@@ -14,6 +14,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // PricingEngine is the single owner of all price math (blueprint 1.4).
         $this->app->singleton(\App\Services\Pricing\PricingEngine::class);
+
+        // WalletService is the single owner of wallet balance changes (1.2).
+        $this->app->singleton(\App\Services\Wallet\WalletService::class);
     }
 
     /**

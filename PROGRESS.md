@@ -29,17 +29,19 @@ Laravel 11 (11.54) installed; Sanctum (api guard + `routes/api.php`) + Fortify (
 - Airalo guard auto-corrects up — raises sub-minimum Airalo retail to `airalo_min_price`; ignored for non-Airalo providers.
 - every calc logged — `pricing_engine_logs` row per call verified. Locked by `tests/Feature/PricingEngineTest.php` (12 tests / 104 assertions). Full suite 24/24.
 
+### ✅ Module 4 — WalletService  (Sections 1, 14)  — passed acceptance 2026-07-12
+`app/Services/Wallet/WalletService.php` (singleton) is the single owner of wallet balance changes: `debit`, `credit`, `refund`, `reward`, and `charge()` (charge-then-deliver with orphan-charge guard). Every change runs inside a DB transaction with `lockForUpdate` on the wallet row AND an atomic cache lock per wallet (Redis in prod), and writes a `wallet_transactions` row with `balance_before`/`balance_after` in the same transaction. Idempotent by `reference` (money actions never blind-retry). Dual-currency (NGN/USD). Auto-refund + `AlertAdminJob` (writes `error_logs`) when delivery fails. Exceptions: `InsufficientBalanceException`, `OrphanChargeRefundedException`.
+**Acceptance — all green:**
+- concurrent-debit proves no double-spend — 20 real concurrent OS processes debiting a 100 balance → exactly 10 succeed, 10 rejected, final balance 0.00, 10 debit rows (never negative). Plus a deterministic contention test in the suite.
+- failed downstream save auto-refunds — `charge()` debits, runs delivery, and on any throw auto-refunds (net zero), alerts, and rethrows `OrphanChargeRefundedException`. Locked by `tests/Feature/WalletServiceTest.php` (9 tests). Full suite 33/33.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 4 — WalletService  (Sections 1, 14)
-Atomic debit/credit in DB transaction + lockForUpdate; wallet_transactions with before/after; orphan-charge guard.
-**Done when:** concurrent-debit test proves no double-spend; a failed downstream save auto-refunds.
-
-### Module 5 — eSIM Providers + ProviderRouter  (Sections 5, 6)
+### >>> CURRENT: Module 5 — eSIM Providers + ProviderRouter  (Sections 5, 6)
 EsimProviderInterface; eSIM Go v2.5, Airalo (SDK), Quibity; profit-aware ProviderRouter; catalogue sync calling PricingEngine.
 **Done when:** fake-HTTP tests show eSIM Go fail -> Airalo -> Quibity; a margin-eating fallback is skipped and refunds.
 
@@ -138,3 +140,11 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **`recompute(plan)`** stores the pure engine price (manual override temporarily nulled) into `computed_retail_usd`; `final_retail_usd` then follows via COALESCE. `RecomputePlanPricingJob` (queued, Horizon) reprices all plans on a global-markup change — dispatch it from the admin pricing panel in M10.
 - **Settings:** `Setting::getValue/setValue` cache per-key for 1h and wrap values as `['value' => …]` so scalars survive the `encrypted:array` cast; cache is busted on save/delete. `PricingSettingsSeeder` is idempotent (won't clobber admin edits) and runs from `DatabaseSeeder`.
 - **Deferred:** `CurrencyService` (NGN display, Section 13.4) needs `AiraloService::getExchangeRates()` for the auto rate — build it in Module 5/9 when AiraloService exists; until then all pricing is USD.
+
+### 2026-07-12 — Module 4 (WalletService)
+- **Single owner of balances.** `WalletService` (singleton) is the only thing that mutates `user_wallets`/`wallet_transactions`. Every debit/credit: cache lock per wallet (`Cache::lock("wallet:{id}")`) → `DB::transaction` → `lockForUpdate` → read `balance_before` → apply → write `balance_after` + the transaction row, all atomic.
+- **Concurrency guard is belt-and-suspenders.** `lockForUpdate` gives real row locking on MySQL (prod). On SQLite it's a no-op, so the **cache lock** (Redis in prod/local) provides cross-process serialization. CI uses the array cache store (per-process) which is fine because the CI suite is single-process; the deterministic contention test proves the invariant there. The 20-process cross-process proof was run locally against Redis (10 OK / 10 REJECT / balance 0).
+- **Orphan-charge guard:** use `charge($user,$amt,$cur, fn($debit)=>deliver())` for any purchase — it debits, runs delivery, and auto-refunds + `AlertAdminJob` + throws `OrphanChargeRefundedException` if delivery fails. Never call `debit()` then deliver separately.
+- **Idempotency:** pass `['reference'=>...]` (or `idempotency_key`); a repeat with the same reference returns the existing txn and moves no money. Refunds inside `charge()` use `refund:{debit_ref}` so they can't double-refund.
+- **total_deposits vs total_spent:** only real `credit` (top-up) grows `total_deposits`; `refund`/`referral` don't. `debit` grows `total_spent`. These lifetime aggregates are currency-agnostic (single column each per schema) — treat as informational, not a per-currency ledger.
+- **Known deprecation (cleanup later):** assigning float values to `decimal`-cast money attributes triggers a brick/math "passing floats" deprecation (brick/math will drop float support in 0.15). Non-breaking today and values store correctly; when upgrading brick/math, assign money as strings. Affects all models with decimal casts, so fix in a hardening pass, not piecemeal.
