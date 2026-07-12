@@ -35,17 +35,19 @@ Laravel 11 (11.54) installed; Sanctum (api guard + `routes/api.php`) + Fortify (
 - concurrent-debit proves no double-spend — 20 real concurrent OS processes debiting a 100 balance → exactly 10 succeed, 10 rejected, final balance 0.00, 10 debit rows (never negative). Plus a deterministic contention test in the suite.
 - failed downstream save auto-refunds — `charge()` debits, runs delivery, and on any throw auto-refunds (net zero), alerts, and rethrows `OrphanChargeRefundedException`. Locked by `tests/Feature/WalletServiceTest.php` (9 tests). Full suite 33/33.
 
+### ✅ Module 5 — eSIM Providers + ProviderRouter  (Sections 5, 6)  — passed acceptance 2026-07-12
+`EsimProviderInterface` (6 methods) with three implementations bound as `esim.esimgo`/`esim.airalo`/`esim.quibity`: `EsimGoService` (v2.5, X-API-Key + x-sandbox), `AiraloService` (OAuth2 client-credentials via Laravel Http, token cached), `QuibityService` (Bearer + x-sandbox). `ProviderRouter` does profit-aware failover eSIM Go → Airalo → Quibity via `findEquivalentPlan` (cheapest cost that covers country+data+validity), skips any margin-eating fallback, logs `order_logs`, and on total failure refunds the wallet + `AlertAdminJob` + throws `EsimProviderException`. `CatalogueSyncService` maps each provider's catalogue into `esim_plans` (Airalo `net_price`→cost, `minimum_selling_price`→`airalo_min_price`; never Airalo's own `price`) and recomputes retail via the PricingEngine; `SyncEsimCatalogueJob` (queued) + `esim:sync` command drive it.
+**Acceptance — all green:**
+- fake-HTTP failover — eSIM Go fail → Airalo fail → Quibity success returns a Quibity `EsimOrderResult` with profit logged.
+- margin-eating fallback skipped + refunds — a provider whose cost leaves < min profit is never called; wallet refunded, `AlertAdminJob` fired, `EsimProviderException` thrown. Locked by `ProviderRouterTest`, `EsimGoServiceTest`, `CatalogueSyncTest` (10 tests). Full suite 43/43.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 5 — eSIM Providers + ProviderRouter  (Sections 5, 6)
-EsimProviderInterface; eSIM Go v2.5, Airalo (SDK), Quibity; profit-aware ProviderRouter; catalogue sync calling PricingEngine.
-**Done when:** fake-HTTP tests show eSIM Go fail -> Airalo -> Quibity; a margin-eating fallback is skipped and refunds.
-
-### Module 6 — Number Layer + Router  (Sections 7–12)
+### >>> CURRENT: Module 6 — Number Layer + Router  (Sections 7–12)
 Capability router (laneFor by country+type); GetatextService (US), FiveSimService (global), SMS-Activate + Telnyx backups; webhook + poll OTP; unified "My Connectivity" dashboard.
 **Done when:** rent->code works in sandbox; non-US OTP routes to 5sim (Getatext skipped); out-of-stock falls back in-lane; timeout auto-cancels + refunds; 5sim /finish called; webhook verified.
 
@@ -148,3 +150,12 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **Idempotency:** pass `['reference'=>...]` (or `idempotency_key`); a repeat with the same reference returns the existing txn and moves no money. Refunds inside `charge()` use `refund:{debit_ref}` so they can't double-refund.
 - **total_deposits vs total_spent:** only real `credit` (top-up) grows `total_deposits`; `refund`/`referral` don't. `debit` grows `total_spent`. These lifetime aggregates are currency-agnostic (single column each per schema) — treat as informational, not a per-currency ledger.
 - **Known deprecation (cleanup later):** assigning float values to `decimal`-cast money attributes triggers a brick/math "passing floats" deprecation (brick/math will drop float support in 0.15). Non-breaking today and values store correctly; when upgrading brick/math, assign money as strings. Affects all models with decimal casts, so fix in a hardening pass, not piecemeal.
+
+### 2026-07-12 — Module 5 (eSIM Providers + ProviderRouter)
+- **One interface, one router.** All three providers implement `EsimProviderInterface` and are resolved by name (`app("esim.$provider")`). Controllers/jobs must NEVER call a provider service directly — always go through `ProviderRouter`.
+- **Airalo transport deviation (documented).** Blueprint says use the official `airalo/airalo-php-sdk`. We used Laravel `Http` (OAuth2 client-credentials, token cached ~23h) so the provider is `Http::fake`-testable and carries no unpinned dependency. Swapping to the SDK later is isolated to `AiraloService`. The money-critical fields are unaffected: `net_price`→`cost_price_usd` (PRIVATE), `minimum_selling_price`→`airalo_min_price`; Airalo's own `price` is never stored as our retail.
+- **Profit-aware failover.** `ProviderRouter::orderPlan` assumes the wallet was ALREADY debited `final_retail_usd` (checkout in M9 debits first — ideally wrap via `WalletService::charge()`), tries eSIM Go→Airalo→Quibity, and for each uses `findEquivalentPlan` (cheapest active plan of that provider covering the same countries ⊇, data ≥, validity ≥). A provider whose cost leaves < min profit is SKIPPED (not attempted). Total failure → wallet refund + `AlertAdminJob` + `EsimProviderException`.
+- **Refund currency.** `orderPlan(planId, user, currency='USD')` — pass the actual debit currency from checkout so the refund matches what was charged (default USD per blueprint).
+- **`AiraloService::revoke()` throws** (Airalo has no self-serve API revoke; refunds via partner support) and `getBalance()` returns 0.0 for Airalo/Quibity (no documented balance endpoint; only eSIM Go/Getatext/5sim are in the low-balance-alert set). Not exercised by the router.
+- **Catalogue mapping quirks:** eSIM Go catalogue may be `{bundles:[...]}` or a bare list; Quibity `{data|plans}` or bare list; Airalo is nested `data[].operators[].packages[]` with countries at operator level. `CatalogueSyncService` handles all three defensively and always recomputes retail via `PricingEngine`.
+- **Deferred:** eSIM Go webhooks (Section 5.2.3 — `usage.alert`/`bundle.*`/`esim.*`/`order.*`, HMAC-SHA256 verify) belong with the webhook-heavy Module 7; `CurrencyService` (NGN) can now use `AiraloService::getExchangeRates()` when built in M9.

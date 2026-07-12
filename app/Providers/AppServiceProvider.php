@@ -17,6 +17,12 @@ class AppServiceProvider extends ServiceProvider
 
         // WalletService is the single owner of wallet balance changes (1.2).
         $this->app->singleton(\App\Services\Wallet\WalletService::class);
+
+        // eSIM providers, resolved by name via app("esim.$provider") — one
+        // interface, one router (blueprint Section 5.1). Swappable by design.
+        $this->app->singleton('esim.esimgo', \App\Services\eSIM\EsimGoService::class);
+        $this->app->singleton('esim.airalo', \App\Services\eSIM\AiraloService::class);
+        $this->app->singleton('esim.quibity', \App\Services\eSIM\QuibityService::class);
     }
 
     /**
