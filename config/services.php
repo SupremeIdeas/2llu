@@ -92,4 +92,24 @@ return [
         'base_url' => env('TWILIO_BASE_URL', 'https://api.twilio.com/2010-04-01'),
     ],
 
+    // -- Payment gateways (blueprint Sections 14.2 & 19.3) ----------------
+    // Sandbox keys only until Module 12. Webhooks are signature-verified.
+
+    'flutterwave' => [
+        'secret_key' => env('FLUTTERWAVE_SECRET_KEY'),
+        'secret_hash' => env('FLUTTERWAVE_SECRET_HASH'), // verif-hash header
+        'base_url' => env('FLUTTERWAVE_BASE_URL', 'https://api.flutterwave.com/v3'),
+    ],
+
+    'paystack' => [
+        'secret_key' => env('PAYSTACK_SECRET_KEY'), // also signs webhooks (HMAC-SHA512)
+        'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
+    ],
+
+    'stripe' => [
+        'secret_key' => env('STRIPE_SECRET_KEY'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'base_url' => env('STRIPE_BASE_URL', 'https://api.stripe.com/v1'),
+    ],
+
 ];

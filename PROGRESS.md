@@ -48,17 +48,19 @@ Capability routing (NOT blind failover): `SmsProviderInterface` (Getatext/5sim/S
 - non-US OTP routes to 5sim (Getatext skipped); out-of-stock falls back in-lane; margin-eating provider skipped.
 - timeout auto-cancels + refunds; webhook verified + idempotent. Locked by `SmsNumberRouterTest`, `FiveSimServiceTest`, `GetatextServiceTest`, `PollSmsOtpJobTest`, `GetatextWebhookTest` (21 tests). Full suite 64/64.
 
+### ✅ Module 7 — Payments & Wallet Top-up  (Sections 14, 19)  — passed acceptance 2026-07-12
+`PaymentGatewayInterface` (initialize/verifySignature/parseWebhook) with three gateways bound as `pay.$gateway`: `PaystackGateway` (HMAC-SHA512 of raw body), `FlutterwaveGateway` (`verif-hash` shared secret), `StripeGateway` (`t=..,v1=..` HMAC-SHA256 with timestamp tolerance) — all constant-time (`hash_equals`). `PaymentWebhookController` (`POST /webhooks/payments/{gateway}`) verifies the signature BEFORE touching the payload, logs to `webhook_logs`, returns 200 after verify, and dispatches `CreditWalletJob` on success. `CreditWalletJob` (`ShouldBeUnique`) credits via `WalletService` with `reference=topup:{gateway}:{ref}` so the money moves exactly once. Top-ups are metadata-driven (user_id in the verified provider metadata) — no payments table needed.
+**Acceptance — all green:**
+- a top-up credits the wallet exactly once even if the webhook is delivered twice — Paystack double-delivery yields one credit / correct balance.
+- HMAC-verified webhooks + idempotency on provider_order_ref; bad/stale signatures rejected 401 with nothing credited. Locked by `tests/Feature/PaymentWebhookTest.php` (6 tests). Full suite 70/70.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 7 — Payments & Wallet Top-up  (Sections 14, 19)
-Flutterwave/Paystack/Stripe; HMAC-verified webhooks -> queued CreditWalletJob; idempotency on provider_order_ref.
-**Done when:** a top-up credits the wallet exactly once even if the webhook is delivered twice.
-
-### Module 8 — Icon System  (Section 16)
+### >>> CURRENT: Module 8 — Icon System  (Section 16)
 Inline SVG sprite; <x-icon> with custom-icon override; admin custom-icon panel; icons:cache. No emoji anywhere.
 **Done when:** grep of compiled views finds zero emoji; a custom-icon URL overrides the sprite.
 
@@ -172,3 +174,11 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **Getatext webhook has no HMAC** (Getatext sends from many IPs; do NOT IP-whitelist). "Verified" = optional `GETATEXT_WEBHOOK_TOKEN` shared secret (constant-time) + the payload matching a real pending order + idempotency. All webhooks logged to `webhook_logs` before processing. Route is CSRF-exempt via `bootstrap/app.php` (`webhooks/*`).
 - **Refund currency caveat (same as M5):** `sms_orders` has no currency column; timeout/lane refunds default to USD (matching `charged_to_user`, a USD retail). M9 checkout must align the debit currency. `OtpReceived` broadcasts on `private-user.{id}` — the channel authorization callback is added with the broadcasting setup in M9.
 - **Deferred to M9 (Customer UI):** the unified "My Connectivity" dashboard, the Get-a-Number flow, and live OTP streaming UI — Module 6 is the backend/routing layer only.
+
+### 2026-07-12 — Module 7 (Payments & Wallet Top-up)
+- **Signature verify BEFORE touching the payload** (rule 19.3). Each gateway's scheme: Paystack = `hash_hmac('sha512', rawBody, secretKey)` vs `x-paystack-signature`; Flutterwave = static `verif-hash` == `FLUTTERWAVE_SECRET_HASH`; Stripe = parse `t`,`v1` from `Stripe-Signature`, expected = `hash_hmac('sha256', "{t}.{rawBody}", webhookSecret)`, with a 300s timestamp tolerance. All use `hash_equals`. The controller reads `$request->getContent()` (raw) for HMAC — tests post raw JSON via `$this->call(...content)` so the signed bytes match.
+- **Exactly-once is two-layered:** `CreditWalletJob` is `ShouldBeUnique` (keeps duplicate jobs off the queue) AND credits through `WalletService` with `reference=topup:{gateway}:{ref}` (the real guarantee — a repeat reference moves no money). Proven by delivering the same Paystack webhook twice → one credit.
+- **No payments table (deviation, documented).** Section 18 has no payments/top-ups table, so top-ups are metadata-driven: `initialize()` puts `user_id` in the provider metadata + generates our `NAARA-{uuid}` reference; the verified webhook returns user_id + amount + reference, and the credit lands as a `wallet_transactions` row. After signature verification the webhook amount is authoritative (it's what was actually paid). If a first-class payments ledger is wanted later, add a table + migration.
+- **Amount units:** Paystack/Stripe send minor units (kobo/cents) → divided by 100; Flutterwave sends major units. Currency taken from the (verified) webhook.
+- **initialize()** for all three is real HTTP (Paystack `/transaction/initialize`, Flutterwave `/payments`, Stripe `/checkout/sessions` form-encoded) returning `{reference, redirect_url}`; documented endpoints, not invented. The checkout UI that calls it is M9.
+- **Deferred:** eSIM Go provider webhooks (S5.2.3) still pending — fold into the webhook infrastructure now in place (same verify→log→queue pattern) during M9/M10 or a webhook pass.

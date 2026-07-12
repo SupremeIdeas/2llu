@@ -33,6 +33,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('number.smsactivate', \App\Services\SMS\SmsActivateService::class);
         $this->app->singleton('number.twilio', \App\Services\SMS\Numbers\TwilioService::class);
         $this->app->singleton('number.telnyx', \App\Services\SMS\Numbers\TelnyxService::class);
+
+        // Payment gateways, resolved by name via app("pay.$gateway").
+        $this->app->singleton('pay.flutterwave', \App\Services\Payments\FlutterwaveGateway::class);
+        $this->app->singleton('pay.paystack', \App\Services\Payments\PaystackGateway::class);
+        $this->app->singleton('pay.stripe', \App\Services\Payments\StripeGateway::class);
     }
 
     /**
