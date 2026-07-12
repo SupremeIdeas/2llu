@@ -12,7 +12,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // PricingEngine is the single owner of all price math (blueprint 1.4).
+        $this->app->singleton(\App\Services\Pricing\PricingEngine::class);
     }
 
     /**

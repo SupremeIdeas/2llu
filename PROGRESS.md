@@ -22,17 +22,20 @@ Laravel 11 (11.54) installed; Sanctum (api guard + `routes/api.php`) + Fortify (
 - migrate + rollback run clean — verified `migrate:fresh`, `migrate:rollback` (whole batch), and `migrate:refresh` (reset-all → migrate-all) with zero failures.
 - final_retail_usd computes from COALESCE — override wins, else computed, else null; recomputes when a manual override is added. Locked in by `tests/Feature/SchemaAndModelsTest.php` (12 assertions incl. cost-hiding + settings encryption). Full suite 12/12.
 
+### ✅ Module 3 — PricingEngine  (Sections 1, 13)  — passed acceptance 2026-07-12
+`app/Services/Pricing/PricingEngine.php` is the single owner of all price math (bound as a singleton): `calculateRetail`, `calculateSmsRetail`, `getProfitSummary`, plus `recompute`/`RecomputePlanPricingJob` for global-markup reprices. Two upward-only guards — Airalo minimum-selling-price (Airalo plans only) and MarginGuard (cost + min profit floor, cannot be disabled). Every calculation writes a `pricing_engine_logs` row (guard_active + guard_delta). `Setting::getValue/setValue` (encrypted, cached) back the config; `PricingSettingsSeeder` seeds the Section 13.3 defaults (markups, floors, alerts).
+**Acceptance — all green:**
+- retail never < cost + min profit — property test across costs 0.01→999.99 × markups 0→200; manual overrides and near-zero markups all floored by MarginGuard.
+- Airalo guard auto-corrects up — raises sub-minimum Airalo retail to `airalo_min_price`; ignored for non-Airalo providers.
+- every calc logged — `pricing_engine_logs` row per call verified. Locked by `tests/Feature/PricingEngineTest.php` (12 tests / 104 assertions). Full suite 24/24.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 3 — PricingEngine  (Sections 1, 13)
-calculateRetail, calculateSmsRetail, getProfitSummary, MarginGuard, Airalo min guard, pricing_engine_logs. No price math anywhere else.
-**Done when:** tests prove retail never < cost + min profit; Airalo guard auto-corrects up; every calc logged.
-
-### Module 4 — WalletService  (Sections 1, 14)
+### >>> CURRENT: Module 4 — WalletService  (Sections 1, 14)
 Atomic debit/credit in DB transaction + lockForUpdate; wallet_transactions with before/after; orphan-charge guard.
 **Done when:** concurrent-debit test proves no double-spend; a failed downstream save auto-refunds.
 
@@ -127,3 +130,11 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **Money-safety at the model layer:** private cost/profit columns are in `$hidden` on every model that has them (EsimPlan, EsimOrder, SmsOrder, VirtualNumber, OrderLog, PricingEngineLog) so `toArray()`/`toJson()` can never leak them. Test `SchemaAndModelsTest` asserts this.
 - **Deviations from the literal schema, by design:** (1) `users.twofa_secret` omitted — Fortify's `two_factor_secret` already covers 2FA; (2) `users.role` kept as a mirror column but Spatie Permission remains the authorization source of truth; (3) `sms_orders.provider` is a string, not a `(getatext/twilio)` enum, because the number layer also routes OTPs to 5sim/SMS-Activate/Telnyx by lane; (4) `settings.value` stored as `longText` + `encrypted:array` cast (encrypted-at-rest can't be a native JSON column).
 - **Money precision:** NGN balances `decimal(18,2)`, USD balances/prices `decimal(18,4)`, provider USD costs `decimal(12,4)`, percentages `decimal(6,3)`.
+
+### 2026-07-12 — Module 3 (PricingEngine)
+- **Single owner of price math.** `PricingEngine` (singleton) is the only place a retail price is computed. Nothing else does price arithmetic — enforce this in review for every later module.
+- **Guard order & logging:** formula → manual override (if set) → Airalo min guard → MarginGuard. `pricing_engine_logs.computed_retail` = pre-guard candidate, `final_retail` = post-guard, `guard_delta` = final − computed (≥ 0), `guard_active` = the last guard that fired (`none`/`airalo_min`/`margin_guard`).
+- **Manual price still guarded.** A manual fixed price bypasses the markup formula but MarginGuard still floors it (blueprint 13.3, priority 1). Note the DB generated column `final_retail_usd = COALESCE(manual, computed)` uses the RAW manual value, so the admin UI (M10) must block sub-floor manual entries; the engine's `calculateRetail` returns the guarded value for quoting.
+- **`recompute(plan)`** stores the pure engine price (manual override temporarily nulled) into `computed_retail_usd`; `final_retail_usd` then follows via COALESCE. `RecomputePlanPricingJob` (queued, Horizon) reprices all plans on a global-markup change — dispatch it from the admin pricing panel in M10.
+- **Settings:** `Setting::getValue/setValue` cache per-key for 1h and wrap values as `['value' => …]` so scalars survive the `encrypted:array` cast; cache is busted on save/delete. `PricingSettingsSeeder` is idempotent (won't clobber admin edits) and runs from `DatabaseSeeder`.
+- **Deferred:** `CurrencyService` (NGN display, Section 13.4) needs `AiraloService::getExchangeRates()` for the auto rate — build it in Module 5/9 when AiraloService exists; until then all pricing is USD.
