@@ -1,7 +1,4 @@
 import './bootstrap';
 
-import Alpine from 'alpinejs';
-
-window.Alpine = Alpine;
-
-Alpine.start();
+// Alpine is provided by Livewire 3's bundled build (do not start a second
+// Alpine instance here — Livewire injects and starts it globally).

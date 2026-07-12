@@ -29,6 +29,10 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Auth views (blueprint Section 3.1 / 19.1). Dark-mode Blade forms.
+        Fortify::loginView(fn () => view('auth.login'));
+        Fortify::registerView(fn () => view('auth.register'));
+
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);

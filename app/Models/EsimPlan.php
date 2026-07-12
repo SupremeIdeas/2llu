@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\Pricing\CurrencyService;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -62,4 +64,18 @@ class EsimPlan extends Model
     {
         return $this->hasMany(EsimOrder::class, 'plan_id');
     }
+
+    /**
+     * The ONLY price ever shown to users (blueprint Section 13.4): the
+     * generated final_retail_usd formatted as USD + NGN. Never exposes cost.
+     * Computed on access (not appended) so serialization stays cheap.
+     *
+     * @return Attribute<array{usd: string, ngn: string, usd_amount: float, ngn_amount: float}, never>
+     */
+    protected function displayPrice(): Attribute
+    {
+        return Attribute::get(fn () => app(CurrencyService::class)
+            ->displayPrice((float) $this->final_retail_usd));
+    }
 }
+

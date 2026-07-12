@@ -109,6 +109,35 @@ class SmsNumberRouter
     }
 
     /**
+     * Live quote for a request WITHOUT buying: the first in-lane provider that
+     * has stock, its cost, and the retail (USD) the user would pay. Used by the
+     * checkout UI to debit before ordering. Throws SmsException if no provider
+     * in the lane can serve it.
+     *
+     * @return array{provider: string, cost: float, retail: float}
+     */
+    public function quote(NumberRequest $request): array
+    {
+        foreach ($this->laneFor($request->country, $request->type) as $provider) {
+            try {
+                /** @var SmsProviderInterface $svc */
+                $svc = app("number.{$provider}");
+                $cost = $svc->priceFor($request->country, $request->service);
+
+                return [
+                    'provider' => $provider,
+                    'cost' => $cost,
+                    'retail' => $this->pricing->calculateSmsRetail($cost, $provider),
+                ];
+            } catch (Throwable $e) {
+                // try next in lane
+            }
+        }
+
+        throw new SmsException('No number available for that country right now.');
+    }
+
+    /**
      * Ordered provider list for a request. Same-lane fallback only — a non-US
      * request never falls back to a US provider, and an OTP request never
      * becomes a permanent number (blueprint Section 11.1).

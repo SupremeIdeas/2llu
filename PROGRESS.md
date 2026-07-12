@@ -60,17 +60,20 @@ Single inline SVG sprite (`partials/icon-sprite.blade.php`, 31 `<symbol>`s, `fil
 - zero emoji in views (regex scan over all blade files); custom-icon URL overrides the sprite (`<img>` replaces `<use>`).
 - missing-icon check: `icons:cache` succeeds on the real views, fails on a fabricated missing icon. Locked by `IconSystemTest` + `IconsCacheCommandTest` (8 tests). Full suite 78/78.
 
+### ✅ Module 9 — Customer UI  (Sections 4, 12, 14, 16)  — passed acceptance 2026-07-12
+Livewire 3 (v3.8.2, pinned — composer first pulled v4). Full-page components on a `components.layouts.customer` chrome (brand nav + theme toggle): `Catalogue`, `Checkout`, `Wallet`, `GetNumber`, `Dashboard` (My Connectivity), `Referrals`, plus public legal/FAQ pages and dark-mode Fortify login/register views. `CurrencyService` (deferred from M3) + an `EsimPlan::display_price` accessor (USD + NGN) are the only price surface — cost never rendered. Checkout debits then fulfils via `ProviderRouter` with the orphan-charge guard; wallet top-up starts a gateway; get-a-number quotes→debits→routes→polls for the code (`wire:poll`).
+**Acceptance — all green:**
+- no cost field in any payload — display accessor + `$hidden` cost columns; catalogue/checkout render retail only (asserted cost value never appears).
+- every element has dark: variants; every action has a loading state — enforced by a view scan test (`wire:loading` on all action views).
+- Locked by `tests/Feature/CustomerUiTest.php` (8 tests) + live boot check (login/register/faq 200, `/dashboard`→login). Full suite 86/86.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 9 — Customer UI  (Sections 4, 12, 14, 16)
-Dashboard, catalogue, checkout, number flow, rentals, wallet, referrals, legal/FAQ — Livewire, dark-mode, SVG icons, prices via display accessor.
-**Done when:** no cost field in any payload; every element has dark: variants; every action has a loading state.
-
-### Module 10 — Admin Panel  (Sections 13, 15, 17)
+### >>> CURRENT: Module 10 — Admin Panel  (Sections 13, 15, 17)
 Pricing panel (global + per-plan + live profit), API-guide tooltip modal, provider health + wallet widgets, error-log module with dated export.
 **Done when:** admin sets markup + sees profit live; every key field has a working help modal; error log exports CSV + JSON.
 
@@ -191,3 +194,11 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **Resilience:** `IconOverrides::all()` catches DB/settings errors and returns `[]` (built-in sprite) so a pre-install or DB hiccup never blanks the page — this also keeps the stock `ExampleTest` (no migrations) green when `/` renders icons.
 - **`icons:cache`** parses `id="i-..."` from the sprite + `<x-icon name="literal">` from every blade (dynamic `:name` is skipped) and fails on any unresolved icon. Add it to the deploy pipeline in Module 11 alongside `config:cache`/`route:cache`/`view:cache`.
 - **When adding a new icon:** add a `<symbol>` to the sprite; running `icons:cache` will catch any `<x-icon>` you referenced without one.
+
+### 2026-07-12 — Module 9 (Customer UI)
+- **Livewire 3, pinned.** Composer's default pulled Livewire 4; forced `^3.0` (v3.8.2) per CLAUDE.md. Livewire 3 bundles Alpine, so the manual Alpine import was removed from `app.js` (double-Alpine breaks it) and `@livewireStyles`/`@livewireScripts` added to the base layout. Full-page components default to the `components.layouts.customer` layout (which wraps `components.layouts.app`).
+- **One price surface.** `EsimPlan::display_price` (Attribute, not appended) → `CurrencyService::displayPrice` returns USD + NGN. Cost is never passed to CurrencyService and cost columns stay `$hidden`. NGN symbol rendered as the ASCII string "NGN " (not ₦) to stay clear of the emoji scan and encoding issues.
+- **Checkout money flow (important):** debit → `ProviderRouter::orderPlan` → persist `esim_order`. Do NOT wrap `orderPlan` in `WalletService::charge()` — `orderPlan` already self-refunds on total provider failure, so `charge()` would double-refund. The orphan guard here covers only the "order succeeded but persisting failed" case (manual refund + alert). Number checkout uses `SmsNumberRouter::quote()` (new) to debit before ordering; the router self-refunds if the lane exhausts (charged set).
+- **Live OTP via `wire:poll`, not Echo.** Broadcasting/Soketi + Echo client is deferred; `GetNumber` polls the order every 3s to show the code once `PollSmsOtpJob` sets it. `OtpReceived` still fires (logs under `BROADCAST_CONNECTION=log`). Wire the `private-user.{id}` channel + Echo when Soketi is set up.
+- **CurrencyService rate:** auto (Airalo `getExchangeRates`) with try/catch → manual/1500 fallback, cached 1h. In tests pin `pricing.ngn_rate_source=manual` to avoid a live call.
+- **Deferred (documented, for later modules):** rentals inbox view + permanent-number UI + eSIM QR/usage widgets + device-compat check before purchase (S12.3/S32); the **referral profit-share ENGINE** (claim-before-pay reward on first purchase, S14.3) — only the referral display is built, the reward listener is not; i18n + multi-currency beyond USD/NGN (S32). Fortify email-verification gate is NOT applied to customer routes yet (only `auth`) — add `verified` in the hardening module.

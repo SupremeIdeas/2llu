@@ -21,10 +21,12 @@
     </script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 </head>
 <body class="min-h-screen bg-[#F8F9FA] text-[#0F172A] antialiased dark:bg-navy dark:text-slate-100">
     @include('partials.icon-sprite')
     {{ $slot ?? '' }}
     @yield('content')
+    @livewireScripts
 </body>
 </html>
