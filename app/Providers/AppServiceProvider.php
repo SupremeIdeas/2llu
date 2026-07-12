@@ -50,5 +50,13 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user, string $ability) {
             return $user->hasRole('super_admin') ? true : null;
         });
+
+        // Custom-icon overrides are cached; bust that cache when the mapping
+        // setting changes (blueprint Section 16.3).
+        \App\Models\Setting::saved(function (\App\Models\Setting $setting) {
+            if ($setting->key === 'ui.icon_overrides') {
+                \App\Support\IconOverrides::flush();
+            }
+        });
     }
 }

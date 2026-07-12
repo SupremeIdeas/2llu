@@ -54,17 +54,19 @@ Capability routing (NOT blind failover): `SmsProviderInterface` (Getatext/5sim/S
 - a top-up credits the wallet exactly once even if the webhook is delivered twice — Paystack double-delivery yields one credit / correct balance.
 - HMAC-verified webhooks + idempotency on provider_order_ref; bad/stale signatures rejected 401 with nothing credited. Locked by `tests/Feature/PaymentWebhookTest.php` (6 tests). Full suite 70/70.
 
+### ✅ Module 8 — Icon System  (Section 16)  — passed acceptance 2026-07-12
+Single inline SVG sprite (`partials/icon-sprite.blade.php`, 31 `<symbol>`s, `fill:none`+`stroke:currentColor` so icons inherit text colour and dark/light) included once in the base layout. `<x-icon name="" class="">` component renders the sprite `<use>` or, when the admin has mapped one, a custom image. `App\Support\IconOverrides` parses the `ui.icon_overrides` setting (`name = url` lines, slug keys, URL-validated), cached 1h, auto-busted on setting save, and degrades to the built-in sprite if settings are unavailable. `icons:cache` warms the cache and fails the deploy if any `<x-icon name>` lacks a sprite symbol/override. Theme-toggle now uses `<x-icon>`.
+**Acceptance — all green:**
+- zero emoji in views (regex scan over all blade files); custom-icon URL overrides the sprite (`<img>` replaces `<use>`).
+- missing-icon check: `icons:cache` succeeds on the real views, fails on a fabricated missing icon. Locked by `IconSystemTest` + `IconsCacheCommandTest` (8 tests). Full suite 78/78.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 8 — Icon System  (Section 16)
-Inline SVG sprite; <x-icon> with custom-icon override; admin custom-icon panel; icons:cache. No emoji anywhere.
-**Done when:** grep of compiled views finds zero emoji; a custom-icon URL overrides the sprite.
-
-### Module 9 — Customer UI  (Sections 4, 12, 14, 16)
+### >>> CURRENT: Module 9 — Customer UI  (Sections 4, 12, 14, 16)
 Dashboard, catalogue, checkout, number flow, rentals, wallet, referrals, legal/FAQ — Livewire, dark-mode, SVG icons, prices via display accessor.
 **Done when:** no cost field in any payload; every element has dark: variants; every action has a loading state.
 
@@ -182,3 +184,10 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **Amount units:** Paystack/Stripe send minor units (kobo/cents) → divided by 100; Flutterwave sends major units. Currency taken from the (verified) webhook.
 - **initialize()** for all three is real HTTP (Paystack `/transaction/initialize`, Flutterwave `/payments`, Stripe `/checkout/sessions` form-encoded) returning `{reference, redirect_url}`; documented endpoints, not invented. The checkout UI that calls it is M9.
 - **Deferred:** eSIM Go provider webhooks (S5.2.3) still pending — fold into the webhook infrastructure now in place (same verify→log→queue pattern) during M9/M10 or a webhook pass.
+
+### 2026-07-12 — Module 8 (Icon System)
+- **One sprite, `<use>` everywhere.** `partials/icon-sprite.blade.php` holds 31 `<symbol id="i-name">` (Lucide-style paths, MIT). `<x-icon>` emits `<use href="#i-{slug}">`, inheriting `currentColor` + dark/light for free. No emoji, no icon font, no external CDN.
+- **Override mechanism vs admin UI.** The white-label override (`ui.icon_overrides` setting → `IconOverrides` → `<x-icon>` renders `<img>`) is fully built + tested. The admin textarea panel that edits that setting lives in the Admin panel (Module 10) — the mechanism it drives is done.
+- **Resilience:** `IconOverrides::all()` catches DB/settings errors and returns `[]` (built-in sprite) so a pre-install or DB hiccup never blanks the page — this also keeps the stock `ExampleTest` (no migrations) green when `/` renders icons.
+- **`icons:cache`** parses `id="i-..."` from the sprite + `<x-icon name="literal">` from every blade (dynamic `:name` is skipped) and fails on any unresolved icon. Add it to the deploy pipeline in Module 11 alongside `config:cache`/`route:cache`/`view:cache`.
+- **When adding a new icon:** add a `<symbol>` to the sprite; running `icons:cache` will catch any `<x-icon>` you referenced without one.
