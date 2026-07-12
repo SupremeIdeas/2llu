@@ -9,7 +9,12 @@
 
 ## DONE
 
-*(nothing yet — project not started)*
+### ✅ Module 1 — Foundation  (Sections 1, 3)  — passed acceptance 2026-07-12
+Laravel 11 (11.54) installed; Sanctum (api guard + `routes/api.php`) + Fortify (2FA/TOTP + email verification) + Spatie Permission (super_admin/admin/staff/user seeded); Redis driving queue/cache/session (phpredis); Horizon installed with an admin-only `viewHorizon` gate; Wasabi S3 disk (private, default disk); Tailwind `darkMode:'class'` with the brand palette + no-flash pre-paint theme script + `<x-theme-toggle>` (inline SVG, no emoji).
+**Acceptance — all green:**
+- Fresh install boots — `/` returns 200, `/up` health 200, `php artisan test` 6/6 pass.
+- Dark toggle works on a blank layout — browser-verified (Chromium/Playwright): flips `<html>.dark`, persists to `localStorage`, survives reload with no flash.
+- Horizon loads admin-only — `viewHorizon` gate DENY for guest/user/staff, ALLOW for admin/super_admin (super_admin also bypasses via `Gate::before`). Locked in by `tests/Feature/FoundationTest.php`.
 
 ---
 
@@ -17,11 +22,7 @@
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 1 — Foundation  (Sections 1, 3)
-Laravel 11 install; Sanctum + Fortify + Spatie roles; Redis for queue/cache/session; Horizon; Wasabi disk; Tailwind darkMode:'class'.
-**Done when:** fresh install boots; dark toggle works on a blank layout; Horizon dashboard loads admin-only.
-
-### Module 2 — Migrations & Models  (Section 18)
+### >>> CURRENT: Module 2 — Migrations & Models  (Section 18)
 All tables incl. generated final_retail_usd + profit-tracking tables. $fillable on every model. Reversible migrations.
 **Done when:** migrate + rollback run clean; final_retail_usd computes from COALESCE.
 
@@ -107,3 +108,13 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 
 ## SESSION NOTES
 *(Claude: record decisions made, half-finished work, and gotchas hit.)*
+
+### 2026-07-12 — Module 1 (Foundation)
+- **DB in this repo/sandbox = SQLite; production = MySQL 8.** MySQL isn't available in the build sandbox, so the local `.env` uses `DB_CONNECTION=sqlite` (with `database/database.sqlite`, git-ignored) purely to boot + run migrations/tests here. `.env.example` is the production source of truth and is set to MySQL 8 per the blueprint — switch the live `.env` to MySQL before deploy. No code depends on the driver.
+- **Packages:** laravel/sanctum ^4.3, laravel/fortify ^1.37, spatie/laravel-permission ^6.25, laravel/horizon ^5.47, league/flysystem-aws-s3-v3 ^3.35. Alpine.js added via npm for the toggle (Livewire, which also bundles Alpine, lands in a later UI module).
+- **Fortify** was wired by publishing config/migrations + registering `App\Providers\FortifyServiceProvider` in `bootstrap/providers.php` (did NOT run `fortify:install` to avoid duplicate 2FA migrations). 2FA (`confirm`) and email verification are both enabled in `config/fortify.php`.
+- **Horizon admin-only gate** lives in `HorizonServiceProvider::gate()` → `viewHorizon` = `hasAnyRole(['super_admin','admin'])`. `Gate::before` in `AppServiceProvider` gives super_admin a blanket bypass. Note: Horizon skips the gate entirely in the `local` env — the gate only bites in non-local, which is where it matters.
+- **Theme toggle** uses a pre-paint inline script in the layout head (reads `localStorage.theme` → falls back to `prefers-color-scheme`) so there is no flash of the wrong theme. Toggle button is `resources/views/components/theme-toggle.blade.php` (inline moon/sun SVG — the real `<x-icon>` sprite is Module 8). Layout is an anonymous component at `resources/views/components/layouts/app.blade.php` → `<x-layouts.app>`.
+- **Wasabi** disk (`config/filesystems.php` → `wasabi`, S3 driver, `visibility: private`, `throw: true`) is the default `FILESYSTEM_DISK`. Keys blank in sandbox.
+- **Gotcha:** the pre-installed Chromium is at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` (the `chromium/` symlink dir has no `chrome` binary). Use `playwright-core` with that `executablePath` + `--no-sandbox` for browser checks.
+- **Not yet done (deferred to their modules):** MySQL live DB, the full SVG icon sprite (M8), Livewire UI (M9), the `/adminmaster` env-driven admin route (M14 — Horizon is gated but still on the default `/horizon` path for now).
