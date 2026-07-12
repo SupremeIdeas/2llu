@@ -1,0 +1,41 @@
+# === Dependencies ===
+/vendor
+/node_modules
+
+# === Laravel build / runtime ===
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/bootstrap/cache/*.php
+
+# === Environment & secrets (NEVER commit) ===
+.env
+.env.*
+!.env.example
+.phpunit.result.cache
+.phpunit.cache
+auth.json
+
+# === Editor / OS ===
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+.DS_Store
+Thumbs.db
+
+# === Logs ===
+/storage/logs/*.log
+npm-debug.log
+yarn-error.log
+
+# === Homestead / Vagrant ===
+/.vagrant
+Homestead.json
+Homestead.yaml
+
+# === Misc ===
+/.phpactor.json
