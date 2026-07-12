@@ -23,6 +23,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('esim.esimgo', \App\Services\eSIM\EsimGoService::class);
         $this->app->singleton('esim.airalo', \App\Services\eSIM\AiraloService::class);
         $this->app->singleton('esim.quibity', \App\Services\eSIM\QuibityService::class);
+
+        // Number providers, resolved by name via app("number.$provider").
+        // OTP/rental lane (SmsProviderInterface): Getatext (US), 5sim (global),
+        // SMS-Activate (global backup). Permanent lane (NumberProviderInterface):
+        // Twilio (primary), Telnyx (backup). Router never crosses lanes (S11).
+        $this->app->singleton('number.getatext', \App\Services\SMS\GetatextService::class);
+        $this->app->singleton('number.fivesim', \App\Services\SMS\FiveSimService::class);
+        $this->app->singleton('number.smsactivate', \App\Services\SMS\SmsActivateService::class);
+        $this->app->singleton('number.twilio', \App\Services\SMS\Numbers\TwilioService::class);
+        $this->app->singleton('number.telnyx', \App\Services\SMS\Numbers\TelnyxService::class);
     }
 
     /**

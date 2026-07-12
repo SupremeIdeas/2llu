@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Services\SMS;
+
+/**
+ * Contract for OTP / rental number providers (Getatext, 5sim, SMS-Activate).
+ * Each provider normalises its own responses to the shapes below so the
+ * SmsNumberRouter and OTP jobs never depend on a concrete provider.
+ * Bound in the container as number.getatext / number.fivesim / number.smsactivate.
+ */
+interface SmsProviderInterface
+{
+    /**
+     * Live wholesale cost (USD) for a country+service. Never hard-coded.
+     * Throws OutOfStockException when there is no stock.
+     */
+    public function priceFor(string $country, string $service): float;
+
+    /**
+     * Buy a one-time OTP (activation) number.
+     *
+     * @return array{provider_ref: string, number: string, cost: float, status: string}
+     */
+    public function buyOtp(string $country, string $service, array $options = []): array;
+
+    /**
+     * Buy a rental (hosting / long-rental) number.
+     *
+     * @return array{provider_ref: string, number: string, cost: float, status: string}
+     */
+    public function buyRental(string $country, string $service, array $options = []): array;
+
+    /**
+     * Poll an order for its code.
+     *
+     * @return array{status: string, code: ?string}
+     */
+    public function check(string $providerRef): array;
+
+    /** Mark an order finished/completed (protects 5sim rating). */
+    public function finish(string $providerRef): void;
+
+    /** Cancel an order (before any SMS) so cost is credited back. */
+    public function cancel(string $providerRef): void;
+
+    /** NaaraSim's prepaid balance with this provider (USD). */
+    public function balance(): float;
+}

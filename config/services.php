@@ -61,4 +61,35 @@ return [
         'base_url' => env('QUIBITY_BASE_URL', 'https://esim.sm/api/reseller/v1'),
     ],
 
+    // -- Number / SMS providers (blueprint Sections 8-11) -----------------
+    // Costs from these APIs are PRIVATE. Never cross lanes (country+type).
+
+    'getatext' => [
+        'api_key' => env('GETATEXT_API_KEY'),
+        'webhook_url' => env('GETATEXT_WEBHOOK_URL'),
+        'webhook_token' => env('GETATEXT_WEBHOOK_TOKEN'), // optional shared secret
+        'base_url' => env('GETATEXT_BASE_URL', 'https://getatext.com/api/v1'),
+    ],
+
+    'fivesim' => [
+        'api_key' => env('FIVESIM_API_KEY'), // Bearer JWT
+        'base_url' => env('FIVESIM_BASE_URL', 'https://5sim.net/v1'),
+    ],
+
+    'smsactivate' => [
+        'api_key' => env('SMSACTIVATE_API_KEY'),
+        'base_url' => env('SMSACTIVATE_BASE_URL', 'https://sms-activate.org/stubs/handler_api.php'),
+    ],
+
+    'telnyx' => [
+        'api_key' => env('TELNYX_API_KEY'),
+        'base_url' => env('TELNYX_BASE_URL', 'https://api.telnyx.com/v2'),
+    ],
+
+    'twilio' => [
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        'base_url' => env('TWILIO_BASE_URL', 'https://api.twilio.com/2010-04-01'),
+    ],
+
 ];

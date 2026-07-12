@@ -14,6 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // Sanctum SPA statefulness for first-party requests.
         $middleware->statefulApi();
+
+        // Provider webhooks carry no CSRF token; verification is per-provider
+        // (HMAC/shared-secret) inside each handler.
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

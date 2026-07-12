@@ -41,17 +41,20 @@ Laravel 11 (11.54) installed; Sanctum (api guard + `routes/api.php`) + Fortify (
 - fake-HTTP failover — eSIM Go fail → Airalo fail → Quibity success returns a Quibity `EsimOrderResult` with profit logged.
 - margin-eating fallback skipped + refunds — a provider whose cost leaves < min profit is never called; wallet refunded, `AlertAdminJob` fired, `EsimProviderException` thrown. Locked by `ProviderRouterTest`, `EsimGoServiceTest`, `CatalogueSyncTest` (10 tests). Full suite 43/43.
 
+### ✅ Module 6 — Number Layer + Router  (Sections 7–12)  — passed acceptance 2026-07-12
+Capability routing (NOT blind failover): `SmsProviderInterface` (Getatext/5sim/SMS-Activate) + `NumberProviderInterface` (Twilio/Telnyx), bound as `number.$provider`. `SmsNumberRouter::laneFor(country,type)` implements the exact lane map and falls back ONLY within a lane. `GetatextService` (US, `Auth:` header, error→exception mapping) and `FiveSimService` (global, Bearer JWT, rating discipline) are full HTTP clients; SMS-Activate/Twilio/Telnyx are interface-complete skeletons (report unavailable until endpoints+keys wired at go-live — not invented). `PollSmsOtpJob` polls every 5s to a 15-min window: on a code → store + `finish()` + broadcast `OtpReceived` + complete; on timeout → `cancel()` + refund. Getatext webhook (`POST /webhooks/getatext`, CSRF-exempt, optional shared-secret, idempotent, logged to `webhook_logs`). Margin protection: live cost capped against the already-charged retail; lane-exhaustion refunds + `AlertAdminJob`.
+**Acceptance — all green:**
+- rent→code works — `buyOtp` → `PollSmsOtpJob` received path stores code, calls 5sim `/finish`, broadcasts `OtpReceived`.
+- non-US OTP routes to 5sim (Getatext skipped); out-of-stock falls back in-lane; margin-eating provider skipped.
+- timeout auto-cancels + refunds; webhook verified + idempotent. Locked by `SmsNumberRouterTest`, `FiveSimServiceTest`, `GetatextServiceTest`, `PollSmsOtpJobTest`, `GetatextWebhookTest` (21 tests). Full suite 64/64.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 6 — Number Layer + Router  (Sections 7–12)
-Capability router (laneFor by country+type); GetatextService (US), FiveSimService (global), SMS-Activate + Telnyx backups; webhook + poll OTP; unified "My Connectivity" dashboard.
-**Done when:** rent->code works in sandbox; non-US OTP routes to 5sim (Getatext skipped); out-of-stock falls back in-lane; timeout auto-cancels + refunds; 5sim /finish called; webhook verified.
-
-### Module 7 — Payments & Wallet Top-up  (Sections 14, 19)
+### >>> CURRENT: Module 7 — Payments & Wallet Top-up  (Sections 14, 19)
 Flutterwave/Paystack/Stripe; HMAC-verified webhooks -> queued CreditWalletJob; idempotency on provider_order_ref.
 **Done when:** a top-up credits the wallet exactly once even if the webhook is delivered twice.
 
@@ -159,3 +162,13 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **`AiraloService::revoke()` throws** (Airalo has no self-serve API revoke; refunds via partner support) and `getBalance()` returns 0.0 for Airalo/Quibity (no documented balance endpoint; only eSIM Go/Getatext/5sim are in the low-balance-alert set). Not exercised by the router.
 - **Catalogue mapping quirks:** eSIM Go catalogue may be `{bundles:[...]}` or a bare list; Quibity `{data|plans}` or bare list; Airalo is nested `data[].operators[].packages[]` with countries at operator level. `CatalogueSyncService` handles all three defensively and always recomputes retail via `PricingEngine`.
 - **Deferred:** eSIM Go webhooks (Section 5.2.3 — `usage.alert`/`bundle.*`/`esim.*`/`order.*`, HMAC-SHA256 verify) belong with the webhook-heavy Module 7; `CurrencyService` (NGN) can now use `AiraloService::getExchangeRates()` when built in M9.
+
+### 2026-07-12 — Module 6 (Number Layer + Router)
+- **Routing, not failover.** Numbers aren't interchangeable, so `SmsNumberRouter` matches country+type to the owning provider and falls back ONLY within the same lane (`laneFor`). A Nigeria OTP never touches a US provider; an OTP never becomes a permanent number.
+- **Provider refs live in `sms_orders.getatext_id`.** The schema only has that one ref column, so it holds the provider order ref for ALL providers (5sim id, Getatext id, etc.), not just Getatext. Slightly misnamed; documented.
+- **Margin cap fix (design).** `calculateSmsRetail` always enforces a floor, so a retail freshly derived from the same live cost can never trip the "cost eats margin" guard — it's dead under that path. The guard is meaningful only against the price the user was ALREADY charged, so the router compares live cost to `request.charged - min_profit` (falls back to a fresh quote when there's no pre-charge). Also passes `max_price` down to the provider buy call.
+- **5sim rating discipline is automated.** `PollSmsOtpJob` calls `finish()` on every received code and `cancel()` on timeout — never leave an order hanging (a zero rating blocks ordering for 24h). Poll = 5s cadence, 15-min timeout window.
+- **Skeletons are honest, not fake-working.** SMS-Activate, Twilio, Telnyx implement their interfaces and are container-bound, but `buy*` throws "not wired yet" (blueprint rule 1.1: don't invent endpoints). Wire their real endpoints + keys at go-live. Permanent lane (`twilio`→`telnyx`) is defined and unit-tested via `laneFor`, but `order()` throws "coming soon" for `permanent` — full permanent provisioning + monthly billing (Part 14.4) is a later module.
+- **Getatext webhook has no HMAC** (Getatext sends from many IPs; do NOT IP-whitelist). "Verified" = optional `GETATEXT_WEBHOOK_TOKEN` shared secret (constant-time) + the payload matching a real pending order + idempotency. All webhooks logged to `webhook_logs` before processing. Route is CSRF-exempt via `bootstrap/app.php` (`webhooks/*`).
+- **Refund currency caveat (same as M5):** `sms_orders` has no currency column; timeout/lane refunds default to USD (matching `charged_to_user`, a USD retail). M9 checkout must align the debit currency. `OtpReceived` broadcasts on `private-user.{id}` — the channel authorization callback is added with the broadcasting setup in M9.
+- **Deferred to M9 (Customer UI):** the unified "My Connectivity" dashboard, the Get-a-Number flow, and live OTP streaming UI — Module 6 is the backend/routing layer only.
