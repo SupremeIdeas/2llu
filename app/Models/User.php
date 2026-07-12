@@ -23,6 +23,13 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'email',
+        'phone',
+        'country_code',
+        'referral_code',
+        'referred_by',
+        'kyc_status',
+        'is_active',
+        'role',
         'password',
     ];
 
@@ -48,6 +55,46 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    // -- Relationships -----------------------------------------------------
+
+    public function wallet(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(UserWallet::class);
+    }
+
+    public function walletTransactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(WalletTransaction::class);
+    }
+
+    public function esimOrders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(EsimOrder::class);
+    }
+
+    public function smsOrders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SmsOrder::class);
+    }
+
+    public function virtualNumbers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(VirtualNumber::class);
+    }
+
+    /** People this user referred. */
+    public function referralsMade(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Referral::class, 'referrer_id');
+    }
+
+    /** The referral record that brought this user in (if any). */
+    public function referral(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Referral::class, 'referred_id');
     }
 }

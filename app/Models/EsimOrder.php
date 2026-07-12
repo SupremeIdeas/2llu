@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class EsimOrder extends Model
+{
+    protected $fillable = [
+        'user_id',
+        'plan_id',
+        'provider',
+        'provider_order_ref',
+        'iccid',
+        'qr_code_url',
+        'status',
+        'activated_at',
+        'expires_at',
+        'data_remaining_mb',
+        'price_charged',
+        'wholesale_cost',
+        'currency',
+    ];
+
+    /** Money-safety rule 1.2: wholesale_cost is private. */
+    protected $hidden = [
+        'wholesale_cost',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'activated_at' => 'datetime',
+            'expires_at' => 'datetime',
+            'data_remaining_mb' => 'integer',
+            'price_charged' => 'decimal:4',
+            'wholesale_cost' => 'decimal:4',
+        ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(EsimPlan::class, 'plan_id');
+    }
+}

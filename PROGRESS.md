@@ -16,17 +16,19 @@ Laravel 11 (11.54) installed; Sanctum (api guard + `routes/api.php`) + Fortify (
 - Dark toggle works on a blank layout — browser-verified (Chromium/Playwright): flips `<html>.dark`, persists to `localStorage`, survives reload with no flash.
 - Horizon loads admin-only — `viewHorizon` gate DENY for guest/user/staff, ALLOW for admin/super_admin (super_admin also bypasses via `Gate::before`). Locked in by `tests/Feature/FoundationTest.php`.
 
+### ✅ Module 2 — Migrations & Models  (Section 18)  — passed acceptance 2026-07-12
+15 migrations covering all Section 18.1 core tables (users additions, user_wallets, wallet_transactions, esim_plans, esim_orders, sms_orders, virtual_numbers, referrals) and all Section 18.2 profit/business tables (order_logs, pricing_engine_logs, provider_wallet_logs, settings, webhook_logs, error_logs, audit_logs). `esim_plans.final_retail_usd` is a STORED generated column = `COALESCE(manual_retail_usd, computed_retail_usd)`. Every model has a `$fillable` allowlist; private cost/profit columns (`cost_price_usd`, `airalo_min_price`, markup, `wholesale_cost`, `provider_cost`, `profit`, `monthly_cost`) are `$hidden` so they can never reach a user payload (money-safety rule 1.2). `settings.value` is `encrypted:array` at rest.
+**Acceptance — all green:**
+- migrate + rollback run clean — verified `migrate:fresh`, `migrate:rollback` (whole batch), and `migrate:refresh` (reset-all → migrate-all) with zero failures.
+- final_retail_usd computes from COALESCE — override wins, else computed, else null; recomputes when a manual override is added. Locked in by `tests/Feature/SchemaAndModelsTest.php` (12 assertions incl. cost-hiding + settings encryption). Full suite 12/12.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 2 — Migrations & Models  (Section 18)
-All tables incl. generated final_retail_usd + profit-tracking tables. $fillable on every model. Reversible migrations.
-**Done when:** migrate + rollback run clean; final_retail_usd computes from COALESCE.
-
-### Module 3 — PricingEngine  (Sections 1, 13)
+### >>> CURRENT: Module 3 — PricingEngine  (Sections 1, 13)
 calculateRetail, calculateSmsRetail, getProfitSummary, MarginGuard, Airalo min guard, pricing_engine_logs. No price math anywhere else.
 **Done when:** tests prove retail never < cost + min profit; Airalo guard auto-corrects up; every calc logged.
 
@@ -118,3 +120,10 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **Wasabi** disk (`config/filesystems.php` → `wasabi`, S3 driver, `visibility: private`, `throw: true`) is the default `FILESYSTEM_DISK`. Keys blank in sandbox.
 - **Gotcha:** the pre-installed Chromium is at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` (the `chromium/` symlink dir has no `chrome` binary). Use `playwright-core` with that `executablePath` + `--no-sandbox` for browser checks.
 - **Not yet done (deferred to their modules):** MySQL live DB, the full SVG icon sprite (M8), Livewire UI (M9), the `/adminmaster` env-driven admin route (M14 — Horizon is gated but still on the default `/horizon` path for now).
+
+### 2026-07-12 — Module 2 (Migrations & Models)
+- **Generated column:** `esim_plans.final_retail_usd` uses Laravel `->storedAs('COALESCE(manual_retail_usd, computed_retail_usd)')`. Works on both SQLite (`... as (COALESCE(...)) stored`) and MySQL 8 (`GENERATED ALWAYS AS (...) STORED`). It is NOT in `$fillable` and is only populated on a fresh read after insert — call `->fresh()` if you need it immediately after `create()`.
+- **Rollback gotcha (SQLite):** dropping the added `users` columns failed because `referral_code`'s unique index and `referred_by`'s index dangled during the table rebuild. Fixed by dropping `users_referral_code_unique` + `users_referred_by_index` in a first `Schema::table` closure, then the columns in a second. `migrate`, `rollback`, and `refresh` all verified clean.
+- **Money-safety at the model layer:** private cost/profit columns are in `$hidden` on every model that has them (EsimPlan, EsimOrder, SmsOrder, VirtualNumber, OrderLog, PricingEngineLog) so `toArray()`/`toJson()` can never leak them. Test `SchemaAndModelsTest` asserts this.
+- **Deviations from the literal schema, by design:** (1) `users.twofa_secret` omitted — Fortify's `two_factor_secret` already covers 2FA; (2) `users.role` kept as a mirror column but Spatie Permission remains the authorization source of truth; (3) `sms_orders.provider` is a string, not a `(getatext/twilio)` enum, because the number layer also routes OTPs to 5sim/SMS-Activate/Telnyx by lane; (4) `settings.value` stored as `longText` + `encrypted:array` cast (encrypted-at-rest can't be a native JSON column).
+- **Money precision:** NGN balances `decimal(18,2)`, USD balances/prices `decimal(18,4)`, provider USD costs `decimal(12,4)`, percentages `decimal(6,3)`.
