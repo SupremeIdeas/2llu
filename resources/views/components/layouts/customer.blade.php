@@ -17,6 +17,7 @@
                             'numbers' => ['Numbers', 'hash'],
                             'wallet' => ['Wallet', 'wallet'],
                             'referrals' => ['Referrals', 'gift'],
+                            'account' => ['Account', 'settings'],
                         ];
                     @endphp
                     @foreach ($links as $route => [$label, $icon])

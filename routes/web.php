@@ -28,14 +28,21 @@ Route::middleware('installer')->prefix('install')->group(function () {
 Route::view('/legal', 'pages.legal')->name('legal');
 Route::view('/faq', 'pages.faq')->name('faq');
 
-// Authenticated customer app (blueprint Sections 4, 12, 14, 16).
-Route::middleware('auth')->group(function () {
+// Authenticated customer app (blueprint Sections 4, 12, 14, 16). `active`
+// confines a self-paused account to the account page until it reactivates
+// (Section 26.1).
+Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
     Route::get('/catalogue', Catalogue::class)->name('catalogue');
     Route::get('/checkout/{plan}', Checkout::class)->name('checkout');
     Route::get('/wallet', Wallet::class)->name('wallet');
     Route::get('/numbers', GetNumber::class)->name('numbers');
     Route::get('/referrals', Referrals::class)->name('referrals');
+
+    // Account & data rights (blueprint Section 26).
+    Route::get('/account', \App\Livewire\Account::class)->name('account');
+    Route::get('/account/export', \App\Http\Controllers\AccountExportController::class)
+        ->name('account.export.download');
 });
 
 // Admin panel (blueprint Sections 13, 15, 17, 25). Mounted on the env-driven
@@ -52,6 +59,7 @@ Route::middleware(['admin', 'throttle:admin'])
         Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
         Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
         Route::get('/security', \App\Livewire\Admin\Security::class)->name('security');
+        Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
     });
 
 // Provider webhooks (CSRF-exempt — see bootstrap/app.php). Getatext OTP

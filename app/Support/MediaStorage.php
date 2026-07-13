@@ -40,6 +40,16 @@ class MediaStorage
         return self::wasabiConfigured() ? 'wasabi' : 'public';
     }
 
+    /**
+     * Disk for PRIVATE files (e.g. GDPR data exports): Wasabi (private) if
+     * configured, otherwise the local disk — never web-accessible. Reached only
+     * through an owner-authenticated download route.
+     */
+    public static function privateDisk(): string
+    {
+        return self::wasabiConfigured() ? 'wasabi' : 'local';
+    }
+
     /** Livewire/validator rule for an uploaded image or SVG. */
     public static function uploadRules(): array
     {

@@ -17,6 +17,7 @@
                             'admin.errors' => ['Error log', 'file-text'],
                             'admin.appearance' => ['Splash', 'zap'],
                             'admin.security' => ['Security', 'shield'],
+                            'admin.deletions' => ['Deletions', 'trash'],
                         ];
                     @endphp
                     @foreach ($links as $route => [$label, $icon])

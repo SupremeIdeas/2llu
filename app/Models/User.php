@@ -31,6 +31,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_active',
         'role',
         'password',
+        'deactivated_at',
+        'deletion_requested_at',
     ];
 
     /**
@@ -56,7 +58,26 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'deactivated_at' => 'datetime',
+            'data_export_ready_at' => 'datetime',
+            'deletion_requested_at' => 'datetime',
+            'deletion_approved_at' => 'datetime',
         ];
+    }
+
+    // -- Account lifecycle (blueprint Section 26) --------------------------
+
+    /** Self-paused account — can log in only to reactivate. */
+    public function isDeactivated(): bool
+    {
+        return ! $this->is_active;
+    }
+
+    /** A deletion request is awaiting super-admin approval. */
+    public function hasPendingDeletion(): bool
+    {
+        return ! is_null($this->deletion_requested_at)
+            && is_null($this->deletion_approved_at);
     }
 
     // -- Relationships -----------------------------------------------------

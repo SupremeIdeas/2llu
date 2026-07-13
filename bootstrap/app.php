@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
+            'active' => \App\Http\Middleware\EnsureActive::class,
             'installer' => \App\Http\Middleware\EnsureNotInstalled::class,
         ]);
 
