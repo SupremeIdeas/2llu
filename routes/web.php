@@ -27,6 +27,7 @@ Route::middleware('installer')->prefix('install')->group(function () {
 // Public legal/help pages (blueprint Section 32).
 Route::view('/legal', 'pages.legal')->name('legal');
 Route::view('/faq', 'pages.faq')->name('faq');
+Route::view('/refund-policy', 'pages.refund-policy')->name('refund-policy');
 
 // Authenticated customer app (blueprint Sections 4, 12, 14, 16). `active`
 // confines a self-paused account to the account page until it reactivates
@@ -38,6 +39,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/wallet', Wallet::class)->name('wallet');
     Route::get('/numbers', GetNumber::class)->name('numbers');
     Route::get('/referrals', Referrals::class)->name('referrals');
+
+    // Data estimator (blueprint Section 32).
+    Route::get('/data-estimator', \App\Livewire\DataEstimator::class)->name('data-estimator');
 
     // Account & data rights (blueprint Section 26).
     Route::get('/account', \App\Livewire\Account::class)->name('account');

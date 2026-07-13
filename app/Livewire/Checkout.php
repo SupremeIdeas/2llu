@@ -9,6 +9,8 @@ use App\Models\EsimOrder;
 use App\Models\EsimPlan;
 use App\Services\eSIM\ProviderRouter;
 use App\Services\Wallet\WalletService;
+use App\Support\Niche\DeviceCompat;
+use App\Support\Niche\LpaActivation;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -33,14 +35,42 @@ class Checkout extends Component
 
     public ?string $error = null;
 
+    /** Device-compatibility gate (blueprint Section 32) — checked BEFORE buying. */
+    public string $device = '';
+
+    public ?bool $deviceResult = null;   // true=supported, false=not, null=unknown
+
+    public bool $deviceConfirmed = false; // user confirmed their device supports eSIM
+
     public function mount(EsimPlan $plan): void
     {
         $this->plan = $plan;
     }
 
+    public function checkDevice(): void
+    {
+        $this->deviceResult = DeviceCompat::check($this->device);
+        // A known-supported device auto-confirms; unknown/unsupported needs the
+        // explicit checkbox so the user takes responsibility.
+        if ($this->deviceResult === true) {
+            $this->deviceConfirmed = true;
+        }
+        if ($this->deviceResult === false) {
+            $this->deviceConfirmed = false;
+        }
+    }
+
     public function purchase(WalletService $wallet, ProviderRouter $router): void
     {
         $user = auth()->user();
+
+        // Device-compatibility gate: never sell an eSIM to a phone that can't use
+        // it (blueprint Section 32 — the check runs BEFORE purchase).
+        if (! $this->deviceConfirmed) {
+            $this->error = 'Please confirm your device supports eSIM before buying.';
+
+            return;
+        }
 
         // Order rate limit: 10/min (blueprint Section 19.2).
         $key = 'orders:'.$user->id;
@@ -85,6 +115,7 @@ class Checkout extends Component
                     ?? data_get($result->payload, 'esims.0.iccid'),
                 'qr_code_url' => data_get($result->payload, 'qr_code')
                     ?? data_get($result->payload, 'qrCodeUrl'),
+                'lpa_string' => LpaActivation::fromPayload($result->payload),
                 'status' => 'processing',
                 'price_charged' => $retail,
                 'wholesale_cost' => $result->cost,

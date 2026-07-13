@@ -92,6 +92,7 @@ class HardeningTest extends TestCase
         }
 
         Livewire::actingAs($user)->test(Checkout::class, ['plan' => $plan])
+            ->set('deviceConfirmed', true) // pass the device gate to reach the rate limiter
             ->call('purchase')
             ->assertSet('error', 'Too many orders in a short time. Please wait a minute and try again.');
 

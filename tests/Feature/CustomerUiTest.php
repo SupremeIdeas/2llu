@@ -80,6 +80,7 @@ class CustomerUiTest extends TestCase
         ]));
 
         Livewire::actingAs($user)->test(Checkout::class, ['plan' => $plan])
+            ->set('deviceConfirmed', true) // device-compat gate (Section 32)
             ->call('purchase')
             ->assertSet('done', true)
             ->assertDontSee('3.77'); // still no cost on the success screen
@@ -98,6 +99,7 @@ class CustomerUiTest extends TestCase
         $user = User::factory()->create(); // no funds
 
         Livewire::actingAs($user)->test(Checkout::class, ['plan' => $plan])
+            ->set('deviceConfirmed', true) // pass the device gate to reach the balance check
             ->call('purchase')
             ->assertSet('done', false)
             ->assertSet('error', 'Your wallet balance is too low. Please top up and try again.');

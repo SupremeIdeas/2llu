@@ -41,8 +41,39 @@
                 Go to My Connectivity <x-icon name="chevron-right" class="h-4 w-4" />
             </a>
         @else
+            {{-- Device-compatibility check — runs BEFORE purchase (Section 32) --}}
+            <div class="mt-6 rounded-xl border border-slate-200 p-4 dark:border-[#2D4060]">
+                <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    <x-icon name="phone" class="h-4 w-4 text-primary" /> Does your phone support eSIM?
+                </h2>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">An eSIM only works on an eSIM-capable phone. Let’s check yours first.</p>
+
+                <div class="mt-3 flex gap-2">
+                    <input wire:model="device" type="text" placeholder="e.g. iPhone 14, Galaxy S23, Pixel 7"
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <button type="button" wire:click="checkDevice" wire:loading.attr="disabled" wire:target="checkDevice"
+                            class="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">Check</button>
+                </div>
+
+                @if ($deviceResult === true)
+                    <p class="mt-2 flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400"><x-icon name="badge-check" class="h-4 w-4" /> Great — that device supports eSIM.</p>
+                @elseif ($deviceResult === false)
+                    <p class="mt-2 flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400"><x-icon name="x" class="h-4 w-4" /> That device does not support eSIM — a purchase won’t work on it.</p>
+                @elseif ($deviceResult === null && $device !== '')
+                    <p class="mt-2 text-xs text-amber-600 dark:text-amber-400">We’re not sure about that model. {{ \App\Support\Niche\DeviceCompat::howToCheck() }}</p>
+                @endif
+
+                @if ($deviceResult !== false)
+                    <label class="mt-3 flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
+                        <input type="checkbox" wire:model.live="deviceConfirmed" class="mt-0.5 rounded text-primary">
+                        <span>I confirm my device supports eSIM (dial <span class="font-mono">*#06#</span> to find your EID).</span>
+                    </label>
+                @endif
+            </div>
+
             <button type="button" wire:click="purchase" wire:loading.attr="disabled" wire:target="purchase"
-                    class="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-60">
+                    @disabled(! $deviceConfirmed)
+                    class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-60">
                 <span wire:loading.remove wire:target="purchase" class="inline-flex items-center gap-2">
                     <x-icon name="shield-check" class="h-5 w-5" /> Pay with wallet
                 </span>
@@ -50,7 +81,7 @@
                     <x-icon name="refresh" class="h-5 w-5 animate-spin" /> Processing…
                 </span>
             </button>
-            <p class="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">Charged securely from your NaaraSim wallet.</p>
+            <p class="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">Charged securely from your NaaraSim wallet. <a href="{{ route('refund-policy') }}" class="text-primary hover:underline">Refund policy</a>.</p>
         @endif
     </div>
 </div>
