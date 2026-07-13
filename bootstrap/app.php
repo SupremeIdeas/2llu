@@ -30,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'active' => \App\Http\Middleware\EnsureActive::class,
             'installer' => \App\Http\Middleware\EnsureNotInstalled::class,
+            // Staff role/scope gating (blueprint Section 27).
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         ]);
 
         // Security headers on every web response (blueprint Section 19.2; the

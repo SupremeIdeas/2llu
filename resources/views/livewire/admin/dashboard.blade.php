@@ -1,6 +1,25 @@
 <div>
     <h1 class="mb-6 text-2xl font-bold text-slate-900 dark:text-slate-100">Overview</h1>
 
+    @unless ($privileged)
+        {{-- Staff view: scopes only, no business figures. --}}
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                <x-icon name="shield-check" class="h-4 w-4 text-primary" /> Your access
+            </h2>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">You can work within these scopes. Ask a super admin if you need more.</p>
+            <div class="mt-4 flex flex-wrap gap-2">
+                @forelse ($myScopes as $scope)
+                    <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary-dark dark:bg-primary/20 dark:text-primary">
+                        <x-icon name="check" class="h-3 w-3" /> {{ $scopeLabels[$scope] ?? $scope }}
+                    </span>
+                @empty
+                    <span class="text-sm text-slate-400 dark:text-slate-500">No scopes assigned yet.</span>
+                @endforelse
+            </div>
+        </div>
+    @else
+
     {{-- 30-day profit (admin-only figures) --}}
     <div class="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
         @php
@@ -71,4 +90,5 @@
             </div>
         </section>
     </div>
+    @endunless
 </div>

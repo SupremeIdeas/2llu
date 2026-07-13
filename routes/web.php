@@ -54,12 +54,22 @@ Route::middleware(['admin', 'throttle:admin'])
     ->prefix(config('admin.path'))
     ->name('admin.')
     ->group(function () {
+        // Panel entry + 2FA self-enrolment — any panel user (incl. staff).
         Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('dashboard');
-        Route::get('/pricing', \App\Livewire\Admin\Pricing::class)->name('pricing');
-        Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
-        Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
         Route::get('/security', \App\Livewire\Admin\Security::class)->name('security');
-        Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
+
+        // Admin configuration — super_admin & admin only (staff excluded).
+        Route::middleware('role:super_admin|admin')->group(function () {
+            Route::get('/pricing', \App\Livewire\Admin\Pricing::class)->name('pricing');
+            Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
+            Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
+            Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
+        });
+
+        // Staff management — super_admin only (blueprint Section 27).
+        Route::middleware('role:super_admin')->group(function () {
+            Route::get('/staff', \App\Livewire\Admin\Staff::class)->name('staff');
+        });
     });
 
 // Provider webhooks (CSRF-exempt — see bootstrap/app.php). Getatext OTP

@@ -13,10 +13,12 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  *
  *  1. Optional IP allow-list — an IP outside it gets a plain 404 and never
  *     learns the admin area exists.
- *  2. Role — guests and non-admins get a plain 404 (never a login page, so the
- *     secret path reveals nothing). Staff scopes arrive in Module 16.
- *  3. Two-factor — an admin without a confirmed TOTP secret is redirected to
- *     the admin security page to enrol before any other admin page opens.
+ *  2. Role — guests and anyone without an admin-panel role (super_admin, admin
+ *     or staff) get a plain 404 (never a login page, so the secret path reveals
+ *     nothing). Per-page scopes for staff are enforced by the `role`/
+ *     `permission` middleware on the individual routes (blueprint Section 27).
+ *  3. Two-factor — a panel user without a confirmed TOTP secret is redirected
+ *     to the admin security page to enrol before any other admin page opens.
  */
 class EnsureAdmin
 {
@@ -28,7 +30,7 @@ class EnsureAdmin
         }
 
         $user = $request->user();
-        if ($user === null || ! $user->hasAnyRole(['super_admin', 'admin'])) {
+        if ($user === null || ! $user->hasAnyRole(['super_admin', 'admin', 'staff'])) {
             throw new NotFoundHttpException;
         }
 

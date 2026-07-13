@@ -11,14 +11,23 @@
                 </a>
                 <div class="hidden items-center gap-1 sm:flex">
                     @php
-                        $links = [
-                            'admin.dashboard' => ['Overview', 'signal'],
-                            'admin.pricing' => ['Pricing', 'credit-card'],
-                            'admin.errors' => ['Error log', 'file-text'],
-                            'admin.appearance' => ['Splash', 'zap'],
-                            'admin.security' => ['Security', 'shield'],
-                            'admin.deletions' => ['Deletions', 'trash'],
-                        ];
+                        // Nav is role-scoped (blueprint Section 27). Staff see only
+                        // the entry + their security page; admin configuration is
+                        // super_admin/admin; staff management is super_admin only.
+                        $isPrivileged = auth()->user()->hasAnyRole(['super_admin', 'admin']);
+                        $isSuper = auth()->user()->hasRole('super_admin');
+
+                        $links = ['admin.dashboard' => ['Overview', 'signal']];
+                        if ($isPrivileged) {
+                            $links['admin.pricing'] = ['Pricing', 'credit-card'];
+                            $links['admin.errors'] = ['Error log', 'file-text'];
+                            $links['admin.appearance'] = ['Splash', 'zap'];
+                            $links['admin.deletions'] = ['Deletions', 'trash'];
+                        }
+                        if ($isSuper) {
+                            $links['admin.staff'] = ['Staff', 'id-card'];
+                        }
+                        $links['admin.security'] = ['Security', 'shield'];
                     @endphp
                     @foreach ($links as $route => [$label, $icon])
                         <a href="{{ route($route) }}"
