@@ -39,3 +39,6 @@ Homestead.yaml
 
 # === Misc ===
 /.phpactor.json
+
+# Installer lock (environment state)
+/storage/installed
