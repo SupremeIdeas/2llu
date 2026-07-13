@@ -67,17 +67,20 @@ Livewire 3 (v3.8.2, pinned — composer first pulled v4). Full-page components o
 - every element has dark: variants; every action has a loading state — enforced by a view scan test (`wire:loading` on all action views).
 - Locked by `tests/Feature/CustomerUiTest.php` (8 tests) + live boot check (login/register/faq 200, `/dashboard`→login). Full suite 86/86.
 
+### ✅ Module 10 — Admin Panel  (Sections 13, 15, 17)  — passed acceptance 2026-07-12
+Admin area at `/adminmaster` behind an `EnsureAdmin` middleware (plain 404 for non-admins). `Admin\Pricing` (global markup + profit floor, per-plan override/fixed price/active/featured, LIVE profit summary via `getProfitSummary(log:false)`; saving the global markup dispatches `RecomputePlanPricingJob` and audit-logs). `Admin\ApiGuideModal` — one modal engine; every `<x-admin-help-icon provider field>` dispatches `open-api-guide` (content from `Support\ApiGuide`, Sections 15.3–15.9). `Admin\ErrorLogViewer` — per-day + severity filter with CSV/JSON export. `Admin\Dashboard` — provider wallet health (from `providers:health-check`), Active/Coming-Soon per product (`Support\ProviderStatus`, S17.4), and a 30-day profit snapshot. `providers:health-check` command caches balances and fires low-balance alerts (S17.2).
+**Acceptance — all green:**
+- admin sets markup + sees profit live — global save persists+reprices+audits; per-plan preview updates as you type without logging.
+- every key field has a working help modal — `ApiGuideModal` opens with the right content per provider/field.
+- error log exports CSV + JSON — both download for the selected day. Non-admins get 404. Locked by `tests/Feature/AdminPanelTest.php` (7 tests). Full suite 93/93.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 10 — Admin Panel  (Sections 13, 15, 17)
-Pricing panel (global + per-plan + live profit), API-guide tooltip modal, provider health + wallet widgets, error-log module with dated export.
-**Done when:** admin sets markup + sees profit live; every key field has a working help modal; error log exports CSV + JSON.
-
-### Module 11 — Installer & Deploy  (Section 22)
+### >>> CURRENT: Module 11 — Installer & Deploy  (Section 22)
 Web installer (requirements -> DB -> app -> keys -> finalize) with installed lock; cPanel + VPS docs; CI/CD.
 **Done when:** a clean server goes from upload to admin login via the browser installer; Coming-Soon shows for blank keys.
 
@@ -202,3 +205,12 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **Live OTP via `wire:poll`, not Echo.** Broadcasting/Soketi + Echo client is deferred; `GetNumber` polls the order every 3s to show the code once `PollSmsOtpJob` sets it. `OtpReceived` still fires (logs under `BROADCAST_CONNECTION=log`). Wire the `private-user.{id}` channel + Echo when Soketi is set up.
 - **CurrencyService rate:** auto (Airalo `getExchangeRates`) with try/catch → manual/1500 fallback, cached 1h. In tests pin `pricing.ngn_rate_source=manual` to avoid a live call.
 - **Deferred (documented, for later modules):** rentals inbox view + permanent-number UI + eSIM QR/usage widgets + device-compat check before purchase (S12.3/S32); the **referral profit-share ENGINE** (claim-before-pay reward on first purchase, S14.3) — only the referral display is built, the reward listener is not; i18n + multi-currency beyond USD/NGN (S32). Fortify email-verification gate is NOT applied to customer routes yet (only `auth`) — add `verified` in the hardening module.
+
+### 2026-07-12 — Module 10 (Admin Panel)
+- **Admin at `/adminmaster` now**, gated by `EnsureAdmin` (auth + `hasAnyRole(['super_admin','admin'])`) which throws a plain 404 for everyone else. Module 14 makes the path env-driven and adds 2FA/IP-allow-list; the 404 behavior is already in place.
+- **Live profit without log spam.** `PricingEngine::calculateRetail`/`getProfitSummary` gained a `bool $log = true` param; the admin live preview calls `getProfitSummary(log:false)` so typing in the markup field doesn't write a `pricing_engine_logs` row per keystroke. Real saves still log. Note the preview recomputes retail from the markup FORMULA (cost × markup + guards), which can differ from a plan's stored `computed_retail_usd` if that was seeded directly.
+- **One modal engine** (`ApiGuideModal`) placed once in the admin layout; `<x-admin-help-icon>` just dispatches `open-api-guide`. Content lives in `Support\ApiGuide` (verbatim from S15). ESC/backdrop close via Alpine.
+- **Active/Coming-Soon is real config** (`Support\ProviderStatus`): a provider is Active only when all its required config keys are non-empty — drives the dashboard badges and, later, the customer "Coming Soon" gating (S17.4).
+- **`providers:health-check`** pings only wallet-key providers (esimgo/getatext/5sim), caches `providers:health` for 30 min, and dispatches a `warning` `AlertAdminJob` when a balance is below its `pricing.low_balance_alert.*` threshold. Add it to the scheduler (every 15 min) in Module 11.
+- **Audit logging** started here: pricing changes write `audit_logs` (who/what/ip). Module 12 extends audit coverage to every admin action.
+- **Downloads:** Livewire `->assertFileDownloaded(...)` confirms the CSV/JSON exports; `streamDownload` returns the file from the action.

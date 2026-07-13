@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Support;
+
+/**
+ * Active / Coming-Soon by real config (blueprint Section 17.4). A product is
+ * "Coming Soon" while its provider key is empty and flips to "Active" — and
+ * starts calling the real API — the moment a valid key is saved. Real logic
+ * driven by config, so the operator can launch one product at a time.
+ */
+class ProviderStatus
+{
+    /** provider => config keys that must all be non-empty to be Active. */
+    private const REQUIRED = [
+        'esimgo' => ['services.esimgo.api_key'],
+        'airalo' => ['services.airalo.client_id', 'services.airalo.client_secret'],
+        'quibity' => ['services.quibity.api_key'],
+        'getatext' => ['services.getatext.api_key'],
+        'fivesim' => ['services.fivesim.api_key'],
+        'smsactivate' => ['services.smsactivate.api_key'],
+        'twilio' => ['services.twilio.account_sid', 'services.twilio.auth_token'],
+        'telnyx' => ['services.telnyx.api_key'],
+        'paystack' => ['services.paystack.secret_key'],
+        'flutterwave' => ['services.flutterwave.secret_key'],
+        'stripe' => ['services.stripe.secret_key'],
+    ];
+
+    public static function isActive(string $provider): bool
+    {
+        foreach (self::REQUIRED[$provider] ?? [] as $key) {
+            if (empty(config($key))) {
+                return false;
+            }
+        }
+
+        return isset(self::REQUIRED[$provider]);
+    }
+
+    public static function label(string $provider): string
+    {
+        return self::isActive($provider) ? 'Active' : 'Coming Soon';
+    }
+
+    /** @return array<string, string> provider => Active|Coming Soon */
+    public static function all(): array
+    {
+        return collect(array_keys(self::REQUIRED))
+            ->mapWithKeys(fn ($p) => [$p => self::label($p)])
+            ->all();
+    }
+}

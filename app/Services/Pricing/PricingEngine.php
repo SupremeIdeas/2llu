@@ -26,7 +26,7 @@ class PricingEngine
      * the Airalo and MarginGuard floors. This is the value quoted to users
      * (via final_retail_usd) and used by getProfitSummary.
      */
-    public function calculateRetail(EsimPlan $plan): float
+    public function calculateRetail(EsimPlan $plan, bool $log = true): float
     {
         $cost = (float) $plan->cost_price_usd;
 
@@ -60,15 +60,17 @@ class PricingEngine
             $guard = 'margin_guard';
         }
 
-        $this->log(
-            planId: $plan->id,
-            provider: $plan->provider,
-            cost: $cost,
-            markup: $markup,
-            computed: $preGuard,
-            final: $computed,
-            guard: $guard,
-        );
+        if ($log) {
+            $this->log(
+                planId: $plan->id,
+                provider: $plan->provider,
+                cost: $cost,
+                markup: $markup,
+                computed: $preGuard,
+                final: $computed,
+                guard: $guard,
+            );
+        }
 
         return $computed;
     }
@@ -105,10 +107,10 @@ class PricingEngine
      * is included here for the admin profit panel and must never be surfaced
      * to end users.
      */
-    public function getProfitSummary(EsimPlan $plan): array
+    public function getProfitSummary(EsimPlan $plan, bool $log = true): array
     {
         $cost = (float) $plan->cost_price_usd;
-        $retail = $this->calculateRetail($plan);
+        $retail = $this->calculateRetail($plan, $log);
         $profit = round($retail - $cost, 2);
 
         return [

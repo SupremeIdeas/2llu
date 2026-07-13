@@ -28,6 +28,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/referrals', Referrals::class)->name('referrals');
 });
 
+// Admin panel (blueprint Sections 13, 15, 17). Admin-only; the env-driven
+// /adminmaster path + hard 404 hardening is Module 14.
+Route::middleware(['auth', 'admin'])->prefix('adminmaster')->name('admin.')->group(function () {
+    Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('dashboard');
+    Route::get('/pricing', \App\Livewire\Admin\Pricing::class)->name('pricing');
+    Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
+});
+
 // Provider webhooks (CSRF-exempt — see bootstrap/app.php). Getatext OTP
 // delivery (blueprint Section 8.2).
 Route::post('/webhooks/getatext', GetatextWebhookController::class)
