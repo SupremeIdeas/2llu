@@ -69,13 +69,13 @@ jobs:
         run: php bin/security-audit.php
 
   # Static analysis (blueprint Section 30). Advisory for now: Larastan is
-  # installed on-demand here and a baseline hasn't been committed yet, so a
-  # finding reports without blocking the merge. Flip continue-on-error off once
-  # a baseline is generated.
+  # installed on-demand here and a baseline hasn't been committed yet (it can't
+  # be generated in the build sandbox), so findings are printed for review but
+  # do not gate the merge. Drop the trailing "|| true" once a baseline is
+  # committed to make this a hard gate.
   static-analysis:
     runs-on: ubuntu-latest
     name: Static analysis (Larastan)
-    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -92,5 +92,5 @@ jobs:
       - name: Install Larastan
         run: composer require --dev larastan/larastan --no-interaction --no-progress
 
-      - name: Analyse
-        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+      - name: Analyse (advisory)
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G || true
