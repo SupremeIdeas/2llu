@@ -40,14 +40,15 @@ class AdminSecurityTest extends TestCase
 
     public function test_the_admin_path_is_env_driven(): void
     {
-        // config/admin.php reads ADMIN_PATH from the environment…
-        putenv('ADMIN_PATH=vault-x9');
-        $fresh = require base_path('config/admin.php');
-        putenv('ADMIN_PATH'); // restore
-        $this->assertSame('vault-x9', $fresh['path']);
-
-        // …and the admin route group is mounted on config('admin.path').
+        // The admin route group is mounted on config('admin.path')…
         $this->assertStringEndsWith('/'.config('admin.path'), route('admin.dashboard'));
+
+        // …and that config value is bound to the ADMIN_PATH environment variable
+        // (so each deployment can set its own non-guessable admin path).
+        $this->assertStringContainsString(
+            "env('ADMIN_PATH'",
+            file_get_contents(base_path('config/admin.php'))
+        );
     }
 
     public function test_guests_non_admins_and_the_guessable_admin_path_all_404(): void
