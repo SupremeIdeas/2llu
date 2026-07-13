@@ -60,6 +60,9 @@ class AppServiceProvider extends ServiceProvider
             if ($setting->key === 'ui.icon_overrides') {
                 \App\Support\IconOverrides::flush();
             }
+            if (\App\Support\SplashSettings::isSplashKey($setting->key)) {
+                \App\Support\SplashSettings::flush();
+            }
         });
 
         // Rate limits (blueprint Section 19.2): 300/min authenticated, 60/min

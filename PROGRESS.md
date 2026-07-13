@@ -86,6 +86,12 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 - suite passes + money-safety tests green — full run 105/105; a model-sweep test proves NO model leaks cost/profit; pricing/wallet/provider-fallback/webhook-signature suites all green.
 - rate limits + Sentry + audit logging — order actions blocked at 10/min; exceptions land in `error_logs`; every admin action goes through `Auditor`. Locked by `tests/Feature/HardeningTest.php` (7 tests). **Core platform (Modules 1–12) complete.**
 
+### ✅ Module 13 — Opening Splash / Brand Screen  (Section 24)  — passed acceptance 2026-07-12
+`Support\SplashSettings::current()` (cached, cache-busted on any `splash.*` setting save, degrades to disabled if settings unavailable). `<x-splash>` component: absolute overlay, theme-correct background painted on the FIRST frame via the existing pre-paint theme script (no flash), Alpine picks the light/dark logo, fades out after `duration_ms` (capped 4000), optional show-once-per-session. Included once in the base layout. `Admin\Splash` panel (`/adminmaster/appearance`) edits toggle/name/tagline/duration/logos (Wasabi-CDN URLs, light+dark) — saving busts the cache so it reflects with no redeploy, and audit-logs.
+**Acceptance — all green:**
+- splash shows in correct theme with no flash — overlay carries `dark:bg-navy` and paints under the pre-paint `.dark` class; renders only when enabled.
+- admin swaps logos/text without redeploy — settings save → cache bust → `SplashSettings::current()` reflects immediately; invalid logo URLs rejected. Locked by `tests/Feature/SplashTest.php` (6 tests). Full suite 111/111.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
@@ -94,11 +100,7 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 
 ### === PLATFORM STANDARD & NICHE EDGE (Modules 13–21) ===
 
-### >>> CURRENT: Module 13 — Opening Splash / Brand Screen  (Section 24)
-Admin-configurable splash: product logo + "from Supreme Ideas", auto dark/light (pre-paint script, no flash), logos on Wasabi, on/off + duration.
-**Done when:** splash shows in correct theme with no flash; admin swaps logos/text without redeploy.
-
-### Module 14 — Secure Admin Route /adminmaster  (Section 25)
+### >>> CURRENT: Module 14 — Secure Admin Route /adminmaster  (Section 25)
 Env-driven admin path; non-admins get a plain 404 (not a login page); zero user-UI links; 2FA + throttle + optional IP allow-list.
 **Done when:** /admin and the real path both 404 for non-admins; only admin/staff with 2FA get in.
 
@@ -236,3 +238,9 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **Audit:** `Support\Auditor::log()` is the one entry point; admin pricing mutations use it. Extend every future admin mutation to call `Auditor::log()`; Module 16 (staff scopes) and any admin write must audit.
 - **Money-safety sweep** (`HardeningTest`) instantiates every cost-bearing model and asserts `toArray()` never contains cost/profit — a regression guard for the "never expose cost" rule as new fields are added.
 - **Modules 1–12 done.** Remaining 13–21 are the Platform Standard & Niche Edge (splash, /adminmaster hardening, GDPR lifecycle, staff scopes, DB backup, Claude maintenance loop, security matrix, UI kit, niche edge).
+
+### 2026-07-12 — Module 13 (Opening Splash / Brand Screen)
+- **No-flash = the pre-paint script does the work.** The overlay just uses `bg-[#F8F9FA] dark:bg-navy`; because the theme-boot script in `<head>` sets `.dark` before first paint (already there since M1), the correct background paints on frame 1. Logos are swapped by Alpine in `init()` (reads `html.dark`) — brief until Alpine loads, but the background never flashes.
+- **Config-driven, cache-busted.** `SplashSettings` mirrors the `IconOverrides` pattern: cached, flushed via the `Setting::saved` hook on any `splash.*` key, and try/catch-guarded so a pre-install/no-DB render (e.g. the stock `ExampleTest` hitting `/`) shows no splash instead of erroring.
+- **Logos are URLs** (light+dark, Wasabi/CDN). A direct file-upload-to-Wasabi widget can be added later; pasting the Wasabi signed/CDN URL is the current path (valid + testable without live Wasabi keys).
+- **Included in the base layout** so it appears on every app open (gated by `splash.enabled`, default off — so existing pages/tests are unaffected).

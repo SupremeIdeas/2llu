@@ -14,6 +14,7 @@
                             'admin.dashboard' => ['Overview', 'signal'],
                             'admin.pricing' => ['Pricing', 'credit-card'],
                             'admin.errors' => ['Error log', 'file-text'],
+                            'admin.appearance' => ['Splash', 'zap'],
                         ];
                     @endphp
                     @foreach ($links as $route => [$label, $icon])

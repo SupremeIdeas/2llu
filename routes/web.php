@@ -47,6 +47,7 @@ Route::middleware(['auth', 'admin'])->prefix('adminmaster')->name('admin.')->gro
     Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('dashboard');
     Route::get('/pricing', \App\Livewire\Admin\Pricing::class)->name('pricing');
     Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
+    Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
 });
 
 // Provider webhooks (CSRF-exempt — see bootstrap/app.php). Getatext OTP
