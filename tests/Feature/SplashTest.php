@@ -129,4 +129,18 @@ class SplashTest extends TestCase
             ->call('save')
             ->assertHasErrors('product_logo_light');
     }
+
+    public function test_admin_can_upload_a_logo_and_it_is_stored_and_wired_to_the_url(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        config(['filesystems.disks.wasabi.key' => null]); // force server disk
+
+        Livewire::actingAs($this->admin())->test(SplashPanel::class)
+            ->set('product_logo_dark_file', \Illuminate\Http\UploadedFile::fake()->image('dark.png', 300, 100))
+            ->assertSet('uploadError', null)
+            // The uploaded file's URL is wired into the dark-logo field…
+            ->assertSet('product_logo_dark', fn ($v) => is_string($v) && str_contains($v, '/storage/splash/'));
+
+        $this->assertSame(1, count(\Illuminate\Support\Facades\Storage::disk('public')->allFiles('splash')));
+    }
 }

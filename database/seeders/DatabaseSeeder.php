@@ -13,8 +13,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            RoleSeeder::class,
+            RoleSeeder::class,          // must run before DefaultAdminSeeder
             PricingSettingsSeeder::class,
+            DefaultAdminSeeder::class,  // seeds the default super_admin
         ]);
     }
 }

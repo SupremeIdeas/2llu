@@ -3,17 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Support\Installer;
+use Database\Seeders\DefaultAdminSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Web installer wizard (blueprint Section 22.1): requirements → database →
- * application → provider keys → finalize. Guarded by EnsureNotInstalled so it
- * only runs until the lock file is written.
+ * Web installer wizard (blueprint Section 22.1), styled after the CodeCanyon
+ * flow the operator referenced: Welcome → Server Requirements → Database Setup
+ * (Environment + Database tabs) → Done. A default super_admin is seeded so the
+ * operator can sign in immediately (shown on the Done screen). Guarded by
+ * EnsureNotInstalled — it only runs until the lock file is written.
  */
 class InstallController extends Controller
 {
+    public function welcome()
+    {
+        return view('install.welcome');
+    }
+
     public function requirements()
     {
         return view('install.requirements', [
@@ -22,116 +30,78 @@ class InstallController extends Controller
         ]);
     }
 
-    public function database()
+    public function setup()
     {
-        return view('install.database');
+        return view('install.setup');
     }
 
-    public function storeDatabase(Request $request)
+    public function install(Request $request)
     {
         $data = $request->validate([
-            'db_host' => 'required|string',
-            'db_port' => 'required|string',
+            'app_name' => 'required|string|max:60',
+            'app_url' => ['required', 'string', 'regex:#^https?://[^\s]+[^/]$#'], // no trailing slash
+            'db_connection' => 'required|in:mysql,sqlite',
+            'db_host' => 'required_if:db_connection,mysql|nullable|string',
+            'db_port' => 'required_if:db_connection,mysql|nullable|string',
             'db_database' => 'required|string',
-            'db_username' => 'required|string',
+            'db_username' => 'required_if:db_connection,mysql|nullable|string',
             'db_password' => 'nullable|string',
+        ], [
+            'app_url.regex' => 'Please do not enter “/” at the end of the URL. Example: https://naarasim.com',
         ]);
 
-        session(['install.db' => $data]);
-
-        return redirect('/install/application');
-    }
-
-    public function application()
-    {
-        return view('install.application');
-    }
-
-    public function storeApplication(Request $request)
-    {
-        $data = $request->validate([
-            'app_name' => 'required|string',
-            'app_url' => 'required|url',
-            'admin_name' => 'required|string',
-            'admin_email' => 'required|email',
-            'admin_password' => 'required|string|min:8',
-        ]);
-
-        session(['install.app' => $data]);
-
-        return redirect('/install/providers');
-    }
-
-    public function providers()
-    {
-        return view('install.providers');
-    }
-
-    public function finalize(Request $request)
-    {
-        $app = session('install.app');
-        if (! $app) {
-            return redirect('/install/application');
-        }
-        $db = session('install.db', []);
-
-        // 1) Write .env from the collected settings + provider keys.
+        // 1) Write .env.
         $env = array_filter([
-            'APP_NAME' => $app['app_name'],
-            'APP_URL' => $app['app_url'],
+            'APP_NAME' => $data['app_name'],
+            'APP_URL' => $data['app_url'],
             'APP_ENV' => 'production',
             'APP_DEBUG' => 'false',
-            'DB_CONNECTION' => 'mysql',
-            'DB_HOST' => $db['db_host'] ?? null,
-            'DB_PORT' => $db['db_port'] ?? null,
-            'DB_DATABASE' => $db['db_database'] ?? null,
-            'DB_USERNAME' => $db['db_username'] ?? null,
-            'DB_PASSWORD' => $db['db_password'] ?? null,
+            'DB_CONNECTION' => $data['db_connection'],
+            'DB_HOST' => $data['db_host'] ?? null,
+            'DB_PORT' => $data['db_port'] ?? null,
+            'DB_DATABASE' => $data['db_database'],
+            'DB_USERNAME' => $data['db_username'] ?? null,
+            'DB_PASSWORD' => $data['db_password'] ?? null,
         ], fn ($v) => $v !== null);
 
         if (! config('app.key')) {
             $env['APP_KEY'] = Installer::generateAppKey();
         }
-
-        // Provider keys arrive as key_ESIMGO_API_KEY etc.; blanks are skipped
-        // so the product shows "Coming Soon" until a real key is saved.
-        foreach ($request->except('_token') as $field => $value) {
-            if (str_starts_with($field, 'key_') && $value !== null && $value !== '') {
-                $env[strtoupper(substr($field, 4))] = $value;
-            }
-        }
-
         Installer::writeEnv($env);
 
         // 2) Point the DB connection at the new database, then migrate + seed.
-        if (! app()->runningUnitTests() && ! empty($db)) {
+        if (! app()->runningUnitTests() && $data['db_connection'] === 'mysql') {
             config([
                 'database.default' => 'mysql',
-                'database.connections.mysql.host' => $db['db_host'],
-                'database.connections.mysql.port' => $db['db_port'],
-                'database.connections.mysql.database' => $db['db_database'],
-                'database.connections.mysql.username' => $db['db_username'],
-                'database.connections.mysql.password' => $db['db_password'] ?? '',
+                'database.connections.mysql.host' => $data['db_host'],
+                'database.connections.mysql.port' => $data['db_port'],
+                'database.connections.mysql.database' => $data['db_database'],
+                'database.connections.mysql.username' => $data['db_username'],
+                'database.connections.mysql.password' => $data['db_password'] ?? '',
             ]);
             DB::purge('mysql');
         }
 
         Artisan::call('migrate', ['--force' => true]);
-        Artisan::call('db:seed', ['--force' => true]);
+        Artisan::call('db:seed', ['--force' => true]); // roles, pricing, default admin
 
-        // 3) Create the super_admin.
-        $admin = Installer::createAdmin($app['admin_name'], $app['admin_email'], $app['admin_password']);
-
-        // 4) Lock the installer and warm the caches.
+        // 3) Link the public storage disk (for logo/media uploads without Wasabi)
+        //    and warm the caches — production only.
         Installer::markInstalled();
         if (! app()->runningUnitTests()) {
+            try {
+                Artisan::call('storage:link');
+            } catch (\Throwable $e) {
+                // symlink may be pre-created on some hosts — ignore.
+            }
             foreach (['config:cache', 'route:cache', 'view:cache', 'icons:cache'] as $command) {
                 Artisan::call($command);
             }
         }
 
-        session()->forget(['install.db', 'install.app']);
-
-        return redirect('/login')->with('status', 'Installation complete. Sign in with your admin account.');
+        return view('install.done', [
+            'email' => DefaultAdminSeeder::EMAIL,
+            'password' => DefaultAdminSeeder::PASSWORD,
+        ]);
     }
 }

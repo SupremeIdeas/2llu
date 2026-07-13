@@ -18,13 +18,10 @@ Route::get('/', function () {
 // Web installer (blueprint Section 22.1). Active only until the lock file
 // exists (EnsureNotInstalled).
 Route::middleware('installer')->prefix('install')->group(function () {
-    Route::get('/', [InstallController::class, 'requirements']);
-    Route::get('/database', [InstallController::class, 'database']);
-    Route::post('/database', [InstallController::class, 'storeDatabase']);
-    Route::get('/application', [InstallController::class, 'application']);
-    Route::post('/application', [InstallController::class, 'storeApplication']);
-    Route::get('/providers', [InstallController::class, 'providers']);
-    Route::post('/finalize', [InstallController::class, 'finalize']);
+    Route::get('/', [InstallController::class, 'welcome']);
+    Route::get('/requirements', [InstallController::class, 'requirements']);
+    Route::get('/setup', [InstallController::class, 'setup']);
+    Route::post('/setup', [InstallController::class, 'install'])->name('install.run');
 });
 
 // Public legal/help pages (blueprint Section 32).

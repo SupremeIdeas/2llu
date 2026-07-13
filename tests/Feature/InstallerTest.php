@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Support\Installer;
 use App\Support\ProviderStatus;
+use Database\Seeders\DefaultAdminSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,7 +16,6 @@ class InstallerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Simulate a fresh server: no lock, and a throwaway .env target.
         Installer::unlock();
         Installer::$envPath = storage_path('framework/testing/.env.install-test');
         @unlink(Installer::$envPath);
@@ -25,7 +25,7 @@ class InstallerTest extends TestCase
     {
         @unlink(Installer::$envPath);
         Installer::$envPath = null;
-        Installer::markInstalled(); // restore installed state for the next test
+        Installer::markInstalled();
         parent::tearDown();
     }
 
@@ -35,12 +35,11 @@ class InstallerTest extends TestCase
         $this->get('/login')->assertRedirect('/install');
     }
 
-    public function test_installer_is_reachable_and_shows_requirements(): void
+    public function test_welcome_then_requirements_are_reachable(): void
     {
-        $this->get('/install')
-            ->assertOk()
-            ->assertSee('Server requirements')
-            ->assertSee('PHP 8.2 or higher');
+        $this->get('/install')->assertOk()->assertSee('Let’s start', false);
+        $this->get('/install/requirements')->assertOk()->assertSee('Server Requirements');
+        $this->get('/install/setup')->assertOk()->assertSee('Setup')->assertSee('Environment');
     }
 
     public function test_installed_app_closes_the_installer(): void
@@ -49,33 +48,39 @@ class InstallerTest extends TestCase
         $this->get('/install')->assertRedirect('/login');
     }
 
-    public function test_full_flow_creates_super_admin_writes_lock_and_redirects_to_login(): void
+    public function test_install_creates_the_default_super_admin_and_shows_the_done_screen(): void
     {
-        $this->withSession([
-            'install.db' => [
-                'db_host' => '127.0.0.1', 'db_port' => '3306', 'db_database' => 'naarasim',
-                'db_username' => 'root', 'db_password' => '',
-            ],
-            'install.app' => [
-                'app_name' => 'NaaraSim', 'app_url' => 'https://naarasim.test',
-                'admin_name' => 'Frank', 'admin_email' => 'admin@naarasim.test', 'admin_password' => 'supersecret',
-            ],
-        ])->post('/install/finalize', [
-            'key_GETATEXT_API_KEY' => 'sk_live_123', // Getatext goes live…
-            'key_ESIMGO_API_KEY' => '',              // …eSIM Go stays Coming Soon
-        ])->assertRedirect('/login');
+        $response = $this->post('/install/setup', [
+            'app_name' => 'NaaraSim',
+            'app_url' => 'https://naarasim.test',
+            'db_connection' => 'sqlite',
+            'db_database' => 'naarasim',
+        ]);
 
-        // Super admin created.
-        $admin = User::where('email', 'admin@naarasim.test')->firstOrFail();
+        $response->assertOk()
+            ->assertSee('Installation Completed')
+            ->assertSee(DefaultAdminSeeder::EMAIL, false)
+            ->assertSee(DefaultAdminSeeder::PASSWORD, false);
+
+        $admin = User::where('email', DefaultAdminSeeder::EMAIL)->firstOrFail();
         $this->assertTrue($admin->hasRole('super_admin'));
-
-        // Lock written -> installer now closed.
         $this->assertTrue(Installer::isInstalled());
 
-        // .env got the provided key but not the blank one.
         $env = file_get_contents(Installer::$envPath);
-        $this->assertStringContainsString('GETATEXT_API_KEY=sk_live_123', $env);
         $this->assertStringContainsString('APP_NAME=NaaraSim', $env);
+        $this->assertStringContainsString('APP_URL=https://naarasim.test', $env);
+    }
+
+    public function test_app_url_with_a_trailing_slash_is_rejected(): void
+    {
+        $this->post('/install/setup', [
+            'app_name' => 'NaaraSim',
+            'app_url' => 'https://naarasim.test/', // trailing slash
+            'db_connection' => 'sqlite',
+            'db_database' => 'naarasim',
+        ])->assertSessionHasErrors('app_url');
+
+        $this->assertFalse(Installer::isInstalled());
     }
 
     public function test_coming_soon_when_a_provider_key_is_blank(): void

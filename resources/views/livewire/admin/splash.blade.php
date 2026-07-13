@@ -35,17 +35,44 @@
         </div>
 
         <div class="border-t border-slate-100 pt-4 dark:border-[#243352]">
-            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Logos (Wasabi / CDN URLs — light &amp; dark)</h2>
+            <h2 class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Logos — light &amp; dark</h2>
+            <p class="mb-3 text-xs text-slate-400 dark:text-slate-500">
+                Upload PNG, JPEG, WebP, GIF or SVG (up to 2 MB; SVGs are sanitized). Or paste a URL. Set BOTH light and
+                dark variants so the logo always reads on its background. Stored on Wasabi if configured, otherwise on
+                this server.
+            </p>
+
+            @if ($uploadError)
+                <div class="mb-3 rounded-lg bg-red-50 p-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">{{ $uploadError }}</div>
+            @endif
+
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 @foreach ([
-                    'product_logo_light' => 'Product logo (light)',
-                    'product_logo_dark' => 'Product logo (dark)',
-                    'brand_logo_light' => 'Brand logo (light)',
-                    'brand_logo_dark' => 'Brand logo (dark)',
-                ] as $field => $label)
-                    <div>
+                    'product_logo_light' => ['Product logo (light)', '#F8F9FA'],
+                    'product_logo_dark' => ['Product logo (dark)', '#0D1B2A'],
+                    'brand_logo_light' => ['Brand logo (light)', '#F8F9FA'],
+                    'brand_logo_dark' => ['Brand logo (dark)', '#0D1B2A'],
+                ] as $field => [$label, $preview])
+                    <div wire:key="logo-{{ $field }}">
                         <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{{ $label }}</label>
-                        <input wire:model="{{ $field }}" placeholder="https://…" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <div class="flex items-center gap-2">
+                            <div class="flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 dark:border-[#2D4060]" style="background: {{ $preview }}">
+                                @if ($$field)
+                                    <img src="{{ $$field }}" alt="{{ $label }}" class="max-h-9 max-w-[3.5rem] object-contain">
+                                @else
+                                    <x-icon name="package" class="h-4 w-4 text-slate-400" />
+                                @endif
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <input wire:model="{{ $field }}" placeholder="https://…  or upload →" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                <label class="mt-1 flex cursor-pointer items-center gap-1 text-xs font-medium text-primary hover:underline">
+                                    <x-icon name="inbox" class="h-3.5 w-3.5" />
+                                    <span wire:loading.remove wire:target="{{ $field }}_file">Upload file</span>
+                                    <span wire:loading wire:target="{{ $field }}_file">Uploading…</span>
+                                    <input type="file" wire:model="{{ $field }}_file" accept="{{ \App\Support\MediaStorage::acceptAttribute() }}" class="hidden">
+                                </label>
+                            </div>
+                        </div>
                         @error($field) <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                     </div>
                 @endforeach

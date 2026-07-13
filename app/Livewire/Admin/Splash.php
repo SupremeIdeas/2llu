@@ -4,10 +4,12 @@ namespace App\Livewire\Admin;
 
 use App\Models\Setting;
 use App\Support\Auditor;
+use App\Support\MediaStorage;
 use App\Support\SplashSettings;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 /**
  * Admin → Settings → Appearance → Splash Screen (blueprint Section 24.2). Edits
@@ -17,6 +19,19 @@ use Livewire\Component;
 #[Layout('components.layouts.admin')]
 class Splash extends Component
 {
+    use WithFileUploads;
+
+    /** Temporary upload holders — one per logo. */
+    public $product_logo_light_file;
+
+    public $product_logo_dark_file;
+
+    public $brand_logo_light_file;
+
+    public $brand_logo_dark_file;
+
+    public ?string $uploadError = null;
+
     #[Validate('boolean')]
     public bool $enabled = false;
 
@@ -58,6 +73,31 @@ class Splash extends Component
         $this->product_logo_dark = $s['product_logo_dark'];
         $this->brand_logo_light = $s['brand_logo_light'];
         $this->brand_logo_dark = $s['brand_logo_dark'];
+    }
+
+    /**
+     * When a logo file is chosen, store it (Wasabi if configured, else the
+     * server's public disk) and fill the matching URL field.
+     */
+    public function updated(string $name, $value): void
+    {
+        if (! str_ends_with($name, '_file') || ! $value) {
+            return;
+        }
+
+        $this->uploadError = null;
+        try {
+            $this->validateOnly($name, [$name => MediaStorage::uploadRules()]);
+            $url = MediaStorage::storePublic($value, 'splash');
+            $this->{substr($name, 0, -5)} = $url; // e.g. product_logo_light
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->uploadError = 'Upload must be PNG, JPEG, WebP, GIF or SVG, up to '
+                .round(MediaStorage::MAX_RASTER_KB / 1024).' MB.';
+        } catch (\Throwable $e) {
+            $this->uploadError = 'Could not save the upload. Please try again.';
+        }
+
+        $this->{$name} = null; // clear the temp file
     }
 
     public function save(): void
