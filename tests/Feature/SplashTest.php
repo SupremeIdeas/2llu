@@ -68,6 +68,41 @@ class SplashTest extends TestCase
             ->assertSee('dark:bg-navy', false); // correct-theme paint (no flash)
     }
 
+    public function test_light_and_dark_logos_switch_by_css_so_neither_bleeds_into_the_wrong_theme(): void
+    {
+        Setting::setValue('splash.enabled', true);
+        Setting::setValue('splash.product_logo_light', 'https://cdn.naarasim.com/product-light.svg');
+        Setting::setValue('splash.product_logo_dark', 'https://cdn.naarasim.com/product-dark.svg');
+        Setting::setValue('splash.brand_logo_light', 'https://cdn.naarasim.com/brand-light.svg');
+        Setting::setValue('splash.brand_logo_dark', 'https://cdn.naarasim.com/brand-dark.svg');
+
+        $html = $this->blade('<x-splash />');
+
+        // The light logo is shown only in light mode (block dark:hidden)…
+        $html->assertSee('src="https://cdn.naarasim.com/product-light.svg"', false)
+            ->assertSeeInOrder(['product-light.svg', 'dark:hidden'], false);
+        // …and the dark logo only in dark mode (hidden dark:block).
+        $html->assertSee('src="https://cdn.naarasim.com/product-dark.svg"', false)
+            ->assertSee('dark:block', false)
+            // Brand logos follow the same rule.
+            ->assertSee('src="https://cdn.naarasim.com/brand-light.svg"', false)
+            ->assertSee('src="https://cdn.naarasim.com/brand-dark.svg"', false);
+    }
+
+    public function test_a_missing_logo_for_one_mode_shows_the_wordmark_not_the_wrong_logo(): void
+    {
+        // Only a light logo is set; in dark mode there must be NO product image
+        // (so the light-mode logo never appears on the dark background).
+        Setting::setValue('splash.enabled', true);
+        Setting::setValue('splash.product_logo_light', 'https://cdn.naarasim.com/only-light.svg');
+        Setting::setValue('splash.product_name', 'NaaraSim');
+
+        $html = $this->blade('<x-splash />');
+        $html->assertSee('src="https://cdn.naarasim.com/only-light.svg"', false)
+            ->assertDontSee('dark:block', false)  // no dark-mode <img> rendered
+            ->assertSee('NaaraSim');               // wordmark still shows in dark mode
+    }
+
     public function test_admin_can_toggle_and_rebrand_the_splash_without_redeploy(): void
     {
         Livewire::actingAs($this->admin())->test(SplashPanel::class)
