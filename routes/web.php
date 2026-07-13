@@ -71,6 +71,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/staff', \App\Livewire\Admin\Staff::class)->name('staff');
             Route::get('/backups', \App\Livewire\Admin\Backups::class)->name('backups');
             Route::get('/maintenance', \App\Livewire\Admin\Maintenance::class)->name('maintenance');
+            Route::get('/ui-kit', \App\Livewire\Admin\UiKit::class)->name('ui-kit');
         });
     });
 

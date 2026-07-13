@@ -24,6 +24,7 @@
             $more[] = ['route' => 'admin.errors', 'label' => 'Error log', 'icon' => 'file-text'];
             $more[] = ['route' => 'admin.backups', 'label' => 'Backups', 'icon' => 'package'];
             $more[] = ['route' => 'admin.maintenance', 'label' => 'Maintenance', 'icon' => 'refresh'];
+            $more[] = ['route' => 'admin.ui-kit', 'label' => 'UI Kit', 'icon' => 'grid'];
         }
     }
 
