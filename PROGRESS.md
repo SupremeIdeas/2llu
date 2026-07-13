@@ -100,6 +100,9 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 
 ### === PLATFORM STANDARD & NICHE EDGE (Modules 13–21) ===
 
+### ✨ UI/UX enhancement — Responsive app shell + staff-from-existing-users  (2026-07-13, owner-requested)
+Not a numbered module — a polish pass requested before Module 17. (1) A premium, responsive **app shell** (`components/app-shell.blade.php`) shared by the customer and admin layouts: an **Apple-inspired floating side menu on desktop** (glassy, rounded, active pills, brand badge, sign-out + theme toggle footer) and a **mobile bottom navigation with a raised centre "More" button** that opens a slide-up sheet of secondary items — core destinations sit left/right of the centre. Role-scoped for admin/staff, with Storefront↔Admin cross-links. (2) Staff can be **made from any existing active user** (`StaffService::promote` + a promote-by-email form on the Staff page); they keep their `user` role and end-user access. (3) Post-login landing fixed to `/dashboard` (Fortify `home` was `/home`, a non-route) so everyone — customers, staff, admins — lands in the end-user app and reaches their panel from there via the single user-facing `/login`. Browser-verified on desktop + mobile (customer & admin). 4 new tests; full suite 147/147.
+
 ### >>> CURRENT: Module 17 — Database Backup, Export & Import  (Section 28)
 spatie/laravel-backup to Wasabi (encrypted); DETECT mysqldump, FALL BACK to ifsnop/mysqldump-php on cPanel; super-admin restore (maintenance mode, snapshot-first); dataset export/import with dry-run + transaction.
 **Done when:** backup runs on a host WITHOUT mysqldump; restore works from panel; import dry-runs before committing.

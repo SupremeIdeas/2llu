@@ -10,10 +10,46 @@
         </div>
     @endif
 
-    {{-- Create staff --}}
+    {{-- Promote an existing active user (blueprint Section 27) --}}
+    <form wire:submit="promote" class="mb-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <x-icon name="badge-check" class="h-4 w-4 text-primary" /> Make an existing user staff
+        </h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Pick any active customer by email. They keep their account and end-user access, and simply gain the scopes you choose.</p>
+
+        @if ($promoteError)
+            <div class="rounded-lg bg-red-50 p-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">{{ $promoteError }}</div>
+        @endif
+
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">User email</label>
+            <input wire:model="promoteEmail" type="email" placeholder="customer@example.com" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+            @error('promoteEmail') <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+        </div>
+        <div>
+            <label class="mb-2 block text-xs font-medium text-slate-500 dark:text-slate-400">Scopes</label>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                @foreach ($grantable as $scope)
+                    <label class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 dark:border-[#2D4060] dark:text-slate-200">
+                        <input type="checkbox" wire:model="promoteScopes" value="{{ $scope }}" class="rounded text-primary">
+                        <span>{{ $labels[$scope] ?? $scope }} <span class="text-xs text-slate-400">({{ $scope }})</span></span>
+                    </label>
+                @endforeach
+            </div>
+        </div>
+        <div class="flex justify-end">
+            <button type="submit" wire:loading.attr="disabled" wire:target="promote"
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                <span wire:loading.remove wire:target="promote">Make staff</span>
+                <span wire:loading wire:target="promote" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Promoting…</span>
+            </button>
+        </div>
+    </form>
+
+    {{-- Create a brand-new staff account --}}
     <form wire:submit="createStaff" class="mb-8 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
         <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
-            <x-icon name="id-card" class="h-4 w-4 text-primary" /> Add a staff member
+            <x-icon name="id-card" class="h-4 w-4 text-primary" /> Or create a brand-new staff account
         </h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>

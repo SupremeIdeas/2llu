@@ -73,7 +73,9 @@ return [
     |
     */
 
-    'home' => '/home',
+    // Everyone — customers, staff and admins — lands on the end-user app after
+    // login (staff/admins reach their panel from there). Section 4/27.
+    'home' => '/dashboard',
 
     /*
     |--------------------------------------------------------------------------

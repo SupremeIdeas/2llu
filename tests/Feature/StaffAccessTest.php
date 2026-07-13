@@ -149,6 +149,70 @@ class StaffAccessTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $victim->id]);
     }
 
+    public function test_a_super_admin_promotes_an_existing_active_user_to_staff(): void
+    {
+        $super = $this->withRole('super_admin');
+
+        $customer = User::factory()->create(['is_active' => true]);
+        $customer->assignRole('user');
+
+        (new StaffService)->promote($super, $customer, ['kyc.review', 'orders.assist']);
+
+        $customer->refresh();
+        // Gains staff + scopes…
+        $this->assertTrue($customer->hasRole('staff'));
+        $this->assertTrue($customer->hasPermissionTo('kyc.review'));
+        // …but keeps the `user` role, so they still enjoy the end-user app.
+        $this->assertTrue($customer->hasRole('user'));
+        $this->assertDatabaseHas('audit_logs', ['action' => 'staff.promoted']);
+    }
+
+    public function test_a_staff_member_can_still_use_the_end_user_app(): void
+    {
+        $super = $this->withRole('super_admin');
+        $customer = User::factory()->create(['is_active' => true]);
+        $customer->assignRole('user');
+        (new StaffService)->promote($super, $customer, ['orders.assist']);
+
+        // The end-user app has no admin 2FA gate — a staff member reaches it.
+        $this->actingAs($customer->fresh())->get('/dashboard')->assertOk();
+    }
+
+    public function test_login_uses_the_single_user_facing_route_and_lands_on_the_app(): void
+    {
+        $this->assertSame('/dashboard', config('fortify.home'));
+
+        $user = User::factory()->create(['password' => bcrypt('secret-password')]);
+        $user->assignRole('user');
+
+        $this->post('/login', ['email' => $user->email, 'password' => 'secret-password'])
+            ->assertRedirect('/dashboard');
+    }
+
+    public function test_an_admin_or_inactive_account_cannot_be_promoted(): void
+    {
+        $service = new StaffService;
+        $super = $this->withRole('super_admin');
+
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole('admin');
+        try {
+            $service->promote($super, $admin, []);
+            $this->fail('Expected an admin to be un-promotable.');
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            $this->assertSame(422, $e->getStatusCode());
+        }
+
+        $inactive = User::factory()->create(['is_active' => false]);
+        $inactive->assignRole('user');
+        try {
+            $service->promote($super, $inactive, []);
+            $this->fail('Expected an inactive user to be un-promotable.');
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            $this->assertSame(422, $e->getStatusCode());
+        }
+    }
+
     public function test_revoking_staff_keeps_the_account_but_strips_role_and_scopes(): void
     {
         $service = new StaffService;

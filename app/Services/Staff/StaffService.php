@@ -67,6 +67,31 @@ class StaffService
     }
 
     /**
+     * Promote an EXISTING active user into a staff member (blueprint Section 27
+     * — "made staff by super admin from choosing any active user account"). The
+     * user keeps their `user` role, so they still enjoy the end-user app; they
+     * simply gain the `staff` role plus the granted scopes.
+     *
+     * @param  list<string>  $scopes
+     */
+    public function promote(User $actor, User $user, array $scopes): void
+    {
+        $this->assertCanManageStaff($actor);
+        abort_if($user->hasAnyRole(['super_admin', 'admin']), 422, 'That account is already an admin.');
+        abort_unless($user->is_active, 422, 'Only an active user account can be made staff.');
+
+        $grantable = $this->assertGrantable($actor, $scopes);
+
+        if (! $user->hasRole('staff')) {
+            $user->assignRole('staff');
+        }
+        $user->forceFill(['role' => 'staff'])->save(); // mirror column for display
+        $user->syncPermissions($grantable);
+
+        Auditor::log('staff.promoted', 'User', $user->id, ['scopes' => $grantable]);
+    }
+
+    /**
      * Replace a staff member's scopes. Refuses to touch a non-staff account and
      * refuses any scope the actor can't grant.
      *

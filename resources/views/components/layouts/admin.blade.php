@@ -1,53 +1,39 @@
-{{-- Admin chrome (blueprint Sections 13, 15, 17, 25). Admin-only, mounted on
-     the env-driven admin path; the `admin` middleware enforces the IP
-     allow-list, a plain 404 for non-admins, and TOTP 2FA. --}}
+{{-- Admin chrome (blueprint Sections 13, 15, 17, 25, 27). Same premium shell as
+     the customer app — Apple-inspired side menu on desktop, mobile bottom nav —
+     but role-scoped: staff see only what they may use; admin config is
+     super_admin/admin; staff management is super_admin only. --}}
+@php
+    $u = auth()->user();
+    $isPrivileged = $u->hasAnyRole(['super_admin', 'admin']);
+    $isSuper = $u->hasRole('super_admin');
+
+    $primary = [['route' => 'admin.dashboard', 'label' => 'Overview', 'icon' => 'signal']];
+    $more = [];
+
+    if ($isPrivileged) {
+        // Bottom-bar core differs slightly by role (super gets Staff, admin gets
+        // Errors); the rest live in the "More" sheet / lower sidebar.
+        $primary[] = ['route' => 'admin.pricing', 'label' => 'Pricing', 'icon' => 'credit-card'];
+        $primary[] = $isSuper
+            ? ['route' => 'admin.staff', 'label' => 'Staff', 'icon' => 'id-card']
+            : ['route' => 'admin.errors', 'label' => 'Errors', 'icon' => 'file-text'];
+
+        $more[] = ['route' => 'admin.appearance', 'label' => 'Splash', 'icon' => 'zap'];
+        $more[] = ['route' => 'admin.deletions', 'label' => 'Deletions', 'icon' => 'trash'];
+        if ($isSuper) {
+            $more[] = ['route' => 'admin.errors', 'label' => 'Error log', 'icon' => 'file-text'];
+        }
+    }
+
+    $primary[] = ['route' => 'admin.security', 'label' => 'Security', 'icon' => 'shield'];
+    // Everyone in the panel can hop back to the end-user app.
+    $more[] = ['route' => 'dashboard', 'label' => 'Storefront', 'icon' => 'globe'];
+@endphp
+
 <x-layouts.app :title="($title ?? 'Admin').' — NaaraSim'">
-    <div class="min-h-screen">
-        <nav class="border-b border-slate-200 bg-white dark:border-[#2D4060] dark:bg-[#1A2840]">
-            <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 font-bold text-primary-dark dark:text-primary">
-                    <x-icon name="settings" class="h-6 w-6 text-primary" />
-                    <span>NaaraSim Admin</span>
-                </a>
-                <div class="hidden items-center gap-1 sm:flex">
-                    @php
-                        // Nav is role-scoped (blueprint Section 27). Staff see only
-                        // the entry + their security page; admin configuration is
-                        // super_admin/admin; staff management is super_admin only.
-                        $isPrivileged = auth()->user()->hasAnyRole(['super_admin', 'admin']);
-                        $isSuper = auth()->user()->hasRole('super_admin');
-
-                        $links = ['admin.dashboard' => ['Overview', 'signal']];
-                        if ($isPrivileged) {
-                            $links['admin.pricing'] = ['Pricing', 'credit-card'];
-                            $links['admin.errors'] = ['Error log', 'file-text'];
-                            $links['admin.appearance'] = ['Splash', 'zap'];
-                            $links['admin.deletions'] = ['Deletions', 'trash'];
-                        }
-                        if ($isSuper) {
-                            $links['admin.staff'] = ['Staff', 'id-card'];
-                        }
-                        $links['admin.security'] = ['Security', 'shield'];
-                    @endphp
-                    @foreach ($links as $route => [$label, $icon])
-                        <a href="{{ route($route) }}"
-                           @class([
-                               'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                               'bg-primary/10 text-primary-dark dark:bg-primary/20 dark:text-primary' => request()->routeIs($route),
-                               'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#243352]' => ! request()->routeIs($route),
-                           ])>
-                            <x-icon :name="$icon" class="h-4 w-4" /> <span>{{ $label }}</span>
-                        </a>
-                    @endforeach
-                </div>
-                <x-theme-toggle />
-            </div>
-        </nav>
-
-        <main class="mx-auto max-w-6xl px-4 py-8">
-            {{ $slot }}
-        </main>
-    </div>
+    <x-app-shell :primary="$primary" :more="$more" brand-label="NaaraSim Admin" brand-icon="settings" :brand-route="route('admin.dashboard')">
+        {{ $slot }}
+    </x-app-shell>
 
     {{-- One modal engine for every API-key help icon (Section 15.1). --}}
     <livewire:admin.api-guide-modal />

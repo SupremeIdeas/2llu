@@ -30,7 +30,14 @@ class Staff extends Component
     /** Selected scopes for the create form. */
     public array $scopes = [];
 
+    /** Promote-an-existing-user flow. */
+    public string $promoteEmail = '';
+
+    public array $promoteScopes = [];
+
     public ?string $saved = null;
+
+    public ?string $promoteError = null;
 
     public function mount(StaffService $service): void
     {
@@ -50,6 +57,23 @@ class Staff extends Component
 
         $this->reset('name', 'email', 'password', 'scopes');
         $this->saved = 'Staff member created.';
+    }
+
+    public function promote(StaffService $service): void
+    {
+        $this->promoteError = null;
+        $this->validate(['promoteEmail' => 'required|email']);
+
+        $user = User::where('email', $this->promoteEmail)->first();
+        if ($user === null) {
+            $this->promoteError = 'No user found with that email. Use the "create" form for a brand-new account.';
+
+            return;
+        }
+
+        $service->promote(Auth::user(), $user, $this->promoteScopes);
+        $this->reset('promoteEmail', 'promoteScopes');
+        $this->saved = 'User promoted to staff.';
     }
 
     public function toggleScope(int $staffId, string $scope, StaffService $service): void
