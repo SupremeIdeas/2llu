@@ -74,17 +74,19 @@ Admin area at `/adminmaster` behind an `EnsureAdmin` middleware (plain 404 for n
 - every key field has a working help modal — `ApiGuideModal` opens with the right content per provider/field.
 - error log exports CSV + JSON — both download for the selected day. Non-admins get 404. Locked by `tests/Feature/AdminPanelTest.php` (7 tests). Full suite 93/93.
 
+### ✅ Module 11 — Installer & Deploy  (Section 22)  — passed acceptance 2026-07-12
+Web installer at `/install` (`InstallController` + `Support\Installer`): requirements → database → application → provider keys → finalize. `RedirectIfNotInstalled` (web group) sends a fresh upload to `/install`; `EnsureNotInstalled` closes the wizard once the `storage/installed` lock exists. Finalize writes `.env`, generates `APP_KEY`, migrates+seeds, creates the super_admin, writes the lock, and (in prod) caches config/routes/views/icons — then redirects to `/login`. Blank provider keys are skipped so the product shows "Coming Soon" (`Support\ProviderStatus`). Scheduler wired in `routes/console.php` (`providers:health-check` /15min, `esim:sync` daily). CI/CD `deploy.yml` (build→test→SSH deploy, secret-gated) + `DEPLOYMENT.md` (cPanel + VPS).
+**Acceptance — all green:**
+- clean server → admin login via the browser installer — `/` redirects to `/install`, the finalize step creates the super_admin + lock and redirects to `/login` (verified live + test).
+- Coming-Soon shows for blank keys — installer skips empty keys; `ProviderStatus` reports Active/Coming Soon by real config. Locked by `tests/Feature/InstallerTest.php` (5 tests). Full suite 98/98.
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 11 — Installer & Deploy  (Section 22)
-Web installer (requirements -> DB -> app -> keys -> finalize) with installed lock; cPanel + VPS docs; CI/CD.
-**Done when:** a clean server goes from upload to admin login via the browser installer; Coming-Soon shows for blank keys.
-
-### Module 12 — Core Hardening & Tests  (Sections 1, 19)
+### >>> CURRENT: Module 12 — Core Hardening & Tests  (Sections 1, 19)
 Test suite (pricing, wallet, provider fallback, webhook signature); rate limits; Sentry; audit logging.
 **Done when:** suite passes; money-safety tests green; every admin action audit-logged.
 
@@ -214,3 +216,12 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **`providers:health-check`** pings only wallet-key providers (esimgo/getatext/5sim), caches `providers:health` for 30 min, and dispatches a `warning` `AlertAdminJob` when a balance is below its `pricing.low_balance_alert.*` threshold. Add it to the scheduler (every 15 min) in Module 11.
 - **Audit logging** started here: pricing changes write `audit_logs` (who/what/ip). Module 12 extends audit coverage to every admin action.
 - **Downloads:** Livewire `->assertFileDownloaded(...)` confirms the CSV/JSON exports; `streamDownload` returns the file from the action.
+
+### 2026-07-12 — Module 11 (Installer & Deploy)
+- **`RedirectIfNotInstalled` is global** (web group) and sends any non-installed request to `/install`, EXCEPT `install/*`, `webhooks/*`, and `up`. That exemption matters: provider/payment webhooks must keep working before/independent of install. Verified live (webhook returns 422, not a 302).
+- **Tests are "installed" by default.** `tests/TestCase::setUp` calls `Installer::markInstalled()` so the middleware passes through for all feature tests. `InstallerTest` opts out (unlock in setUp, relock in tearDown) and points `Installer::$envPath` at a throwaway file so it never clobbers the real `.env`.
+- **Finalize under tests** skips the live DB reconfigure + `config:cache` (guarded by `app()->runningUnitTests()`) — it migrates on the current sqlite connection, seeds roles+pricing, creates the super_admin, and writes the lock. In production it repoints the `mysql` connection from the wizard's creds, `DB::purge`es, migrates, then caches everything.
+- **`.env` writing** merges keys into the existing file (or `.env.example` if absent), quoting values with spaces/#. Provider fields arrive as `key_ESIMGO_API_KEY` and blanks are skipped → Coming Soon.
+- **To re-run the installer:** delete `storage/installed`.
+- **Scheduler:** `routes/console.php` uses the `Schedule` facade (Laravel 11 style). One server cron entry (`schedule:run`) drives `providers:health-check` (/15min) and `esim:sync` (daily) — documented in `DEPLOYMENT.md`.
+- **CD `deploy.yml`** is secret-gated (`DEPLOY_SSH_KEY` etc.) so it stays green without secrets; the existing `tests.yml` remains the PR gate.

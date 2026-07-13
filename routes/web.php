@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\InstallController;
 use App\Http\Controllers\Webhooks\GetatextWebhookController;
 use App\Http\Controllers\Webhooks\PaymentWebhookController;
 use App\Livewire\Catalogue;
@@ -13,6 +14,18 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
+
+// Web installer (blueprint Section 22.1). Active only until the lock file
+// exists (EnsureNotInstalled).
+Route::middleware('installer')->prefix('install')->group(function () {
+    Route::get('/', [InstallController::class, 'requirements']);
+    Route::get('/database', [InstallController::class, 'database']);
+    Route::post('/database', [InstallController::class, 'storeDatabase']);
+    Route::get('/application', [InstallController::class, 'application']);
+    Route::post('/application', [InstallController::class, 'storeApplication']);
+    Route::get('/providers', [InstallController::class, 'providers']);
+    Route::post('/finalize', [InstallController::class, 'finalize']);
+});
 
 // Public legal/help pages (blueprint Section 32).
 Route::view('/legal', 'pages.legal')->name('legal');

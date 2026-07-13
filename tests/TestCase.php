@@ -14,5 +14,9 @@ abstract class TestCase extends BaseTestCase
         // compiled asset manifest (public/build is git-ignored and not built
         // in the PHP CI job). withoutVite() stubs the directives.
         $this->withoutVite();
+
+        // Treat the app as installed by default so the RedirectIfNotInstalled
+        // middleware passes through. InstallerTest opts out to drive the wizard.
+        \App\Support\Installer::markInstalled();
     }
 }

@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Sanctum SPA statefulness for first-party requests.
         $middleware->statefulApi();
 
+        // Fresh upload with no lock file -> web installer (blueprint S22.1).
+        $middleware->web(append: [
+            \App\Http\Middleware\RedirectIfNotInstalled::class,
+        ]);
+
         // Provider webhooks carry no CSRF token; verification is per-provider
         // (HMAC/shared-secret) inside each handler.
         $middleware->validateCsrfTokens(except: [
@@ -23,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
+            'installer' => \App\Http\Middleware\EnsureNotInstalled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
