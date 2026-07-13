@@ -66,9 +66,10 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
         });
 
-        // Staff management — super_admin only (blueprint Section 27).
+        // Staff management + backups — super_admin only (Sections 27, 28).
         Route::middleware('role:super_admin')->group(function () {
             Route::get('/staff', \App\Livewire\Admin\Staff::class)->name('staff');
+            Route::get('/backups', \App\Livewire\Admin\Backups::class)->name('backups');
         });
     });
 

@@ -19,3 +19,7 @@ Schedule::command('providers:health-check')->everyFifteenMinutes()->withoutOverl
 
 // Refresh eSIM catalogues + recompute retail via the PricingEngine.
 Schedule::command('esim:sync')->dailyAt('03:00')->withoutOverlapping();
+
+// Nightly encrypted database backup + cleanup of old archives (Section 28).
+Schedule::command('backup:clean')->dailyAt('02:30')->withoutOverlapping();
+Schedule::command('backup:run --only-db')->dailyAt('02:45')->withoutOverlapping();
