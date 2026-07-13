@@ -73,5 +73,10 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('orders', fn (Request $request) => Limit::perMinute(10)
             ->by(optional($request->user())->id ?: $request->ip()));
+
+        // Admin area (blueprint Section 25): per-admin (or per-IP) cap to blunt
+        // brute-force probing of the secret admin path.
+        RateLimiter::for('admin', fn (Request $request) => Limit::perMinute(config('admin.throttle', 60))
+            ->by('admin:'.(optional($request->user())->id ?: $request->ip())));
     }
 }

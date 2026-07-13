@@ -1,5 +1,6 @@
-{{-- Admin chrome (blueprint Sections 13, 15, 17). Admin-only; the env-driven
-     /adminmaster path + hard 404 hardening lands in Module 14. --}}
+{{-- Admin chrome (blueprint Sections 13, 15, 17, 25). Admin-only, mounted on
+     the env-driven admin path; the `admin` middleware enforces the IP
+     allow-list, a plain 404 for non-admins, and TOTP 2FA. --}}
 <x-layouts.app :title="($title ?? 'Admin').' — NaaraSim'">
     <div class="min-h-screen">
         <nav class="border-b border-slate-200 bg-white dark:border-[#2D4060] dark:bg-[#1A2840]">
@@ -15,6 +16,7 @@
                             'admin.pricing' => ['Pricing', 'credit-card'],
                             'admin.errors' => ['Error log', 'file-text'],
                             'admin.appearance' => ['Splash', 'zap'],
+                            'admin.security' => ['Security', 'shield'],
                         ];
                     @endphp
                     @foreach ($links as $route => [$label, $icon])

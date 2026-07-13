@@ -38,14 +38,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/referrals', Referrals::class)->name('referrals');
 });
 
-// Admin panel (blueprint Sections 13, 15, 17). Admin-only; the env-driven
-// /adminmaster path + hard 404 hardening is Module 14.
-Route::middleware(['auth', 'admin'])->prefix('adminmaster')->name('admin.')->group(function () {
-    Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('dashboard');
-    Route::get('/pricing', \App\Livewire\Admin\Pricing::class)->name('pricing');
-    Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
-    Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
-});
+// Admin panel (blueprint Sections 13, 15, 17, 25). Mounted on the env-driven
+// admin path; the `admin` middleware enforces the IP allow-list, a plain 404
+// for guests/non-admins (never a login page), and TOTP 2FA enrolment. `auth`
+// is intentionally omitted so unauthenticated visitors 404 instead of being
+// bounced to /login. Throttled to blunt path probing.
+Route::middleware(['admin', 'throttle:admin'])
+    ->prefix(config('admin.path'))
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('dashboard');
+        Route::get('/pricing', \App\Livewire\Admin\Pricing::class)->name('pricing');
+        Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
+        Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
+        Route::get('/security', \App\Livewire\Admin\Security::class)->name('security');
+    });
 
 // Provider webhooks (CSRF-exempt — see bootstrap/app.php). Getatext OTP
 // delivery (blueprint Section 8.2).

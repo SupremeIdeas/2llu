@@ -35,6 +35,13 @@ class AdminPanelTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole('admin');
 
+        // Confirmed 2FA so the Module 14 gate lets full-page admin requests
+        // through (component tests bypass middleware and don't need this).
+        $user->forceFill([
+            'two_factor_secret' => encrypt('SECRETKEY'),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
         return $user;
     }
 
@@ -49,12 +56,14 @@ class AdminPanelTest extends TestCase
 
     public function test_admin_routes_are_404_for_non_admins_and_ok_for_admins(): void
     {
-        $this->get('/adminmaster')->assertRedirect('/login');
+        // Guests get a plain 404 (never a login page — the path reveals nothing).
+        $this->get('/adminmaster')->assertNotFound();
 
         $user = User::factory()->create();
         $user->assignRole('user');
-        $this->actingAs($user)->get('/adminmaster')->assertNotFound(); // plain 404, not a login page
+        $this->actingAs($user)->get('/adminmaster')->assertNotFound();
 
+        // An admin with confirmed 2FA gets in.
         $this->actingAs($this->admin())->get('/adminmaster')->assertOk();
     }
 

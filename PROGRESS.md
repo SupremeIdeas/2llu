@@ -100,11 +100,7 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 
 ### === PLATFORM STANDARD & NICHE EDGE (Modules 13–21) ===
 
-### >>> CURRENT: Module 14 — Secure Admin Route /adminmaster  (Section 25)
-Env-driven admin path; non-admins get a plain 404 (not a login page); zero user-UI links; 2FA + throttle + optional IP allow-list.
-**Done when:** /admin and the real path both 404 for non-admins; only admin/staff with 2FA get in.
-
-### Module 15 — Account Lifecycle & Data Rights  (Section 26)
+### >>> CURRENT: Module 15 — Account Lifecycle & Data Rights  (Section 26)
 Self-deactivate; data export (queued, JSON/CSV, filters third-party PII, Wasabi signed URL); deletion request -> super-admin approval -> erase incl. backups; immutable audit log.
 **Done when:** user can export all data + pause/resume; deletion needs super-admin approval; staff cannot delete.
 
@@ -239,6 +235,12 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **Money-safety sweep** (`HardeningTest`) instantiates every cost-bearing model and asserts `toArray()` never contains cost/profit — a regression guard for the "never expose cost" rule as new fields are added.
 - **Modules 1–12 done.** Remaining 13–21 are the Platform Standard & Niche Edge (splash, /adminmaster hardening, GDPR lifecycle, staff scopes, DB backup, Claude maintenance loop, security matrix, UI kit, niche edge).
 
+### ✅ Module 14 — Secure Admin Route /adminmaster  (Section 25)  — passed acceptance 2026-07-13
+The admin panel is mounted on an **env-driven path** (`config('admin.path')` ← `ADMIN_PATH`, default `adminmaster`). The `admin` middleware (`EnsureAdmin`) enforces, in order: an optional **IP allow-list** (`ADMIN_IP_ALLOWLIST` — outside IPs get a plain 404), a **plain 404 for guests and non-admins** (the `auth` middleware is intentionally dropped so the secret path never bounces to `/login`), and **TOTP 2FA enrolment** (`ADMIN_REQUIRE_2FA`, default on) — an admin without a confirmed secret is redirected to a new `admin.security` page and cannot open any other admin page until 2FA is confirmed. The group is **throttled** (`throttle:admin`, `ADMIN_THROTTLE`/min per identity). `Admin\Security` (Livewire) drives Fortify's enable→QR/recovery-codes→confirm flow directly, with recovery-code regeneration and a super_admin-only disable. Zero links to the admin path from the user UI.
+**Acceptance — all green:**
+- `/admin` and the real path both 404 for guests and non-admins (never a login page); an admin with confirmed 2FA gets 200.
+- An admin without 2FA is forced to `admin.security` for every page except the security page itself; enable+confirm with a real Google2FA TOTP activates it (wrong code rejected). IP allow-list hides the panel from other IPs; path proven env-driven. Browser-verified (guest 404, post-login redirect to security, QR/recovery-codes render). Locked by `tests/Feature/AdminSecurityTest.php` (7 tests) + updated `AdminPanelTest`. Full suite 127/127.
+
 ### 2026-07-12 — Module 13 (Opening Splash / Brand Screen)
 - **No-flash = the pre-paint script does the work.** The overlay just uses `bg-[#F8F9FA] dark:bg-navy`; because the theme-boot script in `<head>` sets `.dark` before first paint (already there since M1), the correct background paints on frame 1. Logos are swapped by Alpine in `init()` (reads `html.dark`) — brief until Alpine loads, but the background never flashes.
 - **Config-driven, cache-busted.** `SplashSettings` mirrors the `IconOverrides` pattern: cached, flushed via the `Setting::saved` hook on any `splash.*` key, and try/catch-guarded so a pre-install/no-DB render (e.g. the stock `ExampleTest` hitting `/`) shows no splash instead of erroring.
@@ -253,3 +255,13 @@ Requested by the owner between M13 and M14. All shipped in one commit; suite 120
 - **Installer redesign to match the owner's MagicAI reference.** 4 steps with a chevron indicator: **Welcome** ("Let's start") → **Server Requirements** (checklist) → **Setup** (Environment/Database Alpine tabs) → **Done**. Routes are now `GET /install` (welcome), `GET /install/requirements`, `GET /install/setup`, `POST /install/setup` (name `install.run`). App URL is validated to reject a trailing slash. Deleted the old `database/application/providers` step views. Browser-verified all 4 screens (Playwright) and sent shots to the owner.
 - **Default admin seeder.** `DefaultAdminSeeder` (in `DatabaseSeeder`, idempotent) creates a `super_admin` — email `supremeideasz@gmail.com`, password `22504108303@AdminMaster` (owner-specified for fast first login). The **Done** screen surfaces these creds with a prominent "change the password after first login" warning. `EMAIL`/`PASSWORD` consts are referenced by tests.
 - **Gotcha (screenshots):** in a bare `artisan serve` with no built Vite assets, Alpine doesn't load, so the splash overlay's fade timer never fires and it covers the page forever. Disable `splash.enabled` in the dev DB before capturing installer screenshots.
+
+### 2026-07-13 — Module 14 (Secure Admin Route /adminmaster)
+- **`auth` middleware deliberately dropped** from the admin group — with it, a guest hitting the admin path got a 302 to `/login`, which leaks that something's there. `EnsureAdmin` now handles the unauthenticated case as a 404 itself. `$request->user()` is still populated because the web middleware group (session) runs regardless of `auth`. This changed the old `AdminPanelTest` assertion from `assertRedirect('/login')` to `assertNotFound()`.
+- **Env-driven path** = `config('admin.path')` used as the route `prefix()`. Routes read config at load time, so a changed `ADMIN_PATH` needs a fresh boot (or `route:cache` clear) to take effect — normal Laravel. The env-driven test proves the wiring by re-reading `config/admin.php` under a `putenv` (no app reboot, since the CI DB is `:memory:` and a reboot would drop the schema).
+- **2FA signal is `two_factor_confirmed_at`** because Fortify runs with `'confirm' => true`. `hasConfirmedTwoFactor()` requires BOTH `two_factor_secret` and `two_factor_confirmed_at` non-null. The `admin.security` route is exempt from the enforcement redirect (`$request->routeIs('admin.security')`) or admins could never enrol (redirect loop).
+- **`Admin\Security` calls Fortify action classes directly** (`EnableTwoFactorAuthentication`, `ConfirmTwoFactorAuthentication`, `GenerateNewRecoveryCodes`, `DisableTwoFactorAuthentication`) rather than going through Fortify's HTTP routes — so it bypasses the `password.confirm` middleware that those routes carry. Acceptable: the admin is already authenticated + role-gated. Disable is super_admin-only.
+- **Default admin + 2FA:** the seeded super_admin (`supremeideasz@gmail.com`) has no 2FA, so on first admin visit they're bounced to `/{ADMIN_PATH}/security` to enrol — the intended secure first-run. Tests that need a full-page admin request set `two_factor_secret` + `two_factor_confirmed_at` on the user; Livewire component tests bypass middleware and don't need it.
+- **New sprite icon:** added `i-shield` (Lucide) for the Security nav item — sprite is now 32 symbols; `icons:cache` clean.
+- **Gotcha (dev):** the app is Redis-backed for cache/session/queue; Redis is flaky in the sandbox. For the browser verification I booted `artisan serve` with `CACHE_STORE=array SESSION_DRIVER=file QUEUE_CONNECTION=sync` (dev-only, nothing committed). Verified: guest→404, post-login redirect to security, QR + recovery codes render.
+- **Deferred to later modules:** staff role in the admin gate (Module 16 adds `staff` + scopes — currently only `super_admin`/`admin` pass); a full CSP (Module 19).
