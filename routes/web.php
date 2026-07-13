@@ -66,10 +66,11 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
         });
 
-        // Staff management + backups — super_admin only (Sections 27, 28).
+        // Staff, backups + maintenance loop — super_admin only (Sections 27–29).
         Route::middleware('role:super_admin')->group(function () {
             Route::get('/staff', \App\Livewire\Admin\Staff::class)->name('staff');
             Route::get('/backups', \App\Livewire\Admin\Backups::class)->name('backups');
+            Route::get('/maintenance', \App\Livewire\Admin\Maintenance::class)->name('maintenance');
         });
     });
 

@@ -112,4 +112,18 @@ return [
         'base_url' => env('STRIPE_BASE_URL', 'https://api.stripe.com/v1'),
     ],
 
+    // Claude-assisted maintenance loop (blueprint Section 29).
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-5'),
+    ],
+
+    // Fine-grained GitHub token scoped to THIS repo only, for opening
+    // CI-gated maintenance PRs. Store encrypted at rest.
+    'github_maintenance' => [
+        'token' => env('GITHUB_MAINTENANCE_TOKEN'),
+        'repo' => env('GITHUB_MAINTENANCE_REPO'), // owner/name
+        'base_branch' => env('GITHUB_MAINTENANCE_BASE_BRANCH', 'main'),
+    ],
+
 ];

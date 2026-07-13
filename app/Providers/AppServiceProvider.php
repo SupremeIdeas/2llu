@@ -41,6 +41,18 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('pay.flutterwave', \App\Services\Payments\FlutterwaveGateway::class);
         $this->app->singleton('pay.paystack', \App\Services\Payments\PaystackGateway::class);
         $this->app->singleton('pay.stripe', \App\Services\Payments\StripeGateway::class);
+
+        // Claude-assisted maintenance loop (blueprint Section 29). Bound to the
+        // production clients by default; both are gated on config and report
+        // unavailable until configured. Tests swap in fakes.
+        $this->app->bind(
+            \App\Services\Maintenance\Contracts\FixProposer::class,
+            \App\Services\Maintenance\ClaudeFixProposer::class,
+        );
+        $this->app->bind(
+            \App\Services\Maintenance\Contracts\CodeHostClient::class,
+            \App\Services\Maintenance\GitHubCodeHostClient::class,
+        );
     }
 
     /**
