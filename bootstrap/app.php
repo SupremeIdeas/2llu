@@ -30,7 +30,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'installer' => \App\Http\Middleware\EnsureNotInstalled::class,
         ]);
+
+        // Security headers on every web response (blueprint Section 19.2; the
+        // full CSP matrix is Module 19).
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Durable, exportable error capture (Section 17.5).
+        $exceptions->report(function (\Throwable $e) {
+            \App\Support\ErrorLogger::capture($e);
+        });
     })->create();

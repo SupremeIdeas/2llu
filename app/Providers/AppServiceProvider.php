@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -58,5 +61,14 @@ class AppServiceProvider extends ServiceProvider
                 \App\Support\IconOverrides::flush();
             }
         });
+
+        // Rate limits (blueprint Section 19.2): 300/min authenticated, 60/min
+        // public; 10/min for order actions (enforced in the checkout components).
+        RateLimiter::for('api', fn (Request $request) => $request->user()
+            ? Limit::perMinute(300)->by($request->user()->id)
+            : Limit::perMinute(60)->by($request->ip()));
+
+        RateLimiter::for('orders', fn (Request $request) => Limit::perMinute(10)
+            ->by(optional($request->user())->id ?: $request->ip()));
     }
 }

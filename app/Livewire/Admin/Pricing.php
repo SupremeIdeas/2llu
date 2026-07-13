@@ -3,7 +3,6 @@
 namespace App\Livewire\Admin;
 
 use App\Jobs\RecomputePlanPricingJob;
-use App\Models\AuditLog;
 use App\Models\EsimPlan;
 use App\Models\Setting;
 use App\Services\Pricing\PricingEngine;
@@ -107,15 +106,7 @@ class Pricing extends Component
 
     private function audit(string $action, ?int $modelId, array $payload): void
     {
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'action' => $action,
-            'model' => EsimPlan::class,
-            'model_id' => $modelId,
-            'ip_address' => request()->ip(),
-            'user_agent' => substr((string) request()->userAgent(), 0, 255),
-            'payload' => $payload,
-        ]);
+        \App\Support\Auditor::log($action, EsimPlan::class, $modelId, $payload);
     }
 
     public function render(PricingEngine $engine)

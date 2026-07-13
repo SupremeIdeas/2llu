@@ -9,7 +9,7 @@ use App\Models\EsimOrder;
 use App\Models\EsimPlan;
 use App\Services\eSIM\ProviderRouter;
 use App\Services\Wallet\WalletService;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Throwable;
@@ -41,6 +41,16 @@ class Checkout extends Component
     public function purchase(WalletService $wallet, ProviderRouter $router): void
     {
         $user = auth()->user();
+
+        // Order rate limit: 10/min (blueprint Section 19.2).
+        $key = 'orders:'.$user->id;
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            $this->error = 'Too many orders in a short time. Please wait a minute and try again.';
+
+            return;
+        }
+        RateLimiter::hit($key, 60);
+
         $retail = (float) $this->plan->final_retail_usd;
         $ref = "esim-checkout:{$this->plan->id}:{$user->id}:".now()->timestamp;
 

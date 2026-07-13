@@ -80,19 +80,21 @@ Web installer at `/install` (`InstallController` + `Support\Installer`): require
 - clean server → admin login via the browser installer — `/` redirects to `/install`, the finalize step creates the super_admin + lock and redirects to `/login` (verified live + test).
 - Coming-Soon shows for blank keys — installer skips empty keys; `ProviderStatus` reports Active/Coming Soon by real config. Locked by `tests/Feature/InstallerTest.php` (5 tests). Full suite 98/98.
 
+### ✅ Module 12 — Core Hardening & Tests  (Sections 1, 19)  — passed acceptance 2026-07-12
+Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `routes/api.php`); order actions 10/min enforced inside Checkout/GetNumber. `SecurityHeaders` middleware (nosniff, SAMEORIGIN, referrer-policy, permissions-policy) on every web response. Durable error capture: `ErrorLogger` writes server errors to `error_logs` via the `withExceptions` report hook (skips HTTP/validation/auth noise) — feeds the admin ErrorLog export. Sentry installed (DSN-gated, disabled without `SENTRY_LARAVEL_DSN`). Audit trail: `Support\Auditor` records who/what/where; admin pricing mutations audit-logged.
+**Acceptance — all green:**
+- suite passes + money-safety tests green — full run 105/105; a model-sweep test proves NO model leaks cost/profit; pricing/wallet/provider-fallback/webhook-signature suites all green.
+- rate limits + Sentry + audit logging — order actions blocked at 10/min; exceptions land in `error_logs`; every admin action goes through `Auditor`. Locked by `tests/Feature/HardeningTest.php` (7 tests). **Core platform (Modules 1–12) complete.**
+
 ---
 
 ## NEXT  (build strictly top to bottom)
 
 ### === CORE PLATFORM (Modules 1–12) ===
 
-### >>> CURRENT: Module 12 — Core Hardening & Tests  (Sections 1, 19)
-Test suite (pricing, wallet, provider fallback, webhook signature); rate limits; Sentry; audit logging.
-**Done when:** suite passes; money-safety tests green; every admin action audit-logged.
-
 ### === PLATFORM STANDARD & NICHE EDGE (Modules 13–21) ===
 
-### Module 13 — Opening Splash / Brand Screen  (Section 24)
+### >>> CURRENT: Module 13 — Opening Splash / Brand Screen  (Section 24)
 Admin-configurable splash: product logo + "from Supreme Ideas", auto dark/light (pre-paint script, no flash), logos on Wasabi, on/off + duration.
 **Done when:** splash shows in correct theme with no flash; admin swaps logos/text without redeploy.
 
@@ -225,3 +227,12 @@ Priority: manual LPA install fallback + device-compat check; refund policy + hon
 - **To re-run the installer:** delete `storage/installed`.
 - **Scheduler:** `routes/console.php` uses the `Schedule` facade (Laravel 11 style). One server cron entry (`schedule:run`) drives `providers:health-check` (/15min) and `esim:sync` (daily) — documented in `DEPLOYMENT.md`.
 - **CD `deploy.yml`** is secret-gated (`DEPLOY_SSH_KEY` etc.) so it stays green without secrets; the existing `tests.yml` remains the PR gate.
+
+### 2026-07-12 — Module 12 (Core Hardening & Tests)  ★ CORE PLATFORM COMPLETE
+- **Rate limits:** named limiters `api` (300 auth / 60 guest) and `orders` (10/min) in `AppServiceProvider`. `routes/api.php` uses `throttle:api`. Livewire order actions can't be route-throttled per-action, so Checkout/GetNumber call `RateLimiter::tooManyAttempts('orders:{userId}', 10)` + `hit(...,60)` directly.
+- **Error capture:** `withExceptions(report: fn)` → `ErrorLogger::capture` writes to `error_logs` (guarded try/catch so logging can't mask the original error; skips HttpException/Validation/Auth). This is the durable feed for the admin ErrorLog CSV/JSON export.
+- **Sentry** installed but inert without `SENTRY_LARAVEL_DSN` — no network calls in dev/CI. It auto-captures exceptions alongside the `error_logs` write when a DSN is set.
+- **Security headers** via `SecurityHeaders` middleware (web group). Deliberately NOT a strict CSP yet — a full CSP that doesn't break Livewire/Vite inline is the Module 19 security-matrix job. Only nosniff/frame/referrer/permissions here.
+- **Audit:** `Support\Auditor::log()` is the one entry point; admin pricing mutations use it. Extend every future admin mutation to call `Auditor::log()`; Module 16 (staff scopes) and any admin write must audit.
+- **Money-safety sweep** (`HardeningTest`) instantiates every cost-bearing model and asserts `toArray()` never contains cost/profit — a regression guard for the "never expose cost" rule as new fields are added.
+- **Modules 1–12 done.** Remaining 13–21 are the Platform Standard & Niche Edge (splash, /adminmaster hardening, GDPR lifecycle, staff scopes, DB backup, Claude maintenance loop, security matrix, UI kit, niche edge).

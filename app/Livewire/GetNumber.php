@@ -9,6 +9,7 @@ use App\Models\SmsOrder;
 use App\Services\SMS\NumberRequest;
 use App\Services\SMS\SmsNumberRouter;
 use App\Services\Wallet\WalletService;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -42,6 +43,15 @@ class GetNumber extends Component
     {
         $this->error = null;
         $user = auth()->user();
+
+        // Order rate limit: 10/min (blueprint Section 19.2).
+        $key = 'orders:'.$user->id;
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            $this->error = 'Too many requests in a short time. Please wait a minute and try again.';
+
+            return;
+        }
+        RateLimiter::hit($key, 60);
 
         try {
             $quote = $router->quote(new NumberRequest($this->country, $this->type, $this->service, $user));
