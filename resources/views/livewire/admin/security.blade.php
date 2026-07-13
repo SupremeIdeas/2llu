@@ -100,4 +100,47 @@
             </div>
         @endif
     </div>
+
+    {{-- Site protection (super-admin only). Plain-language toggles for the two
+         security headers most likely to clash with a specific host. --}}
+    @if ($canManageSite)
+        <div class="mt-8">
+            <h2 class="mb-1 text-lg font-bold text-slate-900 dark:text-slate-100">Site protection</h2>
+            <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">
+                These extra web-security shields are <span class="font-medium">on by default</span> and recommended. Only turn one off if something on your site visibly stops working after installing on your server — then tell your developer.
+            </p>
+
+            @if ($siteSaved)
+                <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
+                    <x-icon name="badge-check" class="h-4 w-4" /> {{ $siteSaved }}
+                </div>
+            @endif
+
+            <form wire:submit="saveSiteProtection" class="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                <label class="flex items-start justify-between gap-4">
+                    <span>
+                        <span class="block text-sm font-medium text-slate-800 dark:text-slate-100">Content protection (CSP)</span>
+                        <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Blocks malicious scripts from loading. Turn off only if a trusted embed/widget you added won’t appear.</span>
+                    </span>
+                    <input type="checkbox" wire:model="csp_enabled" class="mt-1 h-5 w-5 shrink-0 rounded text-primary">
+                </label>
+
+                <label class="flex items-start justify-between gap-4 border-t border-slate-100 pt-4 dark:border-[#243352]">
+                    <span>
+                        <span class="block text-sm font-medium text-slate-800 dark:text-slate-100">Force secure connection (HSTS)</span>
+                        <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Tells browsers to always use HTTPS. Turn off only if your server isn’t on HTTPS yet.</span>
+                    </span>
+                    <input type="checkbox" wire:model="hsts_enabled" class="mt-1 h-5 w-5 shrink-0 rounded text-primary">
+                </label>
+
+                <div class="flex justify-end">
+                    <button type="submit" wire:loading.attr="disabled" wire:target="saveSiteProtection"
+                            class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                        <span wire:loading.remove wire:target="saveSiteProtection">Save site protection</span>
+                        <span wire:loading wire:target="saveSiteProtection" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Saving…</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    @endif
 </div>

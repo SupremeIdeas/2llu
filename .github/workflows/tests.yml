@@ -68,29 +68,8 @@ jobs:
       - name: Audit dependencies
         run: php bin/security-audit.php
 
-  # Static analysis (blueprint Section 30). Advisory for now: Larastan is
-  # installed on-demand here and a baseline hasn't been committed yet (it can't
-  # be generated in the build sandbox), so findings are printed for review but
-  # do not gate the merge. Drop the trailing "|| true" once a baseline is
-  # committed to make this a hard gate.
-  static-analysis:
-    runs-on: ubuntu-latest
-    name: Static analysis (Larastan)
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          coverage: none
-
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
-
-      - name: Install Larastan
-        run: composer require --dev larastan/larastan --no-interaction --no-progress
-
-      - name: Analyse (advisory)
-        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G || true
+  # NOTE: static analysis (Larastan) is available as an OPTIONAL local developer
+  # check — `composer require --dev larastan/larastan && vendor/bin/phpstan
+  # analyse` (config in phpstan.neon). It is intentionally NOT a CI gate: it is a
+  # code-quality aid for developers, never runs on the live platform, and its
+  # findings were noise for a non-technical maintainer. See SECURITY.md.

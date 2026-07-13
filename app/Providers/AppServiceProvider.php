@@ -75,6 +75,9 @@ class AppServiceProvider extends ServiceProvider
             if (\App\Support\SplashSettings::isSplashKey($setting->key)) {
                 \App\Support\SplashSettings::flush();
             }
+            if (\App\Support\SecuritySettings::isSecurityKey($setting->key)) {
+                \App\Support\SecuritySettings::flush();
+            }
         });
 
         // Rate limits (blueprint Section 19.2): 300/min authenticated, 60/min

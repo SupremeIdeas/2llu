@@ -17,9 +17,30 @@ against it in this codebase. Keep this current as modules change.
 | **CSRF** | Laravel CSRF on all web POSTs; webhooks exempt but **HMAC/shared-secret verified** first | `bootstrap/app.php`, webhook controllers |
 | **Sensitive data exposure** | Cost/profit columns `$hidden`; data export filters third-party PII; secrets only in `.env` via `config()` | models, `UserDataExporter` |
 | **Insecure deserialization / secret writes** | Maintenance loop `SecretGuard` blocks any diff touching `.env`/keys or writing secret-looking values | `Support\Maintenance\SecretGuard` |
-| **Vulnerable dependencies** | `composer audit` gate in CI (fails on any new advisory; documented allow-list only) + Larastan static analysis | `bin/security-audit.php`, `.github/workflows/tests.yml` |
+| **Vulnerable dependencies** | `composer audit` gate in CI — fails on any new advisory (documented allow-list only) | `bin/security-audit.php`, `.github/workflows/tests.yml` |
 | **Rate/abuse of money actions** | Order actions 10/min; money moves are idempotent + atomic | Checkout/GetNumber, `WalletService` |
 | **Audit / non-repudiation** | Immutable `audit_logs` for every admin/staff/lifecycle/maintenance action | `Support\Auditor` |
+
+## Admin-toggleable controls (no coding needed)
+
+The two web-security headers most likely to clash with a specific self-hosted
+environment are **on by default** but can be switched off from the admin panel
+(**Security → Site protection**, super-admin only, applies instantly):
+
+- **Content protection (CSP)** — turn off only if a trusted embed/widget won't load.
+- **Force secure connection (HSTS)** — turn off only if the server isn't on HTTPS yet.
+
+Everything else (SSRF guard, session encryption, rate limits, CSRF, role gates) is
+always on — those have no legitimate reason to be disabled and are not exposed as
+toggles, to avoid a footgun for a non-technical operator.
+
+## Optional developer tooling (does NOT run on the live platform)
+
+`Larastan` static analysis is available for developers as a local check
+(`composer require --dev larastan/larastan && vendor/bin/phpstan analyse`, config
+in `phpstan.neon`). It is a code-quality aid used while editing source — it is
+**never installed on, nor run by, the live platform**, and is deliberately not a
+CI gate.
 
 ## Known accepted risk — Laravel 11 is past security EOL
 

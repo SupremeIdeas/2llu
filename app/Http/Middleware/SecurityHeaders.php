@@ -26,11 +26,12 @@ class SecurityHeaders
             'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
         ];
 
-        if (config('security.csp.enabled') && filled(config('security.csp.policy'))) {
+        // CSP + HSTS are admin-toggleable at runtime (config is the default).
+        if (\App\Support\SecuritySettings::cspEnabled() && filled(config('security.csp.policy'))) {
             $headers['Content-Security-Policy'] = config('security.csp.policy');
         }
 
-        if (config('security.hsts.enabled') && $request->secure()) {
+        if (\App\Support\SecuritySettings::hstsEnabled() && $request->secure()) {
             $headers['Strict-Transport-Security'] = 'max-age='.config('security.hsts.max_age').'; includeSubDomains';
         }
 

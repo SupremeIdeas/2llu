@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\Setting;
 use App\Support\Auditor;
+use App\Support\SecuritySettings;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
@@ -27,7 +29,41 @@ class Security extends Component
     /** TOTP code the admin reads from their authenticator app. */
     public string $code = '';
 
+    /** Admin-toggleable site protection (super-admin only). */
+    public bool $csp_enabled = true;
+
+    public bool $hsts_enabled = true;
+
+    public ?string $siteSaved = null;
+
     public ?string $saved = null;
+
+    public function mount(): void
+    {
+        $s = SecuritySettings::current();
+        $this->csp_enabled = $s['csp_enabled'];
+        $this->hsts_enabled = $s['hsts_enabled'];
+    }
+
+    /**
+     * Save the site-protection toggles. Super-admin only; takes effect
+     * immediately (no redeploy) and is audited.
+     */
+    public function saveSiteProtection(): void
+    {
+        abort_unless(Auth::user()->hasRole('super_admin'), 403);
+
+        Setting::setValue('security.csp_enabled', $this->csp_enabled, 'security');
+        Setting::setValue('security.hsts_enabled', $this->hsts_enabled, 'security');
+        SecuritySettings::flush();
+
+        Auditor::log('security.settings_updated', null, null, [
+            'csp' => $this->csp_enabled,
+            'hsts' => $this->hsts_enabled,
+        ]);
+
+        $this->siteSaved = 'Site protection saved — it applies immediately.';
+    }
 
     public function enable(EnableTwoFactorAuthentication $enable): void
     {
@@ -96,6 +132,7 @@ class Security extends Component
             'secret' => $secret,
             'recoveryCodes' => $recoveryCodes,
             'canDisable' => $user->hasRole('super_admin'),
+            'canManageSite' => $user->hasRole('super_admin'),
         ]);
     }
 }
