@@ -7,9 +7,10 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Baseline security headers (blueprint Section 19.2). The full CSP matrix is
- * built in Module 19; here we set the low-risk, high-value headers that don't
- * interfere with Livewire/Vite.
+ * Security response headers (blueprint Sections 19.2 & 30): the baseline set,
+ * plus a Content-Security-Policy tuned for the TALL stack and HSTS over HTTPS.
+ * The CSP + HSTS are config-driven (config/security.php) so they can be tuned
+ * without a code change.
  */
 class SecurityHeaders
 {
@@ -24,6 +25,14 @@ class SecurityHeaders
             'X-Permitted-Cross-Domain-Policies' => 'none',
             'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
         ];
+
+        if (config('security.csp.enabled') && filled(config('security.csp.policy'))) {
+            $headers['Content-Security-Policy'] = config('security.csp.policy');
+        }
+
+        if (config('security.hsts.enabled') && $request->secure()) {
+            $headers['Strict-Transport-Security'] = 'max-age='.config('security.hsts.max_age').'; includeSubDomains';
+        }
 
         foreach ($headers as $key => $value) {
             if (! $response->headers->has($key)) {

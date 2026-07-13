@@ -45,3 +45,52 @@ jobs:
 
       - name: Execute tests
         run: vendor/bin/phpunit
+
+  # Dependency security gate (blueprint Section 30) — fails on any vulnerable
+  # dependency except the documented, accepted allow-list in
+  # bin/security-audit.php.
+  security:
+    runs-on: ubuntu-latest
+    name: Security audit
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Audit dependencies
+        run: php bin/security-audit.php
+
+  # Static analysis (blueprint Section 30). Advisory for now: Larastan is
+  # installed on-demand here and a baseline hasn't been committed yet, so a
+  # finding reports without blocking the merge. Flip continue-on-error off once
+  # a baseline is generated.
+  static-analysis:
+    runs-on: ubuntu-latest
+    name: Static analysis (Larastan)
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Install Larastan
+        run: composer require --dev larastan/larastan --no-interaction --no-progress
+
+      - name: Analyse
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
