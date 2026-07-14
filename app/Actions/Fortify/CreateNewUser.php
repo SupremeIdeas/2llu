@@ -34,10 +34,21 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
-        return User::create([
+        $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
         ]);
+
+        // Branded, queued welcome email (Module 22). Never let a mail hiccup
+        // break registration — the verification email is sent separately by the
+        // MustVerifyEmail flow regardless.
+        try {
+            $user->notify(new \App\Notifications\WelcomeNotification);
+        } catch (\Throwable) {
+            // swallow — welcome mail is best-effort.
+        }
+
+        return $user;
     }
 }

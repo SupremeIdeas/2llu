@@ -65,6 +65,20 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    // -- Branded, queued auth emails (Module 22) ---------------------------
+
+    /** Use our brand-templated, queued verification email. */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new \App\Notifications\VerifyEmailNotification);
+    }
+
+    /** Use our brand-templated, queued password-reset email. */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
+
     // -- Account lifecycle (blueprint Section 26) --------------------------
 
     /** Self-paused account — can log in only to reactivate. */

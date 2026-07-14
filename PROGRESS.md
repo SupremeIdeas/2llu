@@ -129,7 +129,7 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 >   non-sensitive data (own orders/wallet/plans/device checks) — never other
 >   users, never cost/profit, never staff/platform internals or secrets.
 
-### Module 22 — Transactional Email System + Admin Mail Config  (fills the S21 "keys in .env" gap for mail)
+### ✅ Module 22 — Transactional Email System + Admin Mail Config  — passed acceptance 2026-07-14  (see DONE log)
 Make email actually deliverable and admin-configurable, and ship the missing auth
 email UX.
 - **Admin → Email settings** (super-admin): mailer (smtp/log/sendmail/postmark/
@@ -152,6 +152,13 @@ email UX.
 **Done when:** a real SMTP configured from the admin panel sends a test email;
 password-reset + email-verification work end-to-end through branded templates;
 mail is queued; tooltips guide the admin to each credential.
+> **✅ BUILT 2026-07-14** — see the dated DONE-log entry below. Core delivered:
+> admin Email settings page (mailer/SMTP/from + where-to-get-creds guide + "send
+> test email"), `MailSettings` config overlay (encrypted, masked, blank-keeps),
+> branded queued emails (verify, reset, welcome, password-changed, test), the
+> missing forgot/reset/verify customer pages, and the `verified` gate on money
+> routes. Remaining event emails (order/top-up/refund/low-balance) fold into
+> Modules 24–25 / the money flows as those surfaces are touched.
 
 ### Module 23 — Google Sign-In + Customer Security Center  (Section 3 account-security, expanded)
 - **Social login**: `laravel/socialite` + Google provider. **Admin config**
@@ -266,6 +273,14 @@ Not a numbered module — a polish pass requested before Module 17. (1) A premiu
 - **✅ DONE 2026-07-14 — Laravel 12 upgrade.** Framework 11.54 → 12.63; `composer audit` clean (allow-list emptied). See DONE log.
 - **Section 32 phase 2** (see the Module 21 entry): NaaraCredits loyalty, reviews, Claude live-chat (now folded into Module 24), full i18n, multi-currency.
 - **Go-live checklist:** paste live provider/payment keys in **Admin → API keys** (no `.env` editing needed), set `ADMIN_PATH`/`BACKUP_ARCHIVE_PASSWORD`/`SUPPORT_WHATSAPP`/Wasabi keys, change the default admin password, run the installer (pick the hosting type).
+
+### 2026-07-14 — Module 22 (Transactional Email System + Admin Mail Config)
+- **Email is now deliverable and admin-configurable.** Before this the app had `MAIL_MAILER=log` and no way for a non-technical operator to change it. New **Admin → Email** page (super-admin only): mailer (log/smtp/sendmail), SMTP host/port/username/password/encryption, from-address/name, a **"Where do I get these?" guide** (cPanel email / Mailgun-Postmark-Resend-Brevo-SendGrid / Gmail app-password), and a **"Send test email"** button that sends **synchronously** (`Notification::sendNow`) so SMTP/auth errors surface immediately instead of vanishing into a failed job.
+- **`Support\MailSettings`** mirrors the ProviderKeys pattern: one **encrypted** settings row overlaid on `config('mail.*')` at boot (`applyToConfig()` in `AppServiceProvider`), so every Mailable/Notification uses it with **no `.env` editing**. Password is **masked** in the UI and **blank-keeps-existing**. Guarded (try/catch) so a cache/DB blip never breaks boot. Cache busted on save via the `Setting::saved` hook.
+- **Branded, queued emails**: an email-safe inline-styled brand shell (`components/mail/layout` + `mail/button`, no dark: variants — clients strip them, no emoji) with content views for **verify, reset, welcome, password-changed, test**. Fortify's verify + reset are re-pointed to brand-templated **queued** notifications via `User::sendEmailVerificationNotification()` / `sendPasswordResetNotification()` (reuse Laravel's signed URLs). Welcome fires on registration; password-changed fires on both update + reset (best-effort, never blocks the action).
+- **Missing auth UX built**: registered the Fortify `requestPasswordResetLinkView` / `resetPasswordView` / `verifyEmailView` callbacks and created the **forgot-password, reset-password, verify-email** customer pages (dark-mode, matching the login styling) + a **"Forgot password?"** link on login. Added `i-info` sprite icon.
+- **`verified` gate** applied to the money/core routes (dashboard, catalogue, checkout, wallet, numbers, referrals, estimator) — a user must confirm their email before buying; `/account` stays reachable while unverified so they can manage/delete or resend. (Closes the deferred M9 "apply `verified`" item.)
+- Tests: `EmailSystemTest` (8) — config overlay, encrypted-at-rest + blank-keeps, admin page super-admin-only, test-email send, registration sends welcome+verify, reset uses branded notification, auth pages render, unverified blocked from money routes but not /account. **Full suite 203/203**; audit clean. **Deferred (fold into M24–25 / money flows):** order-confirmed / top-up-receipt / refund / low-balance event emails.
 
 ### 2026-07-14 — Production hardening (owner-requested): shared-hosting mode, cPanel/VPS guide, admin-managed API keys
 - **Shared-hosting mode is real, not a caveat.** The installer's Environment step now asks **Hosting Type — Shared/cPanel vs VPS/Cloud**, and writes the matching drivers: shared → `CACHE_STORE`/`SESSION_DRIVER`/`QUEUE_CONNECTION`=`database` (no Redis, no daemon); VPS → all three `redis` (+ Horizon). Added the missing `create_sessions_table` migration so `SESSION_DRIVER=database` actually works. `.env.example` now defaults to the database profile so a fresh clone runs on the widest range of hosts.

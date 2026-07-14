@@ -28,5 +28,12 @@ class ResetUserPassword implements ResetsUserPasswords
         $user->forceFill([
             'password' => Hash::make($input['password']),
         ])->save();
+
+        // Security alert — branded, queued (Module 22).
+        try {
+            $user->notify(new \App\Notifications\PasswordChangedNotification);
+        } catch (\Throwable) {
+            // best-effort.
+        }
     }
 }

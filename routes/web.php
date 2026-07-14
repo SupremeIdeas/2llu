@@ -33,17 +33,22 @@ Route::view('/refund-policy', 'pages.refund-policy')->name('refund-policy');
 // confines a self-paused account to the account page until it reactivates
 // (Section 26.1).
 Route::middleware(['auth', 'active'])->group(function () {
-    Route::get('/dashboard', Dashboard::class)->name('dashboard');
-    Route::get('/catalogue', Catalogue::class)->name('catalogue');
-    Route::get('/checkout/{plan}', Checkout::class)->name('checkout');
-    Route::get('/wallet', Wallet::class)->name('wallet');
-    Route::get('/numbers', GetNumber::class)->name('numbers');
-    Route::get('/referrals', Referrals::class)->name('referrals');
+    // Money + core app routes additionally require a verified email (Module 22 /
+    // blueprint Section 3) — a user must confirm their address before buying.
+    Route::middleware('verified')->group(function () {
+        Route::get('/dashboard', Dashboard::class)->name('dashboard');
+        Route::get('/catalogue', Catalogue::class)->name('catalogue');
+        Route::get('/checkout/{plan}', Checkout::class)->name('checkout');
+        Route::get('/wallet', Wallet::class)->name('wallet');
+        Route::get('/numbers', GetNumber::class)->name('numbers');
+        Route::get('/referrals', Referrals::class)->name('referrals');
 
-    // Data estimator (blueprint Section 32).
-    Route::get('/data-estimator', \App\Livewire\DataEstimator::class)->name('data-estimator');
+        // Data estimator (blueprint Section 32).
+        Route::get('/data-estimator', \App\Livewire\DataEstimator::class)->name('data-estimator');
+    });
 
-    // Account & data rights (blueprint Section 26).
+    // Account & data rights (blueprint Section 26) — reachable while unverified
+    // so a user can still manage or delete their account and resend the email.
     Route::get('/account', \App\Livewire\Account::class)->name('account');
     Route::get('/account/export', \App\Http\Controllers\AccountExportController::class)
         ->name('account.export.download');
@@ -74,6 +79,7 @@ Route::middleware(['admin', 'throttle:admin'])
         Route::middleware('role:super_admin')->group(function () {
             Route::get('/staff', \App\Livewire\Admin\Staff::class)->name('staff');
             Route::get('/api-keys', \App\Livewire\Admin\ProviderKeys::class)->name('api-keys');
+            Route::get('/email', \App\Livewire\Admin\EmailSettings::class)->name('email');
             Route::get('/backups', \App\Livewire\Admin\Backups::class)->name('backups');
             Route::get('/maintenance', \App\Livewire\Admin\Maintenance::class)->name('maintenance');
             Route::get('/ui-kit', \App\Livewire\Admin\UiKit::class)->name('ui-kit');

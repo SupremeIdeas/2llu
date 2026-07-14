@@ -72,6 +72,11 @@ class AppServiceProvider extends ServiceProvider
         // rule 10). Runs every request/job; degrades to .env pre-install.
         \App\Support\ProviderKeys::applyToConfig();
 
+        // Same overlay for admin-managed outgoing-mail config (Module 22): the
+        // operator sets the mailer + SMTP creds + "from" identity in the panel,
+        // and every Mailable/Notification picks them up with no .env editing.
+        \App\Support\MailSettings::applyToConfig();
+
         // Custom-icon overrides are cached; bust that cache when the mapping
         // setting changes (blueprint Section 16.3).
         \App\Models\Setting::saved(function (\App\Models\Setting $setting) {
@@ -86,6 +91,9 @@ class AppServiceProvider extends ServiceProvider
             }
             if (\App\Support\ProviderKeys::isProviderKey($setting->key)) {
                 \App\Support\ProviderKeys::flush();
+            }
+            if (\App\Support\MailSettings::isMailKey($setting->key)) {
+                \App\Support\MailSettings::flush();
             }
         });
 
