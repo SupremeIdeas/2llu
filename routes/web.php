@@ -24,6 +24,12 @@ Route::middleware('installer')->prefix('install')->group(function () {
     Route::post('/setup', [InstallController::class, 'install'])->name('install.run');
 });
 
+// Social login (Module 23). Guarded internally by SocialLogin::googleEnabled().
+Route::get('/auth/{provider}/redirect', [\App\Http\Controllers\Auth\SocialAuthController::class, 'redirect'])
+    ->name('social.redirect');
+Route::get('/auth/{provider}/callback', [\App\Http\Controllers\Auth\SocialAuthController::class, 'callback'])
+    ->name('social.callback');
+
 // Public legal/help pages (blueprint Section 32).
 Route::view('/legal', 'pages.legal')->name('legal');
 Route::view('/faq', 'pages.faq')->name('faq');
@@ -50,6 +56,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Account & data rights (blueprint Section 26) — reachable while unverified
     // so a user can still manage or delete their account and resend the email.
     Route::get('/account', \App\Livewire\Account::class)->name('account');
+    // Security Center (Module 23) — also reachable unverified (to change email).
+    Route::get('/account/security', \App\Livewire\SecurityCenter::class)->name('security');
     Route::get('/account/export', \App\Http\Controllers\AccountExportController::class)
         ->name('account.export.download');
 });

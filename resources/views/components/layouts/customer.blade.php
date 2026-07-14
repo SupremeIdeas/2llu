@@ -16,6 +16,7 @@
         ['route' => 'referrals', 'label' => 'Referrals', 'icon' => 'gift'],
         ['route' => 'data-estimator', 'label' => 'Estimator', 'icon' => 'signal'],
         ['route' => 'account', 'label' => 'Account', 'icon' => 'settings'],
+        ['route' => 'security', 'label' => 'Security', 'icon' => 'shield'],
     ];
 
     // Staff/admins use the same end-user app and can jump to their panel.

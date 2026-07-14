@@ -160,7 +160,7 @@ mail is queued; tooltips guide the admin to each credential.
 > routes. Remaining event emails (order/top-up/refund/low-balance) fold into
 > Modules 24–25 / the money flows as those surfaces are touched.
 
-### Module 23 — Google Sign-In + Customer Security Center  (Section 3 account-security, expanded)
+### ✅ Module 23 — Google Sign-In + Customer Security Center  — passed acceptance 2026-07-14  (see DONE log)
 - **Social login**: `laravel/socialite` + Google provider. **Admin config**
   (client_id / secret / redirect) via the ProviderKeys pattern with **tooltips**
   (Google Cloud Console → APIs & Services → OAuth consent screen + Credentials →
@@ -273,6 +273,12 @@ Not a numbered module — a polish pass requested before Module 17. (1) A premiu
 - **✅ DONE 2026-07-14 — Laravel 12 upgrade.** Framework 11.54 → 12.63; `composer audit` clean (allow-list emptied). See DONE log.
 - **Section 32 phase 2** (see the Module 21 entry): NaaraCredits loyalty, reviews, Claude live-chat (now folded into Module 24), full i18n, multi-currency.
 - **Go-live checklist:** paste live provider/payment keys in **Admin → API keys** (no `.env` editing needed), set `ADMIN_PATH`/`BACKUP_ARCHIVE_PASSWORD`/`SUPPORT_WHATSAPP`/Wasabi keys, change the default admin password, run the installer (pick the hosting type).
+
+### 2026-07-14 — Module 23 (Google Sign-In + Customer Security Center)
+- **Google sign-in** via `laravel/socialite` (^5.28). Migration adds `google_id` (unique) + `avatar` to users. `SocialAuthController` handles three cases: known `google_id` → login; existing email → **link** Google + login (Google-verified, so safe; no duplicate account); new → create a **verified** account (email_verified_at set via `forceFill` since it's not fillable), assign the `user` role, welcome email, login. Routes `/auth/{provider}/redirect|callback` are **guarded by `SocialLogin::googleEnabled()`** (404 until configured). Redirect URI is anchored absolute if the admin leaves it relative.
+- **Admin-configured, with tooltips:** Google Client ID/Secret added to the **Admin → API keys** page under a new "Social login" group (console.cloud.google.com → Credentials; redirect URI `<site>/auth/google/callback`). A **"Continue with Google"** button (inline Google SVG, no emoji) appears on login + register **only when configured** (`<x-auth.google-button>`).
+- **Customer Security Center** (`/account/security`, new `SecurityCenter` Livewire + customer nav): the account-security surface a normal user never had — **change password** (reuses `UpdateUserPassword`, fires the branded password-changed email), **enrol/manage TOTP two-factor** (reuses Fortify's Enable/Confirm/Disable/Recovery actions, same as the admin page), **change email** with password confirmation → resets verification + resends the branded verify email, **sign out other sessions** (deletes other rows from the `sessions` table on the database driver + `logoutOtherDevices`), a live **active-sessions list** (IP/agent/last-seen), and **link/unlink Google**. Reachable while unverified (so a user can fix a wrong email). Passkeys remain available via Fortify's native WebAuthn feature; a dedicated passkey-management UI is the one deferred sub-item.
+- Tests: `SocialLoginTest` (5) — routes gated, button gated, new/link/known-user callbacks; `SecurityCenterTest` (5) — page loads, password change + email change (+ re-verify) + 2FA enrol + Google unlink. **Full suite 213/213**; audit clean.
 
 ### 2026-07-14 — Module 22 (Transactional Email System + Admin Mail Config)
 - **Email is now deliverable and admin-configurable.** Before this the app had `MAIL_MAILER=log` and no way for a non-technical operator to change it. New **Admin → Email** page (super-admin only): mailer (log/smtp/sendmail), SMTP host/port/username/password/encryption, from-address/name, a **"Where do I get these?" guide** (cPanel email / Mailgun-Postmark-Resend-Brevo-SendGrid / Gmail app-password), and a **"Send test email"** button that sends **synchronously** (`Notification::sendNow`) so SMTP/auth errors surface immediately instead of vanishing into a failed job.

@@ -112,6 +112,14 @@ return [
         'base_url' => env('STRIPE_BASE_URL', 'https://api.stripe.com/v1'),
     ],
 
+    // Social login (Module 23). Keys are admin-managed via the API-keys page;
+    // redirect defaults to our callback route on the current APP_URL.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
+    ],
+
     // Claude-assisted maintenance loop (blueprint Section 29).
     'anthropic' => [
         'api_key' => env('ANTHROPIC_API_KEY'),

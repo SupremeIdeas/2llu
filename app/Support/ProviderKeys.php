@@ -77,6 +77,13 @@ class ProviderKeys
                     'github_maintenance_token' => ['label' => 'GitHub — Maintenance Token', 'config' => 'services.github_maintenance.token', 'env' => 'GITHUB_MAINTENANCE_TOKEN', 'secret' => true, 'hint' => 'Fine-grained PAT scoped to THIS repo only (opens CI-gated PRs).'],
                 ],
             ],
+            'social' => [
+                'label' => 'Social login',
+                'fields' => [
+                    'google_client_id' => ['label' => 'Google — Client ID', 'config' => 'services.google.client_id', 'env' => 'GOOGLE_CLIENT_ID', 'secret' => false, 'hint' => 'console.cloud.google.com → APIs & Services → Credentials → Create OAuth client ID (Web).'],
+                    'google_client_secret' => ['label' => 'Google — Client Secret', 'config' => 'services.google.client_secret', 'env' => 'GOOGLE_CLIENT_SECRET', 'secret' => true, 'hint' => 'Same OAuth client — copy the secret. Set the authorized redirect URI to <your-site>/auth/google/callback.'],
+                ],
+            ],
         ];
     }
 
