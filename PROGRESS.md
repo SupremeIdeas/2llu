@@ -97,6 +97,87 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 ## NEXT  (build strictly top to bottom)
 
 ### ═══════════════════════════════════════════════════════════════════
+### PLANNED — Modules 26–33: Brand system, public front end & no-code CMS (scoped 2026-07-14, owner brainstorm; NOT yet built)
+### ═══════════════════════════════════════════════════════════════════
+> Big owner vision: a premium, fully admin-editable marketing front end + brand
+> system, on top of the working app. Source copy = the uploaded "NaaraSim
+> Complete Brand Copy Document" (home/about/how-it-works/pricing/contact). Build
+> strictly one module at a time, each tested + committed, no-code editable from
+> the admin panel, WebP everywhere for speed, best fintech practices.
+>
+> **Prereq done 2026-07-14:** registration-500 fix, /adminmaster guest→login,
+> admin 2FA opt-in toggle, email-verification-only-when-mail-configured. Email +
+> Google + support are confirmed config-ready (work the moment keys are saved).
+
+**Module 26 — Brand & Global Design System.** Product logo (light+dark) + Supreme
+Ideas Agency logo (light+dark) + full favicon/app-icon set wired into `<head>` and
+the app shell (replace the text wordmark); admin **Branding** hub for brand name,
+logo set, brand colours, and **named custom fonts** for titles/headings
+(self-hosted `@font-face`, e.g. a `font-display` Tailwind family) uploadable +
+swappable from admin. One **Global Settings** home for brand/logo/colour/fonts/
+buttons/forms/preloader. All image handling → **WebP** (`webp` upload + on-the-fly
+convert). *Needs from owner: the real logo files + heading/body font files (see
+formats below).* 
+
+**Module 27 — Public marketing front end (CMS-editable).** Real landing/home,
+about, how-it-works, contact pages built from the brand copy, with modern
+scroll-craft: **stacking/pinned sections, background-colour change on scroll,
+text-reveal on scroll, sticky CTAs**. An admin **Page/Section editor**: per-section
+hero images (WebP upload), headings/body/CTA text, reorder, show/hide. Guests
+browse; logged-in users continue to dashboard; new users create an account and
+continue to the item they picked.
+
+**Module 28 — Two-column auth + assignable footer.** Upgrade login/register to a
+2-column desktop layout with an admin-set **media panel** (video / WebP / JPEG) on
+one side; move "**Supreme Ideas Agency**" + **legal quick-links** to the bottom of
+auth + legal pages; admin-assignable **footer navigation + custom links**.
+
+**Module 29 — Dynamic pricing page + AI pricing education.** When eSIM/number API
+keys are live, real retail plans render on the public pricing page (comparison
+table + knowledgeable tips); admin can **override to an estimate-only** display;
+**AI-assisted live education** explains what each plan/price means for the user
+long-term. New/returning users flow from a chosen plan into checkout.
+
+**Module 30 — Legal pages CMS + Blog.** Admin-editable legal pages (privacy,
+terms, refund, cookies, data-deletion) with accurate best-practice defaults — for
+third-party login reviews (Facebook, Google, etc.) that require public legal
+links. Full **blog** (posts, categories, WebP cover images, draft/publish, SEO
+fields) with easy management.
+
+**Module 31 — Announcement banners.** Best-practice image/design banners placeable
+in header, footer, the mobile "More" modal, and other sensible slots; each banner
+targets a section or custom link; schedule + enable/disable; WebP.
+
+**Module 32 — Reusable elements & effects library.** A preloader library + branded
+button/form/element library; an admin **paste-an-element** panel (name it → paste
+HTML/CSS/JS → choose where it applies → override globally to buttons/forms/etc.),
+with Claude brand-colour matching or manual colour override. *Unicorn.studio
+("universe.io") element embeds: feasible ONLY as sandboxed, self-hosted assets —
+their CDN/script would violate our CSP and add a third-party dependency. Plan:
+recreate the looks we want (glow buttons, animated forms, preloaders) natively in
+our brand system rather than embedding their runtime. Will confirm the approach
+with the owner before building.*
+
+**Module 33 — Cloudflare Turnstile bot protection.** Admin-configured site+secret
+keys (API-keys page, with tooltips) + a plain on/off toggle; the "checkmark"
+challenge verifies on login, register and support; server-side token verification;
+fails open only if disabled. (The owner also wants general Cloudflare-in-front
+guidance — documented in DEPLOYMENT.md.)
+
+**Still deferred (unchanged):** NaaraCredits loyalty, product reviews, full i18n/
+multi-currency, passkey-management UI, order/top-up/refund event emails.
+
+> **Ideal asset formats to send (for Module 26):**
+> - **Logos:** SVG preferred (crisp at any size) — product logo + Supreme Ideas
+>   Agency logo, each with a light-mode and dark-mode version (4 files). PNG with
+>   transparent background is fine if no SVG. A square icon-only mark for the
+>   favicon/app icon is ideal.
+> - **Favicon source:** one square ≥512×512 PNG (I generate .ico + all sizes).
+> - **Fonts:** the heading font + body font as `.woff2` (or `.ttf`/`.otf`), with
+>   the licence allowing web embedding, and the exact family names you want them
+>   called.
+
+### ═══════════════════════════════════════════════════════════════════
 ### PLANNED — Modules 22–25 (scoped 2026-07-14, owner-requested; NOT yet built)
 ### ═══════════════════════════════════════════════════════════════════
 > Audit finding (2026-07-14): the platform has **Fortify's auth backend fully
