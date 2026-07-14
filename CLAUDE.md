@@ -31,7 +31,7 @@ Brand: Deep Teal `#0A6E6E`, Warm Gold `#D4A017`, Midnight Navy `#0D1B2A`.
 
 ## Tech stack (do not substitute)
 
-- **Laravel 11** (PHP 8.2+), TALL stack. (Laravel 11 security support ends 12 Mar 2026 — plan a Laravel 12 upgrade later.)
+- **Laravel 12** (PHP 8.2+), TALL stack. (Upgraded from Laravel 11 on 2026-07-14 — L11 was past its 2026-03-12 security-EOL. Keep on a security-supported release.)
 - **Livewire 3** + **Alpine.js 3** + **Tailwind 3.4** (`darkMode: 'class'`)
 - **MySQL 8** (utf8mb4, strict) · **Redis** (queue/cache/session) · **Horizon**
 - **Sanctum** + **Fortify** (2FA/TOTP) + **Spatie Permission** (roles)

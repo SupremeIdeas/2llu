@@ -42,13 +42,11 @@ in `phpstan.neon`). It is a code-quality aid used while editing source — it is
 **never installed on, nor run by, the live platform**, and is deliberately not a
 CI gate.
 
-## Known accepted risk — Laravel 11 is past security EOL
+## Framework version — Laravel 12 (security-supported)
 
-Laravel 11's security-support window ended **2026-03-12**. `composer audit`
-currently reports three `laravel/framework` advisories that are fixed only in
-Laravel 12.60+ (signed-URL path confusion; CRLF in the default email rule). They
-are listed in the `bin/security-audit.php` allow-list with interim mitigations.
-
-**Action:** schedule the Laravel 12 upgrade — it is now the top security
-priority. Once upgraded, remove those IDs from the allow-list so the audit gate
-enforces a clean tree.
+The platform runs on **Laravel 12** (upgraded from Laravel 11 on 2026-07-14,
+framework `v12.63`). This resolved the three `laravel/framework` advisories that
+Laravel 11 carried after its 2026-03-12 security-EOL (signed-URL path confusion;
+CRLF in the default email rule). `composer audit` now reports a clean tree, and
+the `bin/security-audit.php` allow-list is empty — so any **new** advisory
+breaks the build until it is fixed or consciously accepted.

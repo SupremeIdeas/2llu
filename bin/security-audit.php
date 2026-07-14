@@ -10,16 +10,11 @@
  */
 
 $accepted = [
-    // laravel/framework — Laravel 11 is past its security-support window (ended
-    // 2026-03-12) and these are fixed only in Laravel 12.60+. The Laravel 12
-    // upgrade is tracked in SECURITY.md. Interim mitigations:
-    //   * Signed-URL path confusion — we never build temporary signed URLs from
-    //     user-controlled paths.
-    //   * CRLF in the default email rule — registration/login emails are also
-    //     length-bounded and never echoed into raw headers by our code.
-    'PKSA-m5cs-t1y6-qpcs' => 'Laravel 11 EOL — signed URL path confusion; fixed in L12.60+',
-    'PKSA-3r5d-mb8f-1qw9' => 'Laravel 11 EOL — CRLF in email rule; fixed in L12.60+',
-    'PKSA-mdq4-51ck-6kdq' => 'Laravel 11 EOL — CVE-2026-48019 CRLF email rule; fixed in L12.60+',
+    // Currently empty: the platform runs on Laravel 12 (security-supported), and
+    // `composer audit` reports no advisories. The three Laravel 11 EOL advisories
+    // that used to live here were resolved by the Laravel 12 upgrade. Any NEW
+    // advisory now breaks the build until it is fixed or consciously accepted
+    // here with a justification and mitigation note.
 ];
 
 exec('composer audit --locked --no-scripts --format=json 2>/dev/null', $out);
