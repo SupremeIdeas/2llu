@@ -58,6 +58,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/account', \App\Livewire\Account::class)->name('account');
     // Security Center (Module 23) — also reachable unverified (to change email).
     Route::get('/account/security', \App\Livewire\SecurityCenter::class)->name('security');
+    // NaaraCare AI support chat (Module 24) — reachable unverified (they may need help).
+    Route::get('/support', \App\Livewire\SupportChat::class)->name('support');
     Route::get('/account/export', \App\Http\Controllers\AccountExportController::class)
         ->name('account.export.download');
 });
@@ -81,6 +83,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
             Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
+            Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
         });
 
         // Staff, backups + maintenance loop — super_admin only (Sections 27–29).

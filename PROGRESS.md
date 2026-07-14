@@ -180,7 +180,7 @@ can turn on 2FA, add a passkey, change password/email, and log out other
 sessions — all from their own Account page; admin sets the Google keys from the
 panel with guiding tooltips.
 
-### Module 24 — "NaaraCare" AI Support Agent (Claude, tool-grounded)  (Section 32 live-chat, expanded)
+### ✅ Module 24 — "NaaraCare" AI Support Agent (Claude, tool-grounded)  — passed acceptance 2026-07-14  (see DONE log)
 A named, human-toned first-line agent (admin-configurable name/persona/avatar)
 in an in-app chat widget for logged-in users.
 - **Claude with scoped tool-use** (reuse the `ClaudeFixProposer` HTTP pattern;
@@ -273,6 +273,14 @@ Not a numbered module — a polish pass requested before Module 17. (1) A premiu
 - **✅ DONE 2026-07-14 — Laravel 12 upgrade.** Framework 11.54 → 12.63; `composer audit` clean (allow-list emptied). See DONE log.
 - **Section 32 phase 2** (see the Module 21 entry): NaaraCredits loyalty, reviews, Claude live-chat (now folded into Module 24), full i18n, multi-currency.
 - **Go-live checklist:** paste live provider/payment keys in **Admin → API keys** (no `.env` editing needed), set `ADMIN_PATH`/`BACKUP_ARCHIVE_PASSWORD`/`SUPPORT_WHATSAPP`/Wasabi keys, change the default admin password, run the installer (pick the hosting type).
+
+### 2026-07-14 — Module 24 (NaaraCare AI Support Agent)
+- **A named, human-toned agent that solves each customer's SPECIFIC problem.** `NaaraCareAgent` runs a bounded (≤6-step) Anthropic tool-use loop behind a `ChatModel` contract (prod `ClaudeChatModel` calls the Messages API with tools, gated on the Anthropic key; tests inject `FakeChatModel`, no HTTP). The model can look at the user's real situation and diagnose → solve → escalate.
+- **Scoped tools** (`SupportTools`, every call bound to `$this->user`): `check_device_compatibility` (→ DeviceCompat), `get_my_orders` (diagnose a stuck/expired/out-of-data order), `get_my_esim_setup` (QR + LPA + manual steps for the user's own order), `get_my_wallet_balance`, `get_my_numbers`, `estimate_data`, `suggest_navigation` (deep-link shortcut shown as a button), `escalate_to_human` (flags the conversation → Module 25 does assignment/voice).
+- **Hard data-scoping** = the headline safety property. Tools can only ever read the current user's records (the agent has no parameter to name another user or widen a query), and every tool result is additionally run through **`SupportGuard::scrub()`** which recursively strips any cost/profit/secret key (`wholesale_cost`, `provider_cost`, `profit`, `margin`, `api_key`, `two_factor_secret`, …). The system prompt also forbids revealing economics/other users/secrets. Test proves a two-user setup returns only the bound user's order and no `wholesale_cost`.
+- **Admin-configurable persona** (`Admin → Support agent`, super/admin): agent **name**, **persona/tone**, and an **extra knowledge base** the agent grounds answers on (`SupportSettings`, cached, `support.*` flush hook). The Anthropic key lives on the API-keys page; the page shows an "off until you add the key" banner.
+- **Customer chat** (`/support`, `SupportChat` Livewire + "Help & Support" nav): persisted `support_conversations` + `support_messages`, typing indicator, per-user 20/min rate-limit, navigation shortcut buttons, and graceful fallback text when the model is unconfigured or errors (points to WhatsApp/email). Interactive chat is request-synchronous by design (not a money path) — a documented, intentional exception to "every external call is queued".
+- Tests: `SupportAgentTest` (8) — guard scrubbing, per-user data scoping, tool-then-answer loop feeds tool_result back, escalation flips the conversation, navigation surfaces a link, chat persists turns, unconfigured fallback, admin persona save. **Full suite 221/221**; audit clean. **Next (Module 25):** ticket assignment to online staff + ElevenLabs voice (gated to paying users) build on the `escalated` flag + conversations table.
 
 ### 2026-07-14 — Module 23 (Google Sign-In + Customer Security Center)
 - **Google sign-in** via `laravel/socialite` (^5.28). Migration adds `google_id` (unique) + `avatar` to users. `SocialAuthController` handles three cases: known `google_id` → login; existing email → **link** Google + login (Google-verified, so safe; no duplicate account); new → create a **verified** account (email_verified_at set via `forceFill` since it's not fillable), assign the `user` role, welcome email, login. Routes `/auth/{provider}/redirect|callback` are **guarded by `SocialLogin::googleEnabled()`** (404 until configured). Redirect URI is anchored absolute if the admin leaves it relative.

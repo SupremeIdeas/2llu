@@ -1,0 +1,152 @@
+<?php
+
+namespace App\Services\Support;
+
+use App\Models\SupportConversation;
+use App\Models\User;
+use App\Services\Support\Contracts\ChatModel;
+use App\Support\SupportSettings;
+
+/**
+ * NaaraCare — the AI support agent (Module 24). Orchestrates a bounded tool-use
+ * loop against the ChatModel: the model can call the SupportTools (all scoped to
+ * THIS user), see the user's real situation, and reply with a human-toned answer
+ * + optionally a navigation shortcut, or escalate to a human. It never sees
+ * another user's data, cost/profit, or any secret (SupportTools + SupportGuard).
+ */
+class NaaraCareAgent
+{
+    /** Hard cap on tool round-trips per turn, so a loop can't run away. */
+    private const MAX_STEPS = 6;
+
+    public function __construct(private ChatModel $model) {}
+
+    public function available(): bool
+    {
+        return $this->model->available();
+    }
+
+    /**
+     * Answer one user turn within a conversation.
+     *
+     * @return array{reply: string, nav: ?string, escalated: bool}
+     */
+    public function respond(User $user, SupportConversation $conversation, string $userMessage): array
+    {
+        $tools = new SupportTools($user, $conversation);
+        $schemas = $tools->schemas();
+        $system = $this->systemPrompt($user);
+
+        $messages = $this->history($conversation);
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+        $nav = null;
+        $escalated = false;
+
+        for ($step = 0; $step < self::MAX_STEPS; $step++) {
+            $response = $this->model->reply($system, $messages, $schemas);
+            $content = $response['content'] ?? [];
+            $messages[] = ['role' => 'assistant', 'content' => $content];
+
+            if (($response['stop_reason'] ?? 'end_turn') !== 'tool_use') {
+                return ['reply' => $this->extractText($content), 'nav' => $nav, 'escalated' => $escalated || $conversation->escalated];
+            }
+
+            // Run every tool the model asked for and feed the results back.
+            $toolResults = [];
+            foreach ($content as $block) {
+                if (($block['type'] ?? null) !== 'tool_use') {
+                    continue;
+                }
+                $result = $tools->execute($block['name'], $block['input'] ?? []);
+
+                if ($block['name'] === 'suggest_navigation' && ! empty($result['url'])) {
+                    $nav = $result['url'];
+                }
+                if ($block['name'] === 'escalate_to_human') {
+                    $escalated = true;
+                }
+
+                $toolResults[] = [
+                    'type' => 'tool_result',
+                    'tool_use_id' => $block['id'] ?? '',
+                    'content' => json_encode($result),
+                ];
+            }
+
+            $messages[] = ['role' => 'user', 'content' => $toolResults];
+        }
+
+        // Ran out of steps — return whatever text we have plus a safe fallback.
+        return [
+            'reply' => "I'm having trouble resolving that automatically. Let me connect you with a human who can help.",
+            'nav' => $nav,
+            'escalated' => true,
+        ];
+    }
+
+    private function systemPrompt(User $user): string
+    {
+        $name = SupportSettings::name();
+        $persona = SupportSettings::persona();
+        $knowledge = SupportSettings::knowledge();
+
+        $prompt = <<<PROMPT
+        You are {$name}, the customer support specialist for NaaraSim — a Pan-African
+        travel-connectivity service that sells eSIM data plans for 190+ countries and
+        virtual/verification phone numbers. Brand promise: "Stay Connected. No Borders. No Swaps."
+
+        {$persona}
+
+        HOW YOU HELP:
+        - Your job is to solve each customer's SPECIFIC problem. Use your tools to look at
+          THEIR actual orders, device, numbers and balance before answering — diagnose, then
+          give a concrete solution or the exact next step.
+        - Always run check_device_compatibility when eSIM device support is in question.
+        - Use suggest_navigation to give them a shortcut to the right page.
+        - If something needs a manual action you cannot perform (a refund, a provider outage,
+          an account change), or the user is upset or explicitly asks for a person, call
+          escalate_to_human with a clear summary.
+
+        STRICT RULES:
+        - You can ONLY see this signed-in customer's own data. Never claim to see anyone else's.
+        - NEVER mention or reveal internal costs, wholesale prices, profit, margins, provider
+          economics, staff details, or any API key or secret — you do not have them.
+        - Do not promise refunds, credits or account changes yourself; escalate those.
+        - Be honest when you don't know; never invent order numbers, prices or policies.
+
+        The customer's name is: {$user->name}.
+        PROMPT;
+
+        if (trim($knowledge) !== '') {
+            $prompt .= "\n\nPLATFORM KNOWLEDGE (authoritative — prefer this):\n".trim($knowledge);
+        }
+
+        return $prompt;
+    }
+
+    /**
+     * Recent transcript as plain-text turns for context (tool round-trips from
+     * past turns are not replayed — only the visible messages).
+     *
+     * @return array<int, array{role: string, content: string}>
+     */
+    private function history(SupportConversation $conversation): array
+    {
+        return $conversation->messages()
+            ->latest()->limit(10)->get()->reverse()
+            ->map(fn ($m) => ['role' => $m->role === 'assistant' ? 'assistant' : 'user', 'content' => (string) $m->body])
+            ->values()->all();
+    }
+
+    /** Concatenate the text blocks of an assistant response. */
+    private function extractText(array $content): string
+    {
+        $text = collect($content)
+            ->filter(fn ($b) => ($b['type'] ?? null) === 'text')
+            ->map(fn ($b) => $b['text'] ?? '')
+            ->implode("\n");
+
+        return trim($text) !== '' ? trim($text) : "I'm here to help — could you tell me a little more about what you need?";
+    }
+}

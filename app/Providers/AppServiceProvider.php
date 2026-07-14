@@ -53,6 +53,13 @@ class AppServiceProvider extends ServiceProvider
             \App\Services\Maintenance\Contracts\CodeHostClient::class,
             \App\Services\Maintenance\GitHubCodeHostClient::class,
         );
+
+        // NaaraCare AI support agent (Module 24). Prod impl calls the Anthropic
+        // Messages API with tool-use, gated on the key; tests inject a fake.
+        $this->app->bind(
+            \App\Services\Support\Contracts\ChatModel::class,
+            \App\Services\Support\ClaudeChatModel::class,
+        );
     }
 
     /**
@@ -94,6 +101,9 @@ class AppServiceProvider extends ServiceProvider
             }
             if (\App\Support\MailSettings::isMailKey($setting->key)) {
                 \App\Support\MailSettings::flush();
+            }
+            if (\App\Support\SupportSettings::isSupportKey($setting->key)) {
+                \App\Support\SupportSettings::flush();
             }
         });
 

@@ -13,6 +13,7 @@
     ];
 
     $more = [
+        ['route' => 'support', 'label' => 'Help & Support', 'icon' => 'message-circle'],
         ['route' => 'referrals', 'label' => 'Referrals', 'icon' => 'gift'],
         ['route' => 'data-estimator', 'label' => 'Estimator', 'icon' => 'signal'],
         ['route' => 'account', 'label' => 'Account', 'icon' => 'settings'],
