@@ -120,6 +120,14 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
     ],
 
+    // Voice replies for support (Module 25). Admin-managed via the API-keys page.
+    'elevenlabs' => [
+        'api_key' => env('ELEVENLABS_API_KEY'),
+        'voice_id' => env('ELEVENLABS_VOICE_ID'),
+        'model' => env('ELEVENLABS_MODEL', 'eleven_v3'),
+        'base_url' => env('ELEVENLABS_BASE_URL', 'https://api.elevenlabs.io/v1'),
+    ],
+
     // Claude-assisted maintenance loop (blueprint Section 29).
     'anthropic' => [
         'api_key' => env('ANTHROPIC_API_KEY'),

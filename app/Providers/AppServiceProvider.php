@@ -60,6 +60,12 @@ class AppServiceProvider extends ServiceProvider
             \App\Services\Support\Contracts\ChatModel::class,
             \App\Services\Support\ClaudeChatModel::class,
         );
+
+        // Support voice (Module 25) — ElevenLabs in prod; faked in tests.
+        $this->app->bind(
+            \App\Services\Support\Contracts\VoiceSynthesizer::class,
+            \App\Services\Support\ElevenLabsVoice::class,
+        );
     }
 
     /**

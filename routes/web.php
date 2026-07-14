@@ -60,6 +60,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/account/security', \App\Livewire\SecurityCenter::class)->name('security');
     // NaaraCare AI support chat (Module 24) — reachable unverified (they may need help).
     Route::get('/support', \App\Livewire\SupportChat::class)->name('support');
+    // Private support voice clips (Module 25) — owner or ticket staff only.
+    Route::get('/support/voice/{message}', \App\Http\Controllers\SupportVoiceController::class)->name('support.voice');
     Route::get('/account/export', \App\Http\Controllers\AccountExportController::class)
         ->name('account.export.download');
 });
@@ -84,6 +86,12 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
             Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
+        });
+
+        // Support ticket queue (Module 25) — staff with the tickets.manage scope,
+        // plus admin/super_admin (who hold every scope / bypass).
+        Route::middleware('permission:tickets.manage')->group(function () {
+            Route::get('/tickets', \App\Livewire\Admin\SupportQueue::class)->name('tickets');
         });
 
         // Staff, backups + maintenance loop — super_admin only (Sections 27–29).

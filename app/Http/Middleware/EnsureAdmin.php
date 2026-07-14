@@ -34,6 +34,10 @@ class EnsureAdmin
             throw new NotFoundHttpException;
         }
 
+        // Presence heartbeat (Module 25) — mark this panel user online so they
+        // can be shown as available to take support tickets.
+        \App\Support\StaffPresence::heartbeat($user);
+
         if (config('admin.require_2fa')
             && ! $this->hasConfirmedTwoFactor($user)
             && ! $request->routeIs('admin.security')) {

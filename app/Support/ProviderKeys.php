@@ -84,6 +84,14 @@ class ProviderKeys
                     'google_client_secret' => ['label' => 'Google — Client Secret', 'config' => 'services.google.client_secret', 'env' => 'GOOGLE_CLIENT_SECRET', 'secret' => true, 'hint' => 'Same OAuth client — copy the secret. Set the authorized redirect URI to <your-site>/auth/google/callback.'],
                 ],
             ],
+            'voice' => [
+                'label' => 'Voice (ElevenLabs)',
+                'fields' => [
+                    'elevenlabs_api_key' => ['label' => 'ElevenLabs — API Key', 'config' => 'services.elevenlabs.api_key', 'env' => 'ELEVENLABS_API_KEY', 'secret' => true, 'hint' => 'elevenlabs.io → Profile icon → API Keys → Create. Powers spoken support replies for paying customers.'],
+                    'elevenlabs_voice_id' => ['label' => 'ElevenLabs — Voice ID', 'config' => 'services.elevenlabs.voice_id', 'env' => 'ELEVENLABS_VOICE_ID', 'secret' => false, 'hint' => 'elevenlabs.io → Voices → pick/clone a voice → copy its Voice ID.'],
+                    'elevenlabs_model' => ['label' => 'ElevenLabs — Model', 'config' => 'services.elevenlabs.model', 'env' => 'ELEVENLABS_MODEL', 'secret' => false, 'hint' => 'Use eleven_v3 for the most expressive, human delivery (supports [laughs], [exhales] tags). Leave as eleven_v3 if unsure.'],
+                ],
+            ],
         ];
     }
 

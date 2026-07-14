@@ -31,6 +31,11 @@
         }
     }
 
+    // Support ticket queue — anyone who can work tickets (staff scope / admin).
+    if ($u->hasAnyRole(['super_admin', 'admin']) || $u->can('tickets.manage')) {
+        $more[] = ['route' => 'admin.tickets', 'label' => 'Tickets', 'icon' => 'message-circle'];
+    }
+
     $primary[] = ['route' => 'admin.security', 'label' => 'Security', 'icon' => 'shield'];
     // Everyone in the panel can hop back to the end-user app.
     $more[] = ['route' => 'dashboard', 'label' => 'Storefront', 'icon' => 'globe'];

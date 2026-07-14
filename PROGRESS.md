@@ -207,7 +207,7 @@ device-compat + "how do I…" questions, deep-links them to the right page, and
 opens/escalates a ticket — while a scoped-data test proves it cannot surface
 another user's data, cost/profit, or any secret.
 
-### Module 25 — Support Tickets, Human Handoff + ElevenLabs Voice  (new)
+### ✅ Module 25 — Support Tickets, Human Handoff + ElevenLabs Voice  — passed acceptance 2026-07-14  (see DONE log)
 - **Ticketing**: `tickets` (user, subject, status open/assigned/resolved/closed,
   priority, assigned_to) + `ticket_messages` (author = user/ai/staff, body, +
   optional voice-note attachment on Wasabi/local fallback). Assignment to an
@@ -273,6 +273,13 @@ Not a numbered module — a polish pass requested before Module 17. (1) A premiu
 - **✅ DONE 2026-07-14 — Laravel 12 upgrade.** Framework 11.54 → 12.63; `composer audit` clean (allow-list emptied). See DONE log.
 - **Section 32 phase 2** (see the Module 21 entry): NaaraCredits loyalty, reviews, Claude live-chat (now folded into Module 24), full i18n, multi-currency.
 - **Go-live checklist:** paste live provider/payment keys in **Admin → API keys** (no `.env` editing needed), set `ADMIN_PATH`/`BACKUP_ARCHIVE_PASSWORD`/`SUPPORT_WHATSAPP`/Wasabi keys, change the default admin password, run the installer (pick the hosting type).
+
+### 2026-07-14 — Module 25 (Support Tickets, Human Handoff + ElevenLabs Voice)
+- **Human handoff builds on the M24 conversation** rather than a parallel ticket table: `support_conversations` gains `status`/`assigned_to`/`priority`/`last_human_reply_at`, and `support_messages` gains `voice_path`/`voice_status`. When the AI's `escalate_to_human` fires, the thread surfaces in a **staff ticket queue** (`Admin → Tickets`, `SupportQueue` Livewire, gated by the existing **`permission:tickets.manage`** scope + admin/super). Staff assign to self, read the full thread (AI diagnosis + customer voice notes), reply, and resolve — the customer sees staff replies in the same `/support` chat labelled "Human agent", and gets a branded `HumanRepliedNotification` email.
+- **Expressive voice via ElevenLabs**, admin-configured with tooltips: API key + voice id + model on the **API keys** page (new "Voice (ElevenLabs)" group; `eleven_v3` for `[laughs]`/`[exhales]` affect). Behind a `VoiceSynthesizer` contract (`ElevenLabsVoice` prod, `FakeVoiceSynthesizer` in tests — no HTTP). `RenderVoiceJob` (queued, `$tries=1` — never blind-retry a paid call) synthesizes a reply to MP3 on the **private** disk; the audio streams only through `SupportVoiceController`, which authorizes **owner-or-ticket-staff** (never public).
+- **Voice gated to paying customers** (`SpendGate::hasPurchased` = holds any eSIM/number/virtual-number). `SupportReply` centralizes outgoing AI+staff messages and only queues voice when ElevenLabs is configured AND the customer has paid — new/free users get text only at first glance (ElevenLabs usage-cost control). Text is always saved immediately; voice is best-effort (a failure leaves `voice_status=failed`, text intact).
+- **Voice notes from customers:** the chat composer takes an audio upload (≤10 MB, private disk), best-effort **transcription** (ElevenLabs STT) so the AI can read + answer it; if a human owns the thread, the AI stays quiet and the clip waits for staff. **Staff presence** is a lightweight cache heartbeat from `EnsureAdmin` (`StaffPresence`) so we know who's online to take tickets.
+- Tests: `SupportTicketsTest` (6) — spend-gate, voice queued only for payers, RenderVoiceJob stores + marks ready, voice clip served to owner not strangers, escalated ticket answerable by staff (+ user notified), queue closed without the scope. **Full suite 227/227**; audit clean. **This completes the Modules 22–25 support/comms arc.** Remaining deferred: NaaraCredits loyalty, reviews, full i18n/multi-currency, passkey-management UI, and the order/top-up/refund event emails.
 
 ### 2026-07-14 — Module 24 (NaaraCare AI Support Agent)
 - **A named, human-toned agent that solves each customer's SPECIFIC problem.** `NaaraCareAgent` runs a bounded (≤6-step) Anthropic tool-use loop behind a `ChatModel` contract (prod `ClaudeChatModel` calls the Messages API with tools, gated on the Anthropic key; tests inject `FakeChatModel`, no HTTP). The model can look at the user's real situation and diagnose → solve → escalate.
