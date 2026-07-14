@@ -1,6 +1,42 @@
+/* --- Brand fonts (self-hosted; no external CDN, CSP-safe). Module 26. -----
+   Titles & headings: "Supreme Display" (the Supreme Ideas Agency custom font).
+   Body text:          "Didact Gothic" (Google, self-hosted woff2).
+   Swap either file in public/fonts and keep these names to re-brand. */
+@font-face {
+    font-family: 'Supreme Display';
+    src: url('/fonts/supreme-display.ttf') format('truetype');
+    font-weight: 400 900;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Didact Gothic';
+    src: url('/fonts/didact-gothic.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    /* Body copy defaults to Didact Gothic (the `sans` family). */
+    body {
+        font-family: theme('fontFamily.sans');
+    }
+    /* Titles & headings use the branded display font. */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: theme('fontFamily.display');
+        letter-spacing: -0.01em;
+    }
+}
+
+/* Utility to force the display font on any element (e.g. the wordmark). */
+.font-display {
+    font-family: theme('fontFamily.display');
+}
 
 /* Hide Alpine-cloaked elements until Alpine initializes (prevents icon flash). */
 [x-cloak] {

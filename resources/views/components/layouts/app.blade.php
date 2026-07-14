@@ -6,6 +6,19 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('app.name', 'NaaraSim') }}</title>
 
+    {{-- Favicon / app icon (Module 26): admin-uploaded if set, else the default. --}}
+    @php($favicon = \App\Support\BrandSettings::favicon())
+    @if ($favicon)
+        <link rel="icon" href="{{ $favicon }}">
+        <link rel="apple-touch-icon" href="{{ $favicon }}">
+    @else
+        <link rel="icon" href="/favicon.ico" sizes="any">
+    @endif
+
+    {{-- Preload brand fonts so headings/body paint without a flash. --}}
+    <link rel="preload" href="/fonts/supreme-display.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="/fonts/didact-gothic.woff2" as="font" type="font/woff2" crossorigin>
+
     {{-- Pre-paint theme script: sets the `dark` class BEFORE first paint so
          there is no flash of the wrong theme (blueprint Section 4.2 / 24.3). --}}
     <script>

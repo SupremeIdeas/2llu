@@ -17,11 +17,8 @@
     {{-- ============ DESKTOP: Apple-inspired floating side menu ============ --}}
     <aside class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col lg:p-3">
         <div class="flex h-full flex-col rounded-3xl border border-slate-200/70 bg-white/70 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
-            <a href="{{ $brandRoute ?? '#' }}" class="flex items-center gap-2.5 px-5 py-5">
-                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20">
-                    <x-icon :name="$brandIcon" class="h-5 w-5" />
-                </span>
-                <span class="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ $brandLabel }}</span>
+            <a href="{{ $brandRoute ?? '#' }}" class="flex items-center px-5 py-5">
+                <x-brand-logo variant="product" class="h-9 max-w-[180px]" :fallback-icon="$brandIcon" />
             </a>
 
             <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-2">
@@ -52,11 +49,8 @@
 
     {{-- ============ MOBILE: top brand bar ============ --}}
     <header class="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/70 bg-white/80 px-4 py-3 backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/80">
-        <a href="{{ $brandRoute ?? '#' }}" class="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
-            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary/20">
-                <x-icon :name="$brandIcon" class="h-4 w-4" />
-            </span>
-            {{ $brandLabel }}
+        <a href="{{ $brandRoute ?? '#' }}" class="flex items-center">
+            <x-brand-logo variant="product" class="h-8 max-w-[150px]" :fallback-icon="$brandIcon" />
         </a>
         <x-theme-toggle />
     </header>

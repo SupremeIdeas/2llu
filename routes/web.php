@@ -85,6 +85,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/pricing', \App\Livewire\Admin\Pricing::class)->name('pricing');
             Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
             Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
+            Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
             Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
         });

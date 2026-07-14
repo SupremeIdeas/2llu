@@ -14,7 +14,10 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                // Body copy (Module 26).
+                sans: ['Didact Gothic', 'Figtree', ...defaultTheme.fontFamily.sans],
+                // Titles & headings — the Supreme Ideas Agency custom font.
+                display: ['Supreme Display', 'Figtree', ...defaultTheme.fontFamily.sans],
             },
             // Brand palette (blueprint Section 2.1 / 4.1). Use tokens, never raw hex.
             colors: {

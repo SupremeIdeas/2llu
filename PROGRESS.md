@@ -109,7 +109,19 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 > admin 2FA opt-in toggle, email-verification-only-when-mail-configured. Email +
 > Google + support are confirmed config-ready (work the moment keys are saved).
 
-**Module 26 — Brand & Global Design System.** Product logo (light+dark) + Supreme
+**Module 26 — Brand & Global Design System.** ⏳ IN PROGRESS (2026-07-14): **fonts
+live** — self-hosted "Supreme Display" (the Agency custom TTF) for titles/headings
++ self-hosted **Didact Gothic** (woff2) for body, wired via `@font-face` +
+Tailwind `font-display`/`sans` + preload, CSP-safe. **Branding system built** —
+`BrandSettings` + **Admin → Branding** page uploads the logo set (product +
+Supreme Ideas Agency, each light/dark) + favicon (PNG/JPG/WebP/SVG via
+MediaStorage), and `<x-brand-logo>` renders them (theme-swapped, scaled with
+max-height/object-contain) across the app shell, falling back to the wordmark
+until uploaded. Favicon + font preload in `<head>`. Tests: `BrandingTest` (5).
+**Pending:** the actual logo image files (they arrived inline, not as saved
+files) — upload them via Admin → Branding, or re-attach as file attachments.
+Remaining: brand-colour + global buttons/forms/preloader settings.
+_Original scope:_ Product logo (light+dark) + Supreme
 Ideas Agency logo (light+dark) + full favicon/app-icon set wired into `<head>` and
 the app shell (replace the text wordmark); admin **Branding** hub for brand name,
 logo set, brand colours, and **named custom fonts** for titles/headings
