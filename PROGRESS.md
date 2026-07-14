@@ -96,6 +96,134 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 
 ## NEXT  (build strictly top to bottom)
 
+### ═══════════════════════════════════════════════════════════════════
+### PLANNED — Modules 22–25 (scoped 2026-07-14, owner-requested; NOT yet built)
+### ═══════════════════════════════════════════════════════════════════
+> Audit finding (2026-07-14): the platform has **Fortify's auth backend fully
+> enabled** (registration, password reset, email verification, 2FA/TOTP,
+> passkeys, profile/password update — see `config/fortify.php`) and `User
+> implements MustVerifyEmail`, BUT several surfaces are **missing**:
+> - **Email is not deliverable out of the box** — `MAIL_MAILER=log` (mail is only
+>   written to the log). There is **no admin mail-settings page**, **no branded
+>   email templates** (`app/Mail` and `app/Notifications` don't exist), and **no
+>   customer forgot-password / reset-password / verify-email prompt pages** (only
+>   `login`/`register` blades exist — Fortify is headless).
+> - **No social login** — no Socialite, no "Sign in with Google".
+> - **No customer-facing Security Center** — the only 2FA UI is the ADMIN one;
+>   regular users can't change password, enrol 2FA, manage passkeys/sessions, or
+>   change email from their Account page (`Account.php` only has the GDPR
+>   lifecycle actions from Module 15).
+> - **No support tickets / live chat / AI agent / voice** — no ticket/chat models
+>   or tables at all. (We DO already have an Anthropic client pattern —
+>   `Services\Maintenance\ClaudeFixProposer` — and `Support\Niche\DeviceCompat`,
+>   both reusable by the AI agent.)
+>
+> Reality checks to keep us honest when we build:
+> - **"Trained on our platform"** = retrieval-grounded (a curated knowledge base +
+>   live scoped tools), NOT literal model fine-tuning. Set that expectation.
+> - **Money-touching or account-mutating actions are NEVER fully autonomous** for
+>   the AI agent — same human-in-the-loop rule as the maintenance loop + money
+>   rules 6/7. The agent proposes/assist; a human confirms anything that spends,
+>   refunds, deletes, or changes credentials.
+> - **Strict data scoping:** the agent may only ever read the CURRENT user's
+>   non-sensitive data (own orders/wallet/plans/device checks) — never other
+>   users, never cost/profit, never staff/platform internals or secrets.
+
+### Module 22 — Transactional Email System + Admin Mail Config  (fills the S21 "keys in .env" gap for mail)
+Make email actually deliverable and admin-configurable, and ship the missing auth
+email UX.
+- **Admin → Email settings** (super-admin): mailer (smtp/log/sendmail/postmark/
+  resend/ses), host/port/username/password/encryption, from-address, from-name.
+  Store via the **`ProviderKeys` pattern** (encrypted settings row overlaid on
+  `config('mail.*')` at boot) so no `.env` editing. **Tooltips** (reuse the
+  `ApiGuide`/`<x-admin-help-icon>` engine) telling the admin WHERE to get creds:
+  cPanel email accounts, Mailgun, Postmark, Resend, SendGrid, Gmail SMTP app-pw.
+- **"Send test email"** button (queued) with a clear success/fail result.
+- **Branded, queued mail**: a `resources/views/emails` markdown-mail layout in
+  brand colours + dark-safe; every mail is a queued `Notification`/`Mailable`
+  (money rule 8 — never synchronous).
+- **Wire Fortify notifications** to branded templates and **build the missing
+  customer pages**: forgot-password, reset-password, verify-email prompt +
+  "resend". Apply the **`verified` middleware** to customer routes (deferred item
+  from M9).
+- **Event notifications** (branded, queued): welcome/verify, password changed,
+  new-login alert, order confirmed (eSIM/number), wallet top-up receipt, refund
+  issued, low-balance (to admin), account-deletion scheduled/cancelled.
+**Done when:** a real SMTP configured from the admin panel sends a test email;
+password-reset + email-verification work end-to-end through branded templates;
+mail is queued; tooltips guide the admin to each credential.
+
+### Module 23 — Google Sign-In + Customer Security Center  (Section 3 account-security, expanded)
+- **Social login**: `laravel/socialite` + Google provider. **Admin config**
+  (client_id / secret / redirect) via the ProviderKeys pattern with **tooltips**
+  (Google Cloud Console → APIs & Services → OAuth consent screen + Credentials →
+  authorized redirect URI). "**Continue with Google**" on login + register.
+  Email-collision handling (link to an existing verified account, never silent
+  takeover); link/unlink Google from the account. Store `google_id` +
+  `avatar` (Wasabi/local fallback). Design so Apple/Facebook can slot in later.
+- **Customer Security Center** (new section in `Account`): change password
+  (Fortify `UpdatePassword`), **enrol/manage 2FA TOTP** for regular users (reuse
+  the Fortify actions the admin page already uses), manage **passkeys**, view +
+  **revoke active sessions** (logout other devices), **change email** with
+  re-verification, regenerate recovery codes, toggle login-alert emails.
+- **Profile settings**: name, phone, country, avatar, preferred language +
+  currency placeholders (for the S32 i18n pass).
+**Done when:** a user can create an account with Google and sign back in; a user
+can turn on 2FA, add a passkey, change password/email, and log out other
+sessions — all from their own Account page; admin sets the Google keys from the
+panel with guiding tooltips.
+
+### Module 24 — "NaaraCare" AI Support Agent (Claude, tool-grounded)  (Section 32 live-chat, expanded)
+A named, human-toned first-line agent (admin-configurable name/persona/avatar)
+in an in-app chat widget for logged-in users.
+- **Claude with scoped tool-use** (reuse the `ClaudeFixProposer` HTTP pattern;
+  Anthropic key already in `services.anthropic` + admin API-keys page). Tools the
+  agent may call, each hard-scoped to the current user & non-sensitive data:
+  `check_device_compat` (→ `DeviceCompat`), `my_orders` / `my_wallet_balance` /
+  `my_esim_setup` (own records only, cost/profit stripped), `estimate_data`,
+  `product_info` / `coverage`, `navigate_to` (returns an in-app deep-link so the
+  agent can guide "nomad" users around on demand), `create_ticket`,
+  `escalate_to_human`.
+- **Knowledge base** (grounding, not fine-tuning): platform FAQ / policies /
+  device list / product catalogue stored in settings/DB, injected as context +
+  retrieved on demand. Admin-editable KB page.
+- **Hard guardrails** (a `SupportGuard` sibling of `SecretGuard`): the agent can
+  NEVER read another user's data, cost/profit, staff lists, or platform secrets,
+  and can NEVER autonomously spend/refund/delete/change credentials — those
+  become an escalation or a confirm-in-UI action. Every AI call is queued/streamed
+  and rate-limited; log token usage for cost accounting.
+- **AI-assisted humanized follow-up emails** tailored to the user's use case,
+  sent through Module 22's queued branded mail (with guardrails; money/account
+  changes never triggered by the email path).
+**Done when:** a logged-in user chats with a named agent that answers product +
+device-compat + "how do I…" questions, deep-links them to the right page, and
+opens/escalates a ticket — while a scoped-data test proves it cannot surface
+another user's data, cost/profit, or any secret.
+
+### Module 25 — Support Tickets, Human Handoff + ElevenLabs Voice  (new)
+- **Ticketing**: `tickets` (user, subject, status open/assigned/resolved/closed,
+  priority, assigned_to) + `ticket_messages` (author = user/ai/staff, body, +
+  optional voice-note attachment on Wasabi/local fallback). Assignment to an
+  **online** super-admin/staff (presence heartbeat) with the scoped
+  `permission:support` role from Module 16; staff reply UI in the admin panel.
+- **Voice replies via ElevenLabs** (admin plugs the key in): admin config for
+  **ElevenLabs API key + voice_id + model** via the ProviderKeys pattern with
+  **tooltips** (elevenlabs.io → Profile → API key; Voice Lab → copy voice_id;
+  model `eleven_v3` for expressive **audio tags** — `[laughs]`, `[exhales]`,
+  `[excited]` — so replies carry realistic human affect + friendly tone). AI and
+  staff replies can be rendered to speech (queued TTS job → audio on Wasabi →
+  streamed to the user).
+- **Voice gating by spend** (usage-cost control): **only users who have purchased
+  anything** get voice responses; brand-new users get **text chat only** at first
+  glance. Users may send **voice notes** (upload; optional transcription so the
+  agent can read them). Track ElevenLabs + Anthropic usage cost per interaction.
+- **Presence + notifications**: notify assigned staff (in-app + Module 22 email);
+  notify the user when a human replies.
+**Done when:** the AI can escalate a ticket to an online staff member who replies
+(text or voice) from the panel; a paying user hears an expressive ElevenLabs
+voice reply while a free user gets text only; the admin configured ElevenLabs
+entirely from the panel via guided tooltips; voice notes upload + attach.
+
 ### === CORE PLATFORM (Modules 1–12) ===
 
 ### === PLATFORM STANDARD & NICHE EDGE (Modules 13–21) ===
@@ -134,9 +262,9 @@ spatie/laravel-backup drives encrypted (AES-256 zip) database backups to the **W
 ### ✨ UI/UX enhancement — Responsive app shell + staff-from-existing-users  (2026-07-13, owner-requested)
 Not a numbered module — a polish pass requested before Module 17. (1) A premium, responsive **app shell** (`components/app-shell.blade.php`) shared by the customer and admin layouts: an **Apple-inspired floating side menu on desktop** (glassy, rounded, active pills, brand badge, sign-out + theme toggle footer) and a **mobile bottom navigation with a raised centre "More" button** that opens a slide-up sheet of secondary items — core destinations sit left/right of the centre. Role-scoped for admin/staff, with Storefront↔Admin cross-links. (2) Staff can be **made from any existing active user** (`StaffService::promote` + a promote-by-email form on the Staff page); they keep their `user` role and end-user access. (3) Post-login landing fixed to `/dashboard` (Fortify `home` was `/home`, a non-route) so everyone — customers, staff, admins — lands in the end-user app and reaches their panel from there via the single user-facing `/login`. Browser-verified on desktop + mobile (customer & admin). 4 new tests; full suite 147/147.
 
-### >>> ALL 21 MODULES COMPLETE — remaining work is follow-ups, not new modules
-- **TOP SECURITY PRIORITY: Laravel 12 upgrade.** Laravel 11 is past its security-EOL (2026-03-12); `composer audit` shows 3 accepted framework advisories (see `SECURITY.md`). The upgrade is the single most important outstanding task.
-- **Section 32 phase 2** (see the Module 21 entry): NaaraCredits loyalty, reviews, Claude live-chat, full i18n, multi-currency.
+### >>> ALL 21 MODULES COMPLETE — remaining work is follow-ups + Modules 22–25 (below)
+- **✅ DONE 2026-07-14 — Laravel 12 upgrade.** Framework 11.54 → 12.63; `composer audit` clean (allow-list emptied). See DONE log.
+- **Section 32 phase 2** (see the Module 21 entry): NaaraCredits loyalty, reviews, Claude live-chat (now folded into Module 24), full i18n, multi-currency.
 - **Go-live checklist:** paste live provider/payment keys in **Admin → API keys** (no `.env` editing needed), set `ADMIN_PATH`/`BACKUP_ARCHIVE_PASSWORD`/`SUPPORT_WHATSAPP`/Wasabi keys, change the default admin password, run the installer (pick the hosting type).
 
 ### 2026-07-14 — Production hardening (owner-requested): shared-hosting mode, cPanel/VPS guide, admin-managed API keys
