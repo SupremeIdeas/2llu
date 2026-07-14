@@ -3,19 +3,22 @@
 namespace App\Notifications;
 
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Config;
 
 /**
  * Branded, queued password-reset notification (Module 22). Builds the reset URL
  * exactly as Laravel does (token + email) and renders it through our brand
  * template.
+ *
+ * Uses Queueable (NOT InteractsWithQueue) — see VerifyEmailNotification for why:
+ * a queued notification must expose $connection/$queue/$delay.
  */
 class ResetPasswordNotification extends ResetPassword implements ShouldQueue
 {
-    use InteractsWithQueue;
+    use Queueable;
 
     public function toMail($notifiable): MailMessage
     {

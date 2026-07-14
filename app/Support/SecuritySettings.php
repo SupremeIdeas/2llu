@@ -18,7 +18,9 @@ use Illuminate\Support\Facades\Cache;
  */
 class SecuritySettings
 {
-    private const CACHE_KEY = 'security.settings';
+    // Versioned so adding keys to the cached shape invalidates any stale cache
+    // left over from a previous deploy (a missing key must never crash a read).
+    private const CACHE_KEY = 'security.settings.v2';
 
     public static function current(): array
     {
@@ -27,11 +29,15 @@ class SecuritySettings
                 return [
                     'csp_enabled' => self::boolSetting('security.csp_enabled', (bool) config('security.csp.enabled', true)),
                     'hsts_enabled' => self::boolSetting('security.hsts_enabled', (bool) config('security.hsts.enabled', true)),
+                    // 2FA for the admin panel is OPT-IN: password+email only by
+                    // default, the super-admin turns it on for an extra layer.
+                    'admin_2fa_required' => self::boolSetting('security.admin_2fa_required', (bool) config('admin.require_2fa', false)),
                 ];
             } catch (\Throwable) {
                 return [
                     'csp_enabled' => (bool) config('security.csp.enabled', true),
                     'hsts_enabled' => (bool) config('security.hsts.enabled', true),
+                    'admin_2fa_required' => (bool) config('admin.require_2fa', false),
                 ];
             }
         });
@@ -39,12 +45,17 @@ class SecuritySettings
 
     public static function cspEnabled(): bool
     {
-        return self::current()['csp_enabled'];
+        return self::current()['csp_enabled'] ?? (bool) config('security.csp.enabled', true);
     }
 
     public static function hstsEnabled(): bool
     {
-        return self::current()['hsts_enabled'];
+        return self::current()['hsts_enabled'] ?? (bool) config('security.hsts.enabled', true);
+    }
+
+    public static function admin2faRequired(): bool
+    {
+        return self::current()['admin_2fa_required'] ?? (bool) config('admin.require_2fa', false);
     }
 
     public static function flush(): void

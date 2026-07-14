@@ -56,14 +56,15 @@ class AdminPanelTest extends TestCase
 
     public function test_admin_routes_are_404_for_non_admins_and_ok_for_admins(): void
     {
-        // Guests get a plain 404 (never a login page — the path reveals nothing).
-        $this->get('/adminmaster')->assertNotFound();
+        // Guests are sent to log in (the admin entry point), then returned.
+        $this->get('/adminmaster')->assertRedirect('/login');
 
+        // Authenticated non-admins stay hidden with a plain 404.
         $user = User::factory()->create();
         $user->assignRole('user');
         $this->actingAs($user)->get('/adminmaster')->assertNotFound();
 
-        // An admin with confirmed 2FA gets in.
+        // An admin gets in (2FA is opt-in, off by default).
         $this->actingAs($this->admin())->get('/adminmaster')->assertOk();
     }
 

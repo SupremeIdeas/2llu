@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'active' => \App\Http\Middleware\EnsureActive::class,
+            'verified.mail' => \App\Http\Middleware\EnsureVerifiedWhenMailConfigured::class,
             'installer' => \App\Http\Middleware\EnsureNotInstalled::class,
             // Staff role/scope gating (blueprint Section 27).
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,

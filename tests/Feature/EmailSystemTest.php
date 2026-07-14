@@ -108,6 +108,31 @@ class EmailSystemTest extends TestCase
         Notification::assertSentTo($user, VerifyEmailNotification::class);
     }
 
+    public function test_queued_auth_notifications_serialize_without_error(): void
+    {
+        // Regression: VerifyEmail/ResetPassword notifications implement ShouldQueue,
+        // so they MUST use Queueable (expose $connection/$queue/$delay). With a
+        // real queue this reproduces the "Undefined property $connection" 500 the
+        // faked-notification tests missed. Sync queue + Mail::fake exercises the
+        // actual dispatch path.
+        \Illuminate\Support\Facades\Mail::fake();
+        config(['queue.default' => 'sync']);
+
+        // Both queued auth notifications must have the queue-config properties.
+        $this->assertTrue(property_exists(new VerifyEmailNotification, 'connection'));
+        $this->assertTrue(property_exists(new ResetPasswordNotification('tok'), 'connection'));
+
+        // Registration (which fires the verification notification) must not 500.
+        $this->post('/register', [
+            'name' => 'Grace',
+            'email' => 'grace@naara.test',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('users', ['email' => 'grace@naara.test']);
+    }
+
     public function test_password_reset_uses_the_branded_notification(): void
     {
         Notification::fake();
@@ -124,16 +149,21 @@ class EmailSystemTest extends TestCase
         $this->get('/reset-password/faketoken')->assertOk()->assertSee('Choose a new password');
     }
 
-    public function test_unverified_user_is_blocked_from_money_routes_but_can_reach_account(): void
+    public function test_email_verification_is_only_enforced_once_mail_is_configured(): void
     {
-        // ->fresh() so is_active (DB default true) is hydrated — otherwise the
-        // in-memory instance's null is_active trips the "paused account" guard.
+        // ->fresh() so is_active (DB default true) is hydrated.
         $user = User::factory()->unverified()->create()->fresh();
+
+        // Mail NOT configured yet -> users are NOT trapped; they can use the app.
+        $this->actingAs($user)->get('/dashboard')->assertOk();
+
+        // Once the operator configures mail, verification becomes mandatory.
+        MailSettings::save(['mailer' => 'smtp', 'from_address' => 'a@b.co', 'from_name' => 'N']);
 
         $this->actingAs($user)->get('/dashboard')->assertRedirect(route('verification.notice'));
         $this->actingAs($user)->get('/wallet')->assertRedirect(route('verification.notice'));
 
-        // Account stays reachable so they can manage/delete or resend the email.
+        // Account stays reachable either way so they can manage/resend.
         $this->actingAs($user)->get('/account')->assertOk();
     }
 }

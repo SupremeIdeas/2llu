@@ -42,7 +42,10 @@ return [
     |
     */
 
-    'require_2fa' => (bool) env('ADMIN_REQUIRE_2FA', true),
+    // Admin two-factor is OPT-IN — password + email is enough by default, and a
+    // super-admin can require TOTP as an extra layer from the admin Security page
+    // (stored as the security.admin_2fa_required setting, which overrides this).
+    'require_2fa' => (bool) env('ADMIN_REQUIRE_2FA', false),
 
     /*
     |--------------------------------------------------------------------------

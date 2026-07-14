@@ -30,7 +30,15 @@ class EnsureAdmin
         }
 
         $user = $request->user();
-        if ($user === null || ! $user->hasAnyRole(['super_admin', 'admin', 'staff'])) {
+
+        // A GUEST at the admin path is sent to log in and returned here after
+        // (the owner uses /adminmaster as the admin entry point with the setup
+        // email + password). Authenticated NON-admins still get a plain 404, so
+        // the panel stays invisible to ordinary users (blueprint Section 25).
+        if ($user === null) {
+            return redirect()->guest(route('login'));
+        }
+        if (! $user->hasAnyRole(['super_admin', 'admin', 'staff'])) {
             throw new NotFoundHttpException;
         }
 
@@ -38,7 +46,8 @@ class EnsureAdmin
         // can be shown as available to take support tickets.
         \App\Support\StaffPresence::heartbeat($user);
 
-        if (config('admin.require_2fa')
+        // 2FA is opt-in: only force enrolment when a super-admin has turned it on.
+        if (\App\Support\SecuritySettings::admin2faRequired()
             && ! $this->hasConfirmedTwoFactor($user)
             && ! $request->routeIs('admin.security')) {
             return redirect()->route('admin.security');

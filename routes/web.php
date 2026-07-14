@@ -39,9 +39,10 @@ Route::view('/refund-policy', 'pages.refund-policy')->name('refund-policy');
 // confines a self-paused account to the account page until it reactivates
 // (Section 26.1).
 Route::middleware(['auth', 'active'])->group(function () {
-    // Money + core app routes additionally require a verified email (Module 22 /
-    // blueprint Section 3) — a user must confirm their address before buying.
-    Route::middleware('verified')->group(function () {
+    // Money + core app routes require a verified email — but only once outgoing
+    // mail is configured (owner request), so users are never trapped behind a
+    // verification link that can't be sent yet.
+    Route::middleware('verified.mail')->group(function () {
         Route::get('/dashboard', Dashboard::class)->name('dashboard');
         Route::get('/catalogue', Catalogue::class)->name('catalogue');
         Route::get('/checkout/{plan}', Checkout::class)->name('checkout');

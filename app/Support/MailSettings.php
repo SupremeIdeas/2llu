@@ -127,10 +127,10 @@ class MailSettings
         return $len <= 4 ? str_repeat('•', $len) : str_repeat('•', min($len - 2, 10)).substr($value, -2);
     }
 
-    /** True once a real (non-log) mailer is configured. */
+    /** True once a real, sending mailer is configured (not log/array no-ops). */
     public static function isConfigured(): bool
     {
-        return self::get('mailer', 'log') !== 'log';
+        return ! in_array(self::get('mailer', 'log'), ['log', 'array'], true);
     }
 
     public static function flush(): void

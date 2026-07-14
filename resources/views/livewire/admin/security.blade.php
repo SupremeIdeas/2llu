@@ -133,6 +133,14 @@
                     <input type="checkbox" wire:model="hsts_enabled" class="mt-1 h-5 w-5 shrink-0 rounded text-primary">
                 </label>
 
+                <label class="flex items-start justify-between gap-4 border-t border-slate-100 pt-4 dark:border-[#243352]">
+                    <span>
+                        <span class="block text-sm font-medium text-slate-800 dark:text-slate-100">Require two-factor for admin login</span>
+                        <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Off by default — sign in with just email &amp; password. Turn on to require an authenticator code as an extra layer for everyone in the panel.</span>
+                    </span>
+                    <input type="checkbox" wire:model="admin_2fa_required" class="mt-1 h-5 w-5 shrink-0 rounded text-primary">
+                </label>
+
                 <div class="flex justify-end">
                     <button type="submit" wire:loading.attr="disabled" wire:target="saveSiteProtection"
                             class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">

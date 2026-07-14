@@ -51,30 +51,35 @@ class AdminSecurityTest extends TestCase
         );
     }
 
-    public function test_guests_non_admins_and_the_guessable_admin_path_all_404(): void
+    public function test_guest_is_sent_to_login_and_non_admins_stay_hidden(): void
     {
-        // Guest at the real path — plain 404, never a login redirect.
-        $this->get('/adminmaster')->assertNotFound();
+        // Guest at the real path is sent to log in (the owner's admin entry point),
+        // then returned to /adminmaster after signing in.
+        $this->get('/adminmaster')->assertRedirect('/login');
 
-        // A common guess.
+        // A common guess is a genuine 404 (no such route).
         $this->get('/admin')->assertNotFound();
 
-        // Authenticated non-admin.
+        // Authenticated non-admin still gets a plain 404 — panel stays invisible.
         $user = User::factory()->create();
         $user->assignRole('user');
         $this->actingAs($user)->get('/adminmaster')->assertNotFound();
     }
 
-    public function test_an_admin_without_2fa_is_forced_to_enrol_before_the_panel_opens(): void
+    public function test_admin_2fa_is_opt_in_and_can_be_required(): void
     {
         $admin = $this->admin(with2fa: false);
 
-        // Every admin page bounces to the security page…
-        $this->actingAs($admin)->get('/adminmaster')->assertRedirect(route('admin.security'));
-        $this->actingAs($admin)->get('/adminmaster/pricing')->assertRedirect(route('admin.security'));
+        // Default: 2FA not required — the admin reaches the panel with just
+        // email + password.
+        $this->actingAs($admin)->get('/adminmaster')->assertOk();
 
-        // …except the security page itself, which must be reachable to enrol.
-        $this->actingAs($admin)->get('/adminmaster/security')->assertOk();
+        // Once a super-admin turns the requirement on, enrolment is forced.
+        \App\Models\Setting::setValue('security.admin_2fa_required', true, 'security');
+        \App\Support\SecuritySettings::flush();
+
+        $this->actingAs($admin)->get('/adminmaster')->assertRedirect(route('admin.security'));
+        $this->actingAs($admin)->get('/adminmaster/security')->assertOk(); // reachable to enrol
     }
 
     public function test_an_admin_with_confirmed_2fa_reaches_the_panel(): void
