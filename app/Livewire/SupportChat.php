@@ -39,10 +39,18 @@ class SupportChat extends Component
 
     public function mount(): void
     {
-        $this->conversation = SupportConversation::firstOrCreate(
-            ['user_id' => Auth::id(), 'status' => 'open'],
-            ['title' => 'Support chat'],
-        );
+        // Resume the customer's most recent still-active thread (including one a
+        // human has taken over); only start a fresh one when nothing is open.
+        $this->conversation = SupportConversation::where('user_id', Auth::id())
+            ->whereNotIn('status', ['resolved', 'closed'])
+            ->latest('updated_at')
+            ->first()
+            ?? SupportConversation::create([
+                'user_id' => Auth::id(),
+                'status' => 'open',
+                'title' => 'Support chat',
+            ]);
+
         $this->loadMessages();
     }
 
