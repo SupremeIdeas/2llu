@@ -40,6 +40,7 @@ class InstallController extends Controller
         $data = $request->validate([
             'app_name' => 'required|string|max:60',
             'app_url' => ['required', 'string', 'regex:#^https?://[^\s]+[^/]$#'], // no trailing slash
+            'hosting_type' => 'required|in:shared,vps',
             'db_connection' => 'required|in:mysql,sqlite',
             'db_host' => 'required_if:db_connection,mysql|nullable|string',
             'db_port' => 'required_if:db_connection,mysql|nullable|string',
@@ -49,6 +50,15 @@ class InstallController extends Controller
         ], [
             'app_url.regex' => 'Please do not enter “/” at the end of the URL. Example: https://naarasim.com',
         ]);
+
+        // Driver profile by hosting type (blueprint Sections 20 & 22):
+        //  - Shared cPanel has no Redis and no long-running workers, so cache,
+        //    session and queue all live in the database; a single cron entry
+        //    (schedule:run) drives the scheduler AND drains the queue.
+        //  - VPS uses Redis for all three and runs Horizon as a daemon.
+        $drivers = $data['hosting_type'] === 'vps'
+            ? ['CACHE_STORE' => 'redis', 'SESSION_DRIVER' => 'redis', 'QUEUE_CONNECTION' => 'redis']
+            : ['CACHE_STORE' => 'database', 'SESSION_DRIVER' => 'database', 'QUEUE_CONNECTION' => 'database'];
 
         // 1) Write .env.
         $env = array_filter([
@@ -62,6 +72,9 @@ class InstallController extends Controller
             'DB_DATABASE' => $data['db_database'],
             'DB_USERNAME' => $data['db_username'] ?? null,
             'DB_PASSWORD' => $data['db_password'] ?? null,
+            'CACHE_STORE' => $drivers['CACHE_STORE'],
+            'SESSION_DRIVER' => $drivers['SESSION_DRIVER'],
+            'QUEUE_CONNECTION' => $drivers['QUEUE_CONNECTION'],
         ], fn ($v) => $v !== null);
 
         if (! config('app.key')) {

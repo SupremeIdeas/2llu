@@ -14,6 +14,22 @@ Artisan::command('inspire', function () {
  |   * * * * * cd /path && php artisan schedule:run >> /dev/null 2>&1
  */
 
+// Shared-hosting queue drain (blueprint Section 20). On shared cPanel there is
+// no Redis and no long-running worker, so every external API job (money paths
+// included, money rule 8) sits in the `jobs` table until we drain it. The one
+// schedule:run cron above triggers this each minute; --stop-when-empty keeps it
+// short-lived so it never becomes a runaway process. On a VPS the queue is
+// Redis + Horizon, so this drain is skipped entirely.
+if (config('queue.default') === 'database') {
+    // --tries=1 is the safe floor: money jobs never blind-retry (money rule 7).
+    // Jobs that DO want retries opt in via their own $tries (e.g. the catalogue
+    // sync), which takes precedence over this worker default.
+    Schedule::command('queue:work --stop-when-empty --tries=1 --max-time=50')
+        ->everyMinute()
+        ->withoutOverlapping()
+        ->runInBackground();
+}
+
 // Ping provider wallets and alert on low balance (Section 17.2).
 Schedule::command('providers:health-check')->everyFifteenMinutes()->withoutOverlapping();
 

@@ -36,6 +36,32 @@
                         Please do not enter “/” at the end of the URL. Example: https://naarasim.com
                     </p>
                 </div>
+
+                {{-- Hosting type picks the cache/session/queue drivers. Shared cPanel
+                     has no Redis, so it uses the database + a single cron entry; a
+                     VPS uses Redis + Horizon. This can be changed later in .env. --}}
+                <div x-data="{ host: '{{ old('hosting_type', 'shared') }}' }">
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Hosting Type</label>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <label :class="host === 'shared' ? 'border-primary ring-1 ring-primary' : 'border-slate-300 dark:border-[#2D4060]'"
+                               class="flex cursor-pointer flex-col gap-1 rounded-lg border bg-white p-3 dark:bg-[#243352]">
+                            <span class="flex items-center gap-2">
+                                <input type="radio" name="hosting_type" value="shared" x-model="host" class="text-primary focus:ring-primary">
+                                <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">Shared / cPanel</span>
+                            </span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">No Redis needed. Cache, sessions &amp; queue run in the database, driven by one cron job.</span>
+                        </label>
+                        <label :class="host === 'vps' ? 'border-primary ring-1 ring-primary' : 'border-slate-300 dark:border-[#2D4060]'"
+                               class="flex cursor-pointer flex-col gap-1 rounded-lg border bg-white p-3 dark:bg-[#243352]">
+                            <span class="flex items-center gap-2">
+                                <input type="radio" name="hosting_type" value="vps" x-model="host" class="text-primary focus:ring-primary">
+                                <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">VPS / Cloud</span>
+                            </span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Uses Redis for cache, sessions &amp; queue, with Horizon running the workers.</span>
+                        </label>
+                    </div>
+                </div>
+
                 <button type="button" @click="tab = 'database'"
                         class="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-3 font-semibold text-slate-900 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-100 dark:hover:bg-[#243352]">
                     Setup Database <x-icon name="chevron-right" class="h-4 w-4" />

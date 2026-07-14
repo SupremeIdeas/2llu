@@ -66,6 +66,12 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('super_admin') ? true : null;
         });
 
+        // Overlay any admin-saved API credentials on top of config() so every
+        // service keeps reading config('services.*') unchanged and providers
+        // flip Active the moment a key is saved (blueprint Section 17.4, money
+        // rule 10). Runs every request/job; degrades to .env pre-install.
+        \App\Support\ProviderKeys::applyToConfig();
+
         // Custom-icon overrides are cached; bust that cache when the mapping
         // setting changes (blueprint Section 16.3).
         \App\Models\Setting::saved(function (\App\Models\Setting $setting) {
@@ -77,6 +83,9 @@ class AppServiceProvider extends ServiceProvider
             }
             if (\App\Support\SecuritySettings::isSecurityKey($setting->key)) {
                 \App\Support\SecuritySettings::flush();
+            }
+            if (\App\Support\ProviderKeys::isProviderKey($setting->key)) {
+                \App\Support\ProviderKeys::flush();
             }
         });
 

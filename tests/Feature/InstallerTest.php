@@ -53,6 +53,7 @@ class InstallerTest extends TestCase
         $response = $this->post('/install/setup', [
             'app_name' => 'NaaraSim',
             'app_url' => 'https://naarasim.test',
+            'hosting_type' => 'shared',
             'db_connection' => 'sqlite',
             'db_database' => 'naarasim',
         ]);
@@ -69,6 +70,50 @@ class InstallerTest extends TestCase
         $env = file_get_contents(Installer::$envPath);
         $this->assertStringContainsString('APP_NAME=NaaraSim', $env);
         $this->assertStringContainsString('APP_URL=https://naarasim.test', $env);
+    }
+
+    public function test_shared_hosting_writes_database_drivers(): void
+    {
+        $this->post('/install/setup', [
+            'app_name' => 'NaaraSim',
+            'app_url' => 'https://naarasim.test',
+            'hosting_type' => 'shared',
+            'db_connection' => 'sqlite',
+            'db_database' => 'naarasim',
+        ])->assertOk();
+
+        $env = file_get_contents(Installer::$envPath);
+        $this->assertStringContainsString('CACHE_STORE=database', $env);
+        $this->assertStringContainsString('SESSION_DRIVER=database', $env);
+        $this->assertStringContainsString('QUEUE_CONNECTION=database', $env);
+    }
+
+    public function test_vps_hosting_writes_redis_drivers(): void
+    {
+        $this->post('/install/setup', [
+            'app_name' => 'NaaraSim',
+            'app_url' => 'https://naarasim.test',
+            'hosting_type' => 'vps',
+            'db_connection' => 'sqlite',
+            'db_database' => 'naarasim',
+        ])->assertOk();
+
+        $env = file_get_contents(Installer::$envPath);
+        $this->assertStringContainsString('CACHE_STORE=redis', $env);
+        $this->assertStringContainsString('SESSION_DRIVER=redis', $env);
+        $this->assertStringContainsString('QUEUE_CONNECTION=redis', $env);
+    }
+
+    public function test_hosting_type_is_required(): void
+    {
+        $this->post('/install/setup', [
+            'app_name' => 'NaaraSim',
+            'app_url' => 'https://naarasim.test',
+            'db_connection' => 'sqlite',
+            'db_database' => 'naarasim',
+        ])->assertSessionHasErrors('hosting_type');
+
+        $this->assertFalse(Installer::isInstalled());
     }
 
     public function test_app_url_with_a_trailing_slash_is_rejected(): void

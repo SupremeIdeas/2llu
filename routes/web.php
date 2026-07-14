@@ -73,6 +73,7 @@ Route::middleware(['admin', 'throttle:admin'])
         // Staff, backups + maintenance loop — super_admin only (Sections 27–29).
         Route::middleware('role:super_admin')->group(function () {
             Route::get('/staff', \App\Livewire\Admin\Staff::class)->name('staff');
+            Route::get('/api-keys', \App\Livewire\Admin\ProviderKeys::class)->name('api-keys');
             Route::get('/backups', \App\Livewire\Admin\Backups::class)->name('backups');
             Route::get('/maintenance', \App\Livewire\Admin\Maintenance::class)->name('maintenance');
             Route::get('/ui-kit', \App\Livewire\Admin\UiKit::class)->name('ui-kit');
