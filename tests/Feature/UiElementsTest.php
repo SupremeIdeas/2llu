@@ -83,7 +83,13 @@ class UiElementsTest extends TestCase
             file_get_contents(resource_path('css/app.css')),
         );
 
-        // The compiled bundle actually contains the element classes.
+        // The compiled bundle actually contains the element classes. Build
+        // artifacts are gitignored and CI doesn't run `npm run build`, so this
+        // half only runs where a build exists (local / deploy pipeline).
+        if (! file_exists(public_path('build/manifest.json'))) {
+            $this->markTestSkipped('No compiled Vite build present (CI runs PHP tests only).');
+        }
+
         $manifest = json_decode(file_get_contents(public_path('build/manifest.json')), true);
         $cssFile = collect($manifest)->pluck('css')->flatten()->first()
             ?? collect($manifest)->pluck('file')->first(fn ($f) => str_ends_with((string) $f, '.css'));
