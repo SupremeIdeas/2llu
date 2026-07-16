@@ -80,11 +80,7 @@
                 @foreach ($statuses as $provider => $label)
                     <div wire:key="status-{{ $provider }}" class="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
                         <span class="capitalize text-slate-700 dark:text-slate-200">{{ $provider }}</span>
-                        <span @class([
-                            'rounded-full px-2 py-0.5 text-xs font-semibold',
-                            'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' => $label === 'Active',
-                            'bg-slate-100 text-slate-500 dark:bg-[#243352] dark:text-slate-400' => $label !== 'Active',
-                        ])>{{ $label }}</span>
+                        <x-ui.tag :variant="$label === 'Active' ? 'live' : 'soon'">{{ $label }}</x-ui.tag>
                     </div>
                 @endforeach
             </div>

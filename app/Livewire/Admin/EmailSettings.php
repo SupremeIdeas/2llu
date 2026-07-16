@@ -86,6 +86,7 @@ class EmailSettings extends Component
         $this->smtp_password = '';
         $this->saved = 'Email settings saved. They apply immediately.';
         $this->testResult = $this->testError = null;
+        $this->dispatch('nx-toast', type: 'success', message: 'Email settings saved.');
 
         Auditor::log('mail.settings_updated', null, null, ['mailer' => $this->mailer]);
     }

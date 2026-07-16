@@ -160,7 +160,25 @@ fields) with easy management.
 in header, footer, the mobile "More" modal, and other sensible slots; each banner
 targets a section or custom link; schedule + enable/disable; WebP.
 
-**Module 32 — Reusable elements & effects library.** A preloader library + branded
+**Module 32 — Reusable elements & effects library.** ⏳ PART 1 BUILT (2026-07-14):
+the owner vendored their hand-picked Uiverse components (MIT) at
+`github.com/SupremeIdeas/Uicomponents` (91 + 75 raw snippets), which solves the
+CSP/third-party-runtime concern — everything is adapted locally. Built
+`resources/css/ui-elements.css` (brand-tokenized, dark-mode, compiled into our
+bundle) + Blade components under `components/ui/`: **btn** (primary/gold/ghost/
+danger, shine sweep, wire:loading via `target`), **switch** + **checkbox** (real
+inputs — keyboard/SR/wire:model safe), **toast-stack** (global, Livewire
+`nx-toast` dispatch or JS event; mounted once in the base layout), **loader** +
+**skeleton**, **alert** (info/warning/danger rail cards), **tag** (live pulse /
+soon / gold), **upload** (drop zone). Integrated for real: admin Security
+toggles → switches; dashboard product chips → tags; Security/Branding/Email
+saves fire toasts; UI Kit page showcases all. Attribution in
+`components/ui/CREDITS.md`. Tests: `UiElementsTest` (6); suite 239/239.
+Browser-verified incl. a live toast. **Remaining:** adapt premium cards /
+pricing tables / login forms / nav / cookies banner / date-weather / dropdown as
+their surfaces are built (M27 marketing pages, M29 pricing, M31 banners), and
+the admin paste-an-element panel.
+_Original scope:_ A preloader library + branded
 button/form/element library; an admin **paste-an-element** panel (name it → paste
 HTML/CSS/JS → choose where it applies → override globally to buttons/forms/etc.),
 with Claude brand-colour matching or manual colour override. *Unicorn.studio

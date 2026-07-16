@@ -69,6 +69,7 @@ class Security extends Component
         ]);
 
         $this->siteSaved = 'Site protection saved — it applies immediately.';
+        $this->dispatch('nx-toast', type: 'success', message: 'Site protection saved.');
     }
 
     public function enable(EnableTwoFactorAuthentication $enable): void

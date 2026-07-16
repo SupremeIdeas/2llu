@@ -122,7 +122,7 @@
                         <span class="block text-sm font-medium text-slate-800 dark:text-slate-100">Content protection (CSP)</span>
                         <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Blocks malicious scripts from loading. Turn off only if a trusted embed/widget you added won’t appear.</span>
                     </span>
-                    <input type="checkbox" wire:model="csp_enabled" class="mt-1 h-5 w-5 shrink-0 rounded text-primary">
+                    <x-ui.switch wire:model="csp_enabled" label="Content protection (CSP)" class="mt-1" />
                 </label>
 
                 <label class="flex items-start justify-between gap-4 border-t border-slate-100 pt-4 dark:border-[#243352]">
@@ -130,7 +130,7 @@
                         <span class="block text-sm font-medium text-slate-800 dark:text-slate-100">Force secure connection (HSTS)</span>
                         <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Tells browsers to always use HTTPS. Turn off only if your server isn’t on HTTPS yet.</span>
                     </span>
-                    <input type="checkbox" wire:model="hsts_enabled" class="mt-1 h-5 w-5 shrink-0 rounded text-primary">
+                    <x-ui.switch wire:model="hsts_enabled" label="Force secure connection (HSTS)" class="mt-1" />
                 </label>
 
                 <label class="flex items-start justify-between gap-4 border-t border-slate-100 pt-4 dark:border-[#243352]">
@@ -138,7 +138,7 @@
                         <span class="block text-sm font-medium text-slate-800 dark:text-slate-100">Require two-factor for admin login</span>
                         <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Off by default — sign in with just email &amp; password. Turn on to require an authenticator code as an extra layer for everyone in the panel.</span>
                     </span>
-                    <input type="checkbox" wire:model="admin_2fa_required" class="mt-1 h-5 w-5 shrink-0 rounded text-primary">
+                    <x-ui.switch wire:model="admin_2fa_required" label="Require two-factor for admin login" class="mt-1" />
                 </label>
 
                 <div class="flex justify-end">

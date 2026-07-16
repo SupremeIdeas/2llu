@@ -78,6 +78,7 @@ class Branding extends Component
         BrandSettings::flush();
         Auditor::log('brand.updated');
         $this->saved = 'Branding saved. Your logo and name now show across the platform.';
+        $this->dispatch('nx-toast', type: 'success', message: 'Branding saved — live everywhere.');
     }
 
     public function render()

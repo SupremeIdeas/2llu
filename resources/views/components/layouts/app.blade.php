@@ -39,6 +39,7 @@
 <body class="min-h-screen bg-[#F8F9FA] text-[#0F172A] antialiased dark:bg-navy dark:text-slate-100">
     @include('partials.icon-sprite')
     <x-splash />
+    <x-ui.toast-stack />
     {{ $slot ?? '' }}
     @yield('content')
     @livewireScripts

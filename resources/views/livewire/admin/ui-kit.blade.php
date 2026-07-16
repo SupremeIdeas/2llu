@@ -62,5 +62,54 @@
                 <span class="text-sm text-slate-500 dark:text-slate-400">Flips light / dark with no flash.</span>
             </div>
         </section>
+
+        {{-- Branded elements (Module 32 — adapted from the hand-picked Uiverse set) --}}
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840] lg:col-span-2">
+            <h2 class="mb-1 text-sm font-semibold text-slate-800 dark:text-slate-100">Branded elements</h2>
+            <p class="mb-5 text-xs text-slate-400">Adapted from the hand-picked Uiverse library — re-coloured to the brand, dark-mode ready, no third-party runtime.</p>
+
+            <div class="space-y-6">
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-ui.btn variant="primary" type="button" icon="badge-check">Primary action</x-ui.btn>
+                    <x-ui.btn variant="gold" type="button">Gold highlight</x-ui.btn>
+                    <x-ui.btn variant="ghost" type="button">Ghost</x-ui.btn>
+                    <x-ui.btn variant="danger" type="button">Danger</x-ui.btn>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-6">
+                    <label class="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                        <x-ui.switch checked label="Demo switch" /> Switch
+                    </label>
+                    <label class="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                        <x-ui.checkbox checked label="Demo checkbox" /> Checkbox
+                    </label>
+                    <x-ui.tag variant="live">Active</x-ui.tag>
+                    <x-ui.tag variant="soon">Coming Soon</x-ui.tag>
+                    <x-ui.tag variant="gold">Featured</x-ui.tag>
+                    <x-ui.loader size="1.75rem" />
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-3">
+                    <x-ui.alert variant="info" title="Heads up" icon="info">Informational alert card.</x-ui.alert>
+                    <x-ui.alert variant="warning" title="Careful" icon="shield">Warning alert card.</x-ui.alert>
+                    <x-ui.alert variant="danger" title="Problem" icon="x">Danger alert card.</x-ui.alert>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="space-y-2">
+                        <x-ui.skeleton class="h-4 w-3/4" />
+                        <x-ui.skeleton class="h-4 w-1/2" />
+                        <x-ui.skeleton class="h-24 w-full" />
+                    </div>
+                    <x-ui.upload label="Click or drop a file here" hint="Skeletons load, uploads drop." />
+                </div>
+
+                <button type="button"
+                        x-on:click="window.dispatchEvent(new CustomEvent('nx-toast', { detail: { type: 'success', message: 'Toast test — it works.' } }))"
+                        class="text-xs font-medium text-primary hover:underline">
+                    Fire a test toast
+                </button>
+            </div>
+        </section>
     </div>
 </div>
