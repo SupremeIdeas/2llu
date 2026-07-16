@@ -342,3 +342,85 @@
     opacity: 0;
     cursor: pointer;
 }
+
+/* ================================================================ marketing --
+   Scroll-craft for the public pages (Module 27): text reveal on scroll,
+   stacking step cards, section background transitions, sticky CTA, premium
+   feature/testimonial cards (adapted from the premium-custom-cards picks).
+   All CSS + a tiny IntersectionObserver in app.js — no external libraries. */
+
+/* Text reveal on scroll: elements with [data-reveal] start hidden and slide
+   up when .is-revealed lands. Staggered children via --reveal-delay. */
+.js-enabled [data-reveal] {
+    opacity: 0;
+    transform: translateY(1.4rem);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0s);
+    will-change: opacity, transform;
+}
+.js-enabled [data-reveal].is-revealed { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+    .js-enabled [data-reveal] { opacity: 1; transform: none; transition: none; }
+}
+
+/* Section background change on scroll: the wrapper interpolates between
+   themes as [data-bg] sections become active (class set by the observer). */
+.mkt-bg {
+    transition: background-color 0.8s ease, color 0.8s ease;
+    background-color: #F8F9FA;
+}
+.dark .mkt-bg { background-color: #0D1B2A; }
+.mkt-bg.bg-navy-scene { background-color: #0D1B2A; color: #e2e8f0; }
+.mkt-bg.bg-teal-scene { background-color: #07403f; color: #ccfbf1; }
+
+/* Stacking step cards: each card is sticky, so the next stacks over it. */
+.mkt-stack { display: grid; gap: 1.25rem; }
+.mkt-stack__card {
+    position: sticky;
+    top: 5.5rem;
+    border-radius: 1.25rem;
+    padding: 2rem;
+    box-shadow: 0 18px 40px rgb(13 27 42 / 0.16);
+}
+
+/* Sticky CTA pill: hidden until the hero scrolls away. */
+.mkt-sticky-cta {
+    position: fixed;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translate(-50%, 5rem);
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s;
+    z-index: 60;
+}
+.mkt-sticky-cta.is-shown { transform: translate(-50%, 0); opacity: 1; }
+
+/* Premium card (feature/testimonial): lift + gradient edge glow on hover. */
+.nx-card {
+    position: relative;
+    border-radius: 1.1rem;
+    padding: 1.5rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s;
+}
+.dark .nx-card { background: #16233d; border-color: #2d4060; }
+.nx-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgb(10 110 110 / 0), rgb(10 110 110 / 0.65), rgb(212 160 23 / 0.55));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.35s;
+    pointer-events: none;
+}
+.nx-card:hover { transform: translateY(-4px); box-shadow: 0 16px 36px rgb(13 27 42 / 0.14); }
+.nx-card:hover::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+    .nx-card, .nx-card:hover { transform: none; }
+}

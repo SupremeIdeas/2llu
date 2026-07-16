@@ -1,0 +1,55 @@
+<x-layouts.marketing :title="\App\Support\BrandSettings::name().' — How It Works'">
+    @php($hero = $sections['hero'] ?? null)
+    @if ($hero)
+        <section class="mx-auto max-w-4xl px-4 pb-12 pt-16 text-center">
+            <h1 data-reveal class="text-4xl font-bold text-slate-900 sm:text-5xl dark:text-white">{{ $hero['headline'] }}</h1>
+            <p data-reveal class="mx-auto mt-5 max-w-2xl text-lg text-slate-600 dark:text-slate-300">{{ $hero['subtext'] }}</p>
+            <p data-reveal class="mt-6 text-xs font-medium text-slate-400">{{ $hero['proof'] }}</p>
+        </section>
+    @endif
+
+    @php($steps = $sections['steps'] ?? null)
+    @if ($steps)
+        <section class="mx-auto max-w-3xl px-4 py-12">
+            <h2 data-reveal class="text-center text-2xl font-bold text-slate-900 dark:text-white">{{ $steps['headline'] }}</h2>
+            <ol class="relative mt-10 space-y-8 border-l-2 border-primary/20 pl-8 dark:border-primary/30">
+                @foreach (range(1, 7) as $n)
+                    <li data-reveal style="--reveal-delay: {{ ($n - 1) * 0.05 }}s" class="relative">
+                        <span class="absolute -left-[2.6rem] flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">{{ $n }}</span>
+                        <h3 class="font-bold text-slate-900 dark:text-white">{{ $steps["s{$n}_title"] }}</h3>
+                        <p class="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ $steps["s{$n}_text"] }}</p>
+                    </li>
+                @endforeach
+            </ol>
+        </section>
+    @endif
+
+    @php($compat = $sections['compatibility'] ?? null)
+    @if ($compat)
+        <section id="compatibility" class="bg-navy px-4 py-20 text-slate-100">
+            <div class="mx-auto max-w-3xl text-center">
+                <h2 data-reveal class="text-3xl font-bold">{{ $compat['headline'] }}</h2>
+                <p data-reveal class="mt-4 leading-relaxed opacity-90">{{ $compat['intro'] }}</p>
+                <p data-reveal class="mt-6 rounded-2xl border border-white/15 bg-white/5 p-4 text-sm font-medium text-accent backdrop-blur">{{ $compat['devices'] }}</p>
+                <div class="mt-6 grid gap-3 text-left text-sm sm:grid-cols-2">
+                    <div data-reveal class="rounded-2xl border border-white/15 bg-white/5 p-4 leading-relaxed backdrop-blur">{{ $compat['check_ios'] }}</div>
+                    <div data-reveal class="rounded-2xl border border-white/15 bg-white/5 p-4 leading-relaxed backdrop-blur">{{ $compat['check_android'] }}</div>
+                </div>
+                <p data-reveal class="mt-6 text-sm leading-relaxed opacity-80">{{ $compat['note'] }}</p>
+                <a data-reveal href="{{ auth()->check() ? route('catalogue') : route('register') }}" class="nx-btn nx-btn--gold mt-8 !px-8 !py-3">{{ $compat['cta'] }}</a>
+            </div>
+        </section>
+    @endif
+
+    @php($support = $sections['support'] ?? null)
+    @if ($support)
+        <section class="mx-auto max-w-3xl px-4 py-20 text-center">
+            <h2 data-reveal class="text-3xl font-bold text-slate-900 dark:text-white">{{ $support['headline'] }}</h2>
+            <p data-reveal class="mx-auto mt-4 max-w-2xl leading-relaxed text-slate-600 dark:text-slate-300">{{ $support['text'] }}</p>
+            <blockquote data-reveal class="mx-auto mt-8 max-w-xl rounded-2xl bg-primary/10 p-5 text-sm font-medium italic text-primary dark:bg-primary/20 dark:text-teal-300">
+                {{ $support['promise'] }}
+            </blockquote>
+            <a data-reveal href="{{ route('contact') }}" class="nx-btn nx-btn--primary mt-8 !px-8 !py-3">Contact Support</a>
+        </section>
+    @endif
+</x-layouts.marketing>

@@ -11,9 +11,12 @@ use App\Livewire\Referrals;
 use App\Livewire\Wallet;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+// Public marketing site (Module 27) — CMS-driven pages (SiteContent), edited
+// from Admin → Pages with no redeploy.
+Route::get('/', fn () => view('marketing.home', ['sections' => \App\Support\SiteContent::page('home')]))->name('home');
+Route::get('/about', fn () => view('marketing.about', ['sections' => \App\Support\SiteContent::page('about')]))->name('about');
+Route::get('/how-it-works', fn () => view('marketing.how-it-works', ['sections' => \App\Support\SiteContent::page('how-it-works')]))->name('how-it-works');
+Route::get('/contact', fn () => view('marketing.contact', ['sections' => \App\Support\SiteContent::page('contact')]))->name('contact');
 
 // Web installer (blueprint Section 22.1). Active only until the lock file
 // exists (EnsureNotInstalled).
@@ -86,6 +89,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
             Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
             Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');
+            Route::get('/site', \App\Livewire\Admin\SiteEditor::class)->name('site');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
             Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
         });

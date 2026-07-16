@@ -131,7 +131,24 @@ buttons/forms/preloader. All image handling → **WebP** (`webp` upload + on-the
 convert). *Needs from owner: the real logo files + heading/body font files (see
 formats below).* 
 
-**Module 27 — Public marketing front end (CMS-editable).** Real landing/home,
+**Module 27 — Public marketing front end (CMS-editable).** ✅ BUILT 2026-07-16:
+`SiteContent` CMS (brand copy ships as code defaults; admin overrides + visible/
+order/image per section in one Setting row per page, cached, merged at read).
+Public pages `/` (8-section landing), `/about`, `/how-it-works`, `/contact` in a
+new marketing layout (sticky glassy nav, navy footer with Supreme Ideas Agency
+attribution + legal quick-links). Scroll-craft, all self-hosted/CSP-safe:
+text-reveal on scroll (IntersectionObserver, `.js-enabled`-scoped so no-JS
+visitors/crawlers see everything), page background-colour scene transitions,
+CSS-sticky STACKING step cards, sticky "Get Your eSIM" CTA pill after the hero;
+sections own their solid backgrounds so nothing depends on JS. Contact form:
+signed-in → ESCALATED support conversation (straight into staff Tickets);
+guest → branded queued email to the support address when mail is configured
+(honest direct-channel fallback otherwise); honeypot + per-IP rate limit.
+**Admin → Pages editor**: per-section text fields, show/hide switches, up/down
+reorder, section image upload, "reset to original copy", per-page tabs + View
+page link. CTAs adapt (guest → register, user → catalogue/dashboard). Tests:
+`MarketingSiteTest` (8); suite 247/247; browser-verified (reveal count 42/42,
+scenes + sticky CTA live). _Original scope:_ Real landing/home,
 about, how-it-works, contact pages built from the brand copy, with modern
 scroll-craft: **stacking/pinned sections, background-colour change on scroll,
 text-reveal on scroll, sticky CTAs**. An admin **Page/Section editor**: per-section

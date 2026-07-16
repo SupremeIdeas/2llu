@@ -23,6 +23,9 @@
          there is no flash of the wrong theme (blueprint Section 4.2 / 24.3). --}}
     <script>
         (function () {
+            // Reveal-on-scroll styles only apply when JS runs (no-JS visitors
+            // and crawlers see everything immediately — Module 27).
+            document.documentElement.classList.add('js-enabled');
             try {
                 var stored = localStorage.getItem('theme');
                 var wantsDark = stored
