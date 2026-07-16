@@ -1,9 +1,11 @@
 {{-- Hero (CMS: home.hero). Optional admin image becomes the backdrop. --}}
 <section class="relative overflow-hidden" data-hero-sentinel>
     @if (! empty($s['image']))
-        <div class="absolute inset-0">
-            <img src="{{ $s['image'] }}" alt="" class="h-full w-full object-cover">
-            <div class="absolute inset-0 bg-navy/70"></div>
+        {{-- Apple-style hero media: admin-uploaded image with a slow GSAP
+             parallax scale as the visitor scrolls (Module 27.5). --}}
+        <div class="absolute inset-0 overflow-hidden">
+            <img src="{{ $s['image'] }}" alt="" data-hero-media class="h-full w-full object-cover will-change-transform">
+            <div class="absolute inset-0 bg-gradient-to-b from-navy/60 via-navy/70 to-navy/85"></div>
         </div>
     @endif
     <div class="relative mx-auto max-w-6xl px-4 pb-20 pt-16 text-center sm:pt-24 {{ ! empty($s['image']) ? 'text-white' : '' }}">
@@ -25,9 +27,11 @@
         <dl data-reveal style="--reveal-delay:.4s" class="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
             @foreach (['stat_1', 'stat_2', 'stat_3', 'stat_4'] as $stat)
                 @php [$value, $label] = array_pad(explode(' ', $s[$stat], 2), 2, ''); @endphp
+                @php($numeric = preg_match('/^(\d+)(\+?)$/', $value, $m))
                 <div class="nx-card !p-4 text-center">
                     <dt class="sr-only">{{ $label }}</dt>
-                    <dd class="font-display text-2xl font-bold text-primary dark:text-teal-300">{{ $value }}</dd>
+                    <dd class="font-display text-2xl font-bold text-primary dark:text-teal-300"
+                        @if ($numeric) data-countup="{{ $m[1] }}" data-suffix="{{ $m[2] }}" @endif>{{ $value }}</dd>
                     <dd class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $label }}</dd>
                 </div>
             @endforeach

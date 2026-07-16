@@ -117,6 +117,9 @@ class AppServiceProvider extends ServiceProvider
             if (\App\Support\SiteContent::isSiteKey($setting->key)) {
                 \App\Support\SiteContent::flush();
             }
+            if (\App\Support\ServiceIcons::isServiceIconKey($setting->key)) {
+                \App\Support\ServiceIcons::flush();
+            }
         });
 
         // Rate limits (blueprint Section 19.2): 300/min authenticated, 60/min

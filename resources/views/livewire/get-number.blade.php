@@ -8,7 +8,7 @@
             <div class="flex items-center justify-between">
                 <span class="text-sm text-slate-500 dark:text-slate-400">Your number</span>
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary-dark dark:bg-primary/20 dark:text-primary">
-                    <x-icon name="hash" class="h-3.5 w-3.5" /> {{ ucfirst($order->service_name) }}
+                    <x-service-icon :slug="$order->service_name" class="h-4 w-4" /> {{ ucfirst($order->service_name) }}
                 </span>
             </div>
             <div class="mt-1 flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-slate-100">
@@ -48,19 +48,34 @@
             <div class="space-y-4">
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Country</label>
-                    <select wire:model="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
-                        @foreach ($countries as $slug => $label)
-                            <option value="{{ $slug }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
+                    <div class="flex items-center gap-2">
+                        <x-country-flag :country="$country" class="h-5 w-7 shrink-0" wire:key="flag-{{ $country }}" />
+                        <select wire:model.live="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            @foreach ($countries as $slug => $label)
+                                <option value="{{ $slug }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Service</label>
-                    <select wire:model="service" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm capitalize text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    {{-- Service picker with brand logos (Module 27.5): each option
+                         shows its mark — admin-uploaded official logo, provider
+                         artwork once APIs are live, or the built-in glyph. --}}
+                    <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Service">
                         @foreach ($services as $svc)
-                            <option value="{{ $svc }}">{{ ucfirst($svc) }}</option>
+                            <button type="button" wire:key="svc-{{ $svc }}" wire:click="$set('service', '{{ $svc }}')"
+                                    role="radio" aria-checked="{{ $service === $svc ? 'true' : 'false' }}"
+                                    @class([
+                                        'flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs font-medium capitalize transition',
+                                        'border-primary bg-primary/5 text-primary shadow-sm dark:bg-primary/15 dark:text-teal-300' => $service === $svc,
+                                        'border-slate-200 text-slate-600 hover:border-primary/40 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]' => $service !== $svc,
+                                    ])>
+                                <x-service-icon :slug="$svc" class="h-7 w-7" />
+                                {{ ucfirst($svc) }}
+                            </button>
                         @endforeach
-                    </select>
+                    </div>
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Type</label>

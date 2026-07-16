@@ -12,10 +12,14 @@
     @if ($steps)
         <section class="mx-auto max-w-3xl px-4 py-12">
             <h2 data-reveal class="text-center text-2xl font-bold text-slate-900 dark:text-white">{{ $steps['headline'] }}</h2>
-            <ol class="relative mt-10 space-y-8 border-l-2 border-primary/20 pl-8 dark:border-primary/30">
+            {{-- Trendy timeline (Module 27.5): a muted rail with a teal progress
+                 line GSAP draws downward as the visitor scrolls the steps. --}}
+            <ol data-timeline class="relative mt-10 space-y-8 pl-8">
+                <span class="absolute bottom-1 left-[0.9rem] top-1 w-0.5 rounded-full bg-slate-200 dark:bg-[#2D4060]" aria-hidden="true"></span>
+                <span data-timeline-rail class="absolute bottom-1 left-[0.9rem] top-1 w-0.5 origin-top rounded-full bg-primary" aria-hidden="true"></span>
                 @foreach (range(1, 7) as $n)
                     <li data-reveal style="--reveal-delay: {{ ($n - 1) * 0.05 }}s" class="relative">
-                        <span class="absolute -left-[2.6rem] flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">{{ $n }}</span>
+                        <span class="absolute -left-[2.1rem] top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white ring-4 ring-white dark:ring-navy">{{ $n }}</span>
                         <h3 class="font-bold text-slate-900 dark:text-white">{{ $steps["s{$n}_title"] }}</h3>
                         <p class="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ $steps["s{$n}_text"] }}</p>
                     </li>

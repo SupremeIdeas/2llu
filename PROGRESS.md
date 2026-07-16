@@ -156,6 +156,27 @@ hero images (WebP upload), headings/body/CTA text, reorder, show/hide. Guests
 browse; logged-in users continue to dashboard; new users create an account and
 continue to the item they picked.
 
+**Module 27.5 — Premium polish pass** ✅ BUILT 2026-07-16 (owner-requested):
+(1) **GSAP** (npm-bundled, CSP-safe, reduced-motion-aware): Apple-style hero
+media parallax on the admin-uploaded image, **pinned products section with
+dynamic content-switch on scroll** (3 value panels crossfade; normal stacked
+flow without JS/GSAP via the .gsap-pin gate), **timeline progress rail that
+draws on scroll** on how-it-works, hero **stat count-ups**. New CMS `products`
+section in home defaults. (2) **Service logos + country flags** (the "very
+important" one): `ServiceIcons` resolves admin-override → provider-API artwork →
+bundled brand-mark sprite (22 services: whatsapp/telegram/facebook/google/
+instagram/tiktok/x/snapchat/discord/tinder/okcupid/pof/uber/apple/amazon/
+netflix/paypal/microsoft/viber/signal/linkedin/wechat) → letter avatar;
+**Admin → Service icons** page uploads official logos per service + adds new
+slugs (covers services the live APIs don't return artwork for). `CountryFlags`
+maps provider slugs + ISO codes → self-hosted **flag-icons** SVGs (no CDN).
+Wired into: GetNumber (logo service-picker grid + flag on country), dashboard
+numbers (logo avatars + OTP chip), eSIM cards (flags). (3) **Premium user
+dashboard** from the hand-picked components: gradient **finance-style wallet
+card** (both balances, top-up pill, glow orbs), eSIM cards with **data-remaining
+meter**, status tags with pulse dots, **value-showcase cards** for new accounts.
+Tests: `ServiceIconsTest` (7); suite 254/254; browser-verified. 
+
 **Module 28 — Two-column auth + assignable footer.** Upgrade login/register to a
 2-column desktop layout with an admin-set **media panel** (video / WebP / JPEG) on
 one side; move "**Supreme Ideas Agency**" + **legal quick-links** to the bottom of

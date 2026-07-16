@@ -424,3 +424,9 @@
 @media (prefers-reduced-motion: reduce) {
     .nx-card, .nx-card:hover { transform: none; }
 }
+
+/* Pinned products crossfade (Module 27.5): panels only overlap when GSAP has
+   actually initialised (.gsap-pin added by app.js) — reduced-motion and no-JS
+   visitors get the normal stacked flow. */
+[data-products-pin].gsap-pin [data-product-panel] { grid-area: 1 / 1; }
+[data-products-pin].gsap-pin .grid { gap: 0; }
