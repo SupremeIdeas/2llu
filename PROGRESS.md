@@ -223,11 +223,31 @@ estimate-only** display; **AI-assisted live education** explains what each
 plan/price means for the user long-term. New/returning users flow from a chosen
 plan into checkout.
 
-**Module 30 — Legal pages CMS + Blog.** Admin-editable legal pages (privacy,
-terms, refund, cookies, data-deletion) with accurate best-practice defaults — for
-third-party login reviews (Facebook, Google, etc.) that require public legal
-links. Full **blog** (posts, categories, WebP cover images, draft/publish, SEO
-fields) with easy management.
+**Module 30 — Legal pages CMS + Blog.** ✅ BUILT 2026-07-16.
+**Legal CMS:** `LegalContent` ships accurate best-practice defaults for the five
+docs third-party login reviews expect — **privacy, terms, refund, cookies,
+data-deletion** — each at a stable public URL (`/legal`, `/legal/{slug}`;
+`/refund-policy` kept working). Admin overrides per doc (cached, flush hook,
+`{brand}` interpolated). **Admin → Legal** editor: pick a doc, edit title/body,
+or reset to the shipped copy. Body uses a safe light markup (`## headings`,
+`- bullets`, blank-line paragraphs) rendered through a new **`<x-prose>`**
+line-oriented parser that **escapes everything** — admin/post content can never
+inject HTML/scripts (verified in tests). **Blog:** `posts` table + `Post` model
+(draft/published, past-dated `published()` scope, unique-slug helper, SEO
+meta fallbacks). Public **`/blog`** (published only, category filter, pagination,
+WebP/gradient covers) and **`/blog/{slug}`** (SEO `<meta>`/OG via a threaded
+`description`/`ogImage` layout prop; drafts + future posts 404 for the public,
+previewable by admins). **Admin → Blog** manager: create/edit with title→slug
+auto-suggest, category, excerpt, body, WebP/JPEG cover upload, SEO fields, and
+draft/publish (publishing stamps `published_at`); list + delete. Blog added to
+the marketing nav; footer defaults now point at `/legal`, `/blog` and the exact
+`/legal/{slug}` URLs. Old static legal/refund views removed. Tests:
+`LegalAndBlogTest` (9); suite 286/286; audit clean; browser-verified.
+_Original scope:_ Admin-editable legal pages (privacy, terms, refund, cookies,
+data-deletion) with accurate best-practice defaults — for third-party login
+reviews (Facebook, Google, etc.) that require public legal links. Full **blog**
+(posts, categories, WebP cover images, draft/publish, SEO fields) with easy
+management.
 
 **Module 31 — Announcement banners + margin-protected coupons.** ✅ BUILT
 2026-07-16 (pulled forward + expanded, owner-requested). Two coupled systems:

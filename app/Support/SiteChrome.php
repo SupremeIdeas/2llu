@@ -101,9 +101,9 @@ class SiteChrome
             ]],
             ['heading' => 'Company', 'links' => [
                 ['label' => 'About Us', 'url' => '/about'],
+                ['label' => 'Blog', 'url' => '/blog'],
                 ['label' => 'Contact', 'url' => '/contact'],
-                ['label' => 'Refund Policy', 'url' => '/refund-policy'],
-                ['label' => 'Privacy & Terms', 'url' => '/legal'],
+                ['label' => 'Legal & Policies', 'url' => '/legal'],
             ]],
         ];
     }
@@ -112,9 +112,9 @@ class SiteChrome
     public static function defaultLegal(): array
     {
         return [
-            ['label' => 'Terms', 'url' => '/legal'],
-            ['label' => 'Privacy', 'url' => '/legal'],
-            ['label' => 'Refunds', 'url' => '/refund-policy'],
+            ['label' => 'Terms', 'url' => '/legal/terms'],
+            ['label' => 'Privacy', 'url' => '/legal/privacy'],
+            ['label' => 'Refunds', 'url' => '/legal/refund'],
         ];
     }
 

@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('app.name', 'NaaraSim') }}</title>
+    @if (! empty($description ?? null))
+        <meta name="description" content="{{ $description }}">
+        <meta property="og:title" content="{{ $title ?? config('app.name', 'NaaraSim') }}">
+        <meta property="og:description" content="{{ $description }}">
+        @if (! empty($ogImage ?? null))<meta property="og:image" content="{{ $ogImage }}">@endif
+    @endif
 
     {{-- Favicon / app icon (Module 26): admin-uploaded if set, else the default. --}}
     @php($favicon = \App\Support\BrandSettings::favicon())
@@ -38,6 +44,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    @stack('head')
 </head>
 <body class="min-h-screen bg-[#F8F9FA] text-[#0F172A] antialiased dark:bg-navy dark:text-slate-100">
     @include('partials.icon-sprite')

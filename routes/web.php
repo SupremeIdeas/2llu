@@ -33,10 +33,19 @@ Route::get('/auth/{provider}/redirect', [\App\Http\Controllers\Auth\SocialAuthCo
 Route::get('/auth/{provider}/callback', [\App\Http\Controllers\Auth\SocialAuthController::class, 'callback'])
     ->name('social.callback');
 
-// Public legal/help pages (blueprint Section 32).
-Route::view('/legal', 'pages.legal')->name('legal');
+// Public legal/help pages (blueprint Section 32; Module 30 legal CMS).
+Route::get('/legal', fn () => view('legal.index', ['docs' => \App\Support\LegalContent::all()]))->name('legal');
+Route::get('/legal/{slug}', function (string $slug) {
+    abort_unless(\App\Support\LegalContent::exists($slug), 404);
+
+    return view('legal.show', ['doc' => \App\Support\LegalContent::doc($slug)]);
+})->name('legal.show');
+Route::get('/refund-policy', fn () => view('legal.show', ['doc' => \App\Support\LegalContent::doc('refund')]))->name('refund-policy');
 Route::view('/faq', 'pages.faq')->name('faq');
-Route::view('/refund-policy', 'pages.refund-policy')->name('refund-policy');
+
+// Public blog (Module 30).
+Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog');
+Route::get('/blog/{post:slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
 
 // Public pricing page (Module 29) — real plans when live, estimate tiers before.
 Route::get('/pricing', \App\Livewire\PricingPage::class)->name('pricing');
@@ -94,6 +103,8 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');
             Route::get('/site', \App\Livewire\Admin\SiteEditor::class)->name('site');
             Route::get('/chrome', \App\Livewire\Admin\SiteChromePage::class)->name('chrome');
+            Route::get('/legal', \App\Livewire\Admin\LegalEditor::class)->name('legal');
+            Route::get('/blog', \App\Livewire\Admin\Posts::class)->name('blog');
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
             Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');

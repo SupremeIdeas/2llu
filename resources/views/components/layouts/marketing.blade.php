@@ -2,8 +2,8 @@
      footer with Supreme Ideas Agency attribution + legal quick-links. Guests
      get Sign in / Get Started; signed-in visitors go straight to their
      dashboard. --}}
-@props(['title' => null])
-<x-layouts.app :title="$title ?? \App\Support\BrandSettings::name().' — Stay Connected. No Borders. No Swaps.'">
+@props(['title' => null, 'description' => null, 'ogImage' => null])
+<x-layouts.app :title="$title ?? \App\Support\BrandSettings::name().' — Stay Connected. No Borders. No Swaps.'" :description="$description" :og-image="$ogImage">
     <div class="mkt-bg min-h-screen">
         {{-- Nav --}}
         <header class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-[#0D1B2A]/85">
@@ -13,6 +13,7 @@
                 <div class="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex dark:text-slate-300">
                     <a href="{{ route('how-it-works') }}" class="transition hover:text-primary">How It Works</a>
                     <a href="{{ route('pricing') }}" class="transition hover:text-primary">Pricing</a>
+                    <a href="{{ route('blog') }}" class="transition hover:text-primary">Blog</a>
                     <a href="{{ route('about') }}" class="transition hover:text-primary">About</a>
                     <a href="{{ route('faq') }}" class="transition hover:text-primary">FAQ</a>
                     <a href="{{ route('contact') }}" class="transition hover:text-primary">Contact</a>

@@ -106,7 +106,7 @@ class NicheEdgeTest extends TestCase
 
     public function test_the_refund_policy_page_loads(): void
     {
-        $this->get('/refund-policy')->assertOk()->assertSee('Refund policy');
+        $this->get('/refund-policy')->assertOk()->assertSee('Refund Policy');
     }
 
     public function test_support_whatsapp_link_is_gated_on_configuration(): void
