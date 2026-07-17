@@ -38,6 +38,8 @@ class Branding extends Component
 
     public bool $preloader_enabled = false;
 
+    public string $preloader_style = 'pulse-logo';
+
     // One upload slot per asset (all optional; blank = keep existing).
     public $product_light = null;
 
@@ -69,6 +71,7 @@ class Branding extends Component
         $this->color_action = BrandSettings::color('action');
         $this->radius = BrandSettings::radius();
         $this->preloader_enabled = BrandSettings::preloaderEnabled();
+        $this->preloader_style = BrandSettings::preloaderStyle();
     }
 
     /** Save the brand theme (colours, roundness, preloader). Takes effect live. */
@@ -82,6 +85,7 @@ class Branding extends Component
             'color_navy' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
             'color_action' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
             'radius' => 'required|in:0rem,0.25rem,0.5rem,0.75rem,1rem',
+            'preloader_style' => 'required|in:'.implode(',', BrandSettings::PRELOADER_STYLES),
         ], [
             'color_primary.regex' => 'Use a 6-digit hex colour like #0A6E6E.',
             'color_accent.regex' => 'Use a 6-digit hex colour like #D4A017.',
@@ -95,6 +99,7 @@ class Branding extends Component
         Setting::setValue('brand.color_action', $this->color_action, 'brand');
         Setting::setValue('brand.radius', $this->radius, 'brand');
         Setting::setValue('brand.preloader_enabled', $this->preloader_enabled, 'brand');
+        Setting::setValue('brand.preloader_style', $this->preloader_style, 'brand');
 
         BrandSettings::flush();
         Auditor::log('brand.theme_updated');

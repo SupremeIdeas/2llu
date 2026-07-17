@@ -33,7 +33,11 @@ class BrandSettings
         'brand.color_action',
         'brand.radius',
         'brand.preloader_enabled',
+        'brand.preloader_style',
     ];
+
+    /** Preloader visual styles the admin can pick (blueprint audit §7). */
+    public const PRELOADER_STYLES = ['pulse-logo', 'spinner', 'bars'];
 
     /** Brand default hex palette (mirrors app.css :root — CLAUDE.md Section 2). */
     public const COLOR_DEFAULTS = [
@@ -75,6 +79,7 @@ class BrandSettings
                     'color_action' => (string) Setting::getValue('brand.color_action', ''),
                     'radius' => (string) Setting::getValue('brand.radius', ''),
                     'preloader_enabled' => (bool) Setting::getValue('brand.preloader_enabled', false),
+                    'preloader_style' => (string) Setting::getValue('brand.preloader_style', ''),
                 ];
             } catch (\Throwable) {
                 return self::defaults();
@@ -91,7 +96,7 @@ class BrandSettings
             'agency_light' => '', 'agency_dark' => '',
             'favicon' => '',
             'color_primary' => '', 'color_accent' => '', 'color_navy' => '', 'color_action' => '',
-            'radius' => '', 'preloader_enabled' => false,
+            'radius' => '', 'preloader_enabled' => false, 'preloader_style' => '',
         ];
     }
 
@@ -113,6 +118,14 @@ class BrandSettings
     public static function preloaderEnabled(): bool
     {
         return (bool) (self::current()['preloader_enabled'] ?? false);
+    }
+
+    /** The chosen preloader style; defaults to the pulsing logo (audit §7). */
+    public static function preloaderStyle(): string
+    {
+        $v = (string) (self::current()['preloader_style'] ?? '');
+
+        return in_array($v, self::PRELOADER_STYLES, true) ? $v : 'pulse-logo';
     }
 
     /** True once the admin has overridden any colour or the radius. */

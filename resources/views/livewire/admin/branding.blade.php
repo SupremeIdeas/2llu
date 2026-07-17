@@ -128,6 +128,16 @@
                 </span>
                 <x-ui.switch wire:model="preloader_enabled" label="Show loading screen" class="mb-1" />
             </label>
+            <div class="transition-opacity" x-data x-bind:class="$wire.preloader_enabled ? '' : 'pointer-events-none opacity-50'">
+                <label class="block text-sm font-medium text-slate-800 dark:text-slate-100">Loader style</label>
+                <p class="mt-0.5 mb-1 text-xs text-slate-500 dark:text-slate-400">The <span class="font-medium">pulsing logo</span> uses your uploaded favicon.</p>
+                <select wire:model="preloader_style"
+                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <option value="pulse-logo">Pulsing logo (recommended)</option>
+                    <option value="spinner">Spinner ring</option>
+                    <option value="bars">Bars</option>
+                </select>
+            </div>
         </div>
 
         {{-- Live preview --}}
