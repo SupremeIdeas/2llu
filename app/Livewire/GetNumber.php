@@ -114,6 +114,9 @@ class GetNumber extends Component
             $this->couponNote = 'Coupon applied — you saved $'.number_format($listRetail - $retail, 2).'.';
         }
 
+        // Order-confirmation email (best-effort; never blocks the money path).
+        \App\Support\Mailer::notify($user, new \App\Notifications\OrderPlacedNotification('number', ucfirst($this->service), $retail, 'USD'));
+
         PollSmsOtpJob::dispatch($result->order->id, 'USD');
         $this->orderId = $result->order->id;
     }

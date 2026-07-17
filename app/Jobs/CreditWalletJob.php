@@ -43,9 +43,20 @@ class CreditWalletJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        $wallet->credit($user, $this->amount, $this->currency, [
+        $txn = $wallet->credit($user, $this->amount, $this->currency, [
             'reference' => "topup:{$this->gateway}:{$this->reference}",
             'description' => "Wallet top-up via {$this->gateway}",
         ]);
+
+        // Receipt email — only on a genuinely new credit (idempotent replays
+        // return the existing row and must not re-email). Best-effort.
+        if ($txn->wasRecentlyCreated) {
+            \App\Support\Mailer::notify($user, new \App\Notifications\TopUpReceiptNotification(
+                $this->amount,
+                $this->currency,
+                $this->gateway,
+                (float) $txn->balance_after,
+            ));
+        }
     }
 }

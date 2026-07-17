@@ -195,6 +195,9 @@ class Checkout extends Component
             $coupons->redeem($couponModel, $user, 'esim', $ref, $listRetail, $retail, $couponClamped);
         }
 
+        // Order-confirmation email (best-effort; never blocks the money path).
+        \App\Support\Mailer::notify($user, new \App\Notifications\OrderPlacedNotification('esim', $this->plan->name, $retail, 'USD'));
+
         $this->done = true;
         $this->message = 'Success! Your eSIM is being provisioned and will appear on your dashboard shortly.';
     }

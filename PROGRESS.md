@@ -355,8 +355,31 @@ page, with tooltips) + a plain on/off toggle; the "checkmark" challenge verifies
 on login, register and support; server-side token verification; fails open only
 if disabled.
 
+**Transactional emails (money paths).** ✅ BUILT 2026-07-16 (owner-requested,
+chosen over the risky Module 32 paste-an-element panel). Branded, queued emails
+on the money paths: **order confirmation** (eSIM checkout + number order —
+`OrderPlacedNotification`, shows RETAIL paid only, never cost), **top-up receipt**
+(`CreditWalletJob` after a verified credit — once only, idempotent replays don't
+re-email), and **refund notice** (centralised in `WalletService::refund` so every
+refund path — failed order, OTP timeout, orphan-charge guard — tells the user
+their money is back; only on a new refund row, suppressible via `meta.notify`).
+All dispatched through a new `App\Support\Mailer::notify` helper: gated on
+`MailSettings::isConfigured()` and fully best-effort (try/catch, queued) so a mail
+hiccup can NEVER break the money action. Views `emails/order-placed`, `top-up`,
+`refund` use the branded `<x-mail.layout>`. Tests: `TransactionalEmailsTest` (5);
+suite 305/305; audit clean; email render browser-verified.
+
+**Module 32 paste-an-element panel — DROPPED (deliberate, 2026-07-16).** Assessed
+as a production-stability risk not worth taking: third-party pasted JS fights
+Livewire/Alpine's DOM ownership (morph/snapshot runtime errors on the live site),
+the CSP blocks the external assets such snippets need, global CSS/JS injection is
+an unrollbackable footgun, and it's a stored-XSS vector. The value it was for
+(custom brand-matched UI) is already delivered natively via the vendored+adapted
+Uiverse components (Module 32 parts 1–2). Do not build without a hard rethink to a
+sandboxed, JS-free, self-hosted-assets-only design.
+
 **Still deferred (unchanged):** NaaraCredits loyalty, product reviews, full i18n/
-multi-currency, passkey-management UI, order/top-up/refund event emails.
+multi-currency, passkey-management UI.
 
 > **Ideal asset formats to send (for Module 26):**
 > - **Logos:** SVG preferred (crisp at any size) — product logo + Supreme Ideas

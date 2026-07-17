@@ -56,10 +56,27 @@ class WalletService
         return $this->apply($user, 'credit', $amount, $currency, $meta);
     }
 
-    /** Refund a previous charge back to the wallet. */
+    /**
+     * Refund a previous charge back to the wallet. Sends a best-effort refund
+     * notice email — centralised here so every refund path (failed order, OTP
+     * timeout, orphan-charge guard) tells the user their money is back. The
+     * email dispatches AFTER the transaction commits, only on a genuinely new
+     * refund row (idempotent replays don't re-email), and can be suppressed
+     * with `meta['notify'] === false`.
+     */
     public function refund(User $user, float $amount, string $currency = 'NGN', array $meta = []): WalletTransaction
     {
-        return $this->apply($user, 'refund', $amount, $currency, $meta);
+        $txn = $this->apply($user, 'refund', $amount, $currency, $meta);
+
+        if ($txn->wasRecentlyCreated && ($meta['notify'] ?? true)) {
+            \App\Support\Mailer::notify($user, new \App\Notifications\RefundNotification(
+                $amount,
+                strtoupper($currency),
+                $meta['description'] ?? null,
+            ));
+        }
+
+        return $txn;
     }
 
     /** Credit a referral profit-share reward (store credit). */
