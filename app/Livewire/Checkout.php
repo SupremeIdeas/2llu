@@ -182,6 +182,10 @@ class Checkout extends Component
         } catch (InsufficientBalanceException $e) {
             $this->refundCredits($credits, $user, $creditsSpent, $ref);
             $this->error = 'Your wallet balance is too low. Please top up and try again.';
+            $this->dispatch('nx-toast', variant: 'hero', type: 'error',
+                title: 'Payment failed',
+                message: 'Your wallet balance is too low — you were not charged. Top up and try again.',
+                cta: ['label' => 'Top up wallet', 'href' => route('wallet')]);
 
             return;
         }
@@ -193,6 +197,9 @@ class Checkout extends Component
             // return the redeemed credits too.
             $this->refundCredits($credits, $user, $creditsSpent, $ref);
             $this->error = 'No provider could fulfil this plan right now — your wallet was refunded.';
+            $this->dispatch('nx-toast', variant: 'hero', type: 'error',
+                title: 'Order could not be completed',
+                message: 'No provider could fulfil this plan right now. Your wallet was refunded in full — you were not charged.');
 
             return;
         }
@@ -228,6 +235,9 @@ class Checkout extends Component
                 context: ['user_id' => $user->id, 'plan_id' => $this->plan->id],
             );
             $this->error = 'Something went wrong finalising your order — your wallet was refunded.';
+            $this->dispatch('nx-toast', variant: 'hero', type: 'error',
+                title: 'Order could not be saved',
+                message: 'Something went wrong finalising your order. Your wallet was refunded in full — you were not charged.');
 
             return;
         }
@@ -254,6 +264,14 @@ class Checkout extends Component
         $this->message = $creditsSpent > 0
             ? 'Success! You used '.number_format($creditsSpent, 0).' NaaraCredits. Your eSIM is being provisioned and will appear on your dashboard shortly.'
             : 'Success! Your eSIM is being provisioned and will appear on your dashboard shortly.';
+
+        // Hero toast — dispatched only now, after the order committed (server-anchored).
+        $this->dispatch('nx-toast', variant: 'hero', type: 'success',
+            title: 'Order confirmed',
+            message: $creditsSpent > 0
+                ? number_format($creditsSpent, 0).' NaaraCredits applied. Your eSIM is being provisioned.'
+                : 'Your eSIM is being provisioned and will appear on your dashboard shortly.',
+            cta: ['label' => 'View my eSIM', 'href' => route('dashboard')]);
     }
 
     /** Return redeemed credits to the user after a failed/aborted purchase. */

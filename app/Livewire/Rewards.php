@@ -25,10 +25,16 @@ class Rewards extends Component
     public function checkIn(CreditService $credits): void
     {
         $earned = $credits->checkIn(Auth::user()->fresh());
-        $this->flash = $earned > 0
-            ? "You earned {$earned} NaaraCredits. Come back tomorrow for more!"
-            : 'You’ve already checked in — come back later for your next reward.';
-        $this->dispatch('nx-toast', type: $earned > 0 ? 'success' : 'info', message: $this->flash);
+        if ($earned > 0) {
+            $this->flash = "You earned {$earned} NaaraCredits. Come back tomorrow for more!";
+            // Hero toast — dispatched only after the credits are committed.
+            $this->dispatch('nx-toast', variant: 'hero', type: 'success',
+                title: 'Reward earned',
+                message: "+{$earned} NaaraCredits added to your balance. Come back tomorrow for more!");
+        } else {
+            $this->flash = 'You’ve already checked in — come back later for your next reward.';
+            $this->dispatch('nx-toast', type: 'info', message: $this->flash);
+        }
     }
 
     /** Signed offerwall URL for this user (the network attributes + posts back). */

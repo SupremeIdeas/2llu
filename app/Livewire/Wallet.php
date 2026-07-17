@@ -36,6 +36,9 @@ class Wallet extends Component
                 ->initialize(auth()->user(), (float) $this->amount, $this->currency);
         } catch (\Throwable $e) {
             $this->error = 'We could not start the payment. Please try again.';
+            $this->dispatch('nx-toast', variant: 'hero', type: 'error',
+                title: 'Top-up could not start',
+                message: 'We couldn’t reach the payment provider — you were not charged. Please try again.');
 
             return null;
         }

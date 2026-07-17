@@ -194,10 +194,10 @@ checklist must include setting every webhook secret before going live.
 
 | Item | State | Note |
 | --- | --- | --- |
-| **Spend NaaraCredits at checkout** (margin-capped) | deferred | ships with the F1 refund fix as one money-path change |
+| **Spend NaaraCredits at checkout** (margin-capped) | **done** | shipped with the F1 refund fix as one money-path change |
 | **Admin-overridable payment-gateway icons** | to build | see §5 (requested) |
 | **Animated favicon preloader** | to build | see §7 (requested) |
-| **Big success/failure transaction toaster** | to build | see §8 (requested) |
+| **Big success/failure transaction toaster** | **done** | hero variant on the one toast engine; wired into checkout, numbers, credits & top-up — see §8 |
 | Real logo image files | pending owner | upload via Admin → Branding (SVG or transparent PNG) |
 | Product reviews / ratings | deferred | UI-kit star rating exists |
 | Full i18n + multi-currency | deferred | NGN/USD already live |
@@ -401,6 +401,32 @@ layout — used today for admin saves. It is a **small** corner toast.
 **Acceptance:** every money action ends in exactly one hero toast reflecting the
 true committed outcome; failures are sticky and reassuring ("you were not
 charged"); success auto-dismisses; SVG glyphs only (no emoji); dark-mode + reduced-motion honoured.
+
+**Built (this pass).** The existing `<x-ui.toast-stack>` engine now carries a
+second shape — a centred hero card — behind a `variant: 'hero'` flag, so it is
+still one engine, one dispatch (`nx-toast`). Drawn SVG glyphs (animated check /
+cross / spinner), bold headline + detail + optional CTA, `role="alert"` for
+errors / `role="status"` otherwise, dark-mode + `prefers-reduced-motion`
+parity. Success/info auto-dismiss (~5.5 s); errors stay until dismissed.
+Server-anchored dispatches were wired into:
+
+- **eSIM checkout** — success ("Order confirmed" + *View my eSIM*), and every
+  refunded-failure branch (low balance, all-providers-failed, order-save
+  failure) with "you were not charged" copy.
+- **Number checkout** — success ("Number reserved"), low balance, and the
+  reserve-failed-then-refunded branch.
+- **NaaraCredits check-in** — hero success on the credits actually committed.
+- **Wallet top-up** — hero error when the gateway can't be reached (the user
+  was not charged).
+
+**Deliberate exclusion — top-up *success*.** A successful top-up is credited
+**asynchronously by the payment webhook**, not on the browser's return from the
+gateway. Firing a "success" hero on return would be a *false* success (the money
+may not be credited yet), which violates the server-anchored rule above. Top-up
+success therefore stays confirmed by email + the live wallet balance, exactly as
+the acceptance ("never a false success") requires. If a real-time success toast
+is wanted later, the correct place to originate it is the webhook (e.g. via a
+broadcast/echo channel), never the redirect return.
 
 ---
 
