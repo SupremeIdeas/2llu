@@ -7,6 +7,53 @@
         </div>
     @endif
 
+    {{-- Public pricing page (Module 29) --}}
+    <div class="mb-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <h2 class="mb-1 flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100">
+            <x-icon name="globe" class="h-5 w-5 text-primary" /> Public pricing page
+        </h2>
+        <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">What visitors see at <a href="{{ route('pricing') }}" class="text-primary hover:underline" target="_blank">/pricing</a>. Real plans need a live eSIM provider key; until then the estimate tiers keep the page honest.</p>
+
+        <form wire:submit="savePublicPricing" class="space-y-4">
+            <div class="max-w-sm">
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Display mode</label>
+                <select wire:model="public_mode" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <option value="auto">Auto — live plans when a provider is connected, else estimates</option>
+                    <option value="live">Always live plans (falls back to estimates if none)</option>
+                    <option value="estimate">Always estimates (“from” pricing)</option>
+                </select>
+            </div>
+
+            <div>
+                <div class="mb-2 flex items-center justify-between">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Estimate tiers</label>
+                    <button type="button" wire:click="addTier" @disabled(count($estimate_tiers) >= 6)
+                            class="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">+ Add tier</button>
+                </div>
+                <div class="space-y-3">
+                    @foreach ($estimate_tiers as $i => $tier)
+                        <div wire:key="tier-{{ $i }}" class="grid gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-12 dark:border-[#2D4060]">
+                            <input wire:model="estimate_tiers.{{ $i }}.name" placeholder="Name" class="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm sm:col-span-2 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            <input wire:model="estimate_tiers.{{ $i }}.from_usd" type="number" step="0.01" placeholder="From $" class="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm sm:col-span-1 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            <input wire:model="estimate_tiers.{{ $i }}.data" placeholder="3 GB" class="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm sm:col-span-1 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            <input wire:model="estimate_tiers.{{ $i }}.validity" placeholder="30 days" class="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm sm:col-span-2 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            <input wire:model="estimate_tiers.{{ $i }}.blurb" placeholder="Short blurb" class="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm sm:col-span-5 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            <button type="button" wire:click="removeTier({{ $i }})" class="rounded-lg p-1.5 text-red-500 hover:bg-red-50 sm:col-span-1 dark:hover:bg-red-950/40" aria-label="Remove tier"><x-icon name="trash" class="h-4 w-4" /></button>
+                        </div>
+                    @endforeach
+                </div>
+                @error('estimate_tiers.*.name') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                @error('estimate_tiers.*.from_usd') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+            </div>
+
+            <button type="submit" wire:loading.attr="disabled" wire:target="savePublicPricing"
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                <span wire:loading.remove wire:target="savePublicPricing" class="inline-flex items-center gap-2"><x-icon name="check" class="h-4 w-4" /> Save public pricing</span>
+                <span wire:loading wire:target="savePublicPricing" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Saving…</span>
+            </button>
+        </form>
+    </div>
+
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {{-- Global settings --}}
         <div class="lg:col-span-1">

@@ -12,6 +12,7 @@
 
                 <div class="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex dark:text-slate-300">
                     <a href="{{ route('how-it-works') }}" class="transition hover:text-primary">How It Works</a>
+                    <a href="{{ route('pricing') }}" class="transition hover:text-primary">Pricing</a>
                     <a href="{{ route('about') }}" class="transition hover:text-primary">About</a>
                     <a href="{{ route('faq') }}" class="transition hover:text-primary">FAQ</a>
                     <a href="{{ route('contact') }}" class="transition hover:text-primary">Contact</a>

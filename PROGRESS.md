@@ -198,11 +198,30 @@ with an admin-set **media panel** (video / WebP / JPEG) on one side; move
 "**Supreme Ideas Agency**" + **legal quick-links** to the bottom of auth + legal
 pages; admin-assignable **footer navigation + custom links**.
 
-**Module 29 — Dynamic pricing page + AI pricing education.** When eSIM/number API
-keys are live, real retail plans render on the public pricing page (comparison
-table + knowledgeable tips); admin can **override to an estimate-only** display;
-**AI-assisted live education** explains what each plan/price means for the user
-long-term. New/returning users flow from a chosen plan into checkout.
+**Module 29 — Dynamic pricing page + AI pricing education.** ✅ BUILT 2026-07-16.
+Public **`/pricing`** page (marketing layout, `PricingPage` Livewire). `PricingDisplay`
+resolves the mode: **auto** (real active plans when an eSIM provider key is live
+AND the catalogue has plans, else estimate tiers), **live** (always real, falls
+back to estimate if none), or **estimate** (always “from” tiers) — admin-set.
+Live plans render as a comparison grid via `display_price` only (**cost never
+surfaced** — money-safety verified in tests); featured plan gets a “Most popular”
+badge; CTA sends a guest to register, a signed-in user to checkout. Estimate mode
+shows admin-authored “from” tiers with an honest indicative banner. **AI-assisted
+education**: each plan has a “What does this mean for me?” action → `PricingEducator`,
+which uses the Anthropic model when `services.anthropic.api_key` is set (cached
+per plan signature, cost never passed in) and a knowledgeable **deterministic
+explainer otherwise** (usage-profile maths from `DataEstimator` — how long the
+data realistically lasts + practical tips), so it works with or without keys.
+**Admin → Pricing** gains a “Public pricing page” card: mode selector + editable
+estimate tiers. Pricing added to the marketing nav; the home pricing teaser CTA
+now points at `/pricing`. Tests: `PublicPricingTest` (7); suite 277/277; audit
+clean; browser-verified. _Note:_ this also delivers the home for the deferred
+AnthonyPreite/Cobp pricing-card look (Module 32 part 2 backlog). _Original scope:_
+When eSIM/number API keys are live, real retail plans render on the public pricing
+page (comparison table + knowledgeable tips); admin can **override to an
+estimate-only** display; **AI-assisted live education** explains what each
+plan/price means for the user long-term. New/returning users flow from a chosen
+plan into checkout.
 
 **Module 30 — Legal pages CMS + Blog.** Admin-editable legal pages (privacy,
 terms, refund, cookies, data-deletion) with accurate best-practice defaults — for

@@ -38,6 +38,9 @@ Route::view('/legal', 'pages.legal')->name('legal');
 Route::view('/faq', 'pages.faq')->name('faq');
 Route::view('/refund-policy', 'pages.refund-policy')->name('refund-policy');
 
+// Public pricing page (Module 29) — real plans when live, estimate tiers before.
+Route::get('/pricing', \App\Livewire\PricingPage::class)->name('pricing');
+
 // Authenticated customer app (blueprint Sections 4, 12, 14, 16). `active`
 // confines a self-paused account to the account page until it reactivates
 // (Section 26.1).

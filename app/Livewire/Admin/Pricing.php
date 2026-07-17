@@ -27,6 +27,11 @@ class Pricing extends Component
 
     public $minimum_profit_usd;
 
+    // Public pricing page (Module 29)
+    public string $public_mode = 'auto';
+
+    public array $estimate_tiers = [];
+
     // Per-plan edit buffer
     public ?int $editingPlanId = null;
 
@@ -44,6 +49,38 @@ class Pricing extends Component
     {
         $this->default_markup_pct = Setting::getValue('pricing.default_markup_pct', 30);
         $this->minimum_profit_usd = Setting::getValue('pricing.minimum_profit_usd', 0.50);
+        $this->public_mode = (string) Setting::getValue('pricing.public_mode', 'auto');
+        $this->estimate_tiers = \App\Support\PricingDisplay::estimateTiers();
+    }
+
+    public function savePublicPricing(): void
+    {
+        $this->validate([
+            'public_mode' => 'required|in:auto,live,estimate',
+            'estimate_tiers' => 'array|max:6',
+            'estimate_tiers.*.name' => 'required|string|max:40',
+            'estimate_tiers.*.from_usd' => 'required|numeric|min:0',
+            'estimate_tiers.*.data' => 'required|string|max:20',
+            'estimate_tiers.*.validity' => 'required|string|max:20',
+            'estimate_tiers.*.blurb' => 'required|string|max:200',
+        ]);
+
+        Setting::setValue('pricing.public_mode', $this->public_mode, 'pricing');
+        Setting::setValue('pricing.estimate_tiers', array_values($this->estimate_tiers), 'pricing');
+
+        $this->audit('pricing.public_updated', null, ['public_mode' => $this->public_mode]);
+        $this->saved = 'Public pricing page settings saved.';
+    }
+
+    public function addTier(): void
+    {
+        $this->estimate_tiers[] = ['name' => '', 'from_usd' => 0, 'data' => '', 'validity' => '', 'blurb' => ''];
+    }
+
+    public function removeTier(int $i): void
+    {
+        unset($this->estimate_tiers[$i]);
+        $this->estimate_tiers = array_values($this->estimate_tiers);
     }
 
     public function saveGlobal(): void

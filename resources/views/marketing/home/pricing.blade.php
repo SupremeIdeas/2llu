@@ -10,7 +10,7 @@
     </p>
 
     <div data-reveal class="mt-8">
-        <a href="{{ auth()->check() ? route('catalogue') : route('register') }}" class="nx-btn nx-btn--primary !px-8 !py-3">{{ $s['cta'] }}</a>
+        <a href="{{ route('pricing') }}" class="nx-btn nx-btn--primary !px-8 !py-3">{{ $s['cta'] }}</a>
         <p class="mt-3 text-xs text-slate-400">{{ $s['trust'] }}</p>
     </div>
 </section>
