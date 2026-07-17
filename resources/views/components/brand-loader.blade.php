@@ -32,6 +32,6 @@
         <span class="nx-loader" style="--size:{{ $size / 16 }}rem"></span>
     @endif
     @if ($label)
-        <span class="text-sm font-medium text-slate-600 dark:text-slate-300">{{ $label }}</span>
+        <span class="text-sm font-medium text-slate-600 dark:text-slate-100">{{ $label }}</span>
     @endif
 </div>
