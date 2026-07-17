@@ -1,6 +1,19 @@
 <div>
     <h1 class="mb-6 text-2xl font-bold text-slate-900 dark:text-slate-100">Pricing</h1>
 
+    {{-- AI Pricing Architect entry point (Plan Price with Claude). --}}
+    <a href="{{ route('admin.pricing-architect') }}"
+       class="mb-6 flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 transition hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10">
+        <span class="flex items-center gap-3">
+            <x-icon name="zap" class="h-6 w-6 shrink-0 text-primary dark:text-teal-300" />
+            <span>
+                <span class="block text-sm font-semibold text-slate-900 dark:text-slate-100">Let Claude price everything for you</span>
+                <span class="block text-xs text-slate-500 dark:text-slate-400">Analyse provider costs + competitors, propose the most profitable retail prices, and apply on your approval — always above your profit floor.</span>
+            </span>
+        </span>
+        <x-icon name="chevron-right" class="h-5 w-5 shrink-0 text-primary dark:text-teal-300" />
+    </a>
+
     @if ($saved)
         <div class="mb-6 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
             <x-icon name="badge-check" class="h-4 w-4" /> {{ $saved }}

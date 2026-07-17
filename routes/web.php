@@ -101,6 +101,7 @@ Route::middleware(['admin', 'throttle:admin'])
         // Admin configuration — super_admin & admin only (staff excluded).
         Route::middleware('role:super_admin|admin')->group(function () {
             Route::get('/pricing', \App\Livewire\Admin\Pricing::class)->name('pricing');
+            Route::get('/pricing/architect', \App\Livewire\Admin\PricingArchitect::class)->name('pricing-architect');
             Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
             Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
             Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');

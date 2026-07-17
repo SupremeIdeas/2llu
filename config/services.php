@@ -128,10 +128,13 @@ return [
         'base_url' => env('ELEVENLABS_BASE_URL', 'https://api.elevenlabs.io/v1'),
     ],
 
-    // Claude-assisted maintenance loop (blueprint Section 29).
+    // Claude-assisted maintenance loop (blueprint Section 29) + the AI Pricing
+    // Architect (Plan Price with Claude). Both light up only when the key is set.
     'anthropic' => [
         'api_key' => env('ANTHROPIC_API_KEY'),
         'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-5'),
+        'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com/v1'),
+        'version' => env('ANTHROPIC_VERSION', '2023-06-01'),
     ],
 
     // Fine-grained GitHub token scoped to THIS repo only, for opening

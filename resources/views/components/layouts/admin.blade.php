@@ -18,6 +18,7 @@
             ? ['route' => 'admin.staff', 'label' => 'Staff', 'icon' => 'id-card']
             : ['route' => 'admin.errors', 'label' => 'Errors', 'icon' => 'file-text'];
 
+        $more[] = ['route' => 'admin.pricing-architect', 'label' => 'Price with Claude', 'icon' => 'zap'];
         $more[] = ['route' => 'admin.banners', 'label' => 'Banners', 'icon' => 'image'];
         $more[] = ['route' => 'admin.coupons', 'label' => 'Coupons', 'icon' => 'gift'];
         $more[] = ['route' => 'admin.credits', 'label' => 'NaaraCredits', 'icon' => 'gift'];

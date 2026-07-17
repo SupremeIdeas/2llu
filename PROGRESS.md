@@ -9,6 +9,32 @@
 
 ## DONE
 
+### ✅ AI Pricing Architect — "Plan Price with Claude"  — built 2026-07-17 (owner vision)
+A dedicated layer over the margin controls where Claude analyses live provider
+costs + current retail and PROPOSES the most profitable, competitive prices for
+admin approval. `AnthropicClient` (lights up only when the admin's Anthropic key
+is active), `PricingArchitect` (snapshot → propose → apply → always-on margin
+`monitor`), `GeneratePricingProposalJob` (queued, rule 8), `PricingProposal` +
+`PricingProposalLine` models, and Admin → **Price with Claude** (`/adminmaster/pricing/architect`).
+**Money-safety:** Claude only proposes; **MarginGuard is the law** — every proposed
+price is re-clamped to ≥ cost + minimum profit on generation AND again on apply,
+so no proposal (however low or tampered) can ever sell below the floor. The
+recommended coupon / NaaraCredit caps are guidance ceilings (still floor-clamped
+at redemption). Locked by `tests/Feature/PricingArchitectTest.php` (7 tests) incl.
+a below-floor proposal clamped up, a tampered line re-clamped on apply, the
+disabled-without-key state, and the analyse→approve UI flow. Cost stays admin-only.
+
+### ✅ Finishing touches (post-audit) — 2026-07-17
+- **Money-path pass:** F1 fix (`ProviderRouter` refunds the ACTUAL charged amount,
+  not list price) + margin-capped **NaaraCredit redemption at checkout**
+  (`CreditService::quoteRedemption`, spent before debit, refunded on every failure).
+  `tests/Feature/CreditRedemptionTest.php` (4).
+- **Transaction hero toaster:** big server-anchored success/failure toast on the
+  one toast engine (`variant:'hero'`), wired into checkout, numbers, credits &
+  top-up. `tests/Feature/HeroToastTest.php` (3).
+- **Animated favicon preloader** (pulse-logo) + scoped `<x-brand-loader>` action
+  overlay + admin loader-style control; OFF by default. `BrandThemeTest` (+3).
+
 ### ✅ Module 1 — Foundation  (Sections 1, 3)  — passed acceptance 2026-07-12
 Laravel 11 (11.54) installed; Sanctum (api guard + `routes/api.php`) + Fortify (2FA/TOTP + email verification) + Spatie Permission (super_admin/admin/staff/user seeded); Redis driving queue/cache/session (phpredis); Horizon installed with an admin-only `viewHorizon` gate; Wasabi S3 disk (private, default disk); Tailwind `darkMode:'class'` with the brand palette + no-flash pre-paint theme script + `<x-theme-toggle>` (inline SVG, no emoji).
 **Acceptance — all green:**
