@@ -198,6 +198,14 @@ class Checkout extends Component
         // Order-confirmation email (best-effort; never blocks the money path).
         \App\Support\Mailer::notify($user, new \App\Notifications\OrderPlacedNotification('esim', $this->plan->name, $retail, 'USD'));
 
+        // First-purchase NaaraCredits bonus (loyalty; idempotent, best-effort).
+        app(\App\Services\Credits\CreditService::class)->grantOnce(
+            $user,
+            (float) \App\Support\CreditSettings::get('first_purchase_bonus', 0),
+            'first_purchase',
+            'First purchase bonus',
+        );
+
         $this->done = true;
         $this->message = 'Success! Your eSIM is being provisioned and will appear on your dashboard shortly.';
     }

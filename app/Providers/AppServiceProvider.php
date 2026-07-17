@@ -126,6 +126,9 @@ class AppServiceProvider extends ServiceProvider
             if (\App\Support\LegalContent::isLegalKey($setting->key)) {
                 \App\Support\LegalContent::flush();
             }
+            if (\App\Support\CreditSettings::isCreditKey($setting->key)) {
+                \App\Support\CreditSettings::flush();
+            }
         });
 
         // Banner cache follows the Banner model itself (Module 31).

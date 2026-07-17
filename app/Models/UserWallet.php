@@ -13,6 +13,8 @@ class UserWallet extends Model
         'usd_balance',
         'total_deposits',
         'total_spent',
+        'naara_credits',
+        'last_checkin_at',
     ];
 
     protected function casts(): array
@@ -22,6 +24,8 @@ class UserWallet extends Model
             'usd_balance' => 'decimal:4',
             'total_deposits' => 'decimal:2',
             'total_spent' => 'decimal:2',
+            'naara_credits' => 'decimal:2',
+            'last_checkin_at' => 'datetime',
         ];
     }
 

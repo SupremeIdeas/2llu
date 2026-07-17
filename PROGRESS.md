@@ -378,8 +378,33 @@ an unrollbackable footgun, and it's a stored-XSS vector. The value it was for
 Uiverse components (Module 32 parts 1–2). Do not build without a hard rethink to a
 sandboxed, JS-free, self-hosted-assets-only design.
 
-**Still deferred (unchanged):** NaaraCredits loyalty, product reviews, full i18n/
-multi-currency, passkey-management UI.
+**NaaraCredits loyalty + rewards.** ✅ EARNING BUILT 2026-07-16 (owner vision).
+A loyalty currency separate from the money wallet (admin rate, default 100 = $1).
+`CreditService` owns all balance changes with the money-wallet discipline
+(per-user lock + DB transaction + `credit_ledger` row + idempotent by reference).
+Earn methods: **signup bonus** (CreateNewUser), **first-purchase bonus**
+(Checkout + GetNumber, idempotent), **daily check-in** (cooldown), and
+**postback-verified rewarded ads**. **Rewards area** (`/rewards`, opt-in): balance
+card (+ USD value), check-in, referral link, and a "Watch & earn" launcher that
+only appears when the admin configures a compliant provider — a normal customer
+never sees an ad. **Admin → NaaraCredits**: rate, per-task amounts, redemption
+cap, and the ad provider, with rich tooltips (incl. the explicit "use a rewarded/
+offerwall network, NOT AdSense" guidance + the exact postback URL + HMAC recipe).
+**Compliance/anti-fraud, deliberately:** rewarded-ad credit is granted ONLY via
+`/webhooks/offerwall`, HMAC-verified (hash_equals), idempotent on the network's
+txn id, with a per-user daily cap. The requested "auto-click the ad on cancel"
+was **refused and not built** — that is click fraud that gets the ad account
+permanently banned; the postback design earns legitimately instead. Tests:
+`NaaraCreditsTest` (10); suite 315/315; audit clean; browser-verified.
+**Deferred to a focused follow-up:** spending credits AT CHECKOUT (margin-capped
+redemption). Held back because doing it safely also requires fixing a latent
+detail in `eSIM/ProviderRouter::orderPlan` — on provider failure it refunds
+`final_retail_usd` (full price) rather than the amount actually charged, which
+already mildly over-refunds when a coupon was applied. Redemption + that
+refund-amount fix should ship together as one careful money-path change.
+
+**Still deferred (unchanged):** product reviews, full i18n/multi-currency,
+passkey-management UI.
 
 > **Ideal asset formats to send (for Module 26):**
 > - **Logos:** SVG preferred (crisp at any size) — product logo + Supreme Ideas

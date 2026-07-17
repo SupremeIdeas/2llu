@@ -149,4 +149,13 @@ return [
         'verify_url' => env('TURNSTILE_VERIFY_URL', 'https://challenges.cloudflare.com/turnstile/v0/siteverify'),
     ],
 
+    // Rewarded-ad / offerwall network for the NaaraCredits rewards area (loyalty
+    // module). Rewards are granted ONLY via the network's server-to-server
+    // postback, HMAC-verified with this secret — never self-reported by the
+    // browser. Use a compliant rewarded/offerwall provider (AdGate, AdGem,
+    // BitLabs, CPX, etc.), NOT AdSense (which forbids incentivised views).
+    'offerwall' => [
+        'postback_secret' => env('OFFERWALL_POSTBACK_SECRET'),
+    ],
+
 ];

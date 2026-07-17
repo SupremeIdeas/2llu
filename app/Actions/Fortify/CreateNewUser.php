@@ -49,6 +49,14 @@ class CreateNewUser implements CreatesNewUsers
             // swallow — welcome mail is best-effort.
         }
 
+        // NaaraCredits signup bonus (loyalty module) — best-effort, idempotent.
+        app(\App\Services\Credits\CreditService::class)->grantOnce(
+            $user,
+            (float) \App\Support\CreditSettings::get('signup_bonus', 0),
+            'signup',
+            'Welcome bonus',
+        );
+
         return $user;
     }
 }

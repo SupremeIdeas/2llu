@@ -65,6 +65,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/numbers', GetNumber::class)->name('numbers');
         Route::get('/referrals', Referrals::class)->name('referrals');
 
+        // NaaraCredits rewards area (loyalty module) — opt-in earning.
+        Route::get('/rewards', \App\Livewire\Rewards::class)->name('rewards');
+
         // Data estimator (blueprint Section 32).
         Route::get('/data-estimator', \App\Livewire\DataEstimator::class)->name('data-estimator');
     });
@@ -108,6 +111,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
             Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');
+            Route::get('/credits', \App\Livewire\Admin\Credits::class)->name('credits');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
             Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
         });
@@ -138,3 +142,8 @@ Route::post('/webhooks/getatext', GetatextWebhookController::class)
 // idempotent wallet credit.
 Route::post('/webhooks/payments/{gateway}', PaymentWebhookController::class)
     ->name('webhooks.payments');
+
+// Rewarded-ad / offerwall postback (loyalty module): HMAC-verified,
+// idempotent credit grant. Both verbs — networks vary.
+Route::match(['get', 'post'], '/webhooks/offerwall', \App\Http\Controllers\Webhooks\OfferwallPostbackController::class)
+    ->name('webhooks.offerwall');
