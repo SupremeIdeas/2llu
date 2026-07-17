@@ -4,6 +4,7 @@
     'brandLabel' => 'NaaraSim',
     'brandRoute' => null,
     'brandIcon' => 'signal',
+    'promo' => false,     // customer shell only: promo card / banner in the More sheet
 ])
 
 @php
@@ -97,6 +98,26 @@
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">More</h2>
                 <button type="button" @click="moreOpen = false" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"><x-icon name="x" class="h-5 w-5" /></button>
             </div>
+
+            @if ($promo)
+                @php($menuBanners = \App\Support\Banners::for('menu_sheet'))
+                @if ($menuBanners->isNotEmpty())
+                    <x-banner-zone placement="menu_sheet" class="mb-4" />
+                @else
+                    {{-- Default promo (Module 32 pick — ayman-ashine floating-light
+                         card, rebuilt on brand): shown until the admin publishes a
+                         banner for this zone. --}}
+                    <div class="nx-float-card mb-4" aria-hidden="true">
+                        <span class="nx-float-card__light"></span>
+                        <span class="nx-float-card__ring"></span>
+                        <div class="relative">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">{{ \App\Support\BrandSettings::name() }}</p>
+                            <p class="mt-1.5 font-display text-lg font-bold leading-snug text-white">Stay Connected. No&nbsp;Borders. No&nbsp;Swaps.</p>
+                            <p class="mt-1 text-xs text-slate-300">eSIM data + numbers for 190+ countries, in one wallet.</p>
+                        </div>
+                    </div>
+                @endif
+            @endif
 
             <div class="grid grid-cols-4 gap-3">
                 @foreach ($more as $item)

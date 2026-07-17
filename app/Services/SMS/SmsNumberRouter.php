@@ -53,7 +53,10 @@ class SmsNumberRouter
                 // there is no pre-charge, fall back to a fresh retail quote.
                 $retail = $request->charged ?? $this->pricing->calculateSmsRetail($cost, $provider);
                 $minProfit = (float) Setting::getValue('pricing.sms_min_profit', 0.01);
-                $maxCost = $retail - $minProfit;
+                // Round to the money columns' 4-dp precision so a charge sitting
+                // exactly at cost+minProfit (e.g. a floor-clamped coupon price)
+                // isn't rejected by float noise (0.21 - 0.01 = 0.19999…).
+                $maxCost = round($retail - $minProfit, 4);
                 if ($cost > $maxCost && $cost > 0) {
                     $errors[$provider] = 'cost_exceeds_margin';
                     continue;

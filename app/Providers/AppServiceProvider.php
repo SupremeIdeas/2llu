@@ -122,6 +122,10 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
+        // Banner cache follows the Banner model itself (Module 31).
+        \App\Models\Banner::saved(fn () => \App\Support\Banners::flush());
+        \App\Models\Banner::deleted(fn () => \App\Support\Banners::flush());
+
         // Rate limits (blueprint Section 19.2): 300/min authenticated, 60/min
         // public; 10/min for order actions (enforced in the checkout components).
         RateLimiter::for('api', fn (Request $request) => $request->user()

@@ -8,6 +8,7 @@ use App\Jobs\AlertAdminJob;
 use App\Models\EsimOrder;
 use App\Models\EsimPlan;
 use App\Services\eSIM\ProviderRouter;
+use App\Services\Pricing\CouponEngine;
 use App\Services\Wallet\WalletService;
 use App\Support\Niche\DeviceCompat;
 use App\Support\Niche\LpaActivation;
@@ -42,9 +43,40 @@ class Checkout extends Component
 
     public bool $deviceConfirmed = false; // user confirmed their device supports eSIM
 
+    /** Coupon (Module 31). Only the discounted RETAIL is ever shown — never cost. */
+    public string $coupon = '';
+
+    public ?float $couponPrice = null;   // discounted retail (USD)
+
+    public ?float $couponSaved = null;   // savings vs list retail (USD)
+
+    public ?string $couponError = null;
+
     public function mount(EsimPlan $plan): void
     {
         $this->plan = $plan;
+    }
+
+    public function applyCoupon(CouponEngine $coupons): void
+    {
+        $this->couponError = null;
+        $this->couponPrice = $this->couponSaved = null;
+
+        $model = $coupons->usable($this->coupon, auth()->user(), 'esim');
+        if (! $model) {
+            $this->couponError = 'That coupon code is not valid for this purchase.';
+
+            return;
+        }
+
+        $quote = $coupons->price($model, (float) $this->plan->final_retail_usd, (float) $this->plan->cost_price_usd, 'esim');
+        $this->couponPrice = $quote['price'];
+        $this->couponSaved = $quote['saved'];
+    }
+
+    public function removeCoupon(): void
+    {
+        $this->reset('coupon', 'couponPrice', 'couponSaved', 'couponError');
     }
 
     public function checkDevice(): void
@@ -60,7 +92,7 @@ class Checkout extends Component
         }
     }
 
-    public function purchase(WalletService $wallet, ProviderRouter $router): void
+    public function purchase(WalletService $wallet, ProviderRouter $router, CouponEngine $coupons): void
     {
         $user = auth()->user();
 
@@ -82,6 +114,25 @@ class Checkout extends Component
         RateLimiter::hit($key, 60);
 
         $retail = (float) $this->plan->final_retail_usd;
+
+        // Coupon is re-resolved server-side at purchase time — the preview shown
+        // by applyCoupon() is never trusted. CouponEngine clamps the discount to
+        // cost + minimum profit, so no code can ever charge below wholesale.
+        $couponModel = null;
+        $couponClamped = false;
+        if (trim($this->coupon) !== '') {
+            $couponModel = $coupons->usable($this->coupon, $user, 'esim');
+            if (! $couponModel) {
+                $this->error = 'That coupon code is no longer valid. Remove it or try another.';
+
+                return;
+            }
+            $quote = $coupons->price($couponModel, $retail, (float) $this->plan->cost_price_usd, 'esim');
+            $listRetail = $retail;
+            $retail = $quote['price'];
+            $couponClamped = $quote['clamped'];
+        }
+
         $ref = "esim-checkout:{$this->plan->id}:{$user->id}:".now()->timestamp;
 
         try {
@@ -136,6 +187,12 @@ class Checkout extends Component
             $this->error = 'Something went wrong finalising your order — your wallet was refunded.';
 
             return;
+        }
+
+        // Redemption is recorded only after the order persisted, so an
+        // abandoned/refunded purchase never burns the user's coupon use.
+        if ($couponModel) {
+            $coupons->redeem($couponModel, $user, 'esim', $ref, $listRetail, $retail, $couponClamped);
         }
 
         $this->done = true;

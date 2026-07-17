@@ -18,6 +18,8 @@
             ? ['route' => 'admin.staff', 'label' => 'Staff', 'icon' => 'id-card']
             : ['route' => 'admin.errors', 'label' => 'Errors', 'icon' => 'file-text'];
 
+        $more[] = ['route' => 'admin.banners', 'label' => 'Banners', 'icon' => 'image'];
+        $more[] = ['route' => 'admin.coupons', 'label' => 'Coupons', 'icon' => 'gift'];
         $more[] = ['route' => 'admin.branding', 'label' => 'Branding', 'icon' => 'image'];
         $more[] = ['route' => 'admin.site', 'label' => 'Pages', 'icon' => 'file-text'];
         $more[] = ['route' => 'admin.service-icons', 'label' => 'Service icons', 'icon' => 'grid'];

@@ -6,6 +6,7 @@ use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\SmsException;
 use App\Jobs\PollSmsOtpJob;
 use App\Models\SmsOrder;
+use App\Services\Pricing\CouponEngine;
 use App\Services\SMS\NumberRequest;
 use App\Services\SMS\SmsNumberRouter;
 use App\Services\Wallet\WalletService;
@@ -31,6 +32,11 @@ class GetNumber extends Component
 
     public ?string $error = null;
 
+    /** Coupon (Module 31) — applied to the live retail quote, floor-clamped. */
+    public string $coupon = '';
+
+    public ?string $couponNote = null;
+
     /** Curated list until provider country/service sync (5sim /guest/*) runs. */
     public array $countries = [
         'usa' => 'United States', 'nigeria' => 'Nigeria', 'ghana' => 'Ghana',
@@ -39,9 +45,10 @@ class GetNumber extends Component
 
     public array $services = ['whatsapp', 'google', 'telegram', 'facebook', 'instagram', 'tiktok'];
 
-    public function order(WalletService $wallet, SmsNumberRouter $router): void
+    public function order(WalletService $wallet, SmsNumberRouter $router, CouponEngine $coupons): void
     {
         $this->error = null;
+        $this->couponNote = null;
         $user = auth()->user();
 
         // Order rate limit: 10/min (blueprint Section 19.2).
@@ -62,6 +69,24 @@ class GetNumber extends Component
         }
 
         $retail = $quote['retail'];
+        $listRetail = $retail;
+
+        // Coupon (Module 31): re-validated here, priced off the LIVE quote and
+        // clamped by CouponEngine so the charge never dips below cost + profit.
+        $couponModel = null;
+        $couponClamped = false;
+        if (trim($this->coupon) !== '') {
+            $couponModel = $coupons->usable($this->coupon, $user, 'number');
+            if (! $couponModel) {
+                $this->error = 'That coupon code is not valid for this purchase. Remove it or try another.';
+
+                return;
+            }
+            $priced = $coupons->price($couponModel, $retail, (float) $quote['cost'], 'number');
+            $retail = $priced['price'];
+            $couponClamped = $priced['clamped'];
+        }
+
         $ref = "number-checkout:{$user->id}:".now()->timestamp;
 
         try {
@@ -83,13 +108,19 @@ class GetNumber extends Component
             return;
         }
 
+        // Coupon is burned only once the number is actually reserved.
+        if ($couponModel) {
+            $coupons->redeem($couponModel, $user, 'number', $ref, $listRetail, $retail, $couponClamped);
+            $this->couponNote = 'Coupon applied — you saved $'.number_format($listRetail - $retail, 2).'.';
+        }
+
         PollSmsOtpJob::dispatch($result->order->id, 'USD');
         $this->orderId = $result->order->id;
     }
 
     public function reset_(): void
     {
-        $this->reset('orderId', 'error');
+        $this->reset('orderId', 'error', 'coupon', 'couponNote');
     }
 
     public function render()

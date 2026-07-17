@@ -18,6 +18,16 @@ Adapted source families (see the repo for the raw originals + full author list):
 | `x-ui.alert` (nx-alert) | `admin-alert-cards/` |
 | `x-ui.tag` (nx-tag) | `tags/` |
 | `x-ui.upload` (nx-upload) | `upload-utility-elements/` |
+| Wallet "My Spending" card (nx-aurora) | `premium-custom-cards/` — Gidarx aurora balance card |
+| Admin revenue hero (nx-anim-card) | `premium-custom-cards/` — anand_4957 animated-gradient income card |
+| Admin revenue-split donut (nx-donut) | `premium-custom-cards/` — code-town3 donut stat card |
+| Dashboard product cards (nx-card3d) | `pricing-top-perks/` — om_5409 + chase2k25 3D glass cards |
+| "More" menu promo card (nx-float-card) | `premium-custom-cards/` — ayman-ashine floating-light card |
+| Account day/night scene (nx-theme-scene) | `switch/` — witer33 phone sun/moon toggle |
+| Wallet collapsible top-up (nx-topup) | `premium-custom-cards/` — Na3ar-17 collapsible payment card |
+
+Still reserved: AnthonyPreite + Cobp pricing cards → eSIM plan pricing once the
+live plan APIs are active (Module 29).
 
 Remaining categories (premium cards, pricing tables, login forms, nav elements,
 date/weather, dropdown, cookies banner, product features) are adapted as their

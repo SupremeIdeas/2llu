@@ -91,6 +91,8 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');
             Route::get('/site', \App\Livewire\Admin\SiteEditor::class)->name('site');
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
+            Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
+            Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
             Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
         });

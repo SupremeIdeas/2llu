@@ -20,11 +20,44 @@
             <div class="mt-4 flex items-end justify-between border-t border-slate-200 pt-4 dark:border-[#2D4060]">
                 <span class="text-sm text-slate-500 dark:text-slate-400">You pay</span>
                 <div class="text-right">
-                    <div class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ $plan->display_price['usd'] }}</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ $plan->display_price['ngn'] }}</div>
+                    @if ($couponPrice !== null)
+                        <div class="text-xs text-slate-400 line-through dark:text-slate-500">{{ $plan->display_price['usd'] }}</div>
+                        <div class="text-2xl font-bold text-primary dark:text-teal-300">${{ number_format($couponPrice, 2) }}</div>
+                        <div class="text-xs font-medium text-green-600 dark:text-green-400">You save ${{ number_format($couponSaved, 2) }}</div>
+                    @else
+                        <div class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ $plan->display_price['usd'] }}</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">{{ $plan->display_price['ngn'] }}</div>
+                    @endif
                 </div>
             </div>
         </div>
+
+        {{-- Coupon code (Module 31) — discount is margin-guarded server-side. --}}
+        @unless ($done)
+            <div class="mt-4 rounded-xl border border-dashed border-slate-300 p-3 dark:border-[#2D4060]">
+                @if ($couponPrice !== null)
+                    <div class="flex items-center justify-between gap-2 text-sm">
+                        <span class="inline-flex items-center gap-2 font-medium text-green-700 dark:text-green-400">
+                            <x-icon name="badge-check" class="h-4 w-4" /> Coupon <span class="font-mono uppercase">{{ $coupon }}</span> applied
+                        </span>
+                        <button type="button" wire:click="removeCoupon" class="text-xs text-slate-400 underline hover:text-slate-600 dark:hover:text-slate-300">Remove</button>
+                    </div>
+                @else
+                    <div class="flex gap-2">
+                        <input wire:model="coupon" wire:keydown.enter="applyCoupon" type="text" placeholder="Have a coupon code?" autocomplete="off"
+                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm uppercase tracking-wider dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <button type="button" wire:click="applyCoupon" wire:loading.attr="disabled" wire:target="applyCoupon"
+                                class="shrink-0 rounded-lg border border-primary/40 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/10 disabled:opacity-60 dark:text-teal-300">
+                            <span wire:loading.remove wire:target="applyCoupon">Apply</span>
+                            <span wire:loading wire:target="applyCoupon" class="inline-flex items-center gap-1"><x-icon name="refresh" class="h-3.5 w-3.5 animate-spin" /> Checking…</span>
+                        </button>
+                    </div>
+                    @if ($couponError)
+                        <p class="mt-2 text-xs text-red-600 dark:text-red-400">{{ $couponError }}</p>
+                    @endif
+                @endif
+            </div>
+        @endunless
 
         @if ($error)
             <div class="mt-4 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">

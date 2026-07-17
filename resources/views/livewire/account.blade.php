@@ -2,6 +2,47 @@
     <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Account &amp; privacy</h1>
     <p class="mb-6 text-sm text-slate-500 dark:text-slate-400">Manage your account status, download your data, or ask us to delete your account.</p>
 
+    {{-- Promo banner zone (Module 31, "account" placement). --}}
+    <x-banner-zone placement="account" class="mb-6" />
+
+    {{-- Appearance (Module 32 pick — witer33 sun/moon scene, rebuilt on brand):
+         a day/night scene that drives the REAL theme (localStorage + .dark). --}}
+    <section class="nx-theme-scene mb-5" x-data="{ dark: document.documentElement.classList.contains('dark') }"
+             :class="dark && 'is-night'">
+        <div class="nx-theme-scene__sky" aria-hidden="true">
+            <span class="nx-theme-scene__orb"></span>
+            <span class="nx-theme-scene__cloud nx-theme-scene__cloud--1"></span>
+            <span class="nx-theme-scene__cloud nx-theme-scene__cloud--2"></span>
+            <span class="nx-theme-scene__star nx-theme-scene__star--1"></span>
+            <span class="nx-theme-scene__star nx-theme-scene__star--2"></span>
+            <span class="nx-theme-scene__star nx-theme-scene__star--3"></span>
+        </div>
+        <div class="relative flex items-center justify-between gap-4">
+            <div>
+                <h2 class="flex items-center gap-2 text-sm font-semibold" :class="dark ? 'text-white' : 'text-slate-800'">
+                    <x-icon name="sun" class="h-4 w-4" x-show="!dark" />
+                    <x-icon name="moon" class="h-4 w-4" x-show="dark" x-cloak />
+                    Appearance
+                </h2>
+                <p class="mt-1 text-xs" :class="dark ? 'text-slate-300' : 'text-slate-600'">
+                    <span x-show="!dark">Bright and clear — tap the switch for night mode.</span>
+                    <span x-show="dark" x-cloak>Easy on the eyes — tap the switch for daylight.</span>
+                </p>
+            </div>
+            <button type="button" role="switch" :aria-checked="dark.toString()" aria-label="Toggle dark mode"
+                    class="nx-theme-scene__switch"
+                    @click="dark = !dark;
+                            localStorage.setItem('theme', dark ? 'dark' : 'light');
+                            document.documentElement.classList.toggle('dark', dark);
+                            $dispatch('theme-changed', { dark })">
+                <span class="nx-theme-scene__knob">
+                    <x-icon name="sun" class="h-3.5 w-3.5 text-accent" x-show="!dark" />
+                    <x-icon name="moon" class="h-3.5 w-3.5 text-slate-200" x-show="dark" x-cloak />
+                </span>
+            </button>
+        </div>
+    </section>
+
     @if ($status)
         <div class="mb-6 flex items-center gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary-dark dark:bg-primary/20 dark:text-primary">
             <x-icon name="badge-check" class="h-4 w-4" /> {{ $status }}

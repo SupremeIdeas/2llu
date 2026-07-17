@@ -5,6 +5,11 @@
     @if ($order)
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]"
              @if ($order->status === 'waiting') wire:poll.3s @endif>
+            @if ($couponNote)
+                <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
+                    <x-icon name="badge-check" class="h-4 w-4 shrink-0" /> {{ $couponNote }}
+                </div>
+            @endif
             <div class="flex items-center justify-between">
                 <span class="text-sm text-slate-500 dark:text-slate-400">Your number</span>
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary-dark dark:bg-primary/20 dark:text-primary">
@@ -87,6 +92,12 @@
                             <input type="radio" wire:model="type" value="rental" class="text-primary"> Rental
                         </label>
                     </div>
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Coupon code <span class="font-normal text-slate-400">(optional)</span></label>
+                    <input wire:model="coupon" type="text" placeholder="e.g. WELCOME10" autocomplete="off"
+                           class="w-full rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-sm uppercase tracking-wider text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <p class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">Applied to the live price when you order.</p>
                 </div>
             </div>
 

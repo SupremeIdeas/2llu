@@ -49,6 +49,36 @@ class Wallet extends Component
         $wallet = $user->wallet ?? new UserWallet(['ngn_balance' => 0, 'usd_balance' => 0]);
         $transactions = $user->walletTransactions()->latest()->limit(20)->get();
 
-        return view('livewire.wallet', compact('wallet', 'transactions'));
+        // "My Spending" card (Module 32 pick — Gidarx aurora card, made real):
+        // this-month sums + a 14-day USD spend sparkline, all from the user's
+        // own wallet_transactions. Purchases are charged in USD; top-ups can be
+        // NGN or USD, so both are shown.
+        $recent = $user->walletTransactions()
+            ->where('created_at', '>=', now()->subDays(30)->startOfDay())
+            ->get(['type', 'amount', 'currency', 'created_at']);
+        $month = $recent->where('created_at', '>=', now()->startOfMonth());
+
+        $spentUsd = (float) $month->where('type', 'debit')->where('currency', 'USD')->sum('amount')
+            - (float) $month->where('type', 'refund')->where('currency', 'USD')->sum('amount');
+        $topupUsd = (float) $month->where('type', 'credit')->where('currency', 'USD')->sum('amount');
+        $topupNgn = (float) $month->where('type', 'credit')->where('currency', 'NGN')->sum('amount');
+
+        $daily = collect(range(13, 0))->map(function ($back) use ($recent) {
+            $day = now()->subDays($back)->toDateString();
+
+            return (float) $recent
+                ->filter(fn ($t) => $t->type === 'debit' && $t->currency === 'USD' && $t->created_at->toDateString() === $day)
+                ->sum('amount');
+        })->values();
+
+        // Normalise into SVG polyline points (viewBox 0 0 200 48, baseline y=44).
+        $peak = max((float) $daily->max(), 0.01);
+        $sparkline = $daily->map(
+            fn ($v, $i) => round($i * (200 / 13), 1).','.round(44 - ($v / $peak) * 36, 1)
+        )->implode(' ');
+
+        return view('livewire.wallet', compact(
+            'wallet', 'transactions', 'spentUsd', 'topupUsd', 'topupNgn', 'sparkline'
+        ) + ['hasSpendData' => $daily->sum() > 0]);
     }
 }

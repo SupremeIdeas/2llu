@@ -27,7 +27,7 @@
 @endphp
 
 <x-layouts.app :title="$title ?? config('app.name')">
-    <x-app-shell :primary="$primary" :more="$more" brand-label="NaaraSim" brand-icon="signal" :brand-route="route('dashboard')">
+    <x-app-shell :primary="$primary" :more="$more" :promo="true" brand-label="NaaraSim" brand-icon="signal" :brand-route="route('dashboard')">
         {{ $slot }}
     </x-app-shell>
 

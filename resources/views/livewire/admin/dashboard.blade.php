@@ -20,11 +20,85 @@
         </div>
     @else
 
-    {{-- 30-day profit (admin-only figures) --}}
-    <div class="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+    {{-- Revenue hero (Module 32 pick — anand_4957 animated-border income card,
+         made functional): real 30-day revenue, trend vs the previous window,
+         and real last-7-days revenue bars. --}}
+    <div class="mb-4 grid gap-4 lg:grid-cols-3">
+        <div class="nx-anim-card lg:col-span-2">
+            <div class="nx-anim-card__inner">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-teal-100/80">
+                            <x-icon name="credit-card" class="h-4 w-4" /> Revenue — last 30 days
+                        </p>
+                        <p class="mt-2 font-display text-4xl font-bold tracking-tight text-white">${{ number_format($revenue, 2) }}</p>
+                        <p class="mt-2 text-xs text-teal-100/70">eSIM data + numbers + verification, before provider cost.</p>
+                    </div>
+                    @if ($revenueDelta !== null)
+                        <span @class([
+                            'inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold',
+                            'bg-green-400/15 text-green-300' => $revenueDelta >= 0,
+                            'bg-red-400/15 text-red-300' => $revenueDelta < 0,
+                        ])>
+                            <x-icon name="chevron-right" class="h-3.5 w-3.5 {{ $revenueDelta >= 0 ? '-rotate-90' : 'rotate-90' }}" />
+                            {{ $revenueDelta >= 0 ? '+' : '' }}{{ number_format($revenueDelta, 1) }}% vs previous 30 days
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-teal-100/80">First 30-day window</span>
+                    @endif
+                </div>
+
+                <div class="mt-6 flex h-24 items-end gap-2" role="img"
+                     aria-label="Daily revenue, last 7 days: {{ collect($revenueBars)->map(fn ($b) => $b['label'].' $'.number_format($b['value'], 2))->implode(', ') }}">
+                    @foreach ($revenueBars as $k => $bar)
+                        <div wire:key="revbar-{{ $k }}" class="group flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+                            <span class="text-[10px] font-semibold text-accent opacity-0 transition group-hover:opacity-100">${{ number_format($bar['value'], 0) }}</span>
+                            <div class="nx-anim-card__bar w-full" style="--bar-h: {{ max(4, round($bar['value'] / $barPeak * 100)) }}%; --bar-delay: {{ $k * 90 }}ms"></div>
+                            <span class="text-[10px] font-medium text-teal-100/60">{{ $bar['label'] }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        {{-- Revenue split donut (Module 32 pick — code-town3 stat card, made
+             functional): 30-day revenue share per product line. --}}
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                <x-icon name="signal" class="h-4 w-4 text-primary" /> Revenue split (30d)
+            </h2>
+            <div class="mt-4 flex items-center gap-5">
+                <div class="nx-donut shrink-0" @if ($splitTotal > 0) style="--donut: {{ $splitGradient }}" @endif
+                     role="img" aria-label="Revenue split by product">
+                    <div class="nx-donut__hole">
+                        <span class="text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Total</span>
+                        <span class="font-display text-sm font-bold text-slate-900 dark:text-white">${{ number_format($splitTotal, 0) }}</span>
+                    </div>
+                </div>
+                <ul class="min-w-0 flex-1 space-y-2.5 text-sm">
+                    @foreach ($split as $k => $seg)
+                        <li wire:key="split-{{ $k }}" class="flex items-center justify-between gap-2">
+                            <span class="flex min-w-0 items-center gap-2 text-slate-600 dark:text-slate-300">
+                                <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background: {{ $seg['color'] }}"></span>
+                                <span class="truncate">{{ $seg['label'] }}</span>
+                            </span>
+                            <span class="shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+                                {{ $splitTotal > 0 ? number_format($seg['value'] / $splitTotal * 100, 0).'%' : '—' }}
+                            </span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+            @if ($splitTotal <= 0)
+                <p class="mt-3 text-xs text-slate-400 dark:text-slate-500">No sales in the last 30 days yet — the split fills in with your first orders.</p>
+            @endif
+        </div>
+    </div>
+
+    {{-- 30-day cost/profit tiles (admin-only figures) --}}
+    <div class="mb-8 grid grid-cols-3 gap-4">
         @php
             $tiles = [
-                ['Revenue (30d)', '$'.number_format($revenue, 2), 'credit-card', 'text-slate-900 dark:text-slate-100'],
                 ['Cost (30d)', '$'.number_format($cost, 2), 'package', 'text-slate-900 dark:text-slate-100'],
                 ['Gross profit', '$'.number_format($profit, 2), 'zap', 'text-green-600 dark:text-green-400'],
                 ['Gross margin', number_format($margin, 1).'%', 'signal', 'text-green-600 dark:text-green-400'],

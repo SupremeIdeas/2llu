@@ -11,6 +11,9 @@
         </div>
     </div>
 
+    {{-- Promo banners (Module 31): admin-managed carousel, coupon chips included. --}}
+    <x-banner-zone placement="dashboard_home" class="mb-8" />
+
     {{-- Premium wallet card (Module 27.5 — adapted from the finance-card picks):
          gradient brand card with both balances and a clear top-up action. --}}
     @if ($wallet)
@@ -37,24 +40,29 @@
         </a>
     @endif
 
-    {{-- First-visit value showcase: what NaaraSim offers, as premium cards. --}}
+    {{-- First-visit value showcase (Module 32 pick — om_5409/chase2k25 3D glass
+         cards, rebuilt on brand): the three product lines as floating glass
+         cards with our SVG feature icons. --}}
     @if ($esims->isEmpty() && $numbers->isEmpty())
-        <div class="mb-8 grid gap-4 sm:grid-cols-3">
+        <div class="mb-8 grid gap-5 sm:grid-cols-3">
             @foreach ([
                 ['globe', 'eSIM Data Plans', 'Local data in 190+ countries — installed before you fly, connected when you land.', route('catalogue'), 'Browse plans'],
                 ['hash', 'Verification Numbers', 'Receive one-time codes for WhatsApp, Google, Facebook and more — in seconds.', route('numbers'), 'Get a number'],
                 ['phone', 'Virtual Numbers', 'A permanent second line for calls and SMS, without a second phone.', route('numbers'), 'Explore numbers'],
             ] as [$icon, $title, $text, $url, $cta])
-                <div class="nx-card flex flex-col">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300">
-                        <x-icon :name="$icon" class="h-5 w-5" />
-                    </span>
-                    <h3 class="mt-4 font-bold text-slate-900 dark:text-white">{{ $title }}</h3>
-                    <p class="mt-1.5 flex-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ $text }}</p>
-                    <a href="{{ $url }}" class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline dark:text-teal-300">
-                        {{ $cta }} <x-icon name="chevron-right" class="h-3.5 w-3.5" />
-                    </a>
-                </div>
+                <a href="{{ $url }}" class="nx-card3d group block">
+                    <div class="nx-card3d__body">
+                        <span class="nx-card3d__glass" aria-hidden="true"></span>
+                        <span class="nx-card3d__icon">
+                            <x-icon :name="$icon" class="h-6 w-6" />
+                        </span>
+                        <h3 class="relative mt-5 font-display text-lg font-bold text-slate-900 dark:text-white">{{ $title }}</h3>
+                        <p class="relative mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ $text }}</p>
+                        <span class="relative mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary dark:text-teal-300">
+                            {{ $cta }} <x-icon name="chevron-right" class="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                    </div>
+                </a>
             @endforeach
         </div>
     @endif

@@ -194,9 +194,34 @@ third-party login reviews (Facebook, Google, etc.) that require public legal
 links. Full **blog** (posts, categories, WebP cover images, draft/publish, SEO
 fields) with easy management.
 
-**Module 31 — Announcement banners.** Best-practice image/design banners placeable
-in header, footer, the mobile "More" modal, and other sensible slots; each banner
-targets a section or custom link; schedule + enable/disable; WebP.
+**Module 31 — Announcement banners + margin-protected coupons.** ✅ BUILT
+2026-07-16 (pulled forward + expanded, owner-requested). Two coupled systems:
+(1) **Promo banners** — `banners` table + `Banner` model with placement zones
+(dashboard-home carousel, mobile "More" menu, account/profile), desktop +
+optional mobile artwork (JPG/WebP via MediaStorage, per-zone recommended sizes
+shown in the form), internal-path or external-URL link (href sanitised — only
+`/…` or `http(s)://` accepted), optional attached coupon, sort order + schedule
+window + enable/disable. **Admin → Banners** CRUD; user side renders via
+`<x-banner-zone>`: a responsive, touch-swipeable, auto-rotating carousel on the
+dashboard home (dots + arrows, `<picture>` desktop/mobile sources, reduced-motion
+pauses rotation), single-card in the other zones, with a **tap-to-copy coupon
+chip**. Cached (`App\Support\Banners`, 300 s TTL + save/delete flush). The mobile
+"More" sheet shows its zone's banner, or a branded default floating-light promo
+card until one is published. (2) **Coupons** — `coupons` + `coupon_redemptions`
+tables, `Coupon`/`CouponRedemption` models, **Admin → Coupons** CRUD (percent,
+scope all/esim/number, total + per-user limits, expiry, generate-code). The
+money-safety core is **`CouponEngine`** (the ONE place a coupon touches a price):
+it discounts RETAIL only and clamps every result to the **same floor MarginGuard
+uses — provider cost + minimum profit** (per product line), so **no code, at any
+percent, can ever charge at/below wholesale**; over-floor clamps are flagged on
+the redemption + logged to `pricing_engine_logs`. Wired into both money paths
+(Checkout, GetNumber): code is re-validated + re-priced server-side at purchase
+(the preview is never trusted), and redeemed only AFTER the order persists (an
+abandoned/refunded buy never burns a use). Used coupons are paused, not deleted
+(audit trail). Tests: `CouponsAndBannersTest` (10 — incl. the 90%-off floor
+clamp, invalid-code no-charge, per-user limit, JPG/WebP-only + `javascript:`
+link rejection, zone rendering, admin-only pages); suite 264/264; audit clean;
+browser-verified (carousel + coupon chip live, admin CRUD populated).
 
 **Module 32 — Reusable elements & effects library.** ⏳ PART 1 BUILT (2026-07-14):
 the owner vendored their hand-picked Uiverse components (MIT) at
@@ -212,10 +237,25 @@ soon / gold), **upload** (drop zone). Integrated for real: admin Security
 toggles → switches; dashboard product chips → tags; Security/Branding/Email
 saves fire toasts; UI Kit page showcases all. Attribution in
 `components/ui/CREDITS.md`. Tests: `UiElementsTest` (6); suite 239/239.
-Browser-verified incl. a live toast. **Remaining:** adapt premium cards /
-pricing tables / login forms / nav / cookies banner / date-weather / dropdown as
-their surfaces are built (M27 marketing pages, M29 pricing, M31 banners), and
-the admin paste-an-element panel.
+Browser-verified incl. a live toast. **PART 2 BUILT 2026-07-16** — the owner's
+6 hand-picked premium components, adapted on brand tokens AND wired to real
+data (not just design): **Gidarx aurora** → Wallet "My Spending" card (real
+this-month spend/top-up sums + a 14-day SVG spend sparkline from
+`wallet_transactions`); **Na3ar-17 collapsible payment card** → the real top-up
+flow (currency pills, quick-cash blocks, payment-method radio rows, x-collapse,
+still driving `topUp()`); **anand_4957 animated-gradient-border income card** →
+**Admin Overview revenue hero** (real 30-day revenue across both product lines,
+% vs previous 30 days, real last-7-days revenue bars); **code-town3 donut** →
+admin **revenue-split** by product lane (eSIM / virtual numbers / verification)
+from real orders; **om_5409 / chase2k25 3D glass cards** → dashboard product
+showcase (brand SVG feature icons replace the social buttons); **witer33 phone
+toggle** → **Account "Appearance"** day/night scene (sun/moon/clouds/stars)
+driving the REAL theme (localStorage + `.dark`); **ayman-ashine floating-light
+card** → default promo in the mobile "More" sheet. All CSS folded into
+`ui-elements.css` (brand tokens, dark parity, reduced-motion), attribution in
+CREDITS.md. **Remaining:** AnthonyPreite/Cobp **pricing cards** → deferred to
+M29 (live plan APIs); nav / cookies banner / date-weather / dropdown as their
+surfaces arrive; the admin paste-an-element panel.
 _Original scope:_ A preloader library + branded
 button/form/element library; an admin **paste-an-element** panel (name it → paste
 HTML/CSS/JS → choose where it applies → override globally to buttons/forms/etc.),
