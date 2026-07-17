@@ -7,6 +7,8 @@ use App\Exceptions\InsufficientBalanceException;
 use App\Jobs\AlertAdminJob;
 use App\Models\EsimOrder;
 use App\Models\EsimPlan;
+use App\Services\Credits\CreditService;
+use App\Services\Credits\InsufficientCreditsException;
 use App\Services\eSIM\ProviderRouter;
 use App\Services\Pricing\CouponEngine;
 use App\Services\Wallet\WalletService;
@@ -52,9 +54,23 @@ class Checkout extends Component
 
     public ?string $couponError = null;
 
+    /** NaaraCredits redemption (loyalty). Margin-capped server-side. */
+    public bool $useCredits = false;
+
     public function mount(EsimPlan $plan): void
     {
         $this->plan = $plan;
+    }
+
+    /** The retail the wallet is charged after a coupon (never below the floor). */
+    private function effectiveRetail(CouponEngine $coupons): float
+    {
+        $retail = (float) $this->plan->final_retail_usd;
+        if (trim($this->coupon) !== '' && ($model = $coupons->usable($this->coupon, auth()->user(), 'esim'))) {
+            $retail = $coupons->price($model, $retail, (float) $this->plan->cost_price_usd, 'esim')['price'];
+        }
+
+        return $retail;
     }
 
     public function applyCoupon(CouponEngine $coupons): void
@@ -92,7 +108,7 @@ class Checkout extends Component
         }
     }
 
-    public function purchase(WalletService $wallet, ProviderRouter $router, CouponEngine $coupons): void
+    public function purchase(WalletService $wallet, ProviderRouter $router, CouponEngine $coupons, CreditService $credits): void
     {
         $user = auth()->user();
 
@@ -135,21 +151,47 @@ class Checkout extends Component
 
         $ref = "esim-checkout:{$this->plan->id}:{$user->id}:".now()->timestamp;
 
+        // NaaraCredits redemption (loyalty). Re-quoted server-side and MARGIN-CAPPED
+        // by CreditService so credits can never push the money charged below cost +
+        // minimum profit. Credits are spent BEFORE the wallet debit and refunded on
+        // any downstream failure, so the user is never left short.
+        $redeemUsd = 0.0;
+        $creditsSpent = 0.0;
+        if ($this->useCredits) {
+            $quote = $credits->quoteRedemption($user, $retail, (float) $this->plan->cost_price_usd);
+            $redeemUsd = $quote['usd'];
+            $creditsSpent = $quote['credits'];
+        }
+        $walletCharge = round($retail - $redeemUsd, 4); // always >= cost + min profit > 0
+
+        if ($creditsSpent > 0) {
+            try {
+                $credits->spend($user, $creditsSpent, 'redeem', "credit-redeem:{$ref}", "Redeemed on eSIM: {$this->plan->name}");
+            } catch (InsufficientCreditsException $e) {
+                $this->error = 'Your NaaraCredits balance changed — please review and try again.';
+
+                return;
+            }
+        }
+
         try {
-            $wallet->debit($user, $retail, 'USD', [
+            $wallet->debit($user, $walletCharge, 'USD', [
                 'reference' => $ref,
                 'description' => "eSIM: {$this->plan->name}",
             ]);
         } catch (InsufficientBalanceException $e) {
+            $this->refundCredits($credits, $user, $creditsSpent, $ref);
             $this->error = 'Your wallet balance is too low. Please top up and try again.';
 
             return;
         }
 
         try {
-            $result = $router->orderPlan((string) $this->plan->id, $user, 'USD');
+            $result = $router->orderPlan((string) $this->plan->id, $user, 'USD', $walletCharge);
         } catch (EsimProviderException $e) {
-            // ProviderRouter already refunded the wallet.
+            // ProviderRouter already refunded the wallet (the exact amount charged);
+            // return the redeemed credits too.
+            $this->refundCredits($credits, $user, $creditsSpent, $ref);
             $this->error = 'No provider could fulfil this plan right now — your wallet was refunded.';
 
             return;
@@ -168,17 +210,18 @@ class Checkout extends Component
                     ?? data_get($result->payload, 'qrCodeUrl'),
                 'lpa_string' => LpaActivation::fromPayload($result->payload),
                 'status' => 'processing',
-                'price_charged' => $retail,
+                'price_charged' => $walletCharge,   // real money collected (credits shown separately)
                 'wholesale_cost' => $result->cost,
                 'currency' => 'USD',
             ]);
         } catch (Throwable $e) {
             // Orphan-charge guard: charged + provider ordered, but we failed to
-            // persist. Refund and alert (money-safety rule 1.2).
-            $wallet->refund($user, $retail, 'USD', [
+            // persist. Refund the money AND the redeemed credits, then alert.
+            $wallet->refund($user, $walletCharge, 'USD', [
                 'reference' => "refund:{$ref}",
                 'description' => 'eSIM order could not be saved',
             ]);
+            $this->refundCredits($credits, $user, $creditsSpent, $ref);
             AlertAdminJob::dispatch(
                 code: 'esim_order_save_failed',
                 message: "eSIM order for user {$user->id} succeeded at {$result->provider} but failed to persist; wallet refunded.",
@@ -195,11 +238,12 @@ class Checkout extends Component
             $coupons->redeem($couponModel, $user, 'esim', $ref, $listRetail, $retail, $couponClamped);
         }
 
-        // Order-confirmation email (best-effort; never blocks the money path).
-        \App\Support\Mailer::notify($user, new \App\Notifications\OrderPlacedNotification('esim', $this->plan->name, $retail, 'USD'));
+        // Order-confirmation email (best-effort; never blocks the money path) —
+        // shows the real money charged.
+        \App\Support\Mailer::notify($user, new \App\Notifications\OrderPlacedNotification('esim', $this->plan->name, $walletCharge, 'USD'));
 
         // First-purchase NaaraCredits bonus (loyalty; idempotent, best-effort).
-        app(\App\Services\Credits\CreditService::class)->grantOnce(
+        $credits->grantOnce(
             $user,
             (float) \App\Support\CreditSettings::get('first_purchase_bonus', 0),
             'first_purchase',
@@ -207,11 +251,40 @@ class Checkout extends Component
         );
 
         $this->done = true;
-        $this->message = 'Success! Your eSIM is being provisioned and will appear on your dashboard shortly.';
+        $this->message = $creditsSpent > 0
+            ? 'Success! You used '.number_format($creditsSpent, 0).' NaaraCredits. Your eSIM is being provisioned and will appear on your dashboard shortly.'
+            : 'Success! Your eSIM is being provisioned and will appear on your dashboard shortly.';
     }
 
-    public function render()
+    /** Return redeemed credits to the user after a failed/aborted purchase. */
+    private function refundCredits(CreditService $credits, $user, float $amount, string $ref): void
     {
-        return view('livewire.checkout');
+        if ($amount > 0) {
+            try {
+                $credits->earn($user, $amount, 'redeem', "credit-refund:{$ref}", 'Credits returned — order not completed');
+            } catch (Throwable $e) {
+                // best-effort; the wallet money refund is the primary guarantee
+            }
+        }
+    }
+
+    public function render(CreditService $credits, CouponEngine $coupons)
+    {
+        // Live credit-redemption quote for the UI (margin-capped, never cost).
+        $creditBalance = $credits->balance(auth()->user());
+        $creditQuote = ['usd' => 0.0, 'credits' => 0.0];
+        if (\App\Support\CreditSettings::enabled() && $creditBalance > 0) {
+            $creditQuote = $credits->quoteRedemption(
+                auth()->user(),
+                $this->effectiveRetail($coupons),
+                (float) $this->plan->cost_price_usd,
+            );
+        }
+
+        return view('livewire.checkout', [
+            'creditsEnabled' => \App\Support\CreditSettings::enabled(),
+            'creditBalance' => $creditBalance,
+            'creditQuote' => $creditQuote,
+        ]);
     }
 }

@@ -21,8 +21,11 @@ use Throwable;
  * profit versus what the user already paid, and if none can fulfil profitably
  * it refunds the wallet and alerts — never fulfils below cost + min profit.
  *
- * Assumes the user's wallet has already been debited `final_retail_usd`
- * (checkout debits first, then calls this). On total failure it refunds.
+ * Assumes the user's wallet has already been debited (checkout debits first,
+ * then calls this). Pass the ACTUAL amount charged as `$charged` — after any
+ * coupon or NaaraCredit redemption it is less than list price, and the margin
+ * guard, profit log and refund must all use the real amount, not `final_retail`.
+ * On total failure it refunds exactly `$charged`.
  */
 class ProviderRouter
 {
@@ -33,10 +36,12 @@ class ProviderRouter
     {
     }
 
-    public function orderPlan(string $naaraPlanId, User $user, string $currency = 'USD'): EsimOrderResult
+    public function orderPlan(string $naaraPlanId, User $user, string $currency = 'USD', ?float $charged = null): EsimOrderResult
     {
         $plan = EsimPlan::findOrFail($naaraPlanId);
-        $charged = (float) $plan->final_retail_usd;
+        // Default to list price only when the caller doesn't pass the real
+        // charged amount (keeps older callers/tests working).
+        $charged = $charged ?? (float) $plan->final_retail_usd;
         $minProfit = (float) Setting::getValue('pricing.minimum_profit_usd', 0.50);
         $errors = [];
 

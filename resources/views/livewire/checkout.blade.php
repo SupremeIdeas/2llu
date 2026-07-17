@@ -57,6 +57,29 @@
                     @endif
                 @endif
             </div>
+
+            {{-- NaaraCredits redemption (loyalty) — margin-capped server-side. --}}
+            @if ($creditsEnabled && $creditBalance > 0 && $creditQuote['usd'] > 0)
+                <label class="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 dark:border-primary/40 dark:bg-primary/10">
+                    <input type="checkbox" wire:model.live="useCredits" class="mt-0.5 rounded text-primary focus:ring-primary/40">
+                    <span class="min-w-0 flex-1">
+                        <span class="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            <x-icon name="gift" class="h-4 w-4 text-primary dark:text-teal-300" /> Use my NaaraCredits
+                        </span>
+                        <span class="mt-0.5 block text-xs text-slate-600 dark:text-slate-300">
+                            You have {{ number_format($creditBalance, 0) }} credits. Apply
+                            <span class="font-semibold">{{ number_format($creditQuote['credits'], 0) }}</span>
+                            to save <span class="font-semibold text-green-600 dark:text-green-400">${{ number_format($creditQuote['usd'], 2) }}</span> on this order.
+                        </span>
+                    </span>
+                </label>
+                @if ($useCredits)
+                    <div class="mt-2 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-[#243352]">
+                        <span class="text-slate-500 dark:text-slate-400">Charged to wallet after credits</span>
+                        <span class="font-bold text-primary dark:text-teal-300">${{ number_format(($couponPrice ?? (float) $plan->final_retail_usd) - $creditQuote['usd'], 2) }}</span>
+                    </div>
+                @endif
+            @endif
         @endunless
 
         @if ($error)

@@ -3,6 +3,7 @@
 namespace App\Services\Credits;
 
 use App\Models\CreditLedger;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserWallet;
 use App\Support\CreditSettings;
@@ -123,6 +124,35 @@ class CreditService
         $cooldown = (int) CreditSettings::get('checkin_cooldown_hours', 24);
 
         return $last === null || $last->diffInHours(now()) >= $cooldown;
+    }
+
+    /**
+     * How much of a purchase the user's credits may cover — MARGIN-CAPPED so the
+     * platform always wins. The redeemable USD is the smallest of:
+     *   - what keeps the CHARGED money at or above cost + minimum profit
+     *     (so the sale never dips below wholesale + profit),
+     *   - the admin's max-redeem-% of the retail, and
+     *   - the USD value of the user's credit balance.
+     *
+     * @return array{usd: float, credits: float}
+     */
+    public function quoteRedemption(User $user, float $retail, float $cost): array
+    {
+        if (! CreditSettings::enabled()) {
+            return ['usd' => 0.0, 'credits' => 0.0];
+        }
+
+        $minProfit = (float) Setting::getValue('pricing.minimum_profit_usd', 0.50);
+        $floor = round($cost + $minProfit, 4);
+        $maxByFloor = max(0.0, round($retail - $floor, 4));
+        $maxByPct = round($retail * (int) CreditSettings::get('max_redeem_pct', 50) / 100, 4);
+        $maxByBalance = CreditSettings::creditsToUsd($this->balance($user));
+
+        $usd = round(max(0.0, min($maxByFloor, $maxByPct, $maxByBalance)), 2);
+        // Never spend more credits than the USD represents at the current rate.
+        $credits = min($this->balance($user), CreditSettings::usdToCredits($usd));
+
+        return ['usd' => $usd, 'credits' => round($credits, 2)];
     }
 
     /** One-time bonuses (signup, first purchase) — idempotent by their reference. */
