@@ -1,13 +1,15 @@
-{{-- Scoped action loader (audit §7, mode 2). The pulsing-logo motif at a small
-     in-card size, tied to a Livewire action: it appears while the action is in
-     flight and dismisses EXACTLY when the action resolves — Livewire toggles it
-     via wire:loading / wire:loading.remove, so "the loader dismisses alongside"
-     the finished section. Falls back to the brand orbit loader if no favicon is
-     set. Reduced-motion is handled by the shared .nx-pulse CSS.
+{{--
+     Scoped action loader (audit section 7, mode 2). The pulsing-logo motif at a
+     small in-card size, tied to a Livewire action: it appears while the action
+     is in flight and dismisses EXACTLY when the action resolves — Livewire
+     toggles it via wire:loading / wire:loading.remove, so "the loader dismisses
+     alongside" the finished section. Falls back to the brand orbit loader if no
+     favicon is set. Reduced-motion is handled by the shared .nx-pulse CSS.
 
-     Usage:
-       <x-brand-loader target="purchase" />               {{-- inline, hidden until wire:loading --}}
-       <x-brand-loader target="order" :overlay="true" />  {{-- covers its relative parent --}}
+     Props: target (wire:target action), size (logo px), label, overlay (bool —
+     absolutely fills the nearest positioned ancestor). Do NOT put a literal
+     component tag in this comment: Blade compiles component tags even inside
+     comments, and a self-reference here would recurse infinitely.
 --}}
 @props([
     'target' => null,       // wire:target action(s); omit to react to any action on the component
