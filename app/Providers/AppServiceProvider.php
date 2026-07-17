@@ -120,6 +120,9 @@ class AppServiceProvider extends ServiceProvider
             if (\App\Support\ServiceIcons::isServiceIconKey($setting->key)) {
                 \App\Support\ServiceIcons::flush();
             }
+            if (\App\Support\SiteChrome::isChromeKey($setting->key)) {
+                \App\Support\SiteChrome::flush();
+            }
         });
 
         // Banner cache follows the Banner model itself (Module 31).

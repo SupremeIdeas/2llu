@@ -90,6 +90,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
             Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');
             Route::get('/site', \App\Livewire\Admin\SiteEditor::class)->name('site');
+            Route::get('/chrome', \App\Livewire\Admin\SiteChromePage::class)->name('chrome');
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
             Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');

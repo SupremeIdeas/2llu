@@ -177,10 +177,26 @@ card** (both balances, top-up pill, glow orbs), eSIM cards with **data-remaining
 meter**, status tags with pulse dots, **value-showcase cards** for new accounts.
 Tests: `ServiceIconsTest` (7); suite 254/254; browser-verified. 
 
-**Module 28 — Two-column auth + assignable footer.** Upgrade login/register to a
-2-column desktop layout with an admin-set **media panel** (video / WebP / JPEG) on
-one side; move "**Supreme Ideas Agency**" + **legal quick-links** to the bottom of
-auth + legal pages; admin-assignable **footer navigation + custom links**.
+**Module 28 — Two-column auth + assignable footer.** ✅ BUILT 2026-07-16.
+New `<x-layouts.auth>` two-column shell: an admin-set **media panel** (WebP/JPEG
+image OR a short muted looping video, with poster) on one side, the form on the
+other; collapses to a compact branded header on mobile; theme toggle + dark mode
+throughout; branded gradient fallback until media is uploaded. All five auth
+pages (login, register, forgot, reset, verify-email) moved onto it. `SiteChrome`
+(cached Setting-backed, flush hook) holds the panel config + the assignable
+footer. New **`<x-site-footer>`** (variant full/slim) renders admin-managed
+**link columns + legal row**; "Supreme Ideas Agency" attribution is a brand
+constant, always shown, never removable. Auth pages end with the slim footer
+(attribution + legal); the marketing layout now uses the full footer (columns +
+legal) from the same component. **Admin → Auth & Footer** (`/adminmaster/chrome`,
+super_admin|admin): upload panel media + edit headline/subtext, add/remove footer
+columns and their links, edit the legal row — every link validated to an in-app
+path (`/…`) or full `http(s)://` URL (no `javascript:` etc.). Tests:
+`SiteChromeTest` (6); suite 270/270; audit clean; browser-verified desktop +
+mobile. _Original scope:_ Upgrade login/register to a 2-column desktop layout
+with an admin-set **media panel** (video / WebP / JPEG) on one side; move
+"**Supreme Ideas Agency**" + **legal quick-links** to the bottom of auth + legal
+pages; admin-assignable **footer navigation + custom links**.
 
 **Module 29 — Dynamic pricing page + AI pricing education.** When eSIM/number API
 keys are live, real retail plans render on the public pricing page (comparison

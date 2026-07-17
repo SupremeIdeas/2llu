@@ -1,12 +1,4 @@
-<x-layouts.app title="Confirm your email — NaaraSim">
-    <main class="flex min-h-screen items-center justify-center px-4">
-        <div class="w-full max-w-sm">
-            <div class="mb-6 text-center">
-                <p class="text-xs font-semibold uppercase tracking-widest text-accent">Supreme Ideas Agency</p>
-                <h1 class="mt-1 text-2xl font-bold text-primary-dark dark:text-primary">NaaraSim</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400">Confirm your email</p>
-            </div>
-
+<x-layouts.auth title="Confirm your email — NaaraSim" heading="Confirm your email" subheading="One quick step to activate your account.">
             <div class="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
                 @if (session('status') == 'verification-link-sent')
                     <div class="flex items-start gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
@@ -31,6 +23,4 @@
                     </button>
                 </form>
             </div>
-        </div>
-    </main>
-</x-layouts.app>
+</x-layouts.auth>

@@ -22,6 +22,7 @@
         $more[] = ['route' => 'admin.coupons', 'label' => 'Coupons', 'icon' => 'gift'];
         $more[] = ['route' => 'admin.branding', 'label' => 'Branding', 'icon' => 'image'];
         $more[] = ['route' => 'admin.site', 'label' => 'Pages', 'icon' => 'file-text'];
+        $more[] = ['route' => 'admin.chrome', 'label' => 'Auth & Footer', 'icon' => 'image'];
         $more[] = ['route' => 'admin.service-icons', 'label' => 'Service icons', 'icon' => 'grid'];
         $more[] = ['route' => 'admin.appearance', 'label' => 'Splash', 'icon' => 'zap'];
         $more[] = ['route' => 'admin.support-agent', 'label' => 'Support agent', 'icon' => 'message-circle'];

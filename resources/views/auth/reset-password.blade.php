@@ -1,12 +1,4 @@
-<x-layouts.app title="Set a new password — NaaraSim">
-    <main class="flex min-h-screen items-center justify-center px-4">
-        <div class="w-full max-w-sm">
-            <div class="mb-6 text-center">
-                <p class="text-xs font-semibold uppercase tracking-widest text-accent">Supreme Ideas Agency</p>
-                <h1 class="mt-1 text-2xl font-bold text-primary-dark dark:text-primary">NaaraSim</h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400">Choose a new password</p>
-            </div>
-
+<x-layouts.auth title="Set a new password — NaaraSim" heading="Choose a new password" subheading="Pick something strong you'll remember.">
             <form method="POST" action="/reset-password"
                   class="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
                 @csrf
@@ -35,6 +27,4 @@
                     <x-icon name="shield-check" class="h-5 w-5" /> Save new password
                 </button>
             </form>
-        </div>
-    </main>
-</x-layouts.app>
+</x-layouts.auth>
