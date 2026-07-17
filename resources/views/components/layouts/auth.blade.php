@@ -29,7 +29,7 @@
 
                 <div class="relative flex h-full flex-col justify-between p-8 lg:p-12">
                     <a href="{{ route('home') }}" class="inline-flex">
-                        <x-brand-logo variant="product" class="h-9 max-w-[180px] brightness-0 invert" fallback-icon="signal" />
+                        <x-brand-logo variant="product" theme="dark" class="h-9 max-w-[180px]" fallback-icon="signal" />
                     </a>
                     <div class="hidden lg:block">
                         <h2 class="font-display text-3xl font-bold leading-tight text-white xl:text-4xl">{{ $panel['headline'] }}</h2>

@@ -43,6 +43,20 @@ class BrandSettings
         'action' => '#E8412A',
     ];
 
+    /**
+     * The official brand logos shipped with the product (committed in public/brand,
+     * transparent PNG). These are the DEFAULTS — an admin upload (brand.* setting)
+     * always wins, but a fresh install renders the real NaaraSim + Supreme Ideas
+     * Agency marks out of the box instead of the text wordmark.
+     */
+    public const LOGO_DEFAULTS = [
+        'product_light' => '/brand/naarasim-product-light.png',
+        'product_dark' => '/brand/naarasim-product-dark.png',
+        'agency_light' => '/brand/supreme-ideas-light.png',
+        'agency_dark' => '/brand/supreme-ideas-dark.png',
+        'favicon' => '/brand/naarasim-favicon.png',
+    ];
+
     /** @return array<string, string> */
     public static function current(): array
     {
@@ -183,7 +197,12 @@ class BrandSettings
         return self::current()['name'];
     }
 
-    /** A logo URL for a variant/theme, or null to fall back to the wordmark. */
+    /**
+     * The admin-uploaded logo URL for a variant/theme, or null if none. The
+     * per-variant value is intentionally NOT defaulted here — the light<->dark
+     * cross-fallback and the shipped-default fallback live in <x-brand-logo> /
+     * resolvedLogo(), so a single admin upload still serves both themes.
+     */
     public static function logo(string $variant, string $theme): ?string
     {
         $key = $variant.'_'.$theme; // e.g. product_light
@@ -192,17 +211,31 @@ class BrandSettings
         return $url !== '' ? $url : null;
     }
 
-    /** True when at least one product logo has been uploaded. */
+    /**
+     * Display URL for a variant/theme: admin upload for that theme → admin
+     * upload for the other theme → the shipped brand default. Always returns a
+     * URL, so the real logo shows out of the box and any admin upload wins.
+     */
+    public static function resolvedLogo(string $variant, string $theme): ?string
+    {
+        $other = $theme === 'light' ? 'dark' : 'light';
+
+        return self::logo($variant, $theme)
+            ?? self::logo($variant, $other)
+            ?? (self::LOGO_DEFAULTS[$variant.'_'.$theme] ?? null);
+    }
+
+    /** True — a product logo always displays (admin upload or the shipped default). */
     public static function hasProductLogo(): bool
     {
-        return self::logo('product', 'light') !== null || self::logo('product', 'dark') !== null;
+        return self::resolvedLogo('product', 'light') !== null;
     }
 
     public static function favicon(): ?string
     {
-        $f = self::current()['favicon'];
+        $f = self::current()['favicon'] ?? '';
 
-        return $f !== '' ? $f : null;
+        return $f !== '' ? $f : self::LOGO_DEFAULTS['favicon'];
     }
 
     public static function flush(): void

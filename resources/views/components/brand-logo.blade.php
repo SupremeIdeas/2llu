@@ -1,17 +1,25 @@
-{{-- Brand logo (Module 26). Renders the admin-uploaded logo for the given
-     variant (product = NaaraSim, agency = Supreme Ideas Agency), swapping the
-     light/dark version by theme. Falls back to the built-in icon + wordmark so a
-     fresh install still looks intentional. --}}
-@props(['variant' => 'product', 'class' => 'h-8', 'fallbackIcon' => 'signal'])
+{{-- Brand logo (Module 26). Renders the brand logo for the given variant
+     (product = NaaraSim, agency = Supreme Ideas Agency) — admin upload if set,
+     else the shipped default (public/brand/*). By default it swaps light/dark by
+     page theme; pass `theme="light"` or `theme="dark"` to FORCE one variant on a
+     surface whose background is fixed regardless of theme (e.g. the navy footer
+     or the auth media panel), so the mark always has proper contrast. --}}
+@props(['variant' => 'product', 'class' => 'h-8', 'fallbackIcon' => 'signal', 'theme' => 'auto'])
 @php
-    $light = \App\Support\BrandSettings::logo($variant, 'light') ?? \App\Support\BrandSettings::logo($variant, 'dark');
-    $dark = \App\Support\BrandSettings::logo($variant, 'dark') ?? \App\Support\BrandSettings::logo($variant, 'light');
+    $light = \App\Support\BrandSettings::resolvedLogo($variant, 'light');
+    $dark = \App\Support\BrandSettings::resolvedLogo($variant, 'dark');
     $name = \App\Support\BrandSettings::name();
 @endphp
 @if ($light || $dark)
     <span {{ $attributes->only('class')->merge(['class' => 'inline-flex items-center']) }}>
-        <img src="{{ $light }}" alt="{{ $name }}" class="block w-auto object-contain dark:hidden {{ $class }}">
-        <img src="{{ $dark }}" alt="{{ $name }}" class="hidden w-auto object-contain dark:block {{ $class }}">
+        @if ($theme === 'light')
+            <img src="{{ $light }}" alt="{{ $name }}" class="block w-auto object-contain {{ $class }}">
+        @elseif ($theme === 'dark')
+            <img src="{{ $dark }}" alt="{{ $name }}" class="block w-auto object-contain {{ $class }}">
+        @else
+            <img src="{{ $light }}" alt="{{ $name }}" class="block w-auto object-contain dark:hidden {{ $class }}">
+            <img src="{{ $dark }}" alt="{{ $name }}" class="hidden w-auto object-contain dark:block {{ $class }}">
+        @endif
     </span>
 @else
     <span {{ $attributes->only('class')->merge(['class' => 'inline-flex items-center gap-2']) }}>

@@ -15,7 +15,7 @@
     @if ($variant === 'full')
         <div class="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-4">
             <div class="md:col-span-2">
-                <x-brand-logo variant="product" class="h-9 max-w-[170px]" />
+                <x-brand-logo variant="product" theme="dark" class="h-9 max-w-[170px]" />
                 <p class="mt-4 max-w-md text-sm leading-relaxed text-slate-400">
                     {{ $brand }} — Stay Connected. No Borders. No Swaps. Premium eSIM
                     connectivity and phone numbers for African travellers and global

@@ -25,11 +25,15 @@ class BrandingTest extends TestCase
         BrandSettings::flush();
     }
 
-    public function test_defaults_to_the_app_name_and_no_logos(): void
+    public function test_ships_default_brand_logos_but_no_admin_override(): void
     {
         $this->assertSame(config('app.name'), BrandSettings::name());
-        $this->assertFalse(BrandSettings::hasProductLogo());
-        $this->assertNull(BrandSettings::logo('product', 'light'));
+        // The official logos ship as defaults (public/brand/*), so a product
+        // logo always displays — no admin upload is set yet, though.
+        $this->assertTrue(BrandSettings::hasProductLogo());
+        $this->assertNull(BrandSettings::logo('product', 'light')); // no admin override
+        $this->assertSame('/brand/naarasim-product-light.png', BrandSettings::resolvedLogo('product', 'light'));
+        $this->assertSame('/brand/naarasim-favicon.png', BrandSettings::favicon());
     }
 
     public function test_a_saved_logo_url_is_returned_and_theme_variants_fall_back(): void
