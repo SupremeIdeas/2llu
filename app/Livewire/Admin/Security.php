@@ -37,6 +37,9 @@ class Security extends Component
     /** Require TOTP 2FA to use the admin panel (opt-in extra layer). */
     public bool $admin_2fa_required = false;
 
+    /** Cloudflare Turnstile bot challenge on login/register (opt-in). */
+    public bool $turnstile_enabled = false;
+
     public ?string $siteSaved = null;
 
     public ?string $saved = null;
@@ -47,6 +50,7 @@ class Security extends Component
         $this->csp_enabled = $s['csp_enabled'];
         $this->hsts_enabled = $s['hsts_enabled'];
         $this->admin_2fa_required = $s['admin_2fa_required'];
+        $this->turnstile_enabled = $s['turnstile_enabled'] ?? false;
     }
 
     /**
@@ -60,12 +64,14 @@ class Security extends Component
         Setting::setValue('security.csp_enabled', $this->csp_enabled, 'security');
         Setting::setValue('security.hsts_enabled', $this->hsts_enabled, 'security');
         Setting::setValue('security.admin_2fa_required', $this->admin_2fa_required, 'security');
+        Setting::setValue('security.turnstile_enabled', $this->turnstile_enabled, 'security');
         SecuritySettings::flush();
 
         Auditor::log('security.settings_updated', null, null, [
             'csp' => $this->csp_enabled,
             'hsts' => $this->hsts_enabled,
             'admin_2fa_required' => $this->admin_2fa_required,
+            'turnstile_enabled' => $this->turnstile_enabled,
         ]);
 
         $this->siteSaved = 'Site protection saved — it applies immediately.';
@@ -140,6 +146,7 @@ class Security extends Component
             'recoveryCodes' => $recoveryCodes,
             'canDisable' => $user->hasRole('super_admin'),
             'canManageSite' => $user->hasRole('super_admin'),
+            'turnstileConfigured' => \App\Support\Turnstile::configured(),
         ]);
     }
 }

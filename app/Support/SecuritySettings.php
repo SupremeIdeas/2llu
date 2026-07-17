@@ -20,7 +20,7 @@ class SecuritySettings
 {
     // Versioned so adding keys to the cached shape invalidates any stale cache
     // left over from a previous deploy (a missing key must never crash a read).
-    private const CACHE_KEY = 'security.settings.v2';
+    private const CACHE_KEY = 'security.settings.v3';
 
     public static function current(): array
     {
@@ -32,12 +32,16 @@ class SecuritySettings
                     // 2FA for the admin panel is OPT-IN: password+email only by
                     // default, the super-admin turns it on for an extra layer.
                     'admin_2fa_required' => self::boolSetting('security.admin_2fa_required', (bool) config('admin.require_2fa', false)),
+                    // Cloudflare Turnstile bot challenge — OFF by default; the
+                    // admin turns it on once the site/secret keys are set.
+                    'turnstile_enabled' => self::boolSetting('security.turnstile_enabled', false),
                 ];
             } catch (\Throwable) {
                 return [
                     'csp_enabled' => (bool) config('security.csp.enabled', true),
                     'hsts_enabled' => (bool) config('security.hsts.enabled', true),
                     'admin_2fa_required' => (bool) config('admin.require_2fa', false),
+                    'turnstile_enabled' => false,
                 ];
             }
         });
@@ -56,6 +60,11 @@ class SecuritySettings
     public static function admin2faRequired(): bool
     {
         return self::current()['admin_2fa_required'] ?? (bool) config('admin.require_2fa', false);
+    }
+
+    public static function turnstileEnabled(): bool
+    {
+        return self::current()['turnstile_enabled'] ?? false;
     }
 
     public static function flush(): void

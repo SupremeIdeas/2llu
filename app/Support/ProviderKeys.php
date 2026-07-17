@@ -92,6 +92,13 @@ class ProviderKeys
                     'elevenlabs_model' => ['label' => 'ElevenLabs — Model', 'config' => 'services.elevenlabs.model', 'env' => 'ELEVENLABS_MODEL', 'secret' => false, 'hint' => 'Use eleven_v3 for the most expressive, human delivery (supports [laughs], [exhales] tags). Leave as eleven_v3 if unsure.'],
                 ],
             ],
+            'turnstile' => [
+                'label' => 'Bot protection (Cloudflare Turnstile)',
+                'fields' => [
+                    'turnstile_site_key' => ['label' => 'Turnstile — Site Key', 'config' => 'services.turnstile.site_key', 'env' => 'TURNSTILE_SITE_KEY', 'secret' => false, 'hint' => 'dash.cloudflare.com → Turnstile → Add site. The PUBLIC site key (shown in the widget). Then flip the toggle on the Security page.'],
+                    'turnstile_secret_key' => ['label' => 'Turnstile — Secret Key', 'config' => 'services.turnstile.secret_key', 'env' => 'TURNSTILE_SECRET_KEY', 'secret' => true, 'hint' => 'Same Turnstile site — the SECRET key used to verify the challenge server-side.'],
+                ],
+            ],
         ];
     }
 

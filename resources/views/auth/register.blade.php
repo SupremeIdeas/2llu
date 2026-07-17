@@ -30,6 +30,7 @@
             <input type="password" name="password_confirmation" required
                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
         </div>
+        <x-turnstile />
         <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-semibold text-white hover:bg-primary-dark">
             <x-icon name="badge-check" class="h-5 w-5" /> Create account
         </button>

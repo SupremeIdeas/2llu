@@ -321,11 +321,26 @@ recreate the looks we want (glow buttons, animated forms, preloaders) natively i
 our brand system rather than embedding their runtime. Will confirm the approach
 with the owner before building.*
 
-**Module 33 — Cloudflare Turnstile bot protection.** Admin-configured site+secret
-keys (API-keys page, with tooltips) + a plain on/off toggle; the "checkmark"
-challenge verifies on login, register and support; server-side token verification;
-fails open only if disabled. (The owner also wants general Cloudflare-in-front
-guidance — documented in DEPLOYMENT.md.)
+**Module 33 — Cloudflare Turnstile bot protection.** ✅ BUILT 2026-07-16.
+`Turnstile` support (active = admin-enabled AND both keys set). Site + secret
+keys paste into the **API-keys page** (new "Bot protection" group, with tooltips,
+secret encrypted at rest); a plain **on/off toggle on Admin → Security** (guides
+the admin to add keys first if missing). The `<x-turnstile>` widget renders the
+"I'm human" check on **login + register** only when active (nothing output
+otherwise). **`VerifyTurnstile`** middleware (in the web group, self-gated to the
+login/register POSTs) verifies `cf-turnstile-response` server-side via siteverify
+BEFORE Fortify sees it — a missing/invalid token is rejected; it **fails open
+only when disabled/unconfigured** (and on a Cloudflare outage, so nobody is
+locked out). CSP is augmented at runtime to whitelist `challenges.cloudflare.com`
+in exactly `script-src` + `frame-src`, and only while active. Env placeholders
+added. Tests: `TurnstileTest` (7 — inactive-until-configured, widget+CSP gating,
+token-missing/valid/invalid, disabled-untouched, admin toggle); suite 293/293;
+audit clean. _Follow-up:_ extend the widget to the guest support/contact form
+(Livewire token wiring) and add general Cloudflare-in-front guidance to
+DEPLOYMENT.md. _Original scope:_ Admin-configured site+secret keys (API-keys
+page, with tooltips) + a plain on/off toggle; the "checkmark" challenge verifies
+on login, register and support; server-side token verification; fails open only
+if disabled.
 
 **Still deferred (unchanged):** NaaraCredits loyalty, product reviews, full i18n/
 multi-currency, passkey-management UI, order/top-up/refund event emails.

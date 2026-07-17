@@ -141,6 +141,21 @@
                     <x-ui.switch wire:model="admin_2fa_required" label="Require two-factor for admin login" class="mt-1" />
                 </label>
 
+                <label class="flex items-start justify-between gap-4 border-t border-slate-100 pt-4 dark:border-[#243352]">
+                    <span>
+                        <span class="block text-sm font-medium text-slate-800 dark:text-slate-100">Bot protection on sign-in (Cloudflare Turnstile)</span>
+                        <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+                            Shows a privacy-friendly “I’m human” check on login &amp; register and verifies it server-side.
+                            @if ($turnstileConfigured)
+                                Site &amp; secret keys are set — flip this on to activate.
+                            @else
+                                <span class="text-amber-600 dark:text-amber-400">Add the Turnstile site &amp; secret keys on the <a href="{{ route('admin.api-keys') }}" class="underline" wire:navigate>API keys</a> page first — the toggle has no effect until both are set.</span>
+                            @endif
+                        </span>
+                    </span>
+                    <x-ui.switch wire:model="turnstile_enabled" label="Bot protection on sign-in" class="mt-1" />
+                </label>
+
                 <div class="flex justify-end">
                     <button type="submit" wire:loading.attr="disabled" wire:target="saveSiteProtection"
                             class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">

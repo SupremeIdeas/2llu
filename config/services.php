@@ -142,4 +142,11 @@ return [
         'base_branch' => env('GITHUB_MAINTENANCE_BASE_BRANCH', 'main'),
     ],
 
+    // Cloudflare Turnstile bot protection (blueprint Section 33).
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+        'verify_url' => env('TURNSTILE_VERIFY_URL', 'https://challenges.cloudflare.com/turnstile/v0/siteverify'),
+    ],
+
 ];

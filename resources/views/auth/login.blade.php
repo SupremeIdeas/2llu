@@ -24,6 +24,7 @@
             </label>
             <a href="/forgot-password" class="text-sm font-medium text-primary hover:underline">Forgot password?</a>
         </div>
+        <x-turnstile />
         <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-semibold text-white hover:bg-primary-dark">
             <x-icon name="shield-check" class="h-5 w-5" /> Sign in
         </button>

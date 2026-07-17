@@ -40,6 +40,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // full CSP matrix is Module 19).
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
+            // Turnstile bot check on the auth POSTs (self-gates; no-op unless
+            // active — blueprint Section 33).
+            \App\Http\Middleware\VerifyTurnstile::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
