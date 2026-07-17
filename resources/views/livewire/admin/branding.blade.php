@@ -80,4 +80,74 @@
             </button>
         </div>
     </form>
+
+    {{-- Brand theme (Module 26): colours, control roundness, preloader --}}
+    <form wire:submit="saveTheme" class="mt-8 space-y-6 border-t border-slate-200 pt-8 dark:border-[#2D4060]">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">Brand colours &amp; style</h2>
+                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Recolours the entire platform — buttons, links, accents, everything — instantly, no rebuild.</p>
+            </div>
+            <button type="button" wire:click="resetTheme" wire:confirm="Reset brand colours and roundness to the NaaraSim defaults?"
+                    class="text-xs font-medium text-slate-400 underline hover:text-red-500">Reset to defaults</button>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            @foreach ([
+                ['color_primary', 'Primary (teal)', $color_primary],
+                ['color_accent', 'Accent (gold)', $color_accent],
+                ['color_navy', 'Dark surface (navy)', $color_navy],
+                ['color_action', 'Action (coral)', $color_action],
+            ] as [$field, $label, $val])
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{{ $label }}</label>
+                    <div class="flex items-center gap-2">
+                        <input type="color" wire:model.live="{{ $field }}" class="h-9 w-11 shrink-0 cursor-pointer rounded-lg border border-slate-300 bg-white p-0.5 dark:border-[#2D4060] dark:bg-[#243352]">
+                        <input type="text" wire:model.live="{{ $field }}" class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 font-mono text-xs uppercase text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    </div>
+                    @error($field) <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                </div>
+            @endforeach
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Control roundness</label>
+                <select wire:model="radius" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <option value="0rem">Square</option>
+                    <option value="0.25rem">Subtle</option>
+                    <option value="0.5rem">Default</option>
+                    <option value="0.75rem">Rounded</option>
+                    <option value="1rem">Pill-ish</option>
+                </select>
+            </div>
+            <label class="flex items-end justify-between gap-4">
+                <span>
+                    <span class="block text-sm font-medium text-slate-800 dark:text-slate-100">Loading screen</span>
+                    <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Show a brand-coloured loader while each page loads.</span>
+                </span>
+                <x-ui.switch wire:model="preloader_enabled" label="Show loading screen" class="mb-1" />
+            </label>
+        </div>
+
+        {{-- Live preview --}}
+        <div class="rounded-2xl border border-slate-200 p-5 dark:border-[#2D4060]">
+            <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Live preview</p>
+            <div class="flex flex-wrap items-center gap-3">
+                <button type="button" style="background:{{ $color_primary }};border-radius:calc({{ $radius }} + 0.25rem)" class="px-4 py-2 text-sm font-semibold text-white">Primary button</button>
+                <button type="button" style="color:{{ $color_primary }};box-shadow:inset 0 0 0 1.5px {{ $color_primary }};border-radius:calc({{ $radius }} + 0.25rem)" class="bg-transparent px-4 py-2 text-sm font-semibold">Ghost</button>
+                <span style="background:{{ $color_accent }};border-radius:999px" class="px-3 py-1 text-xs font-bold text-white">Accent tag</span>
+                <span style="background:{{ $color_action }};border-radius:999px" class="px-3 py-1 text-xs font-bold text-white">Action</span>
+                <span style="background:{{ $color_navy }};border-radius:{{ $radius }}" class="px-4 py-2 text-xs font-medium text-white">Dark surface</span>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" wire:loading.attr="disabled" wire:target="saveTheme"
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                <span wire:loading.remove wire:target="saveTheme" class="inline-flex items-center gap-2"><x-icon name="badge-check" class="h-4 w-4" /> Save theme</span>
+                <span wire:loading wire:target="saveTheme" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Saving…</span>
+            </button>
+        </div>
+    </form>
 </div>

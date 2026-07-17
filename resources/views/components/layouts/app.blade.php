@@ -44,11 +44,16 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    {{-- Runtime brand palette override (Module 26): recolours everything with no
+         rebuild. Emitted only when the admin has customised a colour/radius. --}}
+    @php($brandCss = \App\Support\BrandSettings::themeCss())
+    @if ($brandCss)<style id="brand-vars">{!! $brandCss !!}</style>@endif
     @stack('head')
 </head>
 <body class="min-h-screen bg-[#F8F9FA] text-[#0F172A] antialiased dark:bg-navy dark:text-slate-100">
     @include('partials.icon-sprite')
     @include('partials.service-icon-sprite')
+    <x-brand-preloader />
     <x-splash />
     <x-ui.toast-stack />
     {{ $slot ?? '' }}

@@ -25,6 +25,19 @@ class Branding extends Component
 
     public string $brand_name = '';
 
+    // Brand theme (Module 26) — hex colours + control roundness + preloader.
+    public string $color_primary = '';
+
+    public string $color_accent = '';
+
+    public string $color_navy = '';
+
+    public string $color_action = '';
+
+    public string $radius = '0.5rem';
+
+    public bool $preloader_enabled = false;
+
     // One upload slot per asset (all optional; blank = keep existing).
     public $product_light = null;
 
@@ -50,6 +63,61 @@ class Branding extends Component
     public function mount(): void
     {
         $this->brand_name = BrandSettings::name();
+        $this->color_primary = BrandSettings::color('primary');
+        $this->color_accent = BrandSettings::color('accent');
+        $this->color_navy = BrandSettings::color('navy');
+        $this->color_action = BrandSettings::color('action');
+        $this->radius = BrandSettings::radius();
+        $this->preloader_enabled = BrandSettings::preloaderEnabled();
+    }
+
+    /** Save the brand theme (colours, roundness, preloader). Takes effect live. */
+    public function saveTheme(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        $this->validate([
+            'color_primary' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
+            'color_accent' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
+            'color_navy' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
+            'color_action' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
+            'radius' => 'required|in:0rem,0.25rem,0.5rem,0.75rem,1rem',
+        ], [
+            'color_primary.regex' => 'Use a 6-digit hex colour like #0A6E6E.',
+            'color_accent.regex' => 'Use a 6-digit hex colour like #D4A017.',
+            'color_navy.regex' => 'Use a 6-digit hex colour like #0D1B2A.',
+            'color_action.regex' => 'Use a 6-digit hex colour like #E8412A.',
+        ]);
+
+        Setting::setValue('brand.color_primary', $this->color_primary, 'brand');
+        Setting::setValue('brand.color_accent', $this->color_accent, 'brand');
+        Setting::setValue('brand.color_navy', $this->color_navy, 'brand');
+        Setting::setValue('brand.color_action', $this->color_action, 'brand');
+        Setting::setValue('brand.radius', $this->radius, 'brand');
+        Setting::setValue('brand.preloader_enabled', $this->preloader_enabled, 'brand');
+
+        BrandSettings::flush();
+        Auditor::log('brand.theme_updated');
+        $this->saved = 'Brand theme saved — the new colours are live across the platform.';
+        $this->dispatch('nx-toast', type: 'success', message: 'Brand theme saved.');
+    }
+
+    /** Reset colours + roundness to the shipped brand defaults. */
+    public function resetTheme(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        foreach (['brand.color_primary', 'brand.color_accent', 'brand.color_navy', 'brand.color_action', 'brand.radius'] as $key) {
+            Setting::where('key', $key)->get()->each->delete();
+        }
+        BrandSettings::flush();
+        $this->color_primary = BrandSettings::color('primary');
+        $this->color_accent = BrandSettings::color('accent');
+        $this->color_navy = BrandSettings::color('navy');
+        $this->color_action = BrandSettings::color('action');
+        $this->radius = BrandSettings::radius();
+        Auditor::log('brand.theme_reset');
+        $this->saved = 'Brand colours reset to the NaaraSim defaults.';
     }
 
     public function save(): void

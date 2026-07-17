@@ -8,11 +8,15 @@
    ========================================================================== */
 
 :root {
-    --ui-primary: #0A6E6E;
-    --ui-primary-dark: #085555;
-    --ui-accent: #D4A017;
-    --ui-navy: #0D1B2A;
-    --ui-action: #E8412A;
+    /* The nx-* component tokens now FOLLOW the brand palette (Module 26), so an
+       admin colour change re-skins buttons/switches/tags/etc. too. The
+       --brand-* channel triples default in app.css and are overridden at
+       runtime by the admin Branding <style>. */
+    --ui-primary: rgb(var(--brand-primary));
+    --ui-primary-dark: rgb(var(--brand-primary-dark));
+    --ui-accent: rgb(var(--brand-accent));
+    --ui-navy: rgb(var(--brand-navy));
+    --ui-action: rgb(var(--brand-action));
     --ui-success: #16A34A;
     --ui-danger: #DC2626;
 }
@@ -27,7 +31,9 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.625rem 1.5rem;
-    border-radius: 0.75rem;
+    /* Follows the admin control-roundness setting (Module 26); +0.25rem so
+       nx-btn stays a touch softer than inputs, as before. */
+    border-radius: calc(var(--brand-radius, 0.5rem) + 0.25rem);
     font-weight: 600;
     font-size: 0.875rem;
     line-height: 1.25rem;

@@ -109,18 +109,31 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 > admin 2FA opt-in toggle, email-verification-only-when-mail-configured. Email +
 > Google + support are confirmed config-ready (work the moment keys are saved).
 
-**Module 26 — Brand & Global Design System.** ⏳ IN PROGRESS (2026-07-14): **fonts
-live** — self-hosted "Supreme Display" (the Agency custom TTF) for titles/headings
-+ self-hosted **Didact Gothic** (woff2) for body, wired via `@font-face` +
-Tailwind `font-display`/`sans` + preload, CSP-safe. **Branding system built** —
-`BrandSettings` + **Admin → Branding** page uploads the logo set (product +
-Supreme Ideas Agency, each light/dark) + favicon (PNG/JPG/WebP/SVG via
-MediaStorage), and `<x-brand-logo>` renders them (theme-swapped, scaled with
-max-height/object-contain) across the app shell, falling back to the wordmark
-until uploaded. Favicon + font preload in `<head>`. Tests: `BrandingTest` (5).
-**Pending:** the actual logo image files (they arrived inline, not as saved
-files) — upload them via Admin → Branding, or re-attach as file attachments.
-Remaining: brand-colour + global buttons/forms/preloader settings.
+**Module 26 — Brand & Global Design System.** ✅ BUILT (fonts + branding
+2026-07-14; **colours/buttons/preloader 2026-07-16**). **Fonts live** —
+self-hosted "Supreme Display" (the Agency custom TTF) for titles/headings +
+self-hosted **Didact Gothic** (woff2) for body, wired via `@font-face` + Tailwind
+`font-display`/`sans` + preload, CSP-safe. **Branding system** — `BrandSettings`
++ **Admin → Branding** uploads the logo set (product + Supreme Ideas Agency, each
+light/dark) + favicon (PNG/JPG/WebP/SVG via MediaStorage); `<x-brand-logo>`
+renders them (theme-swapped, scaled) across the app shell, falling back to the
+wordmark until uploaded. **Runtime brand colours (NEW)** — the Tailwind palette
+(`primary`/`primary-dark`/`accent`/`navy`/`action`) now resolves from CSS
+variables (`rgb(var(--brand-*) / <alpha>)`), defaulted in app.css and overridden
+by an injected `:root` `<style>` in the layout head, so the admin recolours the
+**entire platform** (Tailwind utilities AND the nx-* components, whose tokens now
+follow the brand vars) **instantly with NO rebuild** — browser-verified by
+re-skinning login to purple/pink live. **Admin → Branding → Brand colours &
+style**: four hex colour-pickers (with a live preview), a control-roundness
+selector (`--brand-radius` → nx-btn + inputs), a **preloader** on/off, and
+reset-to-defaults. `<x-brand-preloader>` is a brand-coloured, reduced-motion-aware
+loading overlay that self-removes on load (hard 4 s fallback). All injected CSS is
+sanitised (hex→channel-triple, radius clamped to a safe rem). Tests:
+`BrandingTest` (5) + `BrandThemeTest` (7); suite 300/300; audit clean.
+**Still pending from owner:** the actual logo image files — they render inline in
+chat but do not arrive as saved attachments, so upload them via Admin → Branding
+(the .ttf font earlier came through fine as a real file attachment, so that path
+works).
 _Original scope:_ Product logo (light+dark) + Supreme
 Ideas Agency logo (light+dark) + full favicon/app-icon set wired into `<head>` and
 the app shell (replace the text wordmark); admin **Branding** hub for brand name,

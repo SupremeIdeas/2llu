@@ -25,6 +25,20 @@
     font-display: swap;
 }
 
+/* --- Brand palette defaults (Module 26). Channel triples so Tailwind's
+   `rgb(var(--brand-*) / <alpha>)` colours + /opacity utilities work. The admin
+   Branding page injects an override <style> in the layout head to recolour the
+   whole platform at runtime — no rebuild. --brand-radius scales button/input
+   roundness. */
+:root {
+    --brand-primary: 10 110 110;      /* Deep Teal   #0A6E6E */
+    --brand-primary-dark: 8 85 85;    /* Teal Dark   #085555 */
+    --brand-accent: 212 160 23;       /* Warm Gold   #D4A017 */
+    --brand-navy: 13 27 42;           /* Midnight Navy #0D1B2A */
+    --brand-action: 232 65 42;        /* Coral Red   #E8412A */
+    --brand-radius: 0.5rem;           /* default control roundness */
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -19,15 +19,19 @@ export default {
                 // Titles & headings — the Supreme Ideas Agency custom font.
                 display: ['Supreme Display', 'Figtree', ...defaultTheme.fontFamily.sans],
             },
-            // Brand palette (blueprint Section 2.1 / 4.1). Use tokens, never raw hex.
+            // Brand palette (blueprint Section 2.1 / 4.1). Driven by CSS variables
+            // so the admin can recolour the whole platform at runtime with NO
+            // rebuild (Module 26 — defaults live in resources/css/app.css and an
+            // admin override <style> is injected in the layout head). The
+            // channel-triple form keeps Tailwind's /opacity utilities working.
             colors: {
                 primary: {
-                    DEFAULT: '#0A6E6E', // Deep Teal
-                    dark: '#085555',    // Teal Dark
+                    DEFAULT: 'rgb(var(--brand-primary) / <alpha-value>)', // Deep Teal
+                    dark: 'rgb(var(--brand-primary-dark) / <alpha-value>)',
                 },
-                accent: '#D4A017',      // Warm Gold
-                navy: '#0D1B2A',        // Midnight Navy
-                action: '#E8412A',      // Coral Red
+                accent: 'rgb(var(--brand-accent) / <alpha-value>)',   // Warm Gold
+                navy: 'rgb(var(--brand-navy) / <alpha-value>)',       // Midnight Navy
+                action: 'rgb(var(--brand-action) / <alpha-value>)',   // Coral Red
                 success: '#16A34A',
                 warning: '#D97706',
                 danger: '#DC2626',
