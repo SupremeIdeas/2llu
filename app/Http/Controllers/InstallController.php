@@ -115,6 +115,7 @@ class InstallController extends Controller
         return view('install.done', [
             'email' => DefaultAdminSeeder::EMAIL,
             'password' => DefaultAdminSeeder::PASSWORD,
+            'hosting' => $data['hosting_type'] === 'vps' ? 'vps' : 'shared',
         ]);
     }
 }

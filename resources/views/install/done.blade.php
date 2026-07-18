@@ -27,6 +27,11 @@
                 </p>
             </div>
 
+            {{-- Final step: the one cron entry that powers the platform. --}}
+            <div class="mt-6">
+                <x-cron-setup :hosting="$hosting ?? 'auto'" />
+            </div>
+
             <a href="/login"
                class="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 font-semibold text-white hover:bg-primary-dark">
                 Go to admin login <x-icon name="chevron-right" class="h-4 w-4" />

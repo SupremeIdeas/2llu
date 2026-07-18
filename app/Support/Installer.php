@@ -117,6 +117,59 @@ class Installer
         return 'base64:'.base64_encode(random_bytes(32));
     }
 
+    // ---- Cron / scheduler setup (blueprint Section 20) ----------------------
+
+    /** True when this install runs the VPS profile (Redis queue + Horizon). */
+    public static function isVps(): bool
+    {
+        return config('queue.default') !== 'database';
+    }
+
+    /** Best-guess absolute path to the PHP CLI binary for the cron line. */
+    public static function phpBinary(): string
+    {
+        // PHP_BINARY under a web SAPI can be php-fpm; fall back to a plain "php"
+        // which cPanel's cron UI resolves to the account's selected version.
+        $bin = PHP_BINARY ?: 'php';
+        if (str_contains($bin, 'fpm') || str_contains($bin, 'apache')) {
+            return 'php';
+        }
+
+        return $bin;
+    }
+
+    /**
+     * THE one cron entry the operator must add. This single line drives the whole
+     * platform: the scheduler (health checks, catalogue sync, backups) AND — on
+     * shared/cPanel — draining the queue every minute. Runs `schedule:run` each
+     * minute, exactly as Laravel expects.
+     */
+    public static function cronLine(?string $php = null, ?string $appPath = null): string
+    {
+        $php = $php ?: self::phpBinary();
+        $appPath = $appPath ?: base_path();
+
+        return '* * * * * cd '.$appPath.' && '.$php.' artisan schedule:run >> /dev/null 2>&1';
+    }
+
+    /** cPanel's cron UI splits schedule + command; give the command half too. */
+    public static function cronCommandOnly(?string $php = null, ?string $appPath = null): string
+    {
+        $php = $php ?: self::phpBinary();
+        $appPath = $appPath ?: base_path();
+
+        return 'cd '.$appPath.' && '.$php.' artisan schedule:run >> /dev/null 2>&1';
+    }
+
+    /** VPS-only: the long-running queue worker to run under a supervisor/Horizon. */
+    public static function queueWorkerCommand(?string $php = null, ?string $appPath = null): string
+    {
+        $php = $php ?: self::phpBinary();
+        $appPath = $appPath ?: base_path();
+
+        return $php.' '.$appPath.'/artisan horizon';
+    }
+
     /** Create the first super_admin (blueprint Section 22.1 step 3). */
     public static function createAdmin(string $name, string $email, string $password): User
     {

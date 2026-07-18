@@ -4,6 +4,11 @@
         Claude reads a logged error and proposes a minimal fix. You review the diff; approving opens a <span class="font-medium">CI-gated pull request</span> — nothing reaches production automatically, and the loop never edits secrets.
     </p>
 
+    {{-- Server cron / scheduler command — always available for reference. --}}
+    <div class="mb-6">
+        <x-cron-setup hosting="auto" />
+    </div>
+
     @if ($status)
         <div class="mb-6 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
             <x-icon name="badge-check" class="h-4 w-4" /> {{ $status }}
