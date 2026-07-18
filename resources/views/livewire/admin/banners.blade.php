@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-4xl">
     <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Banners</h1>
-    <p class="mb-6 text-sm text-slate-500 dark:text-slate-400">Promo artwork shown to users. Pick a zone, upload JPG or WebP at the recommended size, and optionally attach a link or a coupon. Dashboard-home banners rotate in a carousel; the other zones show the top banner.</p>
+    <p class="mb-6 text-sm text-slate-500 dark:text-slate-400">Promo artwork shown to users. Pick a zone, upload JPG or WebP at the recommended size (plus an optional MP4/WebM video that loops over it), and optionally attach a link or a coupon. Dashboard-home banners rotate in a carousel; the other zones show the top banner.</p>
 
     @if ($saved)
         <div class="mb-6 flex items-center gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary-dark dark:bg-primary/20 dark:text-primary">
@@ -47,6 +47,14 @@
                 @error('image_mobile') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
             </div>
             <div>
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Motion video <span class="font-normal text-slate-400">(optional — MP4/WebM, ≤ 10 MB)</span></label>
+                <input wire:model="video" type="file" accept="video/mp4,video/webm"
+                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-primary dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-300">
+                <p class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">Plays muted &amp; looping over the artwork above (great for the “More” menu). The artwork stays as the poster and the reduced-motion fallback.</p>
+                <div wire:loading wire:target="video" class="mt-1 text-[11px] text-slate-400">Uploading video…</div>
+                @error('video') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+            </div>
+            <div>
                 <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Link <span class="font-normal text-slate-400">(optional — /catalogue or https://…)</span></label>
                 <input wire:model="link_url" type="text" placeholder="/catalogue"
                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
@@ -81,7 +89,7 @@
                 </div>
             </div>
             <div class="flex items-end">
-                <button type="submit" wire:loading.attr="disabled" wire:target="save,image,image_mobile"
+                <button type="submit" wire:loading.attr="disabled" wire:target="save,image,image_mobile,video"
                         class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                     <span wire:loading.remove wire:target="save" class="inline-flex items-center gap-2"><x-icon name="check" class="h-4 w-4" /> Publish banner</span>
                     <span wire:loading wire:target="save" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Publishing…</span>

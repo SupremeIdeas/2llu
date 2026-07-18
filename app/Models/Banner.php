@@ -24,6 +24,7 @@ class Banner extends Model
         'placement',
         'image_url',
         'image_url_mobile',
+        'video_url',
         'link_url',
         'coupon_id',
         'sort_order',
@@ -44,6 +45,12 @@ class Banner extends Model
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
+    }
+
+    /** A motion banner — plays a muted-looping video (image_url is the poster). */
+    public function hasVideo(): bool
+    {
+        return filled($this->video_url);
     }
 
     /** Currently visible to users: active and inside its schedule window. */

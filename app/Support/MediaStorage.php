@@ -27,6 +27,13 @@ class MediaStorage
 
     public const MAX_SVG_KB = 512;
 
+    /** Motion banners (blueprint Module 31 + operator request). Capped small so
+     *  the "More" zone stays fast: mp4/webm, 10 MB max. Videos are stored as-is
+     *  (never converted) and always served muted-looping with an image poster. */
+    public const VIDEO_TYPES = ['mp4', 'webm'];
+
+    public const MAX_VIDEO_KB = 10240; // 10 MB
+
     public static function wasabiConfigured(): bool
     {
         return filled(config('filesystems.disks.wasabi.key'))
@@ -59,6 +66,17 @@ class MediaStorage
     public static function acceptAttribute(): string
     {
         return 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml';
+    }
+
+    /** Livewire/validator rule for an uploaded banner video (mp4/webm, ≤10 MB). */
+    public static function videoUploadRules(): array
+    {
+        return ['file', 'mimetypes:video/mp4,video/webm', 'max:'.self::MAX_VIDEO_KB];
+    }
+
+    public static function videoAcceptAttribute(): string
+    {
+        return 'video/mp4,video/webm';
     }
 
     /**

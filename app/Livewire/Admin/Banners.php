@@ -28,9 +28,11 @@ class Banners extends Component
 
     public string $placement = 'dashboard_home';
 
-    public $image = null;          // desktop / default artwork (jpg/webp)
+    public $image = null;          // desktop / default artwork (jpg/webp) — also the video poster
 
     public $image_mobile = null;   // optional small-screen artwork
+
+    public $video = null;          // optional motion video (mp4/webm, ≤10 MB) — plays over the poster
 
     public string $link_url = '';
 
@@ -53,6 +55,7 @@ class Banners extends Component
             'placement' => 'required|in:'.implode(',', array_keys(Banner::PLACEMENTS)),
             'image' => 'required|file|mimes:jpg,jpeg,webp|max:2048',
             'image_mobile' => 'nullable|file|mimes:jpg,jpeg,webp|max:2048',
+            'video' => array_merge(['nullable'], MediaStorage::videoUploadRules()),
             'link_url' => 'nullable|string|max:500',
             'coupon_id' => 'nullable|exists:coupons,id',
             'sort_order' => 'required|integer|min:0|max:999',
@@ -61,6 +64,8 @@ class Banners extends Component
         ], [
             'image.mimes' => 'Banner artwork must be JPG or WebP.',
             'image_mobile.mimes' => 'Mobile artwork must be JPG or WebP.',
+            'video.mimetypes' => 'Banner video must be an MP4 or WebM file.',
+            'video.max' => 'Keep the banner video under 10 MB so it loads fast.',
         ]);
 
         // A link must be a same-app path (/...) or a full http(s) URL — nothing
@@ -77,6 +82,7 @@ class Banners extends Component
             'placement' => $this->placement,
             'image_url' => MediaStorage::storePublic($this->image, 'banners'),
             'image_url_mobile' => $this->image_mobile ? MediaStorage::storePublic($this->image_mobile, 'banners') : null,
+            'video_url' => $this->video ? MediaStorage::storePublic($this->video, 'banners') : null,
             'link_url' => $link ?: null,
             'coupon_id' => $this->coupon_id ?: null,
             'sort_order' => (int) $this->sort_order,
@@ -86,7 +92,7 @@ class Banners extends Component
         ]);
 
         Auditor::log('banner.created', Banner::class, $banner->id, ['id' => $banner->id, 'placement' => $banner->placement]);
-        $this->reset('title', 'image', 'image_mobile', 'link_url', 'coupon_id', 'starts_at', 'ends_at');
+        $this->reset('title', 'image', 'image_mobile', 'video', 'link_url', 'coupon_id', 'starts_at', 'ends_at');
         $this->sort_order = 0;
         $this->saved = 'Banner published to the '.Banner::PLACEMENTS[$banner->placement][0].' zone.';
         $this->dispatch('nx-toast', type: 'success', message: 'Banner published.');

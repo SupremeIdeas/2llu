@@ -43,13 +43,23 @@
                         <a href="{{ $banner->link_url }}" @if ($external) target="_blank" rel="noopener" @endif
                            class="block h-full w-full" aria-label="{{ $banner->title }}">
                     @endif
-                        <picture>
-                            @if ($banner->image_url_mobile)
-                                <source media="(max-width: 640px)" srcset="{{ $banner->image_url_mobile }}">
-                            @endif
-                            <img src="{{ $banner->image_url }}" alt="{{ $banner->title }}"
-                                 loading="lazy" class="h-full w-full object-cover">
-                        </picture>
+                        @if ($banner->hasVideo())
+                            {{-- Motion banner: muted-looping video with the artwork as
+                                 poster/fallback. Reduced-motion viewers keep the poster. --}}
+                            <video class="h-full w-full object-cover" autoplay muted loop playsinline preload="metadata"
+                                   poster="{{ $banner->image_url }}" aria-label="{{ $banner->title }}"
+                                   x-init="if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { $el.removeAttribute('autoplay'); $el.pause(); }">
+                                <source src="{{ $banner->video_url }}" type="video/{{ \Illuminate\Support\Str::endsWith($banner->video_url, '.webm') ? 'webm' : 'mp4' }}">
+                            </video>
+                        @else
+                            <picture>
+                                @if ($banner->image_url_mobile)
+                                    <source media="(max-width: 640px)" srcset="{{ $banner->image_url_mobile }}">
+                                @endif
+                                <img src="{{ $banner->image_url }}" alt="{{ $banner->title }}"
+                                     loading="lazy" class="h-full w-full object-cover">
+                            </picture>
+                        @endif
                     @if ($banner->link_url)
                         </a>
                     @endif

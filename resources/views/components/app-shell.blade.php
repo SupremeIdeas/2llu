@@ -14,33 +14,51 @@
     $slots = array_pad(array_slice($primary, 0, 4), 4, null);
 @endphp
 
-<div x-data="{ moreOpen: false }" class="min-h-screen">
-    {{-- ============ DESKTOP: Apple-inspired floating side menu ============ --}}
-    <aside class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col lg:p-3">
+<div x-data="{ moreOpen: false, navCollapsed: localStorage.getItem('nx_nav_collapsed') === '1' }"
+     x-effect="localStorage.setItem('nx_nav_collapsed', navCollapsed ? '1' : '0')"
+     class="min-h-screen">
+    {{-- ============ DESKTOP: Apple-inspired floating side menu ============
+         Collapsible: the toggle shrinks it to an icon-only rail and back to
+         icons + labels. The choice is remembered in localStorage. --}}
+    <aside class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col lg:p-3 lg:transition-[width] lg:duration-300"
+           :class="navCollapsed ? 'lg:!w-24' : ''">
         <div class="flex h-full flex-col rounded-3xl border border-slate-200/70 bg-white/70 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
-            <a href="{{ $brandRoute ?? '#' }}" class="flex items-center px-5 py-5">
-                <x-brand-logo variant="product" class="h-9 max-w-[180px]" :fallback-icon="$brandIcon" />
-            </a>
+            <div class="flex items-center py-5" :class="navCollapsed ? 'justify-center px-3' : 'justify-between px-5'">
+                <a href="{{ $brandRoute ?? '#' }}" class="flex items-center" x-show="!navCollapsed">
+                    <x-brand-logo variant="product" class="h-9 max-w-[150px]" :fallback-icon="$brandIcon" />
+                </a>
+                <button type="button" @click="navCollapsed = !navCollapsed"
+                        :aria-label="navCollapsed ? 'Expand menu' : 'Collapse menu'" :aria-expanded="(!navCollapsed).toString()"
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100/80 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-white/5">
+                    <span class="transition-transform duration-300" :class="navCollapsed ? '' : 'rotate-180'">
+                        <x-icon name="chevron-right" class="h-5 w-5" />
+                    </span>
+                </button>
+            </div>
 
-            <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+            <nav class="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 py-2">
                 @foreach ($allItems as $item)
                     <a href="{{ route($item['route']) }}"
+                       :class="navCollapsed && 'justify-center'"
+                       :title="navCollapsed ? @js($item['label']) : null"
                        @class([
                            'group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition',
                            'bg-primary/10 text-primary-dark shadow-sm dark:bg-primary/20 dark:text-primary' => $isActive($item['route']),
                            'text-slate-600 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-white/5' => ! $isActive($item['route']),
                        ])>
                         <x-icon :name="$item['icon']" class="h-5 w-5 shrink-0" />
-                        <span class="truncate">{{ $item['label'] }}</span>
+                        <span class="truncate" x-show="!navCollapsed">{{ $item['label'] }}</span>
                     </a>
                 @endforeach
             </nav>
 
-            <div class="flex items-center justify-between gap-2 border-t border-slate-200/70 p-3 dark:border-white/10">
+            <div class="flex gap-2 border-t border-slate-200/70 p-3 dark:border-white/10"
+                 :class="navCollapsed ? 'flex-col items-center' : 'items-center justify-between'">
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100/80 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200">
-                        <x-icon name="log-out" class="h-5 w-5" /> Sign out
+                    <button type="submit" :title="navCollapsed ? 'Sign out' : null"
+                            class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100/80 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200">
+                        <x-icon name="log-out" class="h-5 w-5 shrink-0" /> <span x-show="!navCollapsed">Sign out</span>
                     </button>
                 </form>
                 <x-theme-toggle />
@@ -57,7 +75,7 @@
     </header>
 
     {{-- ============ Page content ============ --}}
-    <div class="lg:pl-72">
+    <div class="lg:pl-72 lg:transition-[padding] lg:duration-300" :class="navCollapsed ? 'lg:!pl-24' : ''">
         <main class="mx-auto w-full max-w-6xl px-4 py-6 pb-28 lg:px-8 lg:py-10 lg:pb-10">
             {{ $slot }}
         </main>
