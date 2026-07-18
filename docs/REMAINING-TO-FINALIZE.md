@@ -50,6 +50,17 @@ only after the hardening pass (§6).
 - [ ] **Passkey management UI** (Fortify passkey routes exist; needs a settings screen).
 - [ ] **Payment-gateway icon overrides** (admin-uploadable marks — audit §5).
 
+## 3b. Future expansion layers (designed, not built — admin-toggleable)
+
+Full design/research spec in **`docs/ROADMAP-PAYOUTS-MERCHANTS-API.md`**:
+
+- [ ] **NaaraCredit → cash payouts** (only first-referral credits withdrawable;
+  African + international bank/mobile-money payouts via Paystack/Flutterwave/Wise).
+- [ ] **Developer API reselling** (wholesale + admin markup, never below floor).
+- [ ] **Merchant / reseller system** (KYC-gated migration, co-branded storefront,
+  admin-set reseller margin, merchant payouts + autopilot settlement — admin's
+  profit floor always protected).
+
 ## 4. Content & brand finalization
 
 - [ ] **Legal pages** — Terms, Privacy, Refund policy: CMS is built; needs final
