@@ -4,7 +4,9 @@
     $banners = \App\Support\Banners::for($placement);
     // Aspect per zone, so any correctly-sized upload fits every device.
     $aspect = match ($placement) {
-        'dashboard_home' => 'aspect-[2/1] sm:aspect-[3/1]',
+        // 3:1 on every breakpoint so a 1200×400 banner shows in FULL on mobile
+        // (no side crop) — matches the shipped artwork's aspect exactly.
+        'dashboard_home' => 'aspect-[3/1]',
         'account' => 'aspect-[2/1]',
         default => 'aspect-[2/1]',
     };
