@@ -16,7 +16,7 @@ class Banner extends Model
     public const PLACEMENTS = [
         'dashboard_home' => ['Dashboard home (carousel)', '1200×400', '800×400'],
         'menu_sheet' => ['Mobile “More” menu', '800×400', '800×400'],
-        'account' => ['Account / profile settings', '1200×300', '800×300'],
+        'account' => ['Account / profile settings', '800×400', '800×400'],
     ];
 
     protected $fillable = [

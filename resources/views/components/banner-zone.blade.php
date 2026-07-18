@@ -5,7 +5,7 @@
     // Aspect per zone, so any correctly-sized upload fits every device.
     $aspect = match ($placement) {
         'dashboard_home' => 'aspect-[2/1] sm:aspect-[3/1]',
-        'account' => 'aspect-[8/3] sm:aspect-[4/1]',
+        'account' => 'aspect-[2/1]',
         default => 'aspect-[2/1]',
     };
 @endphp
