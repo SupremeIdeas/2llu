@@ -52,14 +52,19 @@ only after the hardening pass (§6).
 
 ## 3b. Future expansion layers (designed, not built — admin-toggleable)
 
-Full design/research spec in **`docs/ROADMAP-PAYOUTS-MERCHANTS-API.md`**:
+Full design/research specs (each researched with real provider sources):
 
-- [ ] **NaaraCredit → cash payouts** (only first-referral credits withdrawable;
-  African + international bank/mobile-money payouts via Paystack/Flutterwave/Wise).
-- [ ] **Developer API reselling** (wholesale + admin markup, never below floor).
-- [ ] **Merchant / reseller system** (KYC-gated migration, co-branded storefront,
-  admin-set reseller margin, merchant payouts + autopilot settlement — admin's
-  profit floor always protected).
+- [ ] **Payouts + merchants + developer API** — `docs/ROADMAP-PAYOUTS-MERCHANTS-API.md`
+  (NaaraCredit→cash for first-referral credits; developer API reselling at
+  wholesale + markup; KYC-gated co-branded merchant/reseller system).
+- [ ] **Extra payment gateways (collection + payout)** — `docs/ROADMAP-PAYMENT-GATEWAYS.md`
+  (Stripe payout, PayPal, Binance Pay, Cryptomus, CoinPayments, Payssion).
+- [ ] **NaaraSim Wizard** — `docs/ROADMAP-NAARASIM-WIZARD.md` (guided chat that
+  secures eSIM/number/OTP; provider "model" nicknames; logic-first, Claude-light;
+  reorganised dashboard; wizard fee free-3×-then-$0.45).
+- [ ] **Admin setup wizard, staff/user management, partners** —
+  `docs/ROADMAP-ADMIN-TEAM-PARTNERS.md` (first-run guided setup; money-safe staff
+  tools with evidence-gated pending-refund fix; partner earnings + payouts).
 
 ## 4. Content & brand finalization
 
