@@ -9,6 +9,24 @@
 
 ## DONE
 
+### ✅ Wizard polish — $0.45 convenience fee after 3 free sessions — built 2026-07-19
+Roadmap §6. The first few purchases completed **through the Wizard** are free;
+after that a small, always-visible fee applies (the dashboard/Numbers path stays
+free). `app/Support/WizardFee.php`: amount (default $0.45) + free allowance
+(default 3) are admin-settable via `Setting`; a per-user **`wizard_uses`** counter
+(new column) decides when it kicks in. It's a service fee, not a product price —
+never through PricingEngine/MarginGuard. Both money paths (OTP/rental `purchase`,
+`provisionPermanent`) charge the fee **alongside** the purchase with full
+money-safety: own reference, refunded together with the retail if the order fails,
+and if the wallet can't cover the fee the whole purchase rolls back to the top-up
+state (never a partial charge). `wizard_uses` increments only on completion. UI:
+fee shown up front as its own line + total on review (with the "skip it — use the
+Numbers page free" copy) and a one-time note on the permanent picker; hidden while
+free or when the admin sets it to 0. `WizardTest` (+4, now 21).
+
+**→ The NaaraSim Wizard is now feature-complete per `docs/ROADMAP-NAARASIM-WIZARD.md`
+(core + all five polish items). Only the optional NaaraCare handoff (§10) remains.**
+
 ### ✅ Wizard polish — Claude NLU sprinkle — built 2026-07-19
 Roadmap §8. An **optional** free-text box on the wizard's purpose step that maps a
 user's words to the FIXED options and drives the same deterministic machine the
@@ -231,8 +249,7 @@ The wizard core is live; polish layers on top (each independent, all optional/
 admin-toggleable, none in the money path):
 1. ~~**Claude NLU sprinkle**~~ — ✅ done 2026-07-19 (see DONE).
 2. ~~**Number matching** for Naara Line (§5/§6)~~ — ✅ done 2026-07-19 (see DONE).
-3. **$0.45 wizard fee** after the first 3 completed sessions (§6) — a visible
-   line item at purchase; the dashboard path stays free. Track `wizard_uses`.
+3. ~~**$0.45 wizard fee** after the first 3 completed sessions (§6)~~ — ✅ done 2026-07-19 (see DONE).
 4. ~~**OTP push to widget** (§3.10)~~ — ✅ done 2026-07-19 (see DONE).
 5. **NaaraCare handoff** (§10) — one-tap to `/support` for anything the wizard
    shouldn't answer, context passed so the agent starts warm.
