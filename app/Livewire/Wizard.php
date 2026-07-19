@@ -68,6 +68,14 @@ class Wizard extends Component
 
     public ?string $notice = null;
 
+    /**
+     * OTP push-to-widget (roadmap §3.10). The widget surfaces the user's latest
+     * live OTP from ANYWHERE (wizard or the dedicated numbers page), so the code
+     * lands here with one-tap copy. `dismissedOtpId` hides everything up to and
+     * including an order the user has finished with (ids only ever increase).
+     */
+    public int $dismissedOtpId = 0;
+
     /** Curated countries (until a provider country sync lands); label per slug. */
     public array $countries = [
         'usa' => 'United States', 'nigeria' => 'Nigeria', 'ghana' => 'Ghana',
@@ -114,9 +122,67 @@ class Wizard extends Component
         ], ProviderModels::available());
     }
 
+    /**
+     * The user's latest surfaceable OTP (roadmap §3.10) — waiting for a code or
+     * freshly arrived, from any entry point, within the last 30 minutes and not
+     * yet dismissed. Supplier stays masked (SmsOrder hides `provider`).
+     */
+    #[Computed]
+    public function liveOtp(): ?SmsOrder
+    {
+        return SmsOrder::where('user_id', auth()->id())
+            ->where('type', NumberRequest::TYPE_OTP)
+            ->whereIn('status', ['pending', 'waiting', 'completed'])
+            ->where('id', '>', $this->dismissedOtpId)
+            ->where('created_at', '>=', now()->subMinutes(30))
+            ->latest('id')
+            ->first();
+    }
+
+    /** True only while a surfaced code is still being fetched (bounds polling). */
+    #[Computed]
+    public function otpPending(): bool
+    {
+        return ($otp = $this->liveOtp) !== null && in_array($otp->status, ['pending', 'waiting'], true);
+    }
+
     public function toggle(): void
     {
         $this->open = ! $this->open;
+        // Opening with a live OTP and no purchase mid-flight → jump to the code.
+        if ($this->open && $this->liveOtp && in_array($this->step, ['purpose', 'result'], true)) {
+            $this->step = 'otp';
+        }
+    }
+
+    /** Open the widget straight to the surfaced OTP (launcher "code ready" tap). */
+    public function openOtp(): void
+    {
+        $this->open = true;
+        $this->step = 'otp';
+    }
+
+    /** Finish with the surfaced OTP — hide it (and anything older) from the widget. */
+    public function dismissOtp(): void
+    {
+        if ($otp = $this->liveOtp) {
+            $this->dismissedOtpId = $otp->id;
+        }
+        unset($this->liveOtp, $this->otpPending);
+        $this->reset('smsOrderId', 'notice');
+        $this->step = 'purpose';
+    }
+
+    /** Request another OTP — reuse the country if we still have it, else restart. */
+    public function anotherOtp(): void
+    {
+        if ($otp = $this->liveOtp) {
+            $this->dismissedOtpId = $otp->id;
+        }
+        unset($this->liveOtp, $this->otpPending);
+        $this->reset('smsOrderId', 'notice', 'error', 'quoteRetail');
+        $this->model = 'naara_verify';
+        $this->step = $this->country ? 'service' : 'country';
     }
 
     // ---- navigation --------------------------------------------------------
@@ -297,10 +363,16 @@ class Wizard extends Component
 
         PollSmsOtpJob::dispatch($result->order->id, 'USD');
         $this->smsOrderId = $result->order->id;
-        $this->step = 'result';
-        $this->notice = $type === NumberRequest::TYPE_OTP
-            ? 'Number reserved — we’re fetching your code now.'
-            : 'Your rental number is ready.';
+        if ($type === NumberRequest::TYPE_OTP) {
+            // Surface it through the live-OTP channel (poll → one-tap copy).
+            $this->dismissedOtpId = (int) $result->order->id - 1;
+            unset($this->liveOtp, $this->otpPending);
+            $this->step = 'otp';
+            $this->notice = 'Number reserved — we’re fetching your code now.';
+        } else {
+            $this->step = 'result';
+            $this->notice = 'Your rental number is ready.';
+        }
         $this->clearSession();
         $this->dispatch('nx-toast', variant: 'hero', type: 'success',
             title: 'Number reserved', message: 'Your number is on its way — check the widget.');

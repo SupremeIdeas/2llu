@@ -1,15 +1,30 @@
 {{-- NaaraSim Wizard widget (roadmap §11). Floating, collapsible, glowing brand
      border, SVG icons only, dark-mode parity. Buttons-only state machine — fully
      usable with no LLM. Money actions disable while in flight (wire:loading). --}}
-<div class="fixed bottom-6 right-4 z-50 print:hidden" wire:key="naara-wizard">
+<div class="fixed bottom-6 right-4 z-50 print:hidden" wire:key="naara-wizard"
+     @if ($this->otpPending) wire:poll.4s @endif>
 
     @if (! $open)
-        {{-- Launcher --}}
+        {{-- Launcher — with a live-OTP badge when a code is on its way / ready. --}}
+        @php $otp = $this->liveOtp; @endphp
+        @if ($otp && $otp->status === 'completed')
+            {{-- "Code ready" pill — the pushed OTP surfacing (roadmap §3.10). --}}
+            <button type="button" wire:click="openOtp"
+                    class="mb-2 flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-semibold text-navy shadow-lg shadow-accent/40 transition hover:brightness-105 motion-safe:animate-[naaraGlow_2.2s_ease-in-out_infinite]">
+                <x-icon name="check" class="h-4 w-4" /> Your code is ready
+            </button>
+        @endif
         <button type="button" wire:click="toggle"
                 aria-label="Open the NaaraSim helper"
                 class="group relative flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-dark motion-safe:animate-[naaraGlow_2.8s_ease-in-out_infinite]">
             <x-icon name="zap" class="h-5 w-5" />
             <span class="hidden sm:inline">Ask NaaraSim</span>
+            @if ($otp)
+                <span class="absolute -right-1 -top-1 flex h-3.5 w-3.5">
+                    <span class="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 motion-safe:animate-ping"></span>
+                    <span class="relative inline-flex h-3.5 w-3.5 rounded-full bg-accent ring-2 ring-white dark:ring-[#101d33]"></span>
+                </span>
+            @endif
         </button>
     @else
         {{-- Panel with an animated glowing brand border (reduced-motion → static). --}}
@@ -47,6 +62,15 @@
                         <div class="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">
                             <x-icon name="x" class="mt-0.5 h-4 w-4 shrink-0" /> <span>{{ $error }}</span>
                         </div>
+                    @endif
+
+                    {{-- Live-OTP nudge when the user is on another step (roadmap §3.10). --}}
+                    @if ($step !== 'otp' && ($banner = $this->liveOtp) && $banner->status === 'completed')
+                        <button type="button" wire:click="openOtp"
+                                class="flex w-full items-center justify-between gap-2 rounded-lg bg-accent/15 px-3 py-2 text-left text-xs font-semibold text-navy dark:bg-accent/20 dark:text-accent">
+                            <span class="flex items-center gap-1.5"><x-icon name="check" class="h-4 w-4" /> Your verification code arrived</span>
+                            <x-icon name="chevron-right" class="h-4 w-4" />
+                        </button>
                     @endif
 
                     {{-- 1) Purpose --}}
@@ -224,11 +248,67 @@
                                 class="w-full rounded-lg px-3 py-2 text-sm font-medium text-primary hover:underline">
                             Do something else
                         </button>
+
+                    {{-- OTP surface — the pushed code with one-tap copy (roadmap §3.10) --}}
+                    @elseif ($step === 'otp')
+                        @php $otp = $this->liveOtp; @endphp
+                        @if (! $otp)
+                            <p class="text-sm text-slate-500 dark:text-slate-400">No active code right now.</p>
+                            <button type="button" wire:click="restart"
+                                    class="w-full rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark">Start over</button>
+                        @else
+                            <div class="rounded-xl bg-slate-50 p-4 dark:bg-[#182742]">
+                                <div class="flex items-center justify-between">
+                                    <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                        <x-service-icon :slug="$otp->service_name" class="h-4 w-4" /> {{ ucfirst($otp->service_name) }}
+                                    </span>
+                                    <span class="text-xs text-slate-400">{{ $otp->phone_number }}</span>
+                                </div>
+
+                                <div class="mt-3 rounded-lg bg-white p-4 text-center dark:bg-[#243352]">
+                                    @if ($otp->status === 'completed' && $otp->otp_code)
+                                        <div class="text-[10px] uppercase tracking-wide text-slate-400">Your code</div>
+                                        {{-- One-tap copy (Alpine + clipboard); resets the label after 2s. --}}
+                                        <div x-data="{ copied: false, code: @js($otp->otp_code) }" class="mt-1">
+                                            <button type="button"
+                                                    x-on:click="navigator.clipboard.writeText(code).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                                    class="group inline-flex items-center gap-2 text-3xl font-bold tracking-widest text-primary transition hover:text-primary-dark"
+                                                    aria-label="Copy code">
+                                                <span>{{ $otp->otp_code }}</span>
+                                                <x-icon name="copy" class="h-5 w-5 opacity-50 group-hover:opacity-100" />
+                                            </button>
+                                            <div class="mt-1 h-4 text-xs font-medium text-green-600 dark:text-green-400"
+                                                 x-show="copied" x-transition x-cloak>Copied to clipboard</div>
+                                            <div class="mt-1 h-4 text-xs text-slate-400" x-show="!copied">Tap the code to copy</div>
+                                        </div>
+                                    @elseif ($otp->status === 'timeout')
+                                        <div class="text-xs text-amber-600 dark:text-amber-400">No code arrived in time — your wallet was refunded.</div>
+                                    @else
+                                        <div class="flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                                            <x-icon name="refresh" class="h-4 w-4 animate-spin text-primary" /> Waiting for your code…
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" wire:click="anotherOtp"
+                                        class="flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
+                                    <x-icon name="refresh" class="h-4 w-4" /> Another code
+                                </button>
+                                <button type="button" wire:click="dismissOtp"
+                                        class="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-dark">
+                                    <x-icon name="check" class="h-4 w-4" /> Done
+                                </button>
+                            </div>
+                            <a href="{{ route('dashboard') }}" wire:navigate
+                               class="block text-center text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">View on dashboard</a>
+                        @endif
                     @endif
                 </div>
 
                 {{-- Footer: back --}}
-                @if (! in_array($step, ['purpose', 'result']))
+                @if (! in_array($step, ['purpose', 'result', 'otp']))
                     <div class="border-t border-slate-100 px-4 py-2.5 dark:border-[#22314e]">
                         <button type="button" wire:click="back"
                                 class="text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">

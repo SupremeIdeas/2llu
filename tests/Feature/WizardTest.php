@@ -84,7 +84,7 @@ class WizardTest extends TestCase
             ->call('chooseService', 'whatsapp')
             ->assertSet('step', 'review')
             ->call('purchase')
-            ->assertSet('step', 'result');
+            ->assertSet('step', 'otp'); // OTP surfaces on the live-code channel
 
         // A waiting order exists and belongs to the user.
         $order = SmsOrder::where('user_id', $user->id)->first();
@@ -183,7 +183,74 @@ class WizardTest extends TestCase
         Livewire::actingAs($user)->test(Wizard::class)
             ->call('chooseService', 'whatsapp')
             ->call('purchase')
-            ->assertSet('step', 'result');
+            ->assertSet('step', 'otp');
         $this->assertDatabaseMissing('wizard_sessions', ['user_id' => $user->id]);
+    }
+
+    // ---- OTP push-to-widget (roadmap §3.10) --------------------------------
+
+    private function otpOrder(User $u, array $extra = []): SmsOrder
+    {
+        return SmsOrder::create(array_merge([
+            'user_id' => $u->id, 'provider' => 'fivesim', 'service_name' => 'whatsapp',
+            'type' => 'otp', 'phone_number' => '+15550001111', 'status' => 'completed',
+            'otp_code' => '123456', 'provider_cost' => 0.20, 'charged_to_user' => 0.50, 'profit' => 0.30,
+        ], $extra));
+    }
+
+    public function test_a_completed_otp_from_anywhere_surfaces_in_the_widget(): void
+    {
+        $user = User::factory()->create();
+        $order = $this->otpOrder($user); // e.g. bought on the dedicated numbers page
+
+        $comp = Livewire::actingAs($user)->test(Wizard::class);
+        // The launcher advertises the ready code, and the code is one-tap copyable.
+        $comp->assertSee('Your code is ready')
+            ->call('openOtp')
+            ->assertSet('step', 'otp')
+            ->assertSee('123456')
+            ->assertSee('Tap the code to copy');
+
+        // The supplier is still never rendered.
+        $comp->assertDontSee('fivesim');
+        $this->assertSame($order->id, $comp->instance()->liveOtp()->id);
+    }
+
+    public function test_dismissing_an_otp_hides_it_and_anything_older(): void
+    {
+        $user = User::factory()->create();
+        $this->otpOrder($user); // older
+        $newer = $this->otpOrder($user, ['otp_code' => '999000']);
+
+        $comp = Livewire::actingAs($user)->test(Wizard::class)
+            ->call('openOtp')
+            ->assertSee('999000')
+            ->call('dismissOtp')
+            ->assertSet('step', 'purpose');
+
+        // Neither the dismissed code nor the older one resurfaces.
+        $this->assertNull($comp->instance()->liveOtp());
+        $comp->assertDontSee('Your code is ready');
+    }
+
+    public function test_only_the_owning_user_sees_their_otp(): void
+    {
+        $mine = User::factory()->create();
+        $other = User::factory()->create();
+        $this->otpOrder($other, ['otp_code' => '777777']);
+
+        $comp = Livewire::actingAs($mine)->test(Wizard::class);
+        $this->assertNull($comp->instance()->liveOtp());
+        $comp->assertDontSee('777777');
+    }
+
+    public function test_a_stale_otp_older_than_the_window_does_not_surface(): void
+    {
+        $user = User::factory()->create();
+        // created_at isn't mass-assignable — force it so the order is genuinely stale.
+        $this->otpOrder($user)->forceFill(['created_at' => now()->subHour()])->save();
+
+        $comp = Livewire::actingAs($user)->test(Wizard::class);
+        $this->assertNull($comp->instance()->liveOtp());
     }
 }
