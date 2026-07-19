@@ -9,6 +9,21 @@
 
 ## DONE
 
+### ✅ Wizard polish — Naara Line number matching — built 2026-07-19
+Roadmap §5/§6. Users can shape a permanent number by typing a few digits they'd
+love (e.g. from their own number). `PermanentNumberRouter::search` now takes a
+**neutral `{digits, position}` spec** (ends|contains): it maps to each provider's
+native filter (Twilio Contains, Telnyx ends_with/contains) **and post-filters the
+results**, so the match is exact regardless of what a provider honours — the
+provider's own syntax is never exposed. The wizard adds a **match** step before
+the picker (digits field + Ends-with/Contains toggle + "Find matching numbers" +
+"Show any number" skip); the pick list labels the pattern, and a no-hit offers to
+widen or try another country. The typed pattern is re-used server-side when
+re-validating the number at provision (soft-hold re-check). Match is on the last
+few digits only (country code differs), trimmed to 7. `WizardTest` (+3, now 13) +
+`PermanentNumberTest` (+1) — pattern filter, no-hit fallback, empty-pattern guard,
+router ends/contains/none.
+
 ### ✅ Wizard polish — OTP push-to-widget + one-tap copy — built 2026-07-19
 Roadmap §3.10. The floating widget now surfaces the user's latest **live OTP**
 (waiting → arrived) from **anywhere** — wizard or the dedicated numbers page —
@@ -200,9 +215,7 @@ The wizard core is live; polish layers on top (each independent, all optional/
 admin-toggleable, none in the money path):
 1. **Claude NLU sprinkle** — free-text → fixed option via the cached
    `AnthropicClient`, with the existing buttons as the always-on fallback (§8).
-2. **Number matching** for Naara Line (§5/§6) — let the user type a desired
-   pattern; pass it to `PermanentNumberRouter::search` (Twilio meta-chars /
-   Telnyx literals abstracted behind the Model).
+2. ~~**Number matching** for Naara Line (§5/§6)~~ — ✅ done 2026-07-19 (see DONE).
 3. **$0.45 wizard fee** after the first 3 completed sessions (§6) — a visible
    line item at purchase; the dashboard path stays free. Track `wizard_uses`.
 4. ~~**OTP push to widget** (§3.10)~~ — ✅ done 2026-07-19 (see DONE).
