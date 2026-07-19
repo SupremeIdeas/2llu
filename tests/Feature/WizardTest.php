@@ -7,12 +7,14 @@ use App\Models\SmsOrder;
 use App\Models\User;
 use App\Models\VirtualNumber;
 use App\Models\WizardSession;
+use App\Services\AI\AnthropicClient;
 use App\Services\SMS\OtpStatus;
 use App\Services\Wallet\WalletService;
 use Database\Seeders\PricingSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
+use Tests\Support\FakeAnthropicClient;
 use Tests\Support\FakePermanentProvider;
 use Tests\Support\FakeSmsProvider;
 use Tests\TestCase;
@@ -316,5 +318,78 @@ class WizardTest extends TestCase
 
         $comp = Livewire::actingAs($user)->test(Wizard::class);
         $this->assertNull($comp->instance()->liveOtp());
+    }
+
+    // ---- Claude NLU sprinkle (roadmap §8) ----------------------------------
+
+    private function fakeAi(array $json, bool $on = true): void
+    {
+        $this->app->instance(AnthropicClient::class, new FakeAnthropicClient(json: $json, on: $on));
+    }
+
+    public function test_free_text_maps_to_fixed_options_and_advances_to_a_quote(): void
+    {
+        $this->configureOtpLane();
+        app()->instance('number.fivesim', new FakeSmsProvider(price: 0.20));
+        $this->fakeAi(['model' => 'naara_verify', 'country' => 'nigeria', 'service' => 'whatsapp']);
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)->test(Wizard::class)
+            ->assertSet('nluOn', true)
+            ->set('freeText', 'I need a whatsapp code for Nigeria')
+            ->call('interpret')
+            ->assertSet('model', 'naara_verify')
+            ->assertSet('country', 'nigeria')
+            ->assertSet('service', 'whatsapp')
+            ->assertSet('step', 'review');
+
+        // The NLU path never buys — a quote is a read, not a charge.
+        $this->assertSame(0, SmsOrder::count());
+        $this->assertSame(0, $user->walletTransactions()->count());
+    }
+
+    public function test_free_text_helper_is_hidden_and_inert_when_claude_is_off(): void
+    {
+        $this->configureOtpLane();
+        $this->fakeAi([], on: false); // no Anthropic key
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)->test(Wizard::class)
+            ->set('open', true)
+            ->assertSet('nluOn', false)
+            ->assertDontSee('Tell me in your words')
+            ->set('freeText', 'permanent number for the US')
+            ->call('interpret')
+            ->assertSet('step', 'purpose'); // buttons still the only path
+    }
+
+    public function test_claude_can_only_pick_from_whitelisted_options(): void
+    {
+        // Only the OTP/rental lane is live → Naara Line is NOT available. Even if
+        // the model names it (or an off-list country), those are dropped.
+        $this->configureOtpLane();
+        $this->fakeAi(['model' => 'naara_line', 'country' => 'atlantis', 'service' => 'whatsapp']);
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)->test(Wizard::class)
+            ->set('open', true)
+            ->set('freeText', 'I want a permanent number in Atlantis')
+            ->call('interpret')
+            ->assertSet('model', null)      // naara_line dropped (not available)
+            ->assertSet('step', 'purpose')
+            ->assertSee('didn’t quite catch');
+    }
+
+    public function test_a_model_without_a_country_advances_to_the_country_step(): void
+    {
+        $this->configureOtpLane();
+        $this->fakeAi(['model' => 'naara_verify', 'country' => '', 'service' => '']);
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)->test(Wizard::class)
+            ->set('freeText', 'get me an otp')
+            ->call('interpret')
+            ->assertSet('model', 'naara_verify')
+            ->assertSet('step', 'country');
     }
 }

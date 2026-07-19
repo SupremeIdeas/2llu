@@ -12,6 +12,7 @@ use App\Services\SMS\NumberRequest;
 use App\Services\SMS\PermanentNumberRouter;
 use App\Services\SMS\SmsNumberRouter;
 use App\Services\Wallet\WalletService;
+use App\Services\Wizard\WizardIntent;
 use App\Support\Niche\DeviceCompat;
 use App\Support\ProviderModels;
 use Illuminate\Support\Facades\RateLimiter;
@@ -79,6 +80,9 @@ class Wizard extends Component
     public ?string $error = null;
 
     public ?string $notice = null;
+
+    /** Optional free-text box (Claude sprinkle, roadmap §8) — buttons still rule. */
+    public string $freeText = '';
 
     /**
      * OTP push-to-widget (roadmap §3.10). The widget surfaces the user's latest
@@ -197,7 +201,59 @@ class Wizard extends Component
         $this->step = $this->country ? 'service' : 'country';
     }
 
+    /** Whether the free-text helper is offered (an Anthropic key is configured). */
+    #[Computed]
+    public function nluOn(): bool
+    {
+        return app(WizardIntent::class)->available();
+    }
+
     // ---- navigation --------------------------------------------------------
+
+    /**
+     * Claude sprinkle (roadmap §8): map the free-text box to fixed options and
+     * advance the SAME deterministic machine the buttons drive. Claude only
+     * pre-selects Model/country/service (all whitelisted); it never buys — the
+     * furthest it goes is a read-only quote, and the user still taps to pay.
+     */
+    public function interpret(WizardIntent $intent, SmsNumberRouter $router): void
+    {
+        $this->error = null;
+        $this->notice = null;
+        $text = trim($this->freeText);
+        if ($text === '') {
+            return;
+        }
+
+        $parsed = $intent->parse($text, array_column($this->purposes(), 'key'), $this->countries, $this->services);
+        $this->freeText = '';
+
+        if (! $parsed || empty($parsed['model'])) {
+            $this->notice = 'I didn’t quite catch that — tap an option below to continue.';
+
+            return;
+        }
+
+        $this->resetFlow();
+        $this->model = $parsed['model'];
+
+        if (! empty($parsed['country'])) {
+            $this->country = $parsed['country'];
+            if ($this->model === 'naara_data') {
+                $this->step = 'device';
+            } elseif ($this->model === 'naara_line') {
+                $this->step = 'match';
+            } elseif (! empty($parsed['service'])) {
+                $this->service = $parsed['service'];
+                $this->quote($router); // read-only — no money
+            } else {
+                $this->step = 'service';
+            }
+        } else {
+            $this->step = 'country';
+        }
+        $this->persist();
+    }
 
     public function choosePurpose(string $modelKey): void
     {

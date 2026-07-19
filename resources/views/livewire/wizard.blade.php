@@ -76,6 +76,30 @@
                     {{-- 1) Purpose --}}
                     @if ($step === 'purpose')
                         <p class="text-sm text-slate-600 dark:text-slate-300">Hi! What would you like to do?</p>
+
+                        {{-- Optional free-text helper (Claude sprinkle, §8). Only shown
+                             when configured; the buttons below always work regardless. --}}
+                        @if ($this->nluOn)
+                            <div class="flex items-center gap-2">
+                                <input type="text" wire:model="freeText" wire:keydown.enter="interpret"
+                                       placeholder="Tell me in your words…"
+                                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                <button type="button" wire:click="interpret" wire:loading.attr="disabled" wire:target="interpret"
+                                        aria-label="Ask"
+                                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white transition hover:bg-primary-dark disabled:opacity-60">
+                                    <x-icon name="send" wire:loading.remove wire:target="interpret" class="h-4 w-4" />
+                                    <x-icon name="refresh" wire:loading wire:target="interpret" class="h-4 w-4 animate-spin" />
+                                </button>
+                            </div>
+                            <div class="relative py-0.5 text-center">
+                                <span class="bg-white px-2 text-[11px] uppercase tracking-wide text-slate-300 dark:bg-[#101d33] dark:text-slate-500">or pick one</span>
+                            </div>
+                        @endif
+
+                        @if ($notice)
+                            <div class="rounded-lg bg-slate-50 p-3 text-xs text-slate-500 dark:bg-[#182742] dark:text-slate-400">{{ $notice }}</div>
+                        @endif
+
                         @forelse ($this->purposes as $p)
                             <button type="button" wire:click="choosePurpose('{{ $p['key'] }}')" wire:key="purpose-{{ $p['key'] }}"
                                     class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-primary hover:bg-primary/5 dark:border-[#2D4060] dark:bg-[#182742] dark:hover:border-primary">
