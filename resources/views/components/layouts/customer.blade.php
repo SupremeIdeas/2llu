@@ -32,13 +32,17 @@
         {{ $slot }}
     </x-app-shell>
 
-    {{-- Live-help: WhatsApp support (blueprint Section 32). Sits above the mobile
-         bottom nav; hidden when no number is configured. --}}
+    {{-- Live-help: WhatsApp support (blueprint Section 32). Stacked above the
+         NaaraSim Wizard launcher so the two floating actions never overlap. --}}
     @if (\App\Support\Niche\SupportLinks::hasWhatsapp())
         <a href="{{ \App\Support\Niche\SupportLinks::whatsappUrl() }}" target="_blank" rel="noopener"
            aria-label="Chat with support on WhatsApp"
-           class="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition hover:bg-primary-dark lg:bottom-6">
+           class="fixed bottom-40 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition hover:bg-primary-dark lg:bottom-24">
             <x-icon name="message-circle" class="h-6 w-6" />
         </a>
     @endif
+
+    {{-- NaaraSim Wizard — guided, buttons-only purchase widget (roadmap §3/§11).
+         Only rendered for verified end-users (this layout is behind auth). --}}
+    @livewire('wizard')
 </x-layouts.app>

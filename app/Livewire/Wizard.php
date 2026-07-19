@@ -1,0 +1,404 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Exceptions\InsufficientBalanceException;
+use App\Exceptions\SmsException;
+use App\Jobs\PollSmsOtpJob;
+use App\Models\SmsOrder;
+use App\Models\VirtualNumber;
+use App\Models\WizardSession;
+use App\Services\SMS\NumberRequest;
+use App\Services\SMS\PermanentNumberRouter;
+use App\Services\SMS\SmsNumberRouter;
+use App\Services\Wallet\WalletService;
+use App\Support\Niche\DeviceCompat;
+use App\Support\ProviderModels;
+use Illuminate\Support\Facades\RateLimiter;
+use Livewire\Attributes\Computed;
+use Livewire\Component;
+
+/**
+ * The NaaraSim Wizard (roadmap §3) — a guided, buttons-only purchase widget.
+ *
+ * It is a deterministic state machine over the Model registry (ProviderModels)
+ * and the real engines (SmsNumberRouter, PermanentNumberRouter, WalletService),
+ * so it is fully usable with no LLM in the loop (Claude NLU is a later polish).
+ *
+ * Money-safety mirrors the dedicated flows exactly:
+ *   - every quote/charge runs through the routers + PricingEngine (retail only),
+ *   - the wallet is debited before ordering; the router refunds on failure,
+ *   - a short wallet routes to a top-up state — it never charges.
+ * Supplier masking: NO provider or cost is ever kept in a PUBLIC property (those
+ * are dehydrated into the browser snapshot). The wizard stores only the public
+ * Model key + retail; the real provider is re-derived server-side at purchase.
+ */
+class Wizard extends Component
+{
+    /** Whether the floating panel is open. */
+    public bool $open = false;
+
+    /** State: purpose → country → (service|device|pick) → review → result. */
+    public string $step = 'purpose';
+
+    /** Public Model key the user is buying (naara_verify|naara_rent|naara_line|naara_data). */
+    public ?string $model = null;
+
+    public ?string $country = null;
+
+    public ?string $service = null;
+
+    /** eSIM device-compat gate (roadmap §4). */
+    public string $device = '';
+
+    public ?bool $deviceResult = null;
+
+    /** Retail-only quote shown before confirming (never cost). */
+    public ?float $quoteRetail = null;
+
+    /** Permanent-number candidates from a server search: [{number, locality, monthly_retail}]. */
+    public array $candidates = [];
+
+    /** The completed order (surfaced for OTP polling / copy). */
+    public ?int $smsOrderId = null;
+
+    public ?int $virtualNumberId = null;
+
+    public ?string $error = null;
+
+    public ?string $notice = null;
+
+    /** Curated countries (until a provider country sync lands); label per slug. */
+    public array $countries = [
+        'usa' => 'United States', 'nigeria' => 'Nigeria', 'ghana' => 'Ghana',
+        'kenya' => 'Kenya', 'south africa' => 'South Africa', 'england' => 'United Kingdom',
+    ];
+
+    public array $services = ['whatsapp', 'google', 'telegram', 'facebook', 'instagram', 'tiktok'];
+
+    /** Model key → number type for the routers (eSIM has no number type). */
+    private const MODEL_TYPE = [
+        'naara_verify' => NumberRequest::TYPE_OTP,
+        'naara_rent' => NumberRequest::TYPE_RENTAL,
+        'naara_line' => NumberRequest::TYPE_PERMANENT,
+    ];
+
+    public function mount(): void
+    {
+        $this->restore();
+    }
+
+    /**
+     * The purposes the user can pick — built ONLY from Models that are actually
+     * available right now (roadmap §2.4), so a supplier-less capability never
+     * appears. Each entry is public-safe (no provider/cost).
+     *
+     * @return array<int, array{key:string, name:string, tagline:string, icon:string, purpose:string}>
+     */
+    #[Computed]
+    public function purposes(): array
+    {
+        $labels = [
+            'naara_verify' => 'Get a verification code',
+            'naara_rent' => 'Rent a number',
+            'naara_line' => 'Get a permanent number + calls',
+            'naara_data' => 'Get eSIM data',
+        ];
+
+        return array_map(fn ($m) => [
+            'key' => $m['key'],
+            'name' => $m['name'],
+            'tagline' => $m['tagline'],
+            'icon' => $m['icon'],
+            'purpose' => $labels[$m['key']] ?? $m['name'],
+        ], ProviderModels::available());
+    }
+
+    public function toggle(): void
+    {
+        $this->open = ! $this->open;
+    }
+
+    // ---- navigation --------------------------------------------------------
+
+    public function choosePurpose(string $modelKey): void
+    {
+        $this->resetFlow();
+        // Only ever accept a Model that is genuinely available (server-verified).
+        if (! collect($this->purposes())->contains(fn ($p) => $p['key'] === $modelKey)) {
+            $this->error = 'That option isn’t available right now.';
+
+            return;
+        }
+        $this->model = $modelKey;
+        $this->step = 'country';
+        $this->persist();
+    }
+
+    public function chooseCountry(string $slug): void
+    {
+        if (! isset($this->countries[$slug])) {
+            return;
+        }
+        $this->country = $slug;
+        $this->error = null;
+
+        // Branch by the Model's capability.
+        if ($this->model === 'naara_data') {
+            $this->step = 'device';
+        } elseif ($this->model === 'naara_line') {
+            $this->searchPermanent();
+        } else {
+            $this->step = 'service';
+        }
+        $this->persist();
+    }
+
+    public function chooseService(string $service, SmsNumberRouter $router): void
+    {
+        if (! in_array($service, $this->services, true)) {
+            return;
+        }
+        $this->service = $service;
+        $this->quote($router);
+    }
+
+    /** OTP/rental live quote (retail only — provider + cost are discarded). */
+    private function quote(SmsNumberRouter $router): void
+    {
+        $this->error = null;
+        try {
+            $q = $router->quote(new NumberRequest($this->country, self::MODEL_TYPE[$this->model], $this->service, auth()->user()));
+        } catch (SmsException $e) {
+            $this->error = 'No number is available for that country and service right now. Try another.';
+            $this->step = 'service';
+
+            return;
+        }
+        $this->quoteRetail = round((float) $q['retail'], 2); // NEVER store cost/provider
+        $this->step = 'review';
+        $this->persist();
+    }
+
+    // ---- eSIM path (guided hand-off to the tested checkout) -----------------
+
+    public function checkDevice(): void
+    {
+        $this->deviceResult = DeviceCompat::check($this->device);
+    }
+
+    /**
+     * eSIM purchase is completed in the dedicated, fully-tested Checkout (coupons,
+     * credits, orphan-charge guard). The wizard guides the user there filtered by
+     * country rather than duplicating that money path (roadmap principle 3).
+     */
+    public function goToEsims()
+    {
+        $label = $this->countries[$this->country] ?? '';
+        $this->finish();
+
+        return $this->redirect(route('catalogue', ['q' => $label]), navigate: true);
+    }
+
+    // ---- permanent path -----------------------------------------------------
+
+    private function searchPermanent(): void
+    {
+        $found = app(PermanentNumberRouter::class)->search($this->country);
+        // search() returns {provider, numbers[]}; keep ONLY the masked numbers.
+        $this->candidates = $found['numbers'];
+        $this->step = 'pick';
+        if ($this->candidates === []) {
+            $this->error = 'No permanent number is available for that country right now. Try another country.';
+        }
+    }
+
+    public function provisionPermanent(string $number, PermanentNumberRouter $router): void
+    {
+        $this->error = null;
+        if ($this->rateLimited()) {
+            return;
+        }
+
+        // Re-derive the provider SERVER-SIDE from a fresh search (never trust the
+        // client, never store the provider in a public property). Also re-validates
+        // the number is still available (roadmap §7 — soft holds).
+        $fresh = $router->search($this->country);
+        $provider = $fresh['provider'];
+        $stillThere = collect($fresh['numbers'])->firstWhere('number', $number);
+        if (! $provider || ! $stillThere) {
+            $this->candidates = $fresh['numbers'];
+            $this->error = 'That number was just taken — here are the latest available ones.';
+
+            return;
+        }
+
+        try {
+            $vn = $router->provision(auth()->user(), $this->country, $number, $provider);
+        } catch (InsufficientBalanceException $e) {
+            $this->step = 'topup';
+
+            return;
+        } catch (SmsException $e) {
+            $this->error = $e->getMessage();
+
+            return;
+        }
+
+        $this->virtualNumberId = $vn->id;
+        $this->step = 'result';
+        $this->notice = 'Your permanent number is live. It’s on your dashboard and renews monthly.';
+        $this->clearSession();
+        $this->dispatch('nx-toast', variant: 'hero', type: 'success',
+            title: 'Number activated',
+            message: 'Your new permanent number is ready on your dashboard.');
+    }
+
+    // ---- OTP/rental purchase ------------------------------------------------
+
+    public function purchase(WalletService $wallet, SmsNumberRouter $router): void
+    {
+        $this->error = null;
+        if ($this->rateLimited()) {
+            return;
+        }
+        $user = auth()->user();
+        $type = self::MODEL_TYPE[$this->model];
+
+        // Re-quote server-side (never trust the displayed retail).
+        try {
+            $q = $router->quote(new NumberRequest($this->country, $type, $this->service, $user));
+        } catch (SmsException $e) {
+            $this->error = 'That number just became unavailable. Try another.';
+            $this->step = 'service';
+
+            return;
+        }
+        $retail = round((float) $q['retail'], 4);
+
+        $ref = "wizard-number:{$user->id}:".now()->timestamp;
+        try {
+            $wallet->debit($user, $retail, 'USD', ['reference' => $ref, 'description' => "Number: {$this->service}"]);
+        } catch (InsufficientBalanceException $e) {
+            $this->step = 'topup';
+
+            return;
+        }
+
+        try {
+            // The router refunds the charged amount itself if the whole lane fails.
+            $result = $router->order(new NumberRequest($this->country, $type, $this->service, $user, 'USD', $retail));
+        } catch (SmsException $e) {
+            $this->error = 'Could not reserve a number — your wallet was refunded.';
+            $this->step = 'service';
+
+            return;
+        }
+
+        PollSmsOtpJob::dispatch($result->order->id, 'USD');
+        $this->smsOrderId = $result->order->id;
+        $this->step = 'result';
+        $this->notice = $type === NumberRequest::TYPE_OTP
+            ? 'Number reserved — we’re fetching your code now.'
+            : 'Your rental number is ready.';
+        $this->clearSession();
+        $this->dispatch('nx-toast', variant: 'hero', type: 'success',
+            title: 'Number reserved', message: 'Your number is on its way — check the widget.');
+    }
+
+    /**
+     * Order rate limit: 10/min (blueprint Section 19.2). Shares the `orders:`
+     * key with GetNumber / Checkout so the cap is unified across every purchase
+     * entry point — the wizard can't be used to bypass it.
+     */
+    private function rateLimited(): bool
+    {
+        $key = 'orders:'.auth()->id();
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            $this->error = 'Too many requests in a short time. Please wait a minute and try again.';
+
+            return true;
+        }
+        RateLimiter::hit($key, 60);
+
+        return false;
+    }
+
+    // ---- housekeeping -------------------------------------------------------
+
+    public function back(): void
+    {
+        $this->error = null;
+        $this->step = match ($this->step) {
+            'country' => 'purpose',
+            'service', 'device', 'pick' => 'country',
+            'review' => 'service',
+            'topup' => $this->model === 'naara_line' ? 'pick' : 'review',
+            default => 'purpose',
+        };
+        $this->persist();
+    }
+
+    public function restart(): void
+    {
+        $this->resetFlow();
+        $this->step = 'purpose';
+        $this->clearSession();
+    }
+
+    private function resetFlow(): void
+    {
+        $this->reset('model', 'country', 'service', 'device', 'deviceResult',
+            'quoteRetail', 'candidates', 'smsOrderId', 'virtualNumberId', 'error', 'notice');
+    }
+
+    private function finish(): void
+    {
+        $this->clearSession();
+    }
+
+    // ---- session persistence (roadmap §7) -----------------------------------
+
+    private function persist(): void
+    {
+        WizardSession::updateOrCreate(
+            ['user_id' => auth()->id()],
+            ['step' => $this->step, 'data' => [
+                'model' => $this->model, 'country' => $this->country, 'service' => $this->service,
+            ]],
+        );
+    }
+
+    private function restore(): void
+    {
+        $s = WizardSession::where('user_id', auth()->id())->first();
+        if (! $s) {
+            return;
+        }
+        // Only rehydrate a real in-progress selection (never a stale terminal step).
+        if (in_array($s->step, ['country', 'service', 'device', 'review'], true) && ! empty($s->data['model'])) {
+            $this->model = $s->data['model'] ?? null;
+            $this->country = $s->data['country'] ?? null;
+            $this->service = $s->data['service'] ?? null;
+            $this->step = $s->step;
+        }
+    }
+
+    private function clearSession(): void
+    {
+        WizardSession::where('user_id', auth()->id())->delete();
+    }
+
+    public function render()
+    {
+        $order = $this->smsOrderId ? SmsOrder::find($this->smsOrderId) : null;
+        $vnumber = $this->virtualNumberId ? VirtualNumber::find($this->virtualNumberId) : null;
+        $balance = (float) (auth()->user()?->wallet?->usd_balance ?? 0);
+
+        return view('livewire.wizard', [
+            'order' => $order,
+            'vnumber' => $vnumber,
+            'balance' => $balance,
+        ]);
+    }
+}
