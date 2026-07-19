@@ -398,15 +398,23 @@
                     @endif
                 </div>
 
-                {{-- Footer: back --}}
-                @if (! in_array($step, ['purpose', 'result', 'otp']))
-                    <div class="border-t border-slate-100 px-4 py-2.5 dark:border-[#22314e]">
+                {{-- Footer: Back (contextual) + always-available NaaraCare hand-off
+                     (roadmap §10). We pass only the public Model as context — never
+                     a supplier — so the human agent starts warm. --}}
+                <div class="flex items-center justify-between border-t border-slate-100 px-4 py-2.5 dark:border-[#22314e]">
+                    @if (! in_array($step, ['purpose', 'result', 'otp']))
                         <button type="button" wire:click="back"
                                 class="text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
                             ← Back
                         </button>
-                    </div>
-                @endif
+                    @else
+                        <span></span>
+                    @endif
+                    <a href="{{ route('support', array_filter(['from' => 'wizard', 'topic' => $model])) }}" wire:navigate
+                       class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary">
+                        <x-icon name="message-circle" class="h-3.5 w-3.5" /> Talk to NaaraCare
+                    </a>
+                </div>
             </div>
         </div>
     @endif

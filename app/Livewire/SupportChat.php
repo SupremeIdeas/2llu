@@ -52,6 +52,29 @@ class SupportChat extends Component
             ]);
 
         $this->loadMessages();
+        $this->applyWarmContext();
+    }
+
+    /**
+     * Warm hand-off from the Wizard (roadmap §10). When a user taps "talk to
+     * NaaraCare" mid-flow we arrive with ?from=wizard&topic=<model>; on a fresh
+     * thread we pre-fill (never auto-send) a friendly starter so the agent has
+     * context the moment the user hits send. Only the public Model is passed —
+     * never a supplier. Any other topic falls back to a generic opener.
+     */
+    private function applyWarmContext(): void
+    {
+        if ($this->messages !== [] || request()->query('from') !== 'wizard') {
+            return;
+        }
+        $starters = [
+            'naara_line' => 'I was setting up a permanent number (Naara Line) in the Helper and need a hand.',
+            'naara_verify' => 'I was getting a verification code in the Helper and need a hand.',
+            'naara_rent' => 'I was renting a number in the Helper and need a hand.',
+            'naara_data' => 'I was getting eSIM data in the Helper and need a hand.',
+        ];
+        $topic = (string) request()->query('topic', '');
+        $this->draft = $starters[$topic] ?? 'I was using the NaaraSim Helper and need a hand with my order.';
     }
 
     private function loadMessages(): void
