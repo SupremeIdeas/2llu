@@ -9,6 +9,22 @@
 
 ## DONE
 
+### ✅ Wizard polish — Claude NLU sprinkle — built 2026-07-19
+Roadmap §8. An **optional** free-text box on the wizard's purpose step that maps a
+user's words to the FIXED options and drives the same deterministic machine the
+buttons drive. `app/Services/Wizard/WizardIntent.php`: lights up **only when an
+Anthropic key is configured**; maps free text → `{model, country, service}` via
+`AnthropicClient`, **cached** by normalised input with a tiny token budget, and
+**whitelist-clamped** — Claude may only pick among the available Models/countries/
+services, never invent one; off-list values are dropped, and any error/no-key
+returns null → buttons. `Wizard::interpret` advances from the parsed picks but
+**never buys** — the furthest it reaches is a read-only quote (review step); the
+user still taps to pay, and money paths stay pure code. UI: field + send button
+appear only when the helper is on, with an "or pick one" divider keeping buttons
+primary; an unrecognised request shows a gentle nudge. `WizardTest` (+4, now 17):
+free-text→quote (never charges), hidden+inert with Claude off, off-list dropped,
+model-without-country → country step.
+
 ### ✅ Wizard polish — Naara Line number matching — built 2026-07-19
 Roadmap §5/§6. Users can shape a permanent number by typing a few digits they'd
 love (e.g. from their own number). `PermanentNumberRouter::search` now takes a
@@ -213,8 +229,7 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 ### ▶ NEXT STEP — Wizard polish (roadmap `docs/ROADMAP-NAARASIM-WIZARD.md` §13.5)
 The wizard core is live; polish layers on top (each independent, all optional/
 admin-toggleable, none in the money path):
-1. **Claude NLU sprinkle** — free-text → fixed option via the cached
-   `AnthropicClient`, with the existing buttons as the always-on fallback (§8).
+1. ~~**Claude NLU sprinkle**~~ — ✅ done 2026-07-19 (see DONE).
 2. ~~**Number matching** for Naara Line (§5/§6)~~ — ✅ done 2026-07-19 (see DONE).
 3. **$0.45 wizard fee** after the first 3 completed sessions (§6) — a visible
    line item at purchase; the dashboard path stays free. Track `wizard_uses`.
