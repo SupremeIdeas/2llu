@@ -9,6 +9,15 @@
 
 ## DONE
 
+### ✅ Wizard polish — NaaraCare warm hand-off — built 2026-07-19
+Roadmap §10. A persistent **"Talk to NaaraCare"** link in the widget footer opens
+`/support` for anything the Wizard shouldn't answer (billing/refund/account). It
+passes only the public Model as context (`?from=wizard&topic=…`, never a supplier);
+`SupportChat` pre-fills (never auto-sends) a friendly, editable starter on a fresh
+thread so the human agent begins warm, with a generic fallback for an unknown
+topic and no prefill on a normal visit. `WizardHandoffTest` (3). **→ The NaaraSim
+Wizard roadmap is now fully complete (core + all polish items).**
+
 ### ✅ Wizard polish — $0.45 convenience fee after 3 free sessions — built 2026-07-19
 Roadmap §6. The first few purchases completed **through the Wizard** are free;
 after that a small, always-visible fee applies (the dashboard/Numbers path stays
@@ -251,8 +260,11 @@ admin-toggleable, none in the money path):
 2. ~~**Number matching** for Naara Line (§5/§6)~~ — ✅ done 2026-07-19 (see DONE).
 3. ~~**$0.45 wizard fee** after the first 3 completed sessions (§6)~~ — ✅ done 2026-07-19 (see DONE).
 4. ~~**OTP push to widget** (§3.10)~~ — ✅ done 2026-07-19 (see DONE).
-5. **NaaraCare handoff** (§10) — one-tap to `/support` for anything the wizard
-   shouldn't answer, context passed so the agent starts warm.
+5. ~~**NaaraCare handoff** (§10)~~ — ✅ done 2026-07-19 (see DONE).
+
+**✅ Wizard roadmap complete.** Next candidates (owner's call): the deferred
+brand/front-end modules (26–33) already scoped below, or hardening/real-key
+onboarding before go-live.
 
 ### ═══════════════════════════════════════════════════════════════════
 ### PLANNED — Modules 26–33: Brand system, public front end & no-code CMS (scoped 2026-07-14, owner brainstorm; NOT yet built)
