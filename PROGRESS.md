@@ -9,6 +9,19 @@
 
 ## DONE
 
+### ✅ Wizard polish — OTP push-to-widget + one-tap copy — built 2026-07-19
+Roadmap §3.10. The floating widget now surfaces the user's latest **live OTP**
+(waiting → arrived) from **anywhere** — wizard or the dedicated numbers page —
+via a `liveOtp` lookup scoped to their own orders inside a 30-min window. The
+launcher shows a pulsing badge + a "Your code is ready" pill; a completed code
+opens straight to a dedicated OTP surface with **one-tap copy** (Alpine +
+`navigator.clipboard`, "Copied" feedback). "Another code" re-runs the OTP flow
+(reusing the country when known); "Done" dismisses the code and everything older
+so it never re-surfaces. Polling is **bounded** — only while a code is pending
+(4s), stopping on arrival/timeout. Supplier masking holds (`liveOtp` is
+owner-scoped; `SmsOrder` hides `provider`). `tests/Feature/WizardTest.php` (now
+10): surface-from-anywhere, dismiss-hides-older, owner-only, stale-window.
+
 ### ✅ NaaraSim Wizard core (guided purchase widget) — built 2026-07-19
 The floating, buttons-only guided assistant (`app/Livewire/Wizard.php` +
 `resources/views/livewire/wizard.blade.php`, mounted in the customer shell). A
@@ -192,8 +205,7 @@ admin-toggleable, none in the money path):
    Telnyx literals abstracted behind the Model).
 3. **$0.45 wizard fee** after the first 3 completed sessions (§6) — a visible
    line item at purchase; the dashboard path stays free. Track `wizard_uses`.
-4. **OTP push to widget** (§3.10) — surface `PollSmsOtpJob`'s result live so the
-   code appears in the widget with one-tap copy.
+4. ~~**OTP push to widget** (§3.10)~~ — ✅ done 2026-07-19 (see DONE).
 5. **NaaraCare handoff** (§10) — one-tap to `/support` for anything the wizard
    shouldn't answer, context passed so the agent starts warm.
 
