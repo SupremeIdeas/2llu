@@ -152,8 +152,40 @@
                         </button>
 
                     {{-- 3c) Pick a permanent number --}}
+                    {{-- 3c-i) Number matching (Naara Line only, roadmap §5) --}}
+                    @elseif ($step === 'match')
+                        <p class="text-sm text-slate-600 dark:text-slate-300">Want a number with certain digits? Type a few (e.g. from your own number) and we’ll find the closest.</p>
+                        <input type="text" wire:model="matchDigits" inputmode="numeric" placeholder="e.g. 1234"
+                               wire:keydown.enter="findNumbers"
+                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" wire:click="$set('matchPosition', 'ends')"
+                                    class="rounded-lg border px-3 py-2 text-xs font-semibold transition {{ $matchPosition === 'ends' ? 'border-primary bg-primary/10 text-primary-dark dark:text-primary' : 'border-slate-200 text-slate-600 dark:border-[#2D4060] dark:text-slate-300' }}">
+                                Ends with
+                            </button>
+                            <button type="button" wire:click="$set('matchPosition', 'contains')"
+                                    class="rounded-lg border px-3 py-2 text-xs font-semibold transition {{ $matchPosition === 'contains' ? 'border-primary bg-primary/10 text-primary-dark dark:text-primary' : 'border-slate-200 text-slate-600 dark:border-[#2D4060] dark:text-slate-300' }}">
+                                Contains
+                            </button>
+                        </div>
+                        <p class="text-[11px] leading-relaxed text-slate-400">The match is on the last few digits — the country code will differ from your own number.</p>
+                        <button type="button" wire:click="findNumbers" wire:loading.attr="disabled" wire:target="findNumbers"
+                                class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
+                            <x-icon name="search" wire:loading.remove wire:target="findNumbers" class="h-4 w-4" />
+                            <x-icon name="refresh" wire:loading wire:target="findNumbers" class="h-4 w-4 animate-spin" />
+                            Find matching numbers
+                        </button>
+                        <button type="button" wire:click="showAnyNumber" wire:loading.attr="disabled" wire:target="showAnyNumber"
+                                class="w-full rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                            Show any number
+                        </button>
+
                     @elseif ($step === 'pick')
-                        <p class="text-sm text-slate-600 dark:text-slate-300">Pick your new permanent number:</p>
+                        @if ($matchUsed && $candidates !== [])
+                            <p class="text-sm text-slate-600 dark:text-slate-300">Closest matches to <span class="font-semibold">{{ $matchDigits }}</span>:</p>
+                        @elseif ($candidates !== [])
+                            <p class="text-sm text-slate-600 dark:text-slate-300">Pick your new permanent number:</p>
+                        @endif
                         @foreach ($candidates as $c)
                             <button type="button" wire:click="provisionPermanent('{{ $c['number'] }}')" wire:key="cand-{{ $c['number'] }}"
                                     wire:loading.attr="disabled" wire:target="provisionPermanent"
@@ -164,6 +196,14 @@
                                 <span class="text-xs font-semibold text-primary-dark dark:text-primary">${{ number_format($c['monthly_retail'], 2) }}/mo</span>
                             </button>
                         @endforeach
+                        @if ($candidates === [])
+                            <div class="grid grid-cols-1 gap-2">
+                                <button type="button" wire:click="showAnyNumber"
+                                        class="rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark">Show any number</button>
+                                <button type="button" wire:click="$set('step', 'country')"
+                                        class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">Try another country</button>
+                            </div>
+                        @endif
                         <div wire:loading wire:target="provisionPermanent" class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                             <x-icon name="refresh" class="h-4 w-4 animate-spin text-primary" /> Activating your number…
                         </div>

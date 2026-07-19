@@ -51,16 +51,35 @@ class PermanentNumberRouter
      * Search the lane for available numbers, priced at RETAIL (never cost). Uses
      * the first configured provider that returns results.
      *
+     * Number matching (roadmap §5/§6) is provider-agnostic: the caller passes a
+     * plain `digits` + `position` spec (ends|contains); we translate it to each
+     * provider's native filter (Twilio Contains, Telnyx ends_with/contains) AND
+     * post-filter the results so the match is accurate regardless of what the
+     * provider honours. The provider's own syntax is never exposed to the caller.
+     *
+     * @param  array{digits?:string, position?:string, limit?:int}  $options
      * @return array{provider: ?string, numbers: array<int, array{number:string, locality:string, monthly_retail:float}>}
      */
     public function search(string $country, array $options = []): array
     {
+        $digits = preg_replace('/\D/', '', (string) ($options['digits'] ?? ''));
+        $position = ($options['position'] ?? 'ends') === 'contains' ? 'contains' : 'ends';
+
         foreach ($this->lane as $provider) {
             if (! $this->isConfigured($provider)) {
                 continue;
             }
             $svc = app("number.{$provider}");
-            $found = $svc->searchNumbers($country, $options);
+            $found = $svc->searchNumbers($country, $this->providerOptions($provider, $digits, $position, $options));
+
+            // Guarantee the match ourselves — a provider that ignores the filter
+            // (or only substring-matches) can't slip a non-matching number through.
+            if ($digits !== '') {
+                $found = array_values(array_filter(
+                    $found,
+                    fn ($n) => $this->matchesSpec((string) ($n['number'] ?? ''), $digits, $position),
+                ));
+            }
             if ($found === []) {
                 continue;
             }
@@ -78,6 +97,31 @@ class PermanentNumberRouter
         }
 
         return ['provider' => null, 'numbers' => []];
+    }
+
+    /** Translate the neutral spec into a provider's native search options. */
+    private function providerOptions(string $provider, string $digits, string $position, array $options): array
+    {
+        $native = ['limit' => (int) ($options['limit'] ?? 10)];
+        if ($digits === '') {
+            return $native;
+        }
+        if ($provider === 'telnyx') {
+            // Telnyx honours the position natively.
+            return $native + ($position === 'ends' ? ['ends_with' => $digits] : ['contains' => $digits]);
+        }
+
+        // Twilio's Contains does a pattern/substring match; we post-filter for
+        // the exact position, so passing the digits as `contains` is enough.
+        return $native + ['contains' => $digits];
+    }
+
+    /** Does a number's digits satisfy the neutral match spec? */
+    private function matchesSpec(string $number, string $digits, string $position): bool
+    {
+        $num = preg_replace('/\D/', '', $number);
+
+        return $position === 'ends' ? str_ends_with($num, $digits) : str_contains($num, $digits);
     }
 
     /**

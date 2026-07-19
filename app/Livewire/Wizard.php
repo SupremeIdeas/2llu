@@ -59,6 +59,18 @@ class Wizard extends Component
     /** Permanent-number candidates from a server search: [{number, locality, monthly_retail}]. */
     public array $candidates = [];
 
+    /**
+     * Number matching for Naara Line (roadmap §5). The user's desired digits and
+     * where they should fall (ends|contains). These are the user's own input (not
+     * a supplier detail), so they're safe as public state.
+     */
+    public string $matchDigits = '';
+
+    public string $matchPosition = 'ends';
+
+    /** Whether the current pick list came from a pattern search (drives copy). */
+    public bool $matchUsed = false;
+
     /** The completed order (surfaced for OTP polling / copy). */
     public ?int $smsOrderId = null;
 
@@ -213,7 +225,9 @@ class Wizard extends Component
         if ($this->model === 'naara_data') {
             $this->step = 'device';
         } elseif ($this->model === 'naara_line') {
-            $this->searchPermanent();
+            // Naara Line supports number matching (roadmap §5): let the user shape
+            // the number before we search, or skip straight to any available one.
+            $this->step = 'match';
         } else {
             $this->step = 'service';
         }
@@ -268,14 +282,48 @@ class Wizard extends Component
 
     // ---- permanent path -----------------------------------------------------
 
-    private function searchPermanent(): void
+    /** The neutral match spec sent to the router (digits + position). */
+    private function matchSpec(): array
     {
-        $found = app(PermanentNumberRouter::class)->search($this->country);
+        $digits = substr(preg_replace('/\D/', '', $this->matchDigits), -7); // last 4–7 digits
+        $position = $this->matchPosition === 'contains' ? 'contains' : 'ends';
+
+        return ['digits' => $digits, 'position' => $position];
+    }
+
+    /** Search for a number matching the typed pattern (roadmap §5/§6). */
+    public function findNumbers(): void
+    {
+        $this->matchDigits = trim($this->matchDigits);
+        if (preg_replace('/\D/', '', $this->matchDigits) === '') {
+            $this->error = 'Type a few digits you’d like (or tap “Show any number”).';
+
+            return;
+        }
+        $this->matchUsed = true;
+        $this->searchPermanent($this->matchSpec());
+    }
+
+    /** Skip matching — just show whatever is available for the country. */
+    public function showAnyNumber(): void
+    {
+        $this->reset('matchDigits');
+        $this->matchPosition = 'ends';
+        $this->matchUsed = false;
+        $this->searchPermanent();
+    }
+
+    private function searchPermanent(array $spec = []): void
+    {
+        $this->error = null;
+        $found = app(PermanentNumberRouter::class)->search($this->country, $spec);
         // search() returns {provider, numbers[]}; keep ONLY the masked numbers.
         $this->candidates = $found['numbers'];
         $this->step = 'pick';
         if ($this->candidates === []) {
-            $this->error = 'No permanent number is available for that country right now. Try another country.';
+            $this->error = $this->matchUsed
+                ? 'No number matched that pattern. Try fewer digits, switch to “Contains”, or show any number.'
+                : 'No permanent number is available for that country right now. Try another country.';
         }
     }
 
@@ -287,9 +335,9 @@ class Wizard extends Component
         }
 
         // Re-derive the provider SERVER-SIDE from a fresh search (never trust the
-        // client, never store the provider in a public property). Also re-validates
-        // the number is still available (roadmap §7 — soft holds).
-        $fresh = $router->search($this->country);
+        // client, never store the provider in a public property). Re-uses the same
+        // match spec and re-validates the number is still available (roadmap §7).
+        $fresh = $router->search($this->country, $this->matchUsed ? $this->matchSpec() : []);
         $provider = $fresh['provider'];
         $stillThere = collect($fresh['numbers'])->firstWhere('number', $number);
         if (! $provider || ! $stillThere) {
@@ -403,7 +451,8 @@ class Wizard extends Component
         $this->error = null;
         $this->step = match ($this->step) {
             'country' => 'purpose',
-            'service', 'device', 'pick' => 'country',
+            'service', 'device', 'match' => 'country',
+            'pick' => 'match',
             'review' => 'service',
             'topup' => $this->model === 'naara_line' ? 'pick' : 'review',
             default => 'purpose',
@@ -421,7 +470,8 @@ class Wizard extends Component
     private function resetFlow(): void
     {
         $this->reset('model', 'country', 'service', 'device', 'deviceResult',
-            'quoteRetail', 'candidates', 'smsOrderId', 'virtualNumberId', 'error', 'notice');
+            'quoteRetail', 'candidates', 'matchDigits', 'matchPosition', 'matchUsed',
+            'smsOrderId', 'virtualNumberId', 'error', 'notice');
     }
 
     private function finish(): void

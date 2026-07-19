@@ -67,6 +67,30 @@ class PermanentNumberTest extends TestCase
         $this->assertArrayNotHasKey('monthly_cost', $vn->fresh()->toArray());
     }
 
+    public function test_search_matches_numbers_by_the_neutral_spec(): void
+    {
+        $this->fakeTwilio(new FakePermanentProvider(cost: 1.00, results: [
+            ['number' => '+15550001234', 'locality' => 'NY'],
+            ['number' => '+15559991234', 'locality' => 'CA'],
+            ['number' => '+15558887777', 'locality' => 'TX'],
+        ]));
+
+        $router = app(PermanentNumberRouter::class);
+
+        // ends-with: only the two ending in 1234.
+        $ends = $router->search('usa', ['digits' => '1234', 'position' => 'ends']);
+        $this->assertSame(['+15550001234', '+15559991234'], array_column($ends['numbers'], 'number'));
+
+        // contains: 777 hits only the last number.
+        $contains = $router->search('usa', ['digits' => '777', 'position' => 'contains']);
+        $this->assertSame(['+15558887777'], array_column($contains['numbers'], 'number'));
+
+        // no spec: everything, priced at retail (never cost).
+        $any = $router->search('usa');
+        $this->assertCount(3, $any['numbers']);
+        $this->assertGreaterThanOrEqual(1.01, (float) $any['numbers'][0]['monthly_retail']);
+    }
+
     public function test_a_provider_failure_refunds_the_wallet_and_saves_nothing(): void
     {
         $this->fakeTwilio(new FakePermanentProvider(throwOnBuy: true));

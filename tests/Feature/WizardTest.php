@@ -133,6 +133,8 @@ class WizardTest extends TestCase
         Livewire::actingAs($user)->test(Wizard::class)
             ->call('choosePurpose', 'naara_line')
             ->call('chooseCountry', 'usa')
+            ->assertSet('step', 'match')      // Naara Line offers number matching first
+            ->call('showAnyNumber')
             ->assertSet('step', 'pick')
             ->call('provisionPermanent', '+15550001234')
             ->assertSet('step', 'result');
@@ -142,6 +144,68 @@ class WizardTest extends TestCase
         $this->assertSame('active', $vn->status);
         $this->assertSame('+15550001234', $vn->phone_number);
         $this->assertLessThan(20.0, (float) $user->wallet->fresh()->usd_balance);
+    }
+
+    public function test_number_matching_filters_candidates_by_the_typed_pattern(): void
+    {
+        $this->configurePermanentLane();
+        app()->instance('number.twilio', new FakePermanentProvider(cost: 1.00, results: [
+            ['number' => '+15550001234', 'locality' => 'NY'],
+            ['number' => '+15559991234', 'locality' => 'CA'],
+            ['number' => '+15558887777', 'locality' => 'TX'],
+        ]));
+        $user = User::factory()->create();
+        app(WalletService::class)->credit($user, 20, 'USD');
+
+        $comp = Livewire::actingAs($user)->test(Wizard::class)
+            ->set('open', true)
+            ->call('choosePurpose', 'naara_line')
+            ->call('chooseCountry', 'usa')
+            ->set('matchDigits', '1234')
+            ->set('matchPosition', 'ends')
+            ->call('findNumbers')
+            ->assertSet('step', 'pick')
+            ->assertSee('+15550001234')
+            ->assertSee('+15559991234')
+            ->assertDontSee('+15558887777'); // doesn't end in 1234
+
+        // Only the two matching numbers survived the server-side filter.
+        $this->assertCount(2, $comp->get('candidates'));
+    }
+
+    public function test_number_matching_with_no_hit_offers_a_fallback(): void
+    {
+        $this->configurePermanentLane();
+        app()->instance('number.twilio', new FakePermanentProvider(cost: 1.00, results: [
+            ['number' => '+15558887777', 'locality' => 'TX'],
+        ]));
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)->test(Wizard::class)
+            ->set('open', true)
+            ->call('choosePurpose', 'naara_line')
+            ->call('chooseCountry', 'usa')
+            ->set('matchDigits', '1234')
+            ->call('findNumbers')
+            ->assertSet('step', 'pick')
+            ->assertSet('candidates', [])
+            ->assertSee('No number matched that pattern')
+            ->assertSee('Show any number');
+    }
+
+    public function test_empty_pattern_is_rejected_before_searching(): void
+    {
+        $this->configurePermanentLane();
+        app()->instance('number.twilio', new FakePermanentProvider());
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)->test(Wizard::class)
+            ->set('open', true)
+            ->call('choosePurpose', 'naara_line')
+            ->call('chooseCountry', 'usa')
+            ->call('findNumbers')          // no digits typed
+            ->assertSet('step', 'match')   // stays on the match step
+            ->assertSee('Type a few digits');
     }
 
     public function test_esim_purpose_guides_to_the_catalogue(): void
