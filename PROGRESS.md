@@ -9,6 +9,26 @@
 
 ## DONE
 
+### ✅ NaaraSim Wizard core (guided purchase widget) — built 2026-07-19
+The floating, buttons-only guided assistant (`app/Livewire/Wizard.php` +
+`resources/views/livewire/wizard.blade.php`, mounted in the customer shell). A
+deterministic state machine — **purpose → country → service/device/pick → review
+→ result** — built **only from Models that are actually available**
+(`ProviderModels::available`), so a supplier-less capability never appears. Fully
+usable with **no LLM** (Claude NLU is polish). It routes to the real engines:
+OTP/rental via `SmsNumberRouter` (+`PollSmsOtpJob`), permanent via
+`PermanentNumberRouter::provision`, eSIM guided to the tested `Checkout` after a
+`DeviceCompat` gate (no duplication of that money path). **Money-safety** mirrors
+the dedicated flows: retail-only quotes via `PricingEngine`, debit-before-order
+with router refund on failure, short wallet → top-up state (never charges), shared
+10/min order limit. **Supplier masking:** no provider/cost is ever kept in a public
+(dehydrated) property — the wizard holds only the Model key + retail, and the
+permanent provider is re-derived server-side at purchase from a fresh search (which
+also re-validates the hold). **Save/resume** via `wizard_sessions` (survives
+minimise/top-up/page change, cleared on completion). Widget UX: collapsible,
+animated brand-glow border (reduced-motion → static), SVG-only, dark-mode parity,
+loading states. `tests/Feature/WizardTest.php` (6).
+
 ### ✅ Permanent numbers (Naara Line) end-to-end — built 2026-07-19
 Naara Line is now a real, money-safe product (the step before the Wizard core).
 **Provisioning** (`app/Services/SMS/PermanentNumberRouter.php`) over the Twilio →
@@ -162,16 +182,20 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 
 ## NEXT  (build strictly top to bottom)
 
-### ▶ NEXT STEP — Wizard core (NaaraSim Wizard, per `docs/ROADMAP-NAARASIM-WIZARD.md`)
-A buttons-only state machine over the Model registry (`ProviderModels`) + the
-routers, now that **all four Models are real** (Naara Data / Verify / Rent, and
-Naara Line permanent numbers wired 2026-07-19). Flow: pick Model → country/options
-→ live quote (retail only, via PricingEngine) → confirm → order via the owning
-router (eSIM Checkout · SmsNumberRouter · **PermanentNumberRouter**). Suppliers
-never shown; every step has a loading state; money actions disable in flight.
-Fold the **user-facing permanent-number purchase UI** into this (the one piece
-Naara Line still lacks). THEN wizard polish (Claude NLU sprinkle, number matching,
-device check, $0.45 fee, NaaraCare handoff, glow widget).
+### ▶ NEXT STEP — Wizard polish (roadmap `docs/ROADMAP-NAARASIM-WIZARD.md` §13.5)
+The wizard core is live; polish layers on top (each independent, all optional/
+admin-toggleable, none in the money path):
+1. **Claude NLU sprinkle** — free-text → fixed option via the cached
+   `AnthropicClient`, with the existing buttons as the always-on fallback (§8).
+2. **Number matching** for Naara Line (§5/§6) — let the user type a desired
+   pattern; pass it to `PermanentNumberRouter::search` (Twilio meta-chars /
+   Telnyx literals abstracted behind the Model).
+3. **$0.45 wizard fee** after the first 3 completed sessions (§6) — a visible
+   line item at purchase; the dashboard path stays free. Track `wizard_uses`.
+4. **OTP push to widget** (§3.10) — surface `PollSmsOtpJob`'s result live so the
+   code appears in the widget with one-tap copy.
+5. **NaaraCare handoff** (§10) — one-tap to `/support` for anything the wizard
+   shouldn't answer, context passed so the agent starts warm.
 
 ### ═══════════════════════════════════════════════════════════════════
 ### PLANNED — Modules 26–33: Brand system, public front end & no-code CMS (scoped 2026-07-14, owner brainstorm; NOT yet built)
