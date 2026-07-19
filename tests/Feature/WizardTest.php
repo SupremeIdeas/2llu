@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\VirtualNumber;
 use App\Models\WizardSession;
 use App\Services\AI\AnthropicClient;
+use App\Services\Pricing\PricingEngine;
 use App\Services\SMS\OtpStatus;
 use App\Services\Wallet\WalletService;
 use Database\Seeders\PricingSettingsSeeder;
@@ -391,5 +392,107 @@ class WizardTest extends TestCase
             ->call('interpret')
             ->assertSet('model', 'naara_verify')
             ->assertSet('step', 'country');
+    }
+
+    // ---- Wizard convenience fee (roadmap §6) -------------------------------
+
+    private function otpRetail(): float
+    {
+        return round(app(PricingEngine::class)->calculateSmsRetail(0.20, 'fivesim'), 4);
+    }
+
+    private function usedWizard(int $times): User
+    {
+        $u = User::factory()->create();
+        $u->forceFill(['wizard_uses' => $times])->save();
+
+        return $u;
+    }
+
+    public function test_the_first_sessions_are_free_then_the_fee_applies(): void
+    {
+        $this->configureOtpLane();
+        app()->instance('number.fivesim', new FakeSmsProvider(price: 0.20, buyResponse: [
+            'provider_ref' => '5S-1', 'number' => '+2348010000000', 'cost' => 0.20, 'status' => OtpStatus::PENDING,
+        ]));
+        $retail = $this->otpRetail();
+
+        // Within the free allowance (2 of 3 used) → no fee, counter advances.
+        $free = $this->usedWizard(2);
+        app(WalletService::class)->credit($free, 20, 'USD');
+        Livewire::actingAs($free)->test(Wizard::class)
+            ->call('choosePurpose', 'naara_verify')->call('chooseCountry', 'nigeria')
+            ->call('chooseService', 'whatsapp')->call('purchase')->assertSet('step', 'otp');
+
+        $this->assertSame(number_format(20 - $retail, 4, '.', ''), (string) $free->wallet->fresh()->usd_balance);
+        $this->assertSame(3, (int) $free->fresh()->wizard_uses);
+        $this->assertSame(0, $free->walletTransactions()->where('description', 'Wizard assist fee')->count());
+    }
+
+    public function test_the_fee_is_charged_on_top_once_the_allowance_is_spent(): void
+    {
+        $this->configureOtpLane();
+        app()->instance('number.fivesim', new FakeSmsProvider(price: 0.20, buyResponse: [
+            'provider_ref' => '5S-2', 'number' => '+2348010000000', 'cost' => 0.20, 'status' => OtpStatus::PENDING,
+        ]));
+        $retail = $this->otpRetail();
+        $fee = 0.45;
+
+        $paid = $this->usedWizard(3); // allowance spent → fee applies
+        app(WalletService::class)->credit($paid, 20, 'USD');
+        Livewire::actingAs($paid)->test(Wizard::class)
+            ->set('open', true)
+            ->call('choosePurpose', 'naara_verify')->call('chooseCountry', 'nigeria')
+            ->call('chooseService', 'whatsapp')
+            ->assertSee('Wizard help')            // shown up front, never hidden
+            ->assertSee('0.45')
+            ->call('purchase')->assertSet('step', 'otp');
+
+        // Retail AND the fee were charged; the counter advanced.
+        $this->assertSame(number_format(20 - $retail - $fee, 4, '.', ''), (string) $paid->wallet->fresh()->usd_balance);
+        $this->assertSame(4, (int) $paid->fresh()->wizard_uses);
+        $this->assertSame(1, $paid->walletTransactions()->where('description', 'Wizard assist fee')->count());
+    }
+
+    public function test_a_wallet_that_covers_retail_but_not_the_fee_charges_nothing(): void
+    {
+        $this->configureOtpLane();
+        app()->instance('number.fivesim', new FakeSmsProvider(price: 0.20, buyResponse: [
+            'provider_ref' => '5S-3', 'number' => '+2348010000000', 'cost' => 0.20, 'status' => OtpStatus::PENDING,
+        ]));
+        $retail = $this->otpRetail();
+
+        $paid = $this->usedWizard(3);
+        // Enough for the number, but not the extra $0.45 fee.
+        app(WalletService::class)->credit($paid, $retail + 0.10, 'USD');
+
+        Livewire::actingAs($paid)->test(Wizard::class)
+            ->call('choosePurpose', 'naara_verify')->call('chooseCountry', 'nigeria')
+            ->call('chooseService', 'whatsapp')->call('purchase')
+            ->assertSet('step', 'topup');
+
+        // The retail debit was rolled back — the balance is whole again, no order.
+        $this->assertSame(number_format($retail + 0.10, 4, '.', ''), (string) $paid->wallet->fresh()->usd_balance);
+        $this->assertSame(0, SmsOrder::count());
+        $this->assertSame(3, (int) $paid->fresh()->wizard_uses); // not counted
+    }
+
+    public function test_the_permanent_flow_also_charges_the_fee_and_counts_the_use(): void
+    {
+        $this->configurePermanentLane();
+        app()->instance('number.twilio', new FakePermanentProvider(cost: 1.00, results: [
+            ['number' => '+15550001234', 'locality' => 'NY'],
+        ]));
+        $paid = $this->usedWizard(3);
+        app(WalletService::class)->credit($paid, 20, 'USD');
+
+        Livewire::actingAs($paid)->test(Wizard::class)
+            ->call('choosePurpose', 'naara_line')->call('chooseCountry', 'usa')
+            ->call('showAnyNumber')->call('provisionPermanent', '+15550001234')
+            ->assertSet('step', 'result');
+
+        $this->assertSame(1, $paid->walletTransactions()->where('description', 'Wizard assist fee')->count());
+        $this->assertSame(4, (int) $paid->fresh()->wizard_uses);
+        $this->assertSame(1, VirtualNumber::where('user_id', $paid->id)->count());
     }
 }

@@ -208,6 +208,13 @@ class Wizard extends Component
         return app(WizardIntent::class)->available();
     }
 
+    /** The Wizard convenience fee for THIS user's next purchase (roadmap §6). */
+    #[Computed]
+    public function wizardFee(): float
+    {
+        return \App\Support\WizardFee::forUser(auth()->user());
+    }
+
     // ---- navigation --------------------------------------------------------
 
     /**
@@ -383,7 +390,7 @@ class Wizard extends Component
         }
     }
 
-    public function provisionPermanent(string $number, PermanentNumberRouter $router): void
+    public function provisionPermanent(string $number, PermanentNumberRouter $router, WalletService $wallet): void
     {
         $this->error = null;
         if ($this->rateLimited()) {
@@ -403,18 +410,41 @@ class Wizard extends Component
             return;
         }
 
+        $user = auth()->user();
+
+        // Wizard convenience fee (roadmap §6) — taken first, refunded if the
+        // provisioning below can't complete, never hidden.
+        $fee = $this->wizardFee();
+        $feeRef = "wizard-fee:{$user->id}:".now()->timestamp;
+        if ($fee > 0) {
+            try {
+                $wallet->debit($user, $fee, 'USD', ['reference' => $feeRef, 'description' => 'Wizard assist fee']);
+            } catch (InsufficientBalanceException $e) {
+                $this->step = 'topup';
+
+                return;
+            }
+        }
+
         try {
-            $vn = $router->provision(auth()->user(), $this->country, $number, $provider);
+            $vn = $router->provision($user, $this->country, $number, $provider);
         } catch (InsufficientBalanceException $e) {
+            if ($fee > 0) {
+                $wallet->refund($user, $fee, 'USD', ['reference' => "refund:{$feeRef}", 'description' => 'Wizard fee refunded — number not purchased']);
+            }
             $this->step = 'topup';
 
             return;
         } catch (SmsException $e) {
+            if ($fee > 0) {
+                $wallet->refund($user, $fee, 'USD', ['reference' => "refund:{$feeRef}", 'description' => 'Wizard fee refunded — number not purchased']);
+            }
             $this->error = $e->getMessage();
 
             return;
         }
 
+        $user->increment('wizard_uses'); // counts toward the free allowance
         $this->virtualNumberId = $vn->id;
         $this->step = 'result';
         $this->notice = 'Your permanent number is live. It’s on your dashboard and renews monthly.';
@@ -445,6 +475,7 @@ class Wizard extends Component
             return;
         }
         $retail = round((float) $q['retail'], 4);
+        $fee = $this->wizardFee();
 
         $ref = "wizard-number:{$user->id}:".now()->timestamp;
         try {
@@ -455,16 +486,34 @@ class Wizard extends Component
             return;
         }
 
+        // Wizard convenience fee (roadmap §6) — charged only alongside a real
+        // purchase, refunded with the retail if the order fails, never hidden.
+        $feeRef = "wizard-fee:{$user->id}:".now()->timestamp;
+        if ($fee > 0) {
+            try {
+                $wallet->debit($user, $fee, 'USD', ['reference' => $feeRef, 'description' => 'Wizard assist fee']);
+            } catch (InsufficientBalanceException $e) {
+                $wallet->refund($user, $retail, 'USD', ['reference' => "refund:{$ref}", 'description' => 'Number not purchased']);
+                $this->step = 'topup';
+
+                return;
+            }
+        }
+
         try {
             // The router refunds the charged amount itself if the whole lane fails.
             $result = $router->order(new NumberRequest($this->country, $type, $this->service, $user, 'USD', $retail));
         } catch (SmsException $e) {
+            if ($fee > 0) {
+                $wallet->refund($user, $fee, 'USD', ['reference' => "refund:{$feeRef}", 'description' => 'Wizard fee refunded — order failed']);
+            }
             $this->error = 'Could not reserve a number — your wallet was refunded.';
             $this->step = 'service';
 
             return;
         }
 
+        $user->increment('wizard_uses'); // this wizard purchase counts toward the free allowance
         PollSmsOtpJob::dispatch($result->order->id, 'USD');
         $this->smsOrderId = $result->order->id;
         if ($type === NumberRequest::TYPE_OTP) {

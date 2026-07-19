@@ -210,6 +210,12 @@
                         @elseif ($candidates !== [])
                             <p class="text-sm text-slate-600 dark:text-slate-300">Pick your new permanent number:</p>
                         @endif
+                        @if ($this->wizardFee > 0 && $candidates !== [])
+                            <p class="rounded-lg bg-slate-50 p-2.5 text-[11px] leading-relaxed text-slate-400 dark:bg-[#182742]">
+                                A one-time ${{ number_format($this->wizardFee, 2) }} wizard fee applies on top of the monthly price
+                                (the <a href="{{ route('numbers') }}" wire:navigate class="font-medium text-primary hover:underline">Numbers page</a> is free).
+                            </p>
+                        @endif
                         @foreach ($candidates as $c)
                             <button type="button" wire:click="provisionPermanent('{{ $c['number'] }}')" wire:key="cand-{{ $c['number'] }}"
                                     wire:loading.attr="disabled" wire:target="provisionPermanent"
@@ -243,12 +249,33 @@
                             </div>
                             <div class="mt-2 flex items-center justify-between text-sm">
                                 <span class="text-slate-500 dark:text-slate-400">Price</span>
-                                <span class="text-lg font-bold text-primary-dark dark:text-primary">${{ number_format($quoteRetail, 2) }}</span>
+                                <span class="font-semibold text-slate-900 dark:text-slate-100">${{ number_format($quoteRetail, 2) }}</span>
                             </div>
+                            @if ($this->wizardFee > 0)
+                                <div class="mt-1 flex items-center justify-between text-sm">
+                                    <span class="text-slate-500 dark:text-slate-400">Wizard help</span>
+                                    <span class="font-semibold text-slate-900 dark:text-slate-100">${{ number_format($this->wizardFee, 2) }}</span>
+                                </div>
+                                <div class="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 text-sm dark:border-[#2D4060]">
+                                    <span class="text-slate-500 dark:text-slate-400">Total</span>
+                                    <span class="text-lg font-bold text-primary-dark dark:text-primary">${{ number_format($quoteRetail + $this->wizardFee, 2) }}</span>
+                                </div>
+                            @else
+                                <div class="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 text-sm dark:border-[#2D4060]">
+                                    <span class="text-slate-500 dark:text-slate-400">Total</span>
+                                    <span class="text-lg font-bold text-primary-dark dark:text-primary">${{ number_format($quoteRetail, 2) }}</span>
+                                </div>
+                            @endif
                             <div class="mt-1 flex items-center justify-between text-xs text-slate-400">
                                 <span>Wallet balance</span><span>${{ number_format($balance, 2) }}</span>
                             </div>
                         </div>
+                        @if ($this->wizardFee > 0)
+                            <p class="text-[11px] leading-relaxed text-slate-400">
+                                A small ${{ number_format($this->wizardFee, 2) }} — not even a dollar — supports the Wizard doing the heavy lifting.
+                                Prefer to skip it? <a href="{{ route('numbers') }}" wire:navigate class="font-medium text-primary hover:underline">Use the Numbers page free</a>.
+                            </p>
+                        @endif
                         <button type="button" wire:click="purchase" wire:loading.attr="disabled" wire:target="purchase"
                                 class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
                             <x-icon name="refresh" wire:loading wire:target="purchase" class="h-4 w-4 animate-spin" />
