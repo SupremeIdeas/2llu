@@ -9,6 +9,17 @@
 
 ## DONE
 
+### ✅ Connectivity Model layer (supplier masking) — built 2026-07-18 (Wizard keystone)
+`app/Support/ProviderModels.php` — the four public **Models** (Naara Data / Verify
+/ Rent / Line) each backed by a real provider lane, matching SmsNumberRouter's
+capability routing. `status()` = live (any lane provider configured) · needs_key ·
+coming_soon (Naara Line — permanent purchase not wired). `forProvider/forNumberType`
+map to the public Model. The raw `provider` is now `$hidden` on SmsOrder + EsimOrder
+(never serialised); `sms_orders.type` records otp/rental so numbers badge correctly.
+`<x-model-badge>` shows the Model (name + icon), never the supplier — applied to the
+dashboard eSIM + number cards. This is the keystone the Wizard + dashboard reorg
+build on (per `docs/ROADMAP-NAARASIM-WIZARD.md` §13). `tests/Feature/ProviderModelsTest.php` (4).
+
 ### ✅ AI Pricing Architect — "Plan Price with Claude"  — built 2026-07-17 (owner vision)
 A dedicated layer over the margin controls where Claude analyses live provider
 costs + current retail and PROPOSES the most profitable, competitive prices for

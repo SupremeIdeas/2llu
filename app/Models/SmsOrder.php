@@ -12,6 +12,7 @@ class SmsOrder extends Model
         'provider',
         'service_id',
         'service_name',
+        'type',
         'getatext_id',
         'phone_number',
         'otp_code',
@@ -23,10 +24,15 @@ class SmsOrder extends Model
         'completed_at',
     ];
 
-    /** Money-safety rule 1.2: provider cost and profit are private. */
+    /**
+     * Money-safety rule 1.2: provider cost and profit are private. The raw
+     * supplier (`provider`) is masked too — users only ever see the public Model
+     * (ProviderModels), never which third-party fulfilled the number.
+     */
     protected $hidden = [
         'provider_cost',
         'profit',
+        'provider',
     ];
 
     protected function casts(): array

@@ -80,7 +80,10 @@
                                 @foreach (array_slice($esim->plan?->countries ?? [], 0, 3) as $iso)
                                     <x-country-flag :country="$iso" class="h-4 w-6 shrink-0" />
                                 @endforeach
-                                <span class="truncate font-semibold text-slate-900 dark:text-slate-100">{{ $esim->plan?->name ?? 'eSIM' }}</span>
+                                <span class="min-w-0">
+                                    <span class="block truncate font-semibold text-slate-900 dark:text-slate-100">{{ $esim->plan?->name ?? 'eSIM' }}</span>
+                                    <x-model-badge :esim="true" class="mt-0.5" />
+                                </span>
                             </span>
                             <x-ui.tag :variant="$esim->status === 'active' ? 'live' : (in_array($esim->status, ['pending', 'processing']) ? 'gold' : 'soon')">
                                 {{ ucfirst($esim->status) }}
@@ -164,7 +167,10 @@
                                 </span>
                                 <span class="min-w-0">
                                     <span class="block truncate font-semibold text-slate-900 dark:text-slate-100">{{ $number->phone_number ?? ucfirst($number->service_name) }}</span>
-                                    <span class="block text-xs capitalize text-slate-400">{{ $number->service_name }}</span>
+                                    <span class="mt-0.5 flex items-center gap-1.5">
+                                        <span class="text-xs capitalize text-slate-400">{{ $number->service_name }}</span>
+                                        <x-model-badge :type="$number->type" :provider="$number->provider" />
+                                    </span>
                                 </span>
                             </span>
                             <div class="flex flex-col items-end gap-1">

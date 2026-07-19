@@ -24,9 +24,14 @@ class EsimOrder extends Model
         'currency',
     ];
 
-    /** Money-safety rule 1.2: wholesale_cost is private. */
+    /**
+     * Money-safety rule 1.2: wholesale_cost is private. The raw supplier
+     * (`provider`) is masked too — users only ever see the public Model
+     * (ProviderModels · Naara Data), never which eSIM provider fulfilled it.
+     */
     protected $hidden = [
         'wholesale_cost',
+        'provider',
     ];
 
     protected function casts(): array
