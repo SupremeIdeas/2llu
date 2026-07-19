@@ -9,6 +9,16 @@
 
 ## DONE
 
+### ✅ Dashboard reorganisation (by Model + Archive) — built 2026-07-18
+"My Connectivity" now organises on the Model layer: **Numbers grouped by their
+public Model** (Naara Line / Rent / Verify, permanent→rental→otp order) with a
+heading + tagline each — no mixing of types; **eSIMs** show the Naara Data badge;
+and finished/expired items (numbers cancelled/timeout, eSIMs expired/past-expiry)
+collapse into an **Archive** so the active view stays clean. Suppliers never
+render. `Dashboard.php` computes the groups + archives server-side.
+`tests/Feature/DashboardOrganisationTest.php` (3): grouping, number + eSIM archive,
+supplier never shown, new-user showcase.
+
 ### ✅ Connectivity Model layer (supplier masking) — built 2026-07-18 (Wizard keystone)
 `app/Support/ProviderModels.php` — the four public **Models** (Naara Data / Verify
 / Rent / Line) each backed by a real provider lane, matching SmsNumberRouter's
