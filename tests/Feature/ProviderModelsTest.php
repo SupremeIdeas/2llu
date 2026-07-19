@@ -32,24 +32,29 @@ class ProviderModelsTest extends TestCase
         $this->assertSame('naara_data', ProviderModels::esim()['key']);
     }
 
-    public function test_a_model_needs_a_configured_provider_and_permanent_stays_coming_soon(): void
+    public function test_a_model_needs_a_configured_provider_in_its_lane(): void
     {
-        // No keys → number/eSIM Models need a key; Naara Line is coming-soon.
+        // No keys → every Model needs a key (permanent provisioning is now wired,
+        // so Naara Line is key-driven too, not hard "coming soon").
         config(['services.fivesim.api_key' => null, 'services.esimgo.api_key' => null,
-                'services.getatext.api_key' => null, 'services.smsactivate.api_key' => null]);
+                'services.getatext.api_key' => null, 'services.smsactivate.api_key' => null,
+                'services.twilio.account_sid' => null, 'services.telnyx.api_key' => null]);
         \App\Support\ProviderKeys::flush();
         $this->assertSame('needs_key', ProviderModels::status('naara_verify'));
-        $this->assertSame('coming_soon', ProviderModels::status('naara_line')); // not wired yet
+        $this->assertSame('needs_key', ProviderModels::status('naara_line'));
 
-        // Configure ONE provider in the OTP/rental lane → those Models go live.
+        // Configure ONE provider in the OTP/rental lane → those Models go live,
+        // but Naara Line still needs Twilio/Telnyx.
         config(['services.fivesim.api_key' => 'test-key']);
         \App\Support\ProviderKeys::flush();
         $this->assertSame('live', ProviderModels::status('naara_verify'));
         $this->assertSame('live', ProviderModels::status('naara_rent'));
+        $this->assertSame('needs_key', ProviderModels::status('naara_line'));
 
-        $availableKeys = array_column(ProviderModels::available(), 'key');
-        $this->assertContains('naara_verify', $availableKeys);
-        $this->assertNotContains('naara_line', $availableKeys); // still coming soon
+        // Configure Twilio → Naara Line goes live.
+        config(['services.twilio.account_sid' => 'AC', 'services.twilio.auth_token' => 'tok']);
+        \App\Support\ProviderKeys::flush();
+        $this->assertSame('live', ProviderModels::status('naara_line'));
     }
 
     public function test_the_raw_supplier_is_never_serialised_on_an_order(): void

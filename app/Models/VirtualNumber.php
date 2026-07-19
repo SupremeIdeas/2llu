@@ -21,9 +21,13 @@ class VirtualNumber extends Model
         'expires_at',
     ];
 
-    /** Money-safety rule 1.2: monthly_cost is private. */
+    /**
+     * Money-safety rule 1.2: monthly_cost is private. Supplier masking: the raw
+     * provider (Twilio/Telnyx) is never serialised — users see only Naara Line.
+     */
     protected $hidden = [
         'monthly_cost',
+        'provider',
     ];
 
     protected function casts(): array

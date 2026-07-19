@@ -33,6 +33,9 @@ if (config('queue.default') === 'database') {
 // Ping provider wallets and alert on low balance (Section 17.2).
 Schedule::command('providers:health-check')->everyFifteenMinutes()->withoutOverlapping();
 
+// Charge permanent-number (Naara Line) monthly subscriptions + release lapsed ones.
+Schedule::command('virtual:renew')->dailyAt('04:00')->withoutOverlapping();
+
 // Refresh eSIM catalogues + recompute retail via the PricingEngine.
 Schedule::command('esim:sync')->dailyAt('03:00')->withoutOverlapping();
 

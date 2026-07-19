@@ -56,9 +56,10 @@ class ProviderModels
             'icon' => 'phone',
             'caps' => ['permanent', 'voice', 'number_search'],
             'lane' => ['twilio', 'telnyx'],
-            // Permanent-number provisioning is not wired yet (TwilioService::buyNumber
-            // + SmsNumberRouter::order throw "coming soon"). Keep this until it is.
-            'coming_soon' => true,
+            // Provisioning + monthly billing are now wired (PermanentNumberRouter +
+            // virtual:renew). Availability is key-driven: live once Twilio or Telnyx
+            // is configured, else needs_key.
+            'coming_soon' => false,
         ],
     ];
 
