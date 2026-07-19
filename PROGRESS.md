@@ -9,6 +9,25 @@
 
 ## DONE
 
+### ✅ Permanent numbers (Naara Line) end-to-end — built 2026-07-19
+Naara Line is now a real, money-safe product (the step before the Wizard core).
+**Provisioning** (`app/Services/SMS/PermanentNumberRouter.php`) over the Twilio →
+Telnyx lane: charge the first month up-front, MarginGuard-floored via
+`PricingEngine`, refund on provider failure, **orphan-charge guard** (release the
+provisioned number + refund + admin alert if the record can't be saved), and
+`InsufficientBalance` surfaced for top-up. **Monthly billing**
+(`RenewVirtualNumbersCommand` → `virtual:renew`, scheduled daily 04:00): idempotent
+per-number charge (`vnum-renew:{id}:{Y-m}`), **grace period** on a short wallet
+(`past_due`), then release + expire once grace lapses — so we never keep paying a
+provider for a number the user stopped paying us for. `TwilioService` /
+`TelnyxService` now carry real REST implementations (search / buy / send / release /
+live monthly cost), auth from config, safe degradation with no key, and no cost in
+any user-facing row. `VirtualNumber` hides `provider` (supplier masking) alongside
+`monthly_cost`. `ProviderModels` Naara Line availability is now key-driven (live
+once Twilio or Telnyx is configured). `tests/Feature/PermanentNumberTest.php` (9,
+network-free fake provider) + `ProviderModelsTest` lane availability (12 green
+total). **Still to add:** a user-facing purchase UI (folds into the Wizard core).
+
 ### ✅ Dashboard reorganisation (by Model + Archive) — built 2026-07-18
 "My Connectivity" now organises on the Model layer: **Numbers grouped by their
 public Model** (Naara Line / Rent / Verify, permanent→rental→otp order) with a
@@ -142,6 +161,17 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 ---
 
 ## NEXT  (build strictly top to bottom)
+
+### ▶ NEXT STEP — Wizard core (NaaraSim Wizard, per `docs/ROADMAP-NAARASIM-WIZARD.md`)
+A buttons-only state machine over the Model registry (`ProviderModels`) + the
+routers, now that **all four Models are real** (Naara Data / Verify / Rent, and
+Naara Line permanent numbers wired 2026-07-19). Flow: pick Model → country/options
+→ live quote (retail only, via PricingEngine) → confirm → order via the owning
+router (eSIM Checkout · SmsNumberRouter · **PermanentNumberRouter**). Suppliers
+never shown; every step has a loading state; money actions disable in flight.
+Fold the **user-facing permanent-number purchase UI** into this (the one piece
+Naara Line still lacks). THEN wizard polish (Claude NLU sprinkle, number matching,
+device check, $0.45 fee, NaaraCare handoff, glow widget).
 
 ### ═══════════════════════════════════════════════════════════════════
 ### PLANNED — Modules 26–33: Brand system, public front end & no-code CMS (scoped 2026-07-14, owner brainstorm; NOT yet built)
