@@ -5,34 +5,93 @@
 @props(['title' => null, 'description' => null, 'ogImage' => null])
 <x-layouts.app :title="$title ?? \App\Support\BrandSettings::name().' — Stay Connected. No Borders. No Swaps.'" :description="$description" :og-image="$ogImage">
     <div class="mkt-bg min-h-screen">
-        {{-- Nav --}}
-        <header class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-[#0D1B2A]/85">
-            <nav class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-                <a href="{{ route('home') }}" class="shrink-0"><x-brand-logo variant="product" class="h-8 max-w-[150px]" /></a>
+        {{-- Floating, curved, glass header (Webflow-inspired): a contained pill
+             that never touches the edges, with a few primary links inline and a
+             Menu button that opens a full glass panel of everything. --}}
+        @php($navExplore = [
+            ['route' => 'how-it-works', 'label' => 'How It Works', 'desc' => 'eSIM + numbers in minutes'],
+            ['route' => 'pricing', 'label' => 'Pricing', 'desc' => 'Transparent, no surprises'],
+            ['route' => 'developers', 'label' => 'Developers', 'desc' => 'Resell via our API'],
+            ['route' => 'faq', 'label' => 'FAQ', 'desc' => 'Answers to common questions'],
+        ])
+        @php($navCompany = [
+            ['route' => 'about', 'label' => 'About', 'desc' => 'Our mission & story'],
+            ['route' => 'blog', 'label' => 'Blog', 'desc' => 'News & guides'],
+            ['route' => 'contact', 'label' => 'Contact', 'desc' => 'Talk to us'],
+        ])
+        <header x-data="{ open: false }" class="pointer-events-none sticky top-0 z-50 px-3 pt-4 sm:px-4">
+            <nav class="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-3 rounded-2xl border border-white/50 bg-white/70 px-2.5 py-2 shadow-xl shadow-slate-900/5 ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-[#0D1B2A]/70 dark:ring-white/10">
+                <a href="{{ route('home') }}" class="shrink-0 pl-1.5"><x-brand-logo variant="product" class="h-8 max-w-[140px]" /></a>
 
-                <div class="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex dark:text-slate-300">
+                <div class="hidden items-center gap-7 text-sm font-medium text-slate-600 lg:flex dark:text-slate-300">
                     <a href="{{ route('how-it-works') }}" class="transition hover:text-primary">How It Works</a>
                     <a href="{{ route('pricing') }}" class="transition hover:text-primary">Pricing</a>
-                    <a href="{{ route('blog') }}" class="transition hover:text-primary">Blog</a>
                     <a href="{{ route('developers') }}" class="transition hover:text-primary">Developers</a>
-                    <a href="{{ route('about') }}" class="transition hover:text-primary">About</a>
-                    @foreach (\App\Models\CustomPage::navLinks() as $navPage)
-                        <a href="{{ url('/p/'.$navPage['slug']) }}" class="transition hover:text-primary">{{ $navPage['title'] }}</a>
-                    @endforeach
-                    <a href="{{ route('faq') }}" class="transition hover:text-primary">FAQ</a>
-                    <a href="{{ route('contact') }}" class="transition hover:text-primary">Contact</a>
                 </div>
 
                 <div class="flex items-center gap-2">
                     <x-theme-toggle />
                     @auth
-                        <a href="{{ route('dashboard') }}" class="nx-btn nx-btn--primary !py-2 !px-4">My Dashboard</a>
+                        <a href="{{ route('dashboard') }}" class="hidden nx-btn nx-btn--primary !py-2 !px-4 sm:inline-flex">Dashboard</a>
                     @else
-                        <a href="{{ route('login') }}" class="hidden px-3 py-2 text-sm font-semibold text-slate-600 transition hover:text-primary sm:block dark:text-slate-300">Sign in</a>
-                        <a href="{{ route('register') }}" class="nx-btn nx-btn--primary !py-2 !px-4">Get Started</a>
+                        <a href="{{ route('register') }}" class="hidden nx-btn nx-btn--primary !py-2 !px-4 sm:inline-flex">Get Started</a>
                     @endauth
+
+                    {{-- Menu button (animated bars → X) --}}
+                    <button type="button" @click="open = !open" :aria-expanded="open" aria-label="Open menu"
+                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/60 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-primary hover:text-primary dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+                        <span class="hidden sm:inline">Menu</span>
+                        <span class="relative block h-3.5 w-5" aria-hidden="true">
+                            <span class="absolute left-0 top-0 h-0.5 w-5 rounded bg-current transition-all duration-300" :class="open && 'top-1.5 rotate-45'"></span>
+                            <span class="absolute left-0 top-1.5 h-0.5 w-5 rounded bg-current transition-all duration-300" :class="open && 'opacity-0'"></span>
+                            <span class="absolute left-0 top-3 h-0.5 w-5 rounded bg-current transition-all duration-300" :class="open && 'top-1.5 -rotate-45'"></span>
+                        </span>
+                    </button>
                 </div>
             </nav>
+
+            {{-- Glass mega-menu panel --}}
+            <div x-show="open" x-cloak x-transition.origin.top
+                 @click.outside="open = false" @keydown.escape.window="open = false"
+                 class="pointer-events-auto mx-auto mt-2 max-w-5xl overflow-hidden rounded-2xl border border-white/50 bg-white/85 shadow-2xl shadow-slate-900/10 ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-[#0D1B2A]/90 dark:ring-white/10">
+                <div class="grid gap-6 p-5 sm:grid-cols-2 sm:p-6">
+                    <div>
+                        <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Explore</p>
+                        @foreach ($navExplore as $item)
+                            <a href="{{ route($item['route']) }}" class="group flex items-start gap-3 rounded-xl px-2 py-2.5 transition hover:bg-primary/5 dark:hover:bg-white/5">
+                                <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary/20"><x-icon name="chevron-right" class="h-4 w-4" /></span>
+                                <span><span class="block text-sm font-semibold text-slate-900 group-hover:text-primary dark:text-slate-100">{{ $item['label'] }}</span><span class="block text-xs text-slate-500 dark:text-slate-400">{{ $item['desc'] }}</span></span>
+                            </a>
+                        @endforeach
+                    </div>
+                    <div>
+                        <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Company</p>
+                        @foreach ($navCompany as $item)
+                            <a href="{{ route($item['route']) }}" class="group flex items-start gap-3 rounded-xl px-2 py-2.5 transition hover:bg-primary/5 dark:hover:bg-white/5">
+                                <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent-dark dark:text-accent"><x-icon name="chevron-right" class="h-4 w-4" /></span>
+                                <span><span class="block text-sm font-semibold text-slate-900 group-hover:text-primary dark:text-slate-100">{{ $item['label'] }}</span><span class="block text-xs text-slate-500 dark:text-slate-400">{{ $item['desc'] }}</span></span>
+                            </a>
+                        @endforeach
+                        @foreach (\App\Models\CustomPage::navLinks() as $navPage)
+                            <a href="{{ url('/p/'.$navPage['slug']) }}" class="group flex items-center gap-3 rounded-xl px-2 py-2.5 transition hover:bg-primary/5 dark:hover:bg-white/5">
+                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-300"><x-icon name="file-text" class="h-4 w-4" /></span>
+                                <span class="text-sm font-semibold text-slate-900 group-hover:text-primary dark:text-slate-100">{{ $navPage['title'] }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 bg-white/40 px-5 py-3.5 dark:border-white/10 dark:bg-white/5">
+                    <span class="text-xs font-medium uppercase tracking-widest text-slate-400">Stay Connected · No Borders</span>
+                    <div class="flex items-center gap-2">
+                        @auth
+                            <a href="{{ route('dashboard') }}" class="nx-btn nx-btn--primary !py-2 !px-5">My Dashboard</a>
+                        @else
+                            <a href="{{ route('login') }}" class="px-3 py-2 text-sm font-semibold text-slate-600 transition hover:text-primary dark:text-slate-300">Sign in</a>
+                            <a href="{{ route('register') }}" class="nx-btn nx-btn--primary !py-2 !px-5">Get Started</a>
+                        @endauth
+                    </div>
+                </div>
+            </div>
         </header>
 
         <main>{{ $slot }}</main>
