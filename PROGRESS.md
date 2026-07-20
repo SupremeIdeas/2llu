@@ -9,6 +9,33 @@
 
 ## DONE
 
+### ✅ NaaraCredit → cash withdrawals (ROADMAP §Layer 1) — built 2026-07-21
+Users turn their WITHDRAWABLE credits (first-referral rewards only) into real
+cash, gated on KYC L2, settled through the payout engine. Off unless payouts are
+enabled.
+- **Withdrawable bucket** — `user_wallets.withdrawable_credits` + a `withdrawable`
+  flag on `credit_ledger`. `CreditService::rewardReferral()` is the only path that
+  grows it (idempotent once per referred person, `referral:{referrer}:{referred}`);
+  check-ins/ads/bonuses stay spend-only. Ordinary redemption eats non-withdrawable
+  first (`withdrawable = min(withdrawable, balance)`); `spendWithdrawable()` is the
+  guarded cash-out hold.
+- **WithdrawalService** — caps at the withdrawable balance, enforces the admin
+  minimum, locks FX (USD→local) at request time, HOLDS the credits and creates a
+  `payout_request` (source_bucket `referral_credits`, `credit_amount` recorded).
+  The withdrawn USD was already budgeted as a referral bonus — never admin margin.
+  `ReturnWithdrawnCredits` (on `PayoutReversed`) returns exactly the held credits
+  if the transfer fails (idempotent on the payout reference).
+- **UI** — customer `/rewards/withdraw` (KYC-L2 gated via `kyc:2`): manage payout
+  accounts (name resolved before saving), see the withdrawable balance, request a
+  cash-out. "Withdraw $X" entry point on the Rewards page. Admin approve/decline
+  is the existing Admin → Payouts queue.
+- Tests: `WithdrawalTest` (8, engine/holds/reversal) + `WithdrawPageTest` (5,
+  gate + UI). Suite 486.
+
+**→ Layer 1 done. Remaining toward merchants: Layer 3 (KYB via `kyc:3`, reseller
+margins, co-brand, settlement). Deferred: autopilot `payouts:settle`, Wise/Stripe
+international payouts, non-NGN withdrawal FX.**
+
 ### ✅ KYC / identity gate (ROADMAP §Layer 0.3) — built 2026-07-21
 The identity foundation that gates withdrawals (L2) and merchant migration (L3).
 Works out of the box via manual admin review; the owner switches to a real

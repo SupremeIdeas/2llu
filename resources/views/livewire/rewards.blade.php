@@ -19,7 +19,12 @@
                     <p class="mt-3 font-display text-4xl font-bold tracking-tight text-white">{{ number_format($balance, 0) }}</p>
                     <p class="mt-1 text-sm text-teal-100/80">worth ${{ number_format($usdValue, 2) }} at checkout</p>
                 </div>
-                <a href="{{ route('catalogue') }}" class="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-accent hover:text-navy">Spend credits</a>
+                <div class="flex flex-col items-end gap-2">
+                    <a href="{{ route('catalogue') }}" class="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-accent hover:text-navy">Spend credits</a>
+                    @if ($canWithdraw)
+                        <a href="{{ route('rewards.withdraw') }}" class="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-navy transition hover:bg-white">Withdraw ${{ number_format($withdrawableUsd, 2) }}</a>
+                    @endif
+                </div>
             </div>
         </div>
 

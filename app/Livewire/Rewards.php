@@ -59,6 +59,8 @@ class Rewards extends Component
             'enabled' => CreditSettings::enabled(),
             'balance' => $credits->balance($user),
             'usdValue' => CreditSettings::creditsToUsd($credits->balance($user)),
+            'canWithdraw' => \App\Support\PayoutSettings::enabled() && $credits->withdrawableBalance($user) > 0,
+            'withdrawableUsd' => CreditSettings::creditsToUsd($credits->withdrawableBalance($user)),
             'perUsd' => CreditSettings::perUsd(),
             'canCheckIn' => $credits->canCheckIn($user),
             'checkinDaily' => (int) CreditSettings::get('checkin_daily', 5),

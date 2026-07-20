@@ -77,6 +77,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         // NaaraCredits rewards area (loyalty module) — opt-in earning.
         Route::get('/rewards', \App\Livewire\Rewards::class)->name('rewards');
 
+        // Cash out withdrawable (first-referral) credits (ROADMAP §Layer 1).
+        // KYC L2 gated — unverified users are sent to /account/verify.
+        Route::get('/rewards/withdraw', \App\Livewire\Withdraw::class)
+            ->middleware('kyc:2')->name('rewards.withdraw');
+
         // Data estimator (blueprint Section 32).
         Route::get('/data-estimator', \App\Livewire\DataEstimator::class)->name('data-estimator');
 
