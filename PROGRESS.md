@@ -31,10 +31,17 @@ so the admin never loses; provider cost is never exposed. Increments so far:
   API wallet first, fulfils via a new shared wallet-free `ProviderRouter::fulfil()`,
   refunds on provider failure (502) + orphan-charge guard, idempotent per
   (client, reference). `api_orders` masks to price + delivery. `DeveloperApiOrderTest` (6).
-- **Remaining:** number ordering (otp/rental via SmsNumberRouter → API wallet);
-  developer portal (Livewire: keys, usage, top-up, docs/sandbox); admin controls
-  (flag toggle, dev-markup settings, per-client view, usage/invoices; Claude-proposable
-  markup). 28 new tests, all green.
+- **3.6 Number ordering** — `/orders` now takes otp/rental; `SmsNumberRouter`
+  refactored to a wallet-free `attempt()` (order() refunds the user wallet, the API
+  refunds its prepaid wallet). `ApiOrder::applyNumberStatus()` surfaces the OTP code
+  on status read. `DeveloperApiOrderTest` (+2 = 8).
+- **3.7 API documentation** — `docs/DEVELOPER-API.md` (full reference: auth, scopes,
+  money model, idempotency, errors, every endpoint with curl+JSON) AND a public,
+  browsable in-app page at `/developers` (`DeveloperDocsController` renders the same
+  markdown → one source of truth), linked from the marketing nav. `DeveloperDocsPageTest` (2).
+- **Remaining:** developer portal (Livewire: create/rotate/revoke keys, view usage,
+  top up API balance from wallet); admin controls (flag toggle, dev-markup settings,
+  per-client view, usage/invoices; Claude-proposable markup). 32 new tests, all green.
 
 ### ✅ Wizard polish — NaaraCare warm hand-off — built 2026-07-19
 Roadmap §10. A persistent **"Talk to NaaraCare"** link in the widget footer opens

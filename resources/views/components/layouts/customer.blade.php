@@ -21,6 +21,11 @@
         ['route' => 'security', 'label' => 'Security', 'icon' => 'shield'],
     ];
 
+    // Developer portal — only surfaced when the operator has enabled the API.
+    if (\App\Models\Setting::getValue('developer_api.enabled', false)) {
+        array_splice($more, 4, 0, [['route' => 'developer', 'label' => 'Developer API', 'icon' => 'key']]);
+    }
+
     // Staff/admins use the same end-user app and can jump to their panel.
     if ($u && $u->hasAnyRole(['super_admin', 'admin', 'staff'])) {
         $more[] = ['route' => 'admin.dashboard', 'label' => 'Admin', 'icon' => 'id-card'];

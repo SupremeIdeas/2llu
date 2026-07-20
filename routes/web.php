@@ -74,6 +74,11 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         // Data estimator (blueprint Section 32).
         Route::get('/data-estimator', \App\Livewire\DataEstimator::class)->name('data-estimator');
+
+        // Developer portal (ROADMAP §Layer 2) — only when the Developer API is
+        // enabled (the api.enabled middleware 404s otherwise, hiding the program).
+        Route::get('/developer', \App\Livewire\DeveloperPortal::class)
+            ->middleware('api.enabled')->name('developer');
     });
 
     // Account & data rights (blueprint Section 26) — reachable while unverified
