@@ -34,6 +34,11 @@ return Application::configure(basePath: dirname(__DIR__))
             // Staff role/scope gating (blueprint Section 27).
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            // Developer API (ROADMAP §Layer 2): feature flag, client-usability
+            // gate, and per-scope (Sanctum ability) enforcement.
+            'api.enabled' => \App\Http\Middleware\EnsureDeveloperApiEnabled::class,
+            'api.client' => \App\Http\Middleware\EnsureApiClientUsable::class,
+            'api.scope' => \App\Http\Middleware\ApiScope::class,
         ]);
 
         // Security headers on every web response (blueprint Section 19.2; the
