@@ -15,6 +15,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Fresh-upload safeguards (blueprint S22): before the web installer runs,
+        // seed an APP_KEY (else the encrypting middleware 500s with no .env) and
+        // force file-based session/cache (else StartSession queries a database
+        // that doesn't exist yet). Both no-op once the app is installed.
+        \App\Support\Installer::bootstrapKey();
+        \App\Support\Installer::useSafeDriversUntilInstalled();
+
         // PricingEngine is the single owner of all price math (blueprint 1.4).
         $this->app->singleton(\App\Services\Pricing\PricingEngine::class);
 

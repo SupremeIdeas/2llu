@@ -48,6 +48,37 @@ class InstallerTest extends TestCase
         $this->get('/install')->assertRedirect('/login');
     }
 
+    public function test_bootstrap_key_seeds_a_valid_key_on_a_fresh_upload(): void
+    {
+        // Fresh upload: not installed, no APP_KEY → the installer would otherwise
+        // 500 in the encrypting middleware. bootstrapKey must seed one.
+        Installer::unlock();
+        config(['app.key' => null]);
+
+        Installer::bootstrapKey();
+
+        $key = config('app.key');
+        $this->assertNotEmpty($key);
+        $this->assertStringStartsWith('base64:', $key);
+        $this->assertSame(32, strlen(base64_decode(substr($key, 7)))); // AES-256 length
+        // It also persisted the key to .env so it survives the form round-trip.
+        $this->assertStringContainsString('APP_KEY=', file_get_contents(Installer::$envPath));
+    }
+
+    public function test_bootstrap_key_is_a_noop_once_keyed_or_installed(): void
+    {
+        // Already keyed → left untouched.
+        config(['app.key' => 'base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=']);
+        Installer::bootstrapKey();
+        $this->assertSame('base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', config('app.key'));
+
+        // Installed but no key → do NOT mask a real ops error by inventing one.
+        Installer::markInstalled();
+        config(['app.key' => null]);
+        Installer::bootstrapKey();
+        $this->assertNull(config('app.key'));
+    }
+
     public function test_install_creates_the_default_super_admin_and_shows_the_done_screen(): void
     {
         $response = $this->post('/install/setup', [

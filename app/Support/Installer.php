@@ -117,6 +117,63 @@ class Installer
         return 'base64:'.base64_encode(random_bytes(32));
     }
 
+    /**
+     * Fresh-upload safeguard (must run before any encrypting middleware).
+     *
+     * The web installer renders through the `web` group (cookie + session
+     * encryption), which needs an APP_KEY. A brand-new upload has no `.env` yet,
+     * so without this the installer itself 500s with "No application encryption
+     * key has been specified" before it can run. This seeds a key up front.
+     *
+     * It tries to persist a real random key to `.env` (so it survives the
+     * GET-form → POST-submit round trip). If the project root isn't writable yet,
+     * it falls back to a stable per-install key so sessions/CSRF stay consistent
+     * across requests until setup completes and writes the real key. No-op once
+     * installed, or once any key is already configured.
+     */
+    public static function bootstrapKey(): void
+    {
+        if (config('app.key') || self::isInstalled()) {
+            return;
+        }
+
+        $persisted = false;
+        $random = self::generateAppKey();
+        try {
+            self::writeEnv(['APP_KEY' => $random]); // creates .env from .env.example
+            $persisted = true;
+        } catch (\Throwable) {
+            // Project root not writable yet — fall through to the stable key.
+        }
+
+        // A persisted key is read back from `.env` on later requests (this method
+        // then no-ops); when we can't write, use a deterministic key so CSRF and
+        // sessions don't break between the form load and its submission.
+        $stable = 'base64:'.base64_encode(hash('sha256', base_path().'|naarasim-installer', true));
+        config(['app.key' => $persisted ? $random : $stable]);
+    }
+
+    /**
+     * Until the app is installed, force filesystem-backed session + cache and a
+     * synchronous queue so the web installer never touches a database that does
+     * not exist yet (the DB is created during setup). Without this, StartSession
+     * tries to read a `sessions` table on a fresh upload and 500s with
+     * "Connection refused". No-op once installed — the real drivers from `.env`
+     * (database on shared, redis on VPS) take over.
+     */
+    public static function useSafeDriversUntilInstalled(): void
+    {
+        if (self::isInstalled()) {
+            return;
+        }
+
+        config([
+            'session.driver' => 'file',
+            'cache.default' => 'file',
+            'queue.default' => 'sync',
+        ]);
+    }
+
     // ---- Cron / scheduler setup (blueprint Section 20) ----------------------
 
     /** True when this install runs the VPS profile (Redis queue + Horizon). */
