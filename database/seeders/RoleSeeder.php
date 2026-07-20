@@ -23,7 +23,9 @@ class RoleSeeder extends Seeder
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $roles = [];
-        foreach (['super_admin', 'admin', 'staff', 'user'] as $role) {
+        // `merchant` (ROADMAP §Layer 3) is an additive role a verified user gains
+        // on top of `user` — it never replaces it, and carries no admin scopes.
+        foreach (['super_admin', 'admin', 'staff', 'user', 'merchant'] as $role) {
             $roles[$role] = Role::findOrCreate($role, 'web');
         }
 

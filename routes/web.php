@@ -89,6 +89,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         // enabled (the api.enabled middleware 404s otherwise, hiding the program).
         Route::get('/developer', \App\Livewire\DeveloperPortal::class)
             ->middleware('api.enabled')->name('developer');
+
+        // Become a merchant (ROADMAP §Layer 3.1) — KYB + application flow. The
+        // page self-gates on the programme flag + KYC L3.
+        Route::get('/merchant/apply', \App\Livewire\BecomeMerchant::class)->name('merchant.apply');
     });
 
     // Account & data rights (blueprint Section 26) — reachable while unverified
@@ -138,6 +142,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/developer-api', \App\Livewire\Admin\DeveloperApi::class)->name('developer-api');
             Route::get('/payouts', \App\Livewire\Admin\Payouts::class)->name('payouts');
             Route::get('/kyc', \App\Livewire\Admin\KycReview::class)->name('kyc');
+            Route::get('/merchants', \App\Livewire\Admin\Merchants::class)->name('merchants');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
             Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
         });
