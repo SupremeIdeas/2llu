@@ -9,6 +9,27 @@
 
 ## DONE
 
+### 🔨 Merchant / reseller system (ROADMAP §Layer 3) — IN PROGRESS 2026-07-21
+The co-branded reseller layer. Off by default (`merchants.enabled`).
+- **3.1 Onboarding** ✅ — `merchants` table + `Merchant` model; `users.merchant_id`
+  (customer linking, for co-branding). New additive `merchant` role.
+  `MerchantService` (apply/approve/suspend/reject — KYB-gated, admin-gated,
+  audited; unique slug; reuses an in-flight application). Customer
+  `/merchant/apply` (KYB L3 verify → storefront application) + Admin → Merchants
+  (toggle, global reseller margin, approve/reject/suspend queue).
+  `MerchantTest` (8).
+- **3.2 Reseller price lane** ✅ — `PricingEngine::merchantEsimPrice/merchantSmsPrice`:
+  retail + admin-set reseller margin, stacked ABOVE retail so admin keeps R−C and
+  the merchant earns M−R. Per-merchant override beats the global margin; merchant
+  never prices their own goods; MarginGuard still floors. Logged under `merchant:`.
+  `MerchantPricingTest` (4).
+- **NEXT (still to build):** 3.3 co-branding + invite links (`/merchant/{slug}/join`,
+  set `merchant_id` on signup, merchant logo big + "Powered by NaaraSim") ·
+  3.4 merchant earnings ledger + settlement (accrue M−R on a merchant-customer's
+  purchase, merchant withdraws via the payout engine; merchant-referred credits
+  funded from the merchant's earnings, §3.3) · 3.5 merchant dashboard (storefront
+  setup, customers, earnings, payouts). Suite 498.
+
 ### ✅ NaaraCredit → cash withdrawals (ROADMAP §Layer 1) — built 2026-07-21
 Users turn their WITHDRAWABLE credits (first-referral rewards only) into real
 cash, gated on KYC L2, settled through the payout engine. Off unless payouts are
