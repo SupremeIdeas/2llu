@@ -1,12 +1,13 @@
 # NaaraSim Developer API — Reference (v1)
 
-Resell NaaraSim connectivity (eSIM data now; numbers coming) from your own app.
-You call a simple REST API, pay a **prepaid wholesale price**, and relay the
-delivery (QR / activation code) to your customers.
+Resell NaaraSim connectivity — **eSIM data** and **numbers** (OTP / rental) —
+from your own app. You call a simple REST API, pay a **prepaid wholesale price**,
+and relay the delivery (QR / activation code, or phone number + OTP) to your
+customers.
 
-> **Status:** eSIM catalogue, quoting, ordering and status are live. Number
-> (OTP / rental) **quoting** is live; number **ordering** is on the roadmap and
-> currently returns a validation error on `/orders`.
+> **Status:** eSIM and number catalogue/quoting/ordering/status are live.
+> Permanent numbers, webhooks, and the in-app interactive sandbox are on the
+> roadmap.
 
 ---
 
@@ -181,15 +182,40 @@ curl -X POST https://YOUR-DOMAIN/api/v1/orders \
 Relay `qr_code` (or the `lpa` string for manual install) to your customer. Poll
 `GET /orders/{reference}` until `status` is `completed`.
 
+**Number order**
+```bash
+curl -X POST https://YOUR-DOMAIN/api/v1/orders \
+  -H "Authorization: Bearer $NAARA_KEY" -H "Content-Type: application/json" \
+  -d '{ "type": "number", "number_type": "otp", "country": "nigeria",
+        "service": "whatsapp", "reference": "your-otp-xyz" }'
+```
+```json
+{
+  "reference": "your-otp-xyz",
+  "kind": "number",
+  "status": "processing",
+  "price_usd": 0.23,
+  "currency": "USD",
+  "result": { "number": "+234…", "code": null },
+  "created_at": "2026-07-20T12:00:00+00:00"
+}
+```
+The verification code arrives asynchronously — poll `GET /orders/{reference}`;
+once received, `status` becomes `completed` and `result.code` holds the code.
+(A number that never receives a code times out: `status` becomes `failed`.)
+
 | Field | Type | Notes |
 | --- | --- | --- |
-| `type` | string | `esim` (numbers coming) |
-| `plan_id` | int | a plan `id` from `/catalogue` |
+| `type` | string | `esim` or `number` |
+| `plan_id` | int | required when `type=esim` (an `id` from `/catalogue`) |
+| `number_type` | string | `otp` or `rental`, required when `type=number` |
+| `country` | string | required when `type=number` (e.g. `nigeria`, `usa`) |
+| `service` | string | required when `type=number` (e.g. `whatsapp`) |
 | `reference` | string | optional idempotency key (≤ 64 chars) |
 
-Responses: `402` insufficient balance · `422` invalid plan · `502` unfulfilled
-(refunded) · `500` finalisation failed (refunded). A repeated `reference`
-returns the original order with `200`.
+Responses: `402` insufficient balance · `422` invalid plan / number unavailable ·
+`502` unfulfilled (refunded) · `500` finalisation failed (refunded). A repeated
+`reference` returns the original order with `200`.
 
 ### GET `/orders/{reference}` — order status
 Scope: `status`
@@ -233,6 +259,6 @@ same `reference` are safe.
    customer.
 5. `GET /orders/{reference}` → confirm `completed`.
 
-> Endpoints, scopes and shapes above match the implementation exactly. Number
-> ordering, webhooks (delivery/OTP callbacks) and the in-app interactive docs +
-> sandbox are on the roadmap (`docs/ROADMAP-PAYOUTS-MERCHANTS-API.md` §Layer 2).
+> Endpoints, scopes and shapes above match the implementation exactly. Permanent
+> numbers, webhooks (delivery/OTP callbacks) and the in-app interactive sandbox
+> are on the roadmap (`docs/ROADMAP-PAYOUTS-MERCHANTS-API.md` §Layer 2).

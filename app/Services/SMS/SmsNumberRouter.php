@@ -37,6 +37,36 @@ class SmsNumberRouter
             throw new SmsException('Permanent numbers are coming soon.');
         }
 
+        try {
+            return $this->attempt($request);
+        } catch (SmsException $e) {
+            // Never charge without delivering: refund the caller's wallet if it
+            // pre-charged. The Developer API passes no `charged` here and refunds
+            // its own prepaid API wallet instead (see OrderController).
+            if ($request->charged !== null) {
+                $this->wallet->refund($request->user, $request->charged, $request->currency, [
+                    'description' => 'Number order failed — no provider available in lane',
+                    'reference' => 'number-refund:'.$request->user->id.':'.now()->timestamp,
+                ]);
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * The wallet-free lane attempt: pick the owning provider for (country, type),
+     * fall back only WITHIN the lane, create the order on success, and throw
+     * SmsException if the whole lane is exhausted — WITHOUT refunding. The CALLER
+     * owns the money (user wallet for the storefront, prepaid API wallet for the
+     * Developer API), so this shared loop never assumes whose money paid.
+     *
+     * The margin check uses `$request->charged` (the amount actually collected)
+     * as the ceiling, so a provider whose live cost would eat that margin is
+     * skipped — this works for BOTH the retail and the developer price.
+     */
+    public function attempt(NumberRequest $request): SmsOrderResult
+    {
         $lane = $this->laneFor($request->country, $request->type);
         $errors = [];
 
@@ -95,14 +125,9 @@ class SmsNumberRouter
             }
         }
 
-        // Every provider in the lane failed — refund + alert + honest message.
-        if ($request->charged !== null) {
-            $this->wallet->refund($request->user, $request->charged, $request->currency, [
-                'description' => 'Number order failed — no provider available in lane',
-                'reference' => 'number-refund:'.$request->user->id.':'.now()->timestamp,
-            ]);
-        }
-
+        // Every provider in the lane failed — alert + honest message. The refund
+        // (if the caller pre-charged) is the caller's responsibility: order()
+        // does it for the user wallet, OrderController for the API wallet.
         AlertAdminJob::dispatch(
             code: 'no_number_in_lane',
             message: "No provider could serve a {$request->type} number for {$request->country}.",

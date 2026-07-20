@@ -149,4 +149,59 @@ class DeveloperApiOrderTest extends TestCase
         $this->withToken($token)->postJson('/api/v1/orders', ['type' => 'esim', 'plan_id' => $plan->id])
             ->assertForbidden();
     }
+
+    // ---- number ordering ----------------------------------------------------
+
+    private function fakeNumberProvider(): void
+    {
+        config(['services.fivesim.api_key' => 'k']);
+        \App\Support\ProviderKeys::flush();
+        app()->instance('number.fivesim', new \Tests\Support\FakeSmsProvider(price: 0.20, buyResponse: [
+            'provider_ref' => '5S-API', 'number' => '+2348010000000', 'cost' => 0.20,
+            'status' => \App\Services\SMS\OtpStatus::PENDING,
+        ]));
+    }
+
+    public function test_number_order_charges_the_dev_price_and_returns_the_number(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake(); // PollSmsOtpJob dispatched, not run
+        $this->fakeNumberProvider();
+        [$token, $client] = $this->client(balance: 20.0, scopes: ['order', 'status']);
+
+        // dev number price = cost 0.20 * 1.15 = 0.23
+        $res = $this->withToken($token)->postJson('/api/v1/orders', [
+            'type' => 'number', 'number_type' => 'otp', 'country' => 'nigeria', 'service' => 'whatsapp',
+            'reference' => 'num-1',
+        ])->assertCreated();
+
+        $this->assertEquals(0.23, $res->json('price_usd'));
+        $this->assertSame('+2348010000000', $res->json('result.number'));
+        $this->assertSame('number', $res->json('kind'));
+        $this->assertSame('19.7700', (string) $client->fresh()->prepaid_balance_usd); // 20 - 0.23
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\PollSmsOtpJob::class);
+
+        // Supplier never leaked.
+        $this->assertStringNotContainsString('fivesim', strtolower($res->getContent()));
+    }
+
+    public function test_number_status_surfaces_the_code_once_it_arrives(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake();
+        $this->fakeNumberProvider();
+        [$token] = $this->client(balance: 20.0, scopes: ['order', 'status']);
+
+        $this->withToken($token)->postJson('/api/v1/orders', [
+            'type' => 'number', 'number_type' => 'otp', 'country' => 'nigeria', 'service' => 'whatsapp',
+            'reference' => 'num-2',
+        ])->assertCreated();
+
+        // Simulate the poll job completing the SMS order with a code.
+        \App\Models\SmsOrder::where('phone_number', '+2348010000000')
+            ->update(['status' => 'completed', 'otp_code' => '445566']);
+
+        $this->withToken($token)->getJson('/api/v1/orders/num-2')
+            ->assertOk()
+            ->assertJsonPath('status', 'completed')
+            ->assertJsonPath('result.code', '445566');
+    }
 }

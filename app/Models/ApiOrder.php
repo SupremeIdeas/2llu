@@ -42,6 +42,30 @@ class ApiOrder extends Model
         return $this->belongsTo(EsimOrder::class, 'esim_order_id');
     }
 
+    public function smsOrder(): BelongsTo
+    {
+        return $this->belongsTo(SmsOrder::class, 'sms_order_id');
+    }
+
+    /**
+     * Fold the linked number order's live state into this API order (in memory,
+     * for a status read): the OTP code appears once received; a timeout marks the
+     * order failed. Never exposes the supplier.
+     */
+    public function applyNumberStatus(): void
+    {
+        $sms = $this->smsOrder;
+        if (! $sms) {
+            return;
+        }
+        if ($sms->status === 'completed' && $sms->otp_code) {
+            $this->status = 'completed';
+            $this->result = array_merge($this->result ?? [], ['code' => $sms->otp_code]);
+        } elseif ($sms->status === 'timeout') {
+            $this->status = 'failed';
+        }
+    }
+
     /**
      * Latest developer-facing status derived from the linked eSIM order: once
      * the eSIM is active/completed the API order reads "completed", otherwise it
