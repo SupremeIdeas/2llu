@@ -55,4 +55,23 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->report(function (\Throwable $e) {
             \App\Support\ErrorLogger::capture($e);
         });
+
+        // Never show users the raw "419 Page Expired". A stale CSRF token (an
+        // old tab, the back button, a slow connection) surfaces as a 419
+        // HttpException; we auto-recover by sending them back to the form they
+        // submitted — which re-renders with a fresh token — plus a gentle "please
+        // try again" message, so a resubmit just works. APIs get a clean JSON
+        // 419; any other HTTP error falls through to normal rendering.
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) {
+            if ($e->getStatusCode() !== 419) {
+                return null;
+            }
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Your session expired. Please refresh and try again.'], 419);
+            }
+
+            return redirect()->back()
+                ->withInput($request->except(['password', 'password_confirmation', '_token']))
+                ->with('status', 'Your session timed out for security — please try again.');
+        });
     })->create();
