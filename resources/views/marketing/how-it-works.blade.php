@@ -1,10 +1,24 @@
 <x-layouts.marketing :title="\App\Support\BrandSettings::name().' — How It Works'">
     @php($hero = $sections['hero'] ?? null)
     @if ($hero)
-        <section class="mx-auto max-w-4xl px-4 pb-12 pt-16 text-center">
-            <h1 data-reveal class="text-4xl font-bold text-slate-900 sm:text-5xl dark:text-white">{{ $hero['headline'] }}</h1>
-            <p data-reveal class="mx-auto mt-5 max-w-2xl text-lg text-slate-600 dark:text-slate-300">{{ $hero['subtext'] }}</p>
-            <p data-reveal class="mt-6 text-xs font-medium text-slate-400">{{ $hero['proof'] }}</p>
+        <section class="relative overflow-hidden">
+            @if (empty($hero['image']))
+                {{-- Branded WebGL "connected city" backdrop (lazy, bundled,
+                     CSP-safe, self-pausing off-screen). Glow orbs are the
+                     reduced-motion / no-WebGL fallback. --}}
+                <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                    <span class="absolute bottom-0 left-1/2 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-primary/20 blur-3xl dark:bg-primary/25"></span>
+                    <span class="absolute right-1/4 top-1/3 h-40 w-40 rounded-full bg-accent/20 blur-3xl"></span>
+                    <canvas data-webgl-hero="city"
+                            class="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-[1200ms] [&.is-live]:opacity-100"></canvas>
+                    <div class="absolute inset-0 bg-gradient-to-b from-[#F8F9FA] via-[#F8F9FA]/45 to-[#F8F9FA] dark:from-[#0D1B2A] dark:via-[#0D1B2A]/20 dark:to-[#0D1B2A]"></div>
+                </div>
+            @endif
+            <div class="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-20 text-center sm:pt-24">
+                <h1 data-reveal class="text-4xl font-bold text-slate-900 sm:text-5xl dark:text-white">{{ $hero['headline'] }}</h1>
+                <p data-reveal class="mx-auto mt-5 max-w-2xl text-lg text-slate-600 dark:text-slate-300">{{ $hero['subtext'] }}</p>
+                <p data-reveal class="mt-6 text-xs font-medium text-slate-400 dark:text-slate-400">{{ $hero['proof'] }}</p>
+            </div>
         </section>
     @endif
 

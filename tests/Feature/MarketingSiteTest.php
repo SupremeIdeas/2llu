@@ -113,6 +113,11 @@ class MarketingSiteTest extends TestCase
         $this->get('/')->assertOk()->assertSee('data-webgl-hero="water"', false);
     }
 
+    public function test_the_how_it_works_hero_renders_the_city_webgl_scene(): void
+    {
+        $this->get('/how-it-works')->assertOk()->assertSee('data-webgl-hero="city"', false);
+    }
+
     public function test_the_three_step_showcase_renders_its_artwork(): void
     {
         $this->get('/')->assertOk()

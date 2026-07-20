@@ -365,7 +365,104 @@ function mountWater(canvas) {
     });
 }
 
-const VARIANTS = { planet: mountPlanet, liquid: mountLiquid, water: mountWater };
+// ── Variant: connected city (how-it-works hero) ─────────────────────────────
+// A low-poly teal skyline you drift over — "land in the city, connect
+// instantly." Buildings are one InstancedMesh (cheap), lit by a teal key and a
+// gold rim, with gold "uplink" points climbing from rooftops like signal. Fog
+// sinks the far blocks into the page bg for depth. Idles when off-screen.
+function mountCity(canvas) {
+    const stage = createStage(canvas);
+    if (!stage) return () => {};
+    const { scene, camera } = stage;
+    camera.position.set(0, 5.5, 11);
+    camera.lookAt(0, 1.2, 0);
+    scene.fog = new THREE.FogExp2(0x0d1b2a, 0.055);
+
+    const GRID = 11, GAP = 1.5;
+    const count = GRID * GRID;
+    const geo = new THREE.BoxGeometry(0.9, 1, 0.9);
+    const mat = new THREE.MeshStandardMaterial({ color: TEAL, roughness: 0.45, metalness: 0.35, flatShading: true });
+    const city = new THREE.InstancedMesh(geo, mat, count);
+    const dummy = new THREE.Object3D();
+    const heights = [];
+    let n = 0;
+    for (let gx = 0; gx < GRID; gx++) {
+        for (let gz = 0; gz < GRID; gz++) {
+            const h = 0.6 + Math.random() * Math.random() * 6.5; // skewed → a few towers
+            heights.push(h);
+            dummy.position.set((gx - GRID / 2) * GAP + (Math.random() - 0.5) * 0.3, h / 2, (gz - GRID / 2) * GAP + (Math.random() - 0.5) * 0.3);
+            dummy.scale.set(1, h, 1);
+            dummy.updateMatrix();
+            city.setMatrixAt(n++, dummy.matrix);
+        }
+    }
+    scene.add(city);
+
+    // Ground plane (dark) so buildings read as a skyline, not floating boxes.
+    const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(60, 60),
+        new THREE.MeshStandardMaterial({ color: 0x0a1524, roughness: 1 }),
+    );
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // Gold "uplink" points that climb from random rooftops.
+    const UPLINKS = 40;
+    const upPos = new Float32Array(UPLINKS * 3);
+    const upBase = [];
+    for (let i = 0; i < UPLINKS; i++) {
+        const idx = Math.floor(Math.random() * count);
+        const gx = Math.floor(idx / GRID), gz = idx % GRID;
+        const x = (gx - GRID / 2) * GAP, z = (gz - GRID / 2) * GAP;
+        upBase.push({ x, z, top: heights[idx], speed: 0.6 + Math.random() * 1.2, phase: Math.random() });
+        upPos[i * 3] = x; upPos[i * 3 + 1] = heights[idx]; upPos[i * 3 + 2] = z;
+    }
+    const upGeo = new THREE.BufferGeometry();
+    upGeo.setAttribute('position', new THREE.BufferAttribute(upPos, 3));
+    const uplinks = new THREE.Points(upGeo, new THREE.PointsMaterial({
+        color: GOLD, size: 0.16, transparent: true, opacity: 0.95, depthWrite: false, fog: true,
+    }));
+    scene.add(uplinks);
+
+    scene.add(new THREE.AmbientLight(0x0d1b2a, 1.2));
+    const key = new THREE.DirectionalLight(TEAL_LIGHT, 2.2);
+    key.position.set(-4, 6, 5);
+    scene.add(key);
+    const rim = new THREE.PointLight(GOLD, 14, 30);
+    rim.position.set(6, 4, -2);
+    scene.add(rim);
+
+    const { target, dispose: disposePointer } = pointerParallax(0.4);
+
+    stage.setUpdate((t) => {
+        const arr = upGeo.attributes.position.array;
+        for (let i = 0; i < UPLINKS; i++) {
+            const u = upBase[i];
+            const rise = ((t * u.speed + u.phase) % 1); // 0..1 loop
+            arr[i * 3 + 1] = u.top + rise * 3.2;
+        }
+        upGeo.attributes.position.needsUpdate = true;
+        uplinks.material.opacity = 0.6 + 0.35 * (0.5 + 0.5 * Math.sin(t * 3));
+
+        // Slow drift over the skyline + gentle pointer parallax.
+        camera.position.x = Math.sin(t * 0.08) * 2.2 + target.x * 2;
+        camera.position.z = 11 + Math.cos(t * 0.06) * 1.2;
+        camera.position.y = 5.5 - target.y * 1.2;
+        camera.lookAt(0, 1.2, 0);
+    });
+
+    return () => stage.teardown(() => {
+        disposePointer();
+        geo.dispose();
+        mat.dispose();
+        ground.geometry.dispose();
+        ground.material.dispose();
+        upGeo.dispose();
+        uplinks.material.dispose();
+    });
+}
+
+const VARIANTS = { planet: mountPlanet, liquid: mountLiquid, water: mountWater, city: mountCity };
 
 export function mountHeroScene(canvas, variant) {
     const mounter = VARIANTS[variant];
