@@ -9,6 +9,33 @@
 
 ## DONE
 
+### 🔧 Developer API reselling (ROADMAP §Layer 2) — IN PROGRESS (started 2026-07-20)
+Building the standalone Developer API layer (no payout-engine dependency). Money
+model: developers pay wholesale + a small admin markup — always MarginGuard-floored,
+so the admin never loses; provider cost is never exposed. Increments so far:
+- **3.1 Dev price lane** — `PricingEngine::developerEsimPrice/developerSmsPrice`
+  (default 10%/15% markup, cost+min-profit floor, audited under `dev:{provider}`).
+  Settings seeded. `DeveloperPricingTest` (5).
+- **3.2 API clients + keys** — `api_clients` + `ApiClient` (the Sanctum tokenable;
+  token abilities = scopes catalogue/quote/order/status); `ApiClientService`
+  create/rotate/setScopes/revoke/reactivate (plaintext shown once, last-four
+  stored). `usable()` gates on client + owner active. `ApiClientTest` (6).
+- **3.3 Prepaid API wallet** — `api_wallet_transactions` + `ApiWalletService`
+  (credit/debit/refund): atomic, lockForUpdate, balance_before/after, idempotent,
+  never overdraws — full WalletService discipline. `ApiWalletTest` (4).
+- **3.4 Read surface** — `/api/v1/catalogue` + `/quote` behind `api.enabled`
+  (feature flag, 404 when off), `api.client` (usable gate + last_used_at),
+  `api.scope` (Sanctum abilities). Dev-lane prices, no cost/supplier leaked.
+  `DeveloperApiEndpointsTest` (7).
+- **3.5 eSIM ordering** — `/api/v1/orders` + `/orders/{ref}`. Charges the prepaid
+  API wallet first, fulfils via a new shared wallet-free `ProviderRouter::fulfil()`,
+  refunds on provider failure (502) + orphan-charge guard, idempotent per
+  (client, reference). `api_orders` masks to price + delivery. `DeveloperApiOrderTest` (6).
+- **Remaining:** number ordering (otp/rental via SmsNumberRouter → API wallet);
+  developer portal (Livewire: keys, usage, top-up, docs/sandbox); admin controls
+  (flag toggle, dev-markup settings, per-client view, usage/invoices; Claude-proposable
+  markup). 28 new tests, all green.
+
 ### ✅ Wizard polish — NaaraCare warm hand-off — built 2026-07-19
 Roadmap §10. A persistent **"Talk to NaaraCare"** link in the widget footer opens
 `/support` for anything the Wizard shouldn't answer (billing/refund/account). It
