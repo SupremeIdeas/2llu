@@ -163,6 +163,77 @@ class PricingEngine
     }
 
     /**
+     * Merchant (reseller) price (USD) for an eSIM plan — retail PLUS an admin-set
+     * reseller margin (ROADMAP §Layer 3.2). Stacks ABOVE retail, so the admin's
+     * profit (retail − cost) is always kept and the merchant earns the margin
+     * (merchant price − retail). The margin is admin-owned (per-merchant override
+     * or the global setting); a merchant never sets their own. MarginGuard still
+     * floors it — a merchant price can never dip below cost + minimum profit.
+     */
+    public function merchantEsimPrice(EsimPlan $plan, ?\App\Models\Merchant $merchant = null, bool $log = true): float
+    {
+        $retail = $this->calculateRetail($plan, false);
+        $margin = $this->resellerMargin($merchant);
+        $computed = round($retail * (1 + $margin / 100), 2);
+
+        $cost = (float) $plan->cost_price_usd;
+        $minProfit = (float) Setting::getValue('pricing.minimum_profit_usd', 0.50);
+        $final = max($computed, round($cost + $minProfit, 4));
+
+        if ($log) {
+            $this->log(
+                planId: $plan->id,
+                provider: 'merchant:'.$plan->provider,
+                cost: $cost,
+                markup: $margin,
+                computed: $computed,
+                final: $final,
+                guard: $final > $computed ? 'margin_guard' : 'none',
+            );
+        }
+
+        return $final;
+    }
+
+    /**
+     * Merchant (reseller) price (USD) for a per-number / OTP charge — retail plus
+     * the reseller margin, MarginGuard-floored. Mirrors merchantEsimPrice.
+     */
+    public function merchantSmsPrice(float $cost, string $provider, ?\App\Models\Merchant $merchant = null, bool $log = true): float
+    {
+        $retail = $this->calculateSmsRetail($cost, $provider);
+        $margin = $this->resellerMargin($merchant);
+        $computed = round($retail * (1 + $margin / 100), 4);
+
+        $minProfit = (float) Setting::getValue('pricing.sms_min_profit', 0.01);
+        $final = max($computed, round($cost + $minProfit, 4));
+
+        if ($log) {
+            $this->log(
+                planId: null,
+                provider: 'merchant:'.$provider,
+                cost: $cost,
+                markup: $margin,
+                computed: $computed,
+                final: $final,
+                guard: $final > $computed ? 'margin_guard' : 'none',
+            );
+        }
+
+        return $final;
+    }
+
+    /** The reseller margin % for a merchant: per-merchant override, else global. */
+    private function resellerMargin(?\App\Models\Merchant $merchant): float
+    {
+        if ($merchant !== null && $merchant->reseller_margin_pct !== null) {
+            return (float) $merchant->reseller_margin_pct;
+        }
+
+        return \App\Support\MerchantSettings::resellerMarginPct();
+    }
+
+    /**
      * Cost / retail / profit breakdown for a plan (admin-only view). The cost
      * is included here for the admin profit panel and must never be surfaced
      * to end users.
