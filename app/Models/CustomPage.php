@@ -45,14 +45,23 @@ class CustomPage extends Model
         Cache::forget('custom_pages.nav');
     }
 
-    /** Published pages flagged for the marketing nav (cached). */
+    /**
+     * Published pages flagged for the marketing nav (cached). This runs when the
+     * public shell renders, so it must degrade to "no links" when the table
+     * isn't reachable — pre-install (before migrations) or any DB hiccup — rather
+     * than take the whole page down. Same discipline as ProviderKeys::saved().
+     */
     public static function navLinks(): array
     {
-        return Cache::rememberForever('custom_pages.nav', fn () => self::query()
-            ->where('is_published', true)->where('in_nav', true)
-            ->orderBy('title')
-            ->get(['slug', 'title'])
-            ->map(fn ($p) => ['slug' => $p->slug, 'title' => $p->title])
-            ->all());
+        try {
+            return Cache::rememberForever('custom_pages.nav', fn () => self::query()
+                ->where('is_published', true)->where('in_nav', true)
+                ->orderBy('title')
+                ->get(['slug', 'title'])
+                ->map(fn ($p) => ['slug' => $p->slug, 'title' => $p->title])
+                ->all());
+        } catch (\Throwable) {
+            return [];
+        }
     }
 }
