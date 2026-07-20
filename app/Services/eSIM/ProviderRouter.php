@@ -42,6 +42,39 @@ class ProviderRouter
         // Default to list price only when the caller doesn't pass the real
         // charged amount (keeps older callers/tests working).
         $charged = $charged ?? (float) $plan->final_retail_usd;
+
+        try {
+            return $this->fulfil($plan, $charged, $user);
+        } catch (EsimProviderException $e) {
+            // Never charge without delivering — refund the caller's wallet + alert.
+            $this->wallet->refund($user, $charged, $currency, [
+                'description' => 'eSIM order failed — all providers unavailable or unprofitable',
+                'reference' => "esim-refund:{$plan->id}:{$user->id}:".now()->timestamp,
+            ]);
+
+            AlertAdminJob::dispatch(
+                code: 'all_esim_providers_failed',
+                message: "No eSIM provider could fulfil plan {$plan->id} for user {$user->id}; wallet refunded {$charged} {$currency}.",
+                context: ['plan_id' => $plan->id, 'user_id' => $user->id, 'charged' => $charged, 'currency' => $currency],
+            );
+
+            throw new EsimProviderException('Order could not be fulfilled. Wallet refunded.', previous: $e);
+        }
+    }
+
+    /**
+     * Fulfil a plan at the first profitable provider in the failover chain and
+     * return the result — WITHOUT touching any wallet. Throws
+     * EsimProviderException if no provider can deliver at cost + minimum profit.
+     *
+     * The CALLER owns the money: the storefront (orderPlan) refunds the user's
+     * wallet on failure; the Developer API refunds its prepaid API wallet. This
+     * shared loop never assumes whose money paid, so the margin guard, provider
+     * fallback, and profit log stay in ONE place. `$forLog` only attributes the
+     * OrderLog row.
+     */
+    public function fulfil(EsimPlan $plan, float $charged, User $forLog): EsimOrderResult
+    {
         $minProfit = (float) Setting::getValue('pricing.minimum_profit_usd', 0.50);
         $errors = [];
 
@@ -54,8 +87,9 @@ class ProviderRouter
             $cost = (float) $pp->cost_price_usd;
             if ($charged < $cost + $minProfit) {
                 // Margin guard: fulfilling here would eat the margin. Skip.
-                Log::warning("ProviderRouter: skipping {$provider} for plan {$naaraPlanId} — cost {$cost} too close to charged {$charged}.");
+                Log::warning("ProviderRouter: skipping {$provider} for plan {$plan->id} — cost {$cost} too close to charged {$charged}.");
                 $errors[$provider] = 'skipped: unprofitable';
+
                 continue;
             }
 
@@ -63,7 +97,7 @@ class ProviderRouter
                 $result = app("esim.{$provider}")->orderBundle($pp->provider_plan_id);
 
                 OrderLog::create([
-                    'user_id' => $user->id,
+                    'user_id' => $forLog->id,
                     'naarasim_plan_id' => $plan->id,
                     'provider' => $provider,
                     'provider_cost' => $cost,
@@ -79,26 +113,7 @@ class ProviderRouter
             }
         }
 
-        // No provider fulfilled profitably — refund + alert (never charge
-        // without delivering).
-        $this->wallet->refund($user, $charged, $currency, [
-            'description' => 'eSIM order failed — all providers unavailable or unprofitable',
-            'reference' => "esim-refund:{$plan->id}:{$user->id}:".now()->timestamp,
-        ]);
-
-        AlertAdminJob::dispatch(
-            code: 'all_esim_providers_failed',
-            message: "No eSIM provider could fulfil plan {$plan->id} for user {$user->id}; wallet refunded {$charged} {$currency}.",
-            context: [
-                'plan_id' => $plan->id,
-                'user_id' => $user->id,
-                'charged' => $charged,
-                'currency' => $currency,
-                'errors' => $errors,
-            ],
-        );
-
-        throw new EsimProviderException('Order could not be fulfilled. Wallet refunded.');
+        throw new EsimProviderException('Order could not be fulfilled — no provider available or profitable.');
     }
 
     /**

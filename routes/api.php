@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\CatalogueController;
+use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,4 +25,6 @@ Route::prefix('v1')
     ->group(function () {
         Route::get('catalogue', [CatalogueController::class, 'index'])->middleware('api.scope:catalogue');
         Route::post('quote', [QuoteController::class, 'store'])->middleware('api.scope:quote');
+        Route::post('orders', [OrderController::class, 'store'])->middleware('api.scope:order');
+        Route::get('orders/{reference}', [OrderController::class, 'show'])->middleware('api.scope:status');
     });
