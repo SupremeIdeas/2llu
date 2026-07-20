@@ -57,6 +57,15 @@ class AppServiceProvider extends ServiceProvider
             $app->make(\App\Services\Payouts\FlutterwaveBankResolver::class),
         ]));
 
+        // Payout (money-out) gateways, resolved by name via app("payout.$provider"),
+        // and the engine that owns the withdrawal lifecycle (ROADMAP §Layer 0.2).
+        $this->app->singleton('payout.paystack', \App\Services\Payouts\PaystackPayoutGateway::class);
+        $this->app->singleton('payout.flutterwave', \App\Services\Payouts\FlutterwavePayoutGateway::class);
+        $this->app->singleton(\App\Services\Payouts\PayoutService::class, fn ($app) => new \App\Services\Payouts\PayoutService([
+            $app->make(\App\Services\Payouts\PaystackPayoutGateway::class),
+            $app->make(\App\Services\Payouts\FlutterwavePayoutGateway::class),
+        ]));
+
         // Claude-assisted maintenance loop (blueprint Section 29). Bound to the
         // production clients by default; both are gated on config and report
         // unavailable until configured. Tests swap in fakes.

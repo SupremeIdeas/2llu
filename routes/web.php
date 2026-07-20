@@ -160,6 +160,11 @@ Route::post('/webhooks/getatext', GetatextWebhookController::class)
 Route::post('/webhooks/payments/{gateway}', PaymentWebhookController::class)
     ->name('webhooks.payments');
 
+// Payout (transfer) webhooks (ROADMAP §Layer 0.2): signature-verified,
+// idempotent payout-request settlement.
+Route::post('/webhooks/payouts/{provider}', \App\Http\Controllers\Webhooks\PayoutWebhookController::class)
+    ->name('webhooks.payouts');
+
 // Rewarded-ad / offerwall postback (loyalty module): HMAC-verified,
 // idempotent credit grant. Both verbs — networks vary.
 Route::match(['get', 'post'], '/webhooks/offerwall', \App\Http\Controllers\Webhooks\OfferwallPostbackController::class)
