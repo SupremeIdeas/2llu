@@ -9,10 +9,10 @@
 
 ## DONE
 
-### 🔧 Developer API reselling (ROADMAP §Layer 2) — IN PROGRESS (started 2026-07-20)
-Building the standalone Developer API layer (no payout-engine dependency). Money
-model: developers pay wholesale + a small admin markup — always MarginGuard-floored,
-so the admin never loses; provider cost is never exposed. Increments so far:
+### ✅ Developer API reselling (ROADMAP §Layer 2) — FEATURE-COMPLETE 2026-07-20
+The standalone Developer API layer (no payout-engine dependency). Money model:
+developers pay wholesale + a small admin markup — always MarginGuard-floored, so
+the admin never loses; provider cost is never exposed. All increments done:
 - **3.1 Dev price lane** — `PricingEngine::developerEsimPrice/developerSmsPrice`
   (default 10%/15% markup, cost+min-profit floor, audited under `dev:{provider}`).
   Settings seeded. `DeveloperPricingTest` (5).
@@ -39,9 +39,19 @@ so the admin never loses; provider cost is never exposed. Increments so far:
   money model, idempotency, errors, every endpoint with curl+JSON) AND a public,
   browsable in-app page at `/developers` (`DeveloperDocsController` renders the same
   markdown → one source of truth), linked from the marketing nav. `DeveloperDocsPageTest` (2).
-- **Remaining:** developer portal (Livewire: create/rotate/revoke keys, view usage,
-  top up API balance from wallet); admin controls (flag toggle, dev-markup settings,
-  per-client view, usage/invoices; Claude-proposable markup). 32 new tests, all green.
+- **3.8 Developer portal** — `/developer` (Livewire, flag-gated): create keys
+  (plaintext once), pick scopes, rotate/revoke, and top up a client's prepaid
+  balance from the user's wallet (WalletService debit → ApiWalletService credit
+  under one ref; refunded if the credit can't post). `DeveloperPortalTest` (6).
+- **3.9 Admin controls** — Admin → Developer API: toggle the program, set the
+  eSIM/number developer markups (MarginGuard still floors — a 0% markup can't sell
+  below cost), and a read-only client oversight table. Audited. `AdminDeveloperApiTest` (5).
+
+**→ Layer 2 feature-complete: pricing lane · clients+keys · prepaid wallet ·
+catalogue/quote/order/status (eSIM + numbers) · docs (reference + public page) ·
+developer portal · admin controls. 43 new tests, all green.**
+Deferred to a future pass: webhooks (delivery/OTP callbacks), permanent-number
+ordering, an interactive in-app sandbox, and Claude-proposable markups.
 
 ### ✅ Wizard polish — NaaraCare warm hand-off — built 2026-07-19
 Roadmap §10. A persistent **"Talk to NaaraCare"** link in the widget footer opens
