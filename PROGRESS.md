@@ -9,6 +9,38 @@
 
 ## DONE
 
+### ✅ Payout foundation (ROADMAP §Layer 0.1 + 0.2 + admin) — built 2026-07-21
+The money-OUT foundation that unblocks NaaraCredit cash-out (Layer 1) and the
+merchant system (Layer 3). Off by default behind `payouts.enabled`
+(`Support\PayoutSettings`). Money-safety mirrors WalletService throughout.
+- **0.1 Payout accounts** — `payout_accounts` + `PayoutAccount` (masked number,
+  read-only resolved `account_name`). `BankResolverInterface` with Paystack +
+  Flutterwave (bank list + account-name resolution, key-gated). `PayoutAccountService`
+  routes each country to the first available resolver, CONFIRMS the holder name
+  with the PSP before saving (money never goes to a typo), refuses the
+  unverifiable, keeps one default per user. Resolvers injected (tests use fakes).
+  `PayoutAccountTest` (7).
+- **0.2 Payout engine** — `payout_requests` + `PayoutRequest`
+  (pending→processing→paid|failed|reversed). `PayoutGatewayInterface` +
+  `PaystackPayoutGateway`/`FlutterwavePayoutGateway` (recipient cached on account,
+  transfer send, HMAC/verif-hash webhook verify). `PayoutService`: idempotent by
+  unique reference, row-locked send that never re-sends, webhook-confirmed truth,
+  failed/reversed → `PayoutReversed` (source layer returns held funds) + admin
+  alert (never blind-retry). PSP call in `SendPayoutJob` (ShouldBeUnique,
+  tries=1). Webhook `POST /webhooks/payouts/{provider}` verifies before touching
+  the payload. `PayoutSettled`/`PayoutReversed` events are the source-layer seam.
+  `PayoutEngineTest` (9).
+- **Admin controls** — Admin → Payouts: toggle the feature, manual/autopilot
+  mode + min withdrawal, and a manual approve/decline queue (approve queues the
+  transfer; decline reverses the hold). `AdminPayoutsTest` (4).
+
+**→ Layer 0 done: payout accounts + name resolution · payout engine (Paystack +
+Flutterwave transfers) · admin queue. 20 new tests, all green (suite 464).**
+Deferred to the next passes: Layer 0.3 (KYC L2 gate before withdrawal), the
+autopilot `payouts:settle` batch job + `payout_batches`, and Wise/Stripe
+international payout gateways. Then Layer 1 (NaaraCredit → cash) and Layer 3
+(merchants) build on this.
+
 ### ✅ Developer API reselling (ROADMAP §Layer 2) — FEATURE-COMPLETE 2026-07-20
 The standalone Developer API layer (no payout-engine dependency). Money model:
 developers pay wholesale + a small admin markup — always MarginGuard-floored, so

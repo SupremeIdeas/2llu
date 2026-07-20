@@ -129,6 +129,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');
             Route::get('/credits', \App\Livewire\Admin\Credits::class)->name('credits');
             Route::get('/developer-api', \App\Livewire\Admin\DeveloperApi::class)->name('developer-api');
+            Route::get('/payouts', \App\Livewire\Admin\Payouts::class)->name('payouts');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
             Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
         });

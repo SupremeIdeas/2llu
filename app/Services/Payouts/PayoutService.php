@@ -168,6 +168,30 @@ class PayoutService
         });
     }
 
+    /**
+     * Admin declines a pending request before it's sent. Reverses the hold (the
+     * source layer returns the funds) — nothing was ever sent to the PSP.
+     */
+    public function reject(PayoutRequest $request, User $approver, string $reason = 'Declined by admin'): PayoutRequest
+    {
+        abort_unless($approver->hasAnyRole(['super_admin', 'admin']), 403);
+
+        if ($request->status !== PayoutRequest::PENDING) {
+            return $request; // only a not-yet-sent request can be declined here
+        }
+
+        $request->forceFill([
+            'status' => PayoutRequest::REVERSED,
+            'failure_reason' => $reason,
+            'approved_by' => $approver->id,
+        ])->save();
+        Auditor::log('payout.rejected', 'PayoutRequest', $request->id, ['by' => $approver->id, 'reason' => $reason]);
+
+        PayoutReversed::dispatch($request);
+
+        return $request;
+    }
+
     /** Apply a verified webhook event to its request (idempotent). */
     public function applyWebhook(PayoutEvent $event): ?PayoutRequest
     {
