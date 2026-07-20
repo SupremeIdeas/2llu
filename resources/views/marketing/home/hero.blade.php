@@ -21,6 +21,9 @@
                  themes — firmer in light where the planet is a mid-tone. --}}
             <div class="absolute inset-0 bg-gradient-to-b from-[#F8F9FA] via-[#F8F9FA]/55 to-[#F8F9FA]/70 dark:from-[#0D1B2A] dark:via-[#0D1B2A]/15 dark:to-[#0D1B2A]/65"></div>
         </div>
+        {{-- Flag + comms nodes over the planet: our brand's "connect across
+             borders" message, above the scrim so they read clearly. --}}
+        <x-flag-orbit tone="light" class="z-[1]" />
     @endif
     <div class="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-16 text-center sm:pt-24 {{ ! empty($s['image']) ? 'text-white' : '' }}">
         <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $s['eyebrow'] }}</p>

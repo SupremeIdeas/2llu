@@ -33,6 +33,13 @@
                      planet stays vivid in the centre. --}}
                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-navy/55 via-navy/10 to-navy/65"></div>
 
+                {{-- Flag + comms nodes: the same "connect across borders" motif as
+                     the marketing hero, tuned for the navy panel. Only over the
+                     branded WebGL default (not an admin-uploaded image/video). --}}
+                @unless (\App\Support\SiteChrome::hasAuthMedia())
+                    <x-flag-orbit tone="dark" />
+                @endunless
+
                 <div class="relative flex h-full flex-col justify-between p-8 lg:p-12">
                     <a href="{{ route('home') }}" class="inline-flex">
                         <x-brand-logo variant="product" theme="dark" class="h-9 max-w-[180px]" fallback-icon="signal" />

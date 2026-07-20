@@ -822,3 +822,19 @@
 @media (prefers-reduced-motion: reduce) {
     .nx-marquee__track--ltr, .nx-marquee__track--rtl { animation: none; }
 }
+
+/* --- Hero flag orbit (premium "connections across borders" overlay) ---------
+   Floating flag/comms nodes over the WebGL hero, joined by faint gold "signal"
+   lines whose dash flows to feel alive. Static for reduced-motion. */
+.nx-orbit__line { stroke-dasharray: 5 9; animation: nx-signal 2.6s linear infinite; }
+.nx-orbit__node { animation: nx-float-a 6s ease-in-out infinite; }
+.nx-orbit__node:nth-child(3n) { animation-name: nx-float-b; animation-duration: 7.5s; }
+.nx-orbit__node:nth-child(3n+1) { animation-name: nx-float-c; animation-duration: 8.5s; }
+@keyframes nx-signal { to { stroke-dashoffset: -140; } }
+@keyframes nx-float-a { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes nx-float-b { 0%,100% { transform: translateY(0); } 50% { transform: translateY(9px); } }
+@keyframes nx-float-c { 0%,100% { transform: translateY(-6px); } 50% { transform: translateY(7px); } }
+@media (prefers-reduced-motion: reduce) {
+    .nx-orbit__line { animation: none; }
+    .nx-orbit__node { animation: none; }
+}
