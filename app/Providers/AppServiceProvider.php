@@ -49,6 +49,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('pay.paystack', \App\Services\Payments\PaystackGateway::class);
         $this->app->singleton('pay.stripe', \App\Services\Payments\StripeGateway::class);
 
+        // Payout account resolution (ROADMAP §Layer 0.1). Paystack first for its
+        // markets, Flutterwave as the wider-net resolver. Injected as a list so
+        // tests can drive the service with fakes.
+        $this->app->singleton(\App\Services\Payouts\PayoutAccountService::class, fn ($app) => new \App\Services\Payouts\PayoutAccountService([
+            $app->make(\App\Services\Payouts\PaystackBankResolver::class),
+            $app->make(\App\Services\Payouts\FlutterwaveBankResolver::class),
+        ]));
+
         // Claude-assisted maintenance loop (blueprint Section 29). Bound to the
         // production clients by default; both are gated on config and report
         // unavailable until configured. Tests swap in fakes.
