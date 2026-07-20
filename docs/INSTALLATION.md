@@ -6,6 +6,13 @@ Done**). It runs on both **shared cPanel hosting** and a **VPS / dedicated
 server** — the wizard asks which one you're on and configures the right drivers
 automatically.
 
+> **On shared cPanel (Namecheap etc.)?** Follow the step-by-step
+> **[cPanel install guide](CPANEL-INSTALL.md)** — it covers the exact upload
+> location, the root `.htaccess` that routes `public_html` into Laravel's
+> `public/` folder (the fix for a **404 at `/install`**), permissions, and the
+> required cron line. The compiled front-end assets (`public/build/`) ship in the
+> package, so no Node/npm is needed on the server.
+
 ---
 
 ## 1. Server requirements

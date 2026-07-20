@@ -3,7 +3,10 @@
 /node_modules
 
 # === Laravel build / runtime ===
-/public/build
+# NOTE: /public/build is intentionally COMMITTED (not ignored). Shared cPanel
+# hosting has no Node/npm to run `npm run build`, so the compiled Vite assets
+# must ship with the product for the app to render. Rebuild + recommit after any
+# front-end change (`npm run build`).
 /public/hot
 /public/storage
 /storage/*.key
