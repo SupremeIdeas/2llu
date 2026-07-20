@@ -30,9 +30,9 @@ class AuthRecoveryTest extends TestCase
         $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
         $admin->assignRole('admin');
 
-        // A guest hitting the secret admin path is sent to log in, with the
-        // admin path remembered.
-        $this->get('/adminmaster')->assertRedirect(route('login'));
+        // A guest hitting the secret admin path is sent to the dedicated admin
+        // login, with the admin path remembered.
+        $this->get('/adminmaster')->assertRedirect(route('admin.login'));
 
         // After logging in, they land BACK on the admin path (not /dashboard).
         $this->post('/login', ['email' => $admin->email, 'password' => 'password'])

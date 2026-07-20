@@ -38,6 +38,12 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(fn () => view('auth.login'));
         Fortify::registerView(fn () => view('auth.register'));
 
+        // The 2FA challenge page (TOTP — Google Authenticator/Authy/1Password —
+        // or a recovery code). MUST be registered or a 2FA-enabled user (incl.
+        // an admin) is stranded after entering their password. This is the extra
+        // security layer that never blocks a legitimate login.
+        Fortify::twoFactorChallengeView(fn () => view('auth.two-factor-challenge'));
+
         // Password-reset + email-verification UX (Module 22). Without these the
         // Fortify routes exist but have no page to render.
         Fortify::requestPasswordResetLinkView(fn () => view('auth.forgot-password'));

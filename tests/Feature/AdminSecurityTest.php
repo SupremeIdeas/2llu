@@ -53,9 +53,9 @@ class AdminSecurityTest extends TestCase
 
     public function test_guest_is_sent_to_login_and_non_admins_stay_hidden(): void
     {
-        // Guest at the real path is sent to log in (the owner's admin entry point),
-        // then returned to /adminmaster after signing in.
-        $this->get('/adminmaster')->assertRedirect('/login');
+        // Guest at the real path is sent to the dedicated admin login (the
+        // owner's admin entry point), then returned to /adminmaster after signing in.
+        $this->get('/adminmaster')->assertRedirect(route('admin.login'));
 
         // A common guess is a genuine 404 (no such route).
         $this->get('/admin')->assertNotFound();

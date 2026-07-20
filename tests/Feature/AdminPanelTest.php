@@ -56,8 +56,10 @@ class AdminPanelTest extends TestCase
 
     public function test_admin_routes_are_404_for_non_admins_and_ok_for_admins(): void
     {
-        // Guests are sent to log in (the admin entry point), then returned.
-        $this->get('/adminmaster')->assertRedirect('/login');
+        // Guests are sent to the dedicated admin login, then returned.
+        $this->get('/adminmaster')->assertRedirect(route('admin.login'));
+        // The admin login page itself is reachable by guests.
+        $this->get('/adminmaster/login')->assertOk()->assertSee('Administrator access');
 
         // Authenticated non-admins stay hidden with a plain 404.
         $user = User::factory()->create();

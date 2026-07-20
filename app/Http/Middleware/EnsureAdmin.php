@@ -31,12 +31,15 @@ class EnsureAdmin
 
         $user = $request->user();
 
-        // A GUEST at the admin path is sent to log in and returned here after
-        // (the owner uses /adminmaster as the admin entry point with the setup
-        // email + password). Authenticated NON-admins still get a plain 404, so
-        // the panel stays invisible to ordinary users (blueprint Section 25).
+        // A GUEST at the admin path is sent to the DEDICATED admin login and
+        // returned here after (the owner uses /adminmaster as the admin entry
+        // point). redirect()->guest() remembers the intended admin URL. This
+        // works from any browser/device — access is session-based, not
+        // device-locked (an optional IP allow-list is the only location gate).
+        // Authenticated NON-admins still get a plain 404, so the panel stays
+        // invisible to ordinary users (blueprint Section 25).
         if ($user === null) {
-            return redirect()->guest(route('login'));
+            return redirect()->guest(route('admin.login'));
         }
         if (! $user->hasAnyRole(['super_admin', 'admin', 'staff'])) {
             throw new NotFoundHttpException;

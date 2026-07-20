@@ -10,6 +10,9 @@
     $primary = [['route' => 'admin.dashboard', 'label' => 'Overview', 'icon' => 'signal']];
     $more = [];
 
+    // `More` is grouped with ['heading' => ...] separators so complementary
+    // tools sit together; the app-shell renders headings in the desktop sidebar
+    // and skips them in the mobile grid.
     if ($isPrivileged) {
         // Bottom-bar core differs slightly by role (super gets Staff, admin gets
         // Errors); the rest live in the "More" sheet / lower sidebar.
@@ -18,41 +21,60 @@
             ? ['route' => 'admin.staff', 'label' => 'Staff', 'icon' => 'id-card']
             : ['route' => 'admin.errors', 'label' => 'Errors', 'icon' => 'file-text'];
 
+        // Store & pricing.
+        $more[] = ['heading' => 'Store & pricing'];
         $more[] = ['route' => 'admin.pricing-architect', 'label' => 'Price with Claude', 'icon' => 'zap'];
-        $more[] = ['route' => 'admin.banners', 'label' => 'Banners', 'icon' => 'image'];
         $more[] = ['route' => 'admin.coupons', 'label' => 'Coupons', 'icon' => 'gift'];
+        $more[] = ['route' => 'admin.banners', 'label' => 'Banners', 'icon' => 'image'];
         $more[] = ['route' => 'admin.credits', 'label' => 'NaaraCredits', 'icon' => 'gift'];
-        $more[] = ['route' => 'admin.developer-api', 'label' => 'Developer API', 'icon' => 'key'];
+
+        // Money & partners.
+        $more[] = ['heading' => 'Money & partners'];
         $more[] = ['route' => 'admin.payouts', 'label' => 'Payouts', 'icon' => 'credit-card'];
-        $more[] = ['route' => 'admin.kyc', 'label' => 'Identity', 'icon' => 'shield'];
+        $more[] = ['route' => 'admin.kyc', 'label' => 'Identity (KYC)', 'icon' => 'shield'];
         $more[] = ['route' => 'admin.merchants', 'label' => 'Merchants', 'icon' => 'id-card'];
-        $more[] = ['route' => 'admin.pages', 'label' => 'Pages', 'icon' => 'file-text'];
-        $more[] = ['route' => 'admin.branding', 'label' => 'Branding', 'icon' => 'image'];
-        $more[] = ['route' => 'admin.site', 'label' => 'Pages', 'icon' => 'file-text'];
-        $more[] = ['route' => 'admin.chrome', 'label' => 'Auth & Footer', 'icon' => 'image'];
+        $more[] = ['route' => 'admin.developer-api', 'label' => 'Developer API', 'icon' => 'key'];
+
+        // Website (public front end + branding).
+        $more[] = ['heading' => 'Website'];
+        $more[] = ['route' => 'admin.site', 'label' => 'Marketing site', 'icon' => 'globe'];
+        $more[] = ['route' => 'admin.pages', 'label' => 'Custom pages', 'icon' => 'file-text'];
         $more[] = ['route' => 'admin.blog', 'label' => 'Blog', 'icon' => 'file-text'];
         $more[] = ['route' => 'admin.legal', 'label' => 'Legal', 'icon' => 'shield'];
-        $more[] = ['route' => 'admin.service-icons', 'label' => 'Service icons', 'icon' => 'grid'];
+        $more[] = ['route' => 'admin.branding', 'label' => 'Branding', 'icon' => 'image'];
+        $more[] = ['route' => 'admin.chrome', 'label' => 'Auth & footer', 'icon' => 'image'];
         $more[] = ['route' => 'admin.appearance', 'label' => 'Splash', 'icon' => 'zap'];
-        $more[] = ['route' => 'admin.support-agent', 'label' => 'Support agent', 'icon' => 'message-circle'];
-        $more[] = ['route' => 'admin.deletions', 'label' => 'Deletions', 'icon' => 'trash'];
-        if ($isSuper) {
-            $more[] = ['route' => 'admin.api-keys', 'label' => 'API keys', 'icon' => 'key'];
-            $more[] = ['route' => 'admin.email', 'label' => 'Email', 'icon' => 'mail'];
-            $more[] = ['route' => 'admin.errors', 'label' => 'Error log', 'icon' => 'file-text'];
-            $more[] = ['route' => 'admin.backups', 'label' => 'Backups', 'icon' => 'package'];
-            $more[] = ['route' => 'admin.maintenance', 'label' => 'Maintenance', 'icon' => 'refresh'];
-            $more[] = ['route' => 'admin.ui-kit', 'label' => 'UI Kit', 'icon' => 'grid'];
-        }
+        $more[] = ['route' => 'admin.service-icons', 'label' => 'Service icons', 'icon' => 'grid'];
     }
 
-    // Support ticket queue — anyone who can work tickets (staff scope / admin).
-    if ($u->hasAnyRole(['super_admin', 'admin']) || $u->can('tickets.manage')) {
-        $more[] = ['route' => 'admin.tickets', 'label' => 'Tickets', 'icon' => 'message-circle'];
+    // People & support — ticket-workers (staff scope) and admins.
+    $support = [];
+    if ($isPrivileged) {
+        $support[] = ['route' => 'admin.support-agent', 'label' => 'Support agent', 'icon' => 'message-circle'];
+        $support[] = ['route' => 'admin.deletions', 'label' => 'Deletions', 'icon' => 'trash'];
+    }
+    if ($isPrivileged || $u->can('tickets.manage')) {
+        $support[] = ['route' => 'admin.tickets', 'label' => 'Tickets', 'icon' => 'message-circle'];
+    }
+    if ($support) {
+        $more[] = ['heading' => 'People & support'];
+        $more = array_merge($more, $support);
+    }
+
+    // System — super-admin only.
+    if ($isSuper) {
+        $more[] = ['heading' => 'System'];
+        $more[] = ['route' => 'admin.api-keys', 'label' => 'API keys', 'icon' => 'key'];
+        $more[] = ['route' => 'admin.email', 'label' => 'Email', 'icon' => 'mail'];
+        $more[] = ['route' => 'admin.errors', 'label' => 'Error log', 'icon' => 'file-text'];
+        $more[] = ['route' => 'admin.backups', 'label' => 'Backups', 'icon' => 'package'];
+        $more[] = ['route' => 'admin.maintenance', 'label' => 'Maintenance', 'icon' => 'refresh'];
+        $more[] = ['route' => 'admin.ui-kit', 'label' => 'UI Kit', 'icon' => 'grid'];
     }
 
     $primary[] = ['route' => 'admin.security', 'label' => 'Security', 'icon' => 'shield'];
     // Everyone in the panel can hop back to the end-user app.
+    $more[] = ['heading' => 'Shortcuts'];
     $more[] = ['route' => 'dashboard', 'label' => 'Storefront', 'icon' => 'globe'];
 @endphp
 

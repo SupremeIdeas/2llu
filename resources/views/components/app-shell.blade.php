@@ -38,17 +38,24 @@
 
             <nav class="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 py-2">
                 @foreach ($allItems as $item)
-                    <a href="{{ route($item['route']) }}"
-                       :class="navCollapsed && 'justify-center'"
-                       :title="navCollapsed ? @js($item['label']) : null"
-                       @class([
-                           'group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition',
-                           'bg-primary/10 text-primary-dark shadow-sm dark:bg-primary/20 dark:text-primary' => $isActive($item['route']),
-                           'text-slate-600 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-white/5' => ! $isActive($item['route']),
-                       ])>
-                        <x-icon :name="$item['icon']" class="h-5 w-5 shrink-0" />
-                        <span class="truncate" x-show="!navCollapsed">{{ $item['label'] }}</span>
-                    </a>
+                    @if (! empty($item['heading']))
+                        {{-- Section label — groups complementary items (collapsed
+                             sidebar shows a divider instead). --}}
+                        <p x-show="!navCollapsed" class="px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ $item['heading'] }}</p>
+                        <div x-show="navCollapsed" x-cloak class="mx-auto my-2 h-px w-6 bg-slate-200 dark:bg-white/10"></div>
+                    @else
+                        <a href="{{ route($item['route']) }}"
+                           :class="navCollapsed && 'justify-center'"
+                           :title="navCollapsed ? @js($item['label']) : null"
+                           @class([
+                               'group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition',
+                               'bg-primary/10 text-primary-dark shadow-sm dark:bg-primary/20 dark:text-primary' => $isActive($item['route']),
+                               'text-slate-600 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-white/5' => ! $isActive($item['route']),
+                           ])>
+                            <x-icon :name="$item['icon']" class="h-5 w-5 shrink-0" />
+                            <span class="truncate" x-show="!navCollapsed">{{ $item['label'] }}</span>
+                        </a>
+                    @endif
                 @endforeach
             </nav>
 
@@ -139,6 +146,7 @@
 
             <div class="grid grid-cols-4 gap-3">
                 @foreach ($more as $item)
+                    @continue(! empty($item['heading'])) {{-- headings are desktop-sidebar only --}}
                     <a href="{{ route($item['route']) }}" @click="moreOpen = false"
                        @class([
                            'flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition',

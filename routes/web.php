@@ -110,11 +110,18 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->name('account.export.download');
 });
 
+// Dedicated admin sign-in page (blueprint Section 25). Lives at
+// {ADMIN_PATH}/login OUTSIDE the `admin` gate so guests can reach it; EnsureAdmin
+// redirects unauthenticated panel visitors here (a branded admin login) instead
+// of the customer login. Posts to Fortify /login. Throttled like the panel.
+Route::get(config('admin.path').'/login', \App\Http\Controllers\Admin\LoginController::class)
+    ->middleware('throttle:admin')->name('admin.login');
+
 // Admin panel (blueprint Sections 13, 15, 17, 25). Mounted on the env-driven
-// admin path; the `admin` middleware enforces the IP allow-list, a plain 404
-// for guests/non-admins (never a login page), and TOTP 2FA enrolment. `auth`
-// is intentionally omitted so unauthenticated visitors 404 instead of being
-// bounced to /login. Throttled to blunt path probing.
+// admin path; the `admin` middleware enforces the IP allow-list, a redirect to
+// the dedicated admin login for guests, a plain 404 for signed-in non-admins,
+// and TOTP 2FA enrolment. `auth` is intentionally omitted so EnsureAdmin owns
+// the guest handling. Throttled to blunt path probing.
 Route::middleware(['admin', 'throttle:admin'])
     ->prefix(config('admin.path'))
     ->name('admin.')
