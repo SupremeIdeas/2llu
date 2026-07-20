@@ -7,8 +7,22 @@
             <img src="{{ $s['image'] }}" alt="" data-hero-media class="h-full w-full object-cover will-change-transform">
             <div class="absolute inset-0 bg-gradient-to-b from-navy/60 via-navy/70 to-navy/85"></div>
         </div>
+    @else
+        {{-- Branded WebGL "connected planet" hero backdrop (lazy-loaded, bundled
+             through Vite so it's CSP-safe, and self-pausing off-screen). The
+             glow orbs are the reduced-motion / no-WebGL fallback. --}}
+        <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+            <span class="absolute bottom-0 left-1/2 h-[34rem] w-[34rem] -translate-x-1/2 translate-y-1/4 rounded-full bg-primary/20 blur-3xl dark:bg-primary/25"></span>
+            <span class="absolute right-[12%] top-[42%] h-56 w-56 rounded-full bg-accent/20 blur-3xl"></span>
+            <canvas data-webgl-hero="planet"
+                    class="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-[1200ms] [&.is-live]:opacity-100"></canvas>
+            {{-- Legibility scrim: clean at the top where the headline/subhead sit,
+                 the planet stays vivid lower down. Matches the page bg in both
+                 themes — firmer in light where the planet is a mid-tone. --}}
+            <div class="absolute inset-0 bg-gradient-to-b from-[#F8F9FA] via-[#F8F9FA]/55 to-[#F8F9FA]/70 dark:from-[#0D1B2A] dark:via-[#0D1B2A]/15 dark:to-[#0D1B2A]/65"></div>
+        </div>
     @endif
-    <div class="relative mx-auto max-w-6xl px-4 pb-20 pt-16 text-center sm:pt-24 {{ ! empty($s['image']) ? 'text-white' : '' }}">
+    <div class="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-16 text-center sm:pt-24 {{ ! empty($s['image']) ? 'text-white' : '' }}">
         <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $s['eyebrow'] }}</p>
         <h1 data-reveal style="--reveal-delay:.08s"
             class="mx-auto mt-4 max-w-3xl text-4xl font-bold leading-tight sm:text-6xl {{ empty($s['image']) ? 'text-slate-900 dark:text-white' : '' }}">

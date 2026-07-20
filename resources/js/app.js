@@ -149,3 +149,30 @@ function initLoginScene() {
 
 document.addEventListener('DOMContentLoaded', initLoginScene);
 document.addEventListener('livewire:navigated', initLoginScene);
+
+// --- Marketing page WebGL heroes (lazy) -------------------------------------
+// One scene per page: each hero canvas carries data-webgl-hero="<variant>".
+// Three.js is dynamic-imported (shared with the login chunk), skipped for
+// reduced-motion, and torn down on SPA navigation. Each scene self-pauses when
+// it scrolls off-screen, so it costs nothing once you've scrolled past it.
+let _heroDestroyers = [];
+function initHeroScenes() {
+    _heroDestroyers.forEach((d) => d());
+    _heroDestroyers = [];
+    const canvases = document.querySelectorAll('[data-webgl-hero]');
+    if (!canvases.length) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    import('./webgl/hero-scene.js')
+        .then(({ mountHeroScene }) => {
+            canvases.forEach((canvas) => {
+                const destroy = mountHeroScene(canvas, canvas.dataset.webglHero);
+                _heroDestroyers.push(destroy);
+                canvas.classList.add('is-live'); // fades the canvas in over the fallback
+            });
+        })
+        .catch(() => { /* bundle/WebGL failure → CSS fallback stays */ });
+}
+
+document.addEventListener('DOMContentLoaded', initHeroScenes);
+document.addEventListener('livewire:navigated', initHeroScenes);

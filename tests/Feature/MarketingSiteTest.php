@@ -83,6 +83,24 @@ class MarketingSiteTest extends TestCase
         $this->get('/')->assertSee('Custom Headline From The Editor');
     }
 
+    public function test_the_home_hero_renders_the_webgl_planet_with_a_fallback(): void
+    {
+        $this->get('/')->assertOk()
+            ->assertSee('data-webgl-hero="planet"', false) // the lazy hero scene canvas
+            ->assertSee('blur-3xl', false);                // the glow-orb fallback beneath it
+    }
+
+    public function test_an_admin_hero_image_replaces_the_webgl_backdrop(): void
+    {
+        SiteContent::saveOverrides('home', [
+            'hero' => ['image' => 'https://cdn.example.com/hero.jpg'],
+        ]);
+
+        $this->get('/')->assertOk()
+            ->assertSee('https://cdn.example.com/hero.jpg', false)
+            ->assertDontSee('data-webgl-hero', false);
+    }
+
     public function test_the_three_step_showcase_renders_its_artwork(): void
     {
         $this->get('/')->assertOk()
