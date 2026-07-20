@@ -14,6 +14,7 @@ class UserWallet extends Model
         'total_deposits',
         'total_spent',
         'naara_credits',
+        'withdrawable_credits',
         'last_checkin_at',
     ];
 
@@ -25,6 +26,7 @@ class UserWallet extends Model
             'total_deposits' => 'decimal:2',
             'total_spent' => 'decimal:2',
             'naara_credits' => 'decimal:2',
+            'withdrawable_credits' => 'decimal:2',
             'last_checkin_at' => 'datetime',
         ];
     }

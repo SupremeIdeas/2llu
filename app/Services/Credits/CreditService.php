@@ -32,12 +32,23 @@ class CreditService
     }
 
     /**
-     * Grant credits. `reference` makes it idempotent per earning event
-     * (e.g. "checkin:{userId}:{date}", "ad:{externalTxnId}").
+     * The withdrawable subset of the balance (ROADMAP §Layer 1) — only credits
+     * from first-referral rewards. Cash-out is capped at this, never the whole
+     * balance.
      */
-    public function earn(User $user, float $credits, string $source, ?string $reference = null, ?string $description = null): CreditLedger
+    public function withdrawableBalance(User $user): float
     {
-        return $this->apply($user, 'earn', $credits, $source, $reference, $description);
+        return (float) ($user->wallet?->withdrawable_credits ?? 0);
+    }
+
+    /**
+     * Grant credits. `reference` makes it idempotent per earning event
+     * (e.g. "checkin:{userId}:{date}", "ad:{externalTxnId}"). Set $withdrawable
+     * only for eligible referral rewards — it also grows the withdrawable bucket.
+     */
+    public function earn(User $user, float $credits, string $source, ?string $reference = null, ?string $description = null, bool $withdrawable = false): CreditLedger
+    {
+        return $this->apply($user, 'earn', $credits, $source, $reference, $description, $withdrawable);
     }
 
     /** Spend credits (e.g. redeemed at checkout). Throws if the balance is short. */
@@ -46,15 +57,39 @@ class CreditService
         return $this->apply($user, 'spend', $credits, $source, $reference, $description);
     }
 
-    private function apply(User $user, string $type, float $credits, string $source, ?string $reference, ?string $description): CreditLedger
+    /**
+     * Spend specifically from the withdrawable bucket (the cash-out HOLD). Throws
+     * if the withdrawable balance can't cover it — you can never cash out more
+     * than you earned from referrals.
+     */
+    public function spendWithdrawable(User $user, float $credits, string $source, ?string $reference = null, ?string $description = null): CreditLedger
+    {
+        return $this->apply($user, 'spend', $credits, $source, $reference, $description, fromWithdrawable: true);
+    }
+
+    /**
+     * Grant a withdrawable first-referral reward, once per referred person. The
+     * reference guarantees a given referral is only ever rewarded once.
+     */
+    public function rewardReferral(User $referrer, int $referredId, float $credits, ?string $description = null): CreditLedger
+    {
+        return $this->earn(
+            $referrer, $credits, 'referral',
+            "referral:{$referrer->id}:{$referredId}",
+            $description ?? 'Referral reward',
+            withdrawable: true,
+        );
+    }
+
+    private function apply(User $user, string $type, float $credits, string $source, ?string $reference, ?string $description, bool $withdrawable = false, bool $fromWithdrawable = false): CreditLedger
     {
         $credits = round($credits, self::SCALE);
         if ($credits <= 0) {
             throw new \InvalidArgumentException('Credit amount must be positive.');
         }
 
-        return Cache::lock("credits:{$user->id}", 10)->block(5, function () use ($user, $type, $credits, $source, $reference, $description) {
-            return DB::transaction(function () use ($user, $type, $credits, $source, $reference, $description) {
+        return Cache::lock("credits:{$user->id}", 10)->block(5, function () use ($user, $type, $credits, $source, $reference, $description, $withdrawable, $fromWithdrawable) {
+            return DB::transaction(function () use ($user, $type, $credits, $source, $reference, $description, $withdrawable, $fromWithdrawable) {
                 if ($reference !== null) {
                     $existing = CreditLedger::where('user_id', $user->id)->where('reference', $reference)->first();
                     if ($existing !== null) {
@@ -73,6 +108,23 @@ class CreditService
                     throw new InsufficientCreditsException($user->id, $credits, $before);
                 }
 
+                // Keep the withdrawable bucket coherent:
+                //  - earning a referral reward grows it,
+                //  - a withdrawal HOLD shrinks it (guarded ≤ withdrawable),
+                //  - any other spend eats non-withdrawable first, so withdrawable
+                //    is simply clamped to the new balance.
+                $wBefore = round((float) $wallet->withdrawable_credits, self::SCALE);
+                if ($type === 'earn' && $withdrawable) {
+                    $wallet->withdrawable_credits = round($wBefore + $credits, self::SCALE);
+                } elseif ($type === 'spend' && $fromWithdrawable) {
+                    if ($credits > $wBefore) {
+                        throw new InsufficientCreditsException($user->id, $credits, $wBefore);
+                    }
+                    $wallet->withdrawable_credits = round($wBefore - $credits, self::SCALE);
+                } elseif ($type === 'spend') {
+                    $wallet->withdrawable_credits = min($wBefore, $after);
+                }
+
                 $wallet->naara_credits = $after;
                 $wallet->save();
 
@@ -80,6 +132,7 @@ class CreditService
                     'user_id' => $user->id,
                     'type' => $type,
                     'source' => $source,
+                    'withdrawable' => $type === 'earn' ? $withdrawable : false,
                     'amount' => $credits,
                     'balance_after' => $after,
                     'reference' => $reference ?? (string) Str::uuid(),

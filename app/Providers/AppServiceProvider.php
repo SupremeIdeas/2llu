@@ -115,6 +115,14 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('super_admin') ? true : null;
         });
 
+        // A reversed/failed credit withdrawal returns the held credits
+        // (ROADMAP §Layer 1). Registered explicitly so it fires regardless of
+        // listener auto-discovery.
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\PayoutReversed::class,
+            \App\Listeners\ReturnWithdrawnCredits::class,
+        );
+
         // Overlay any admin-saved API credentials on top of config() so every
         // service keeps reading config('services.*') unchanged and providers
         // flip Active the moment a key is saved (blueprint Section 17.4, money

@@ -11,7 +11,7 @@ class CreditLedger extends Model
     protected $table = 'credit_ledger';
 
     protected $fillable = [
-        'user_id', 'type', 'source', 'amount', 'balance_after', 'reference', 'description',
+        'user_id', 'type', 'source', 'withdrawable', 'amount', 'balance_after', 'reference', 'description',
     ];
 
     protected function casts(): array
@@ -19,6 +19,7 @@ class CreditLedger extends Model
         return [
             'amount' => 'decimal:2',
             'balance_after' => 'decimal:2',
+            'withdrawable' => 'boolean',
         ];
     }
 

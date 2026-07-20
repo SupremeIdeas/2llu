@@ -24,7 +24,7 @@ class PayoutRequest extends Model
     public const REVERSED = 'reversed';
 
     protected $fillable = [
-        'user_id', 'payee_type', 'payout_account_id', 'amount', 'currency',
+        'user_id', 'payee_type', 'payout_account_id', 'amount', 'credit_amount', 'currency',
         'source_bucket', 'status', 'provider', 'provider_ref', 'failure_reason',
         'approved_by', 'reference', 'settled_at',
     ];
@@ -33,6 +33,7 @@ class PayoutRequest extends Model
     {
         return [
             'amount' => 'decimal:4',
+            'credit_amount' => 'decimal:2',
             'settled_at' => 'datetime',
         ];
     }
