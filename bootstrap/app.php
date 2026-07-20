@@ -39,6 +39,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.enabled' => \App\Http\Middleware\EnsureDeveloperApiEnabled::class,
             'api.client' => \App\Http\Middleware\EnsureApiClientUsable::class,
             'api.scope' => \App\Http\Middleware\ApiScope::class,
+            // KYC level gate (ROADMAP §Layer 0.3): kyc:2 to withdraw, kyc:3 to
+            // become a merchant.
+            'kyc' => \App\Http\Middleware\EnsureKycLevel::class,
         ]);
 
         // Security headers on every web response (blueprint Section 19.2; the

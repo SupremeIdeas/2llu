@@ -66,6 +66,18 @@ class AppServiceProvider extends ServiceProvider
             $app->make(\App\Services\Payouts\FlutterwavePayoutGateway::class),
         ]));
 
+        // KYC/identity providers, resolved by name via app("kyc.$provider"), and
+        // the service that owns verification state (ROADMAP §Layer 0.3). Manual
+        // review is the always-available fallback.
+        $this->app->singleton('kyc.manual', \App\Services\Kyc\ManualKycProvider::class);
+        $this->app->singleton('kyc.smileid', \App\Services\Kyc\SmileIdKycProvider::class);
+        $this->app->singleton('kyc.dojah', \App\Services\Kyc\DojahKycProvider::class);
+        $this->app->singleton(\App\Services\Kyc\KycService::class, fn ($app) => new \App\Services\Kyc\KycService([
+            $app->make(\App\Services\Kyc\ManualKycProvider::class),
+            $app->make(\App\Services\Kyc\SmileIdKycProvider::class),
+            $app->make(\App\Services\Kyc\DojahKycProvider::class),
+        ]));
+
         // Claude-assisted maintenance loop (blueprint Section 29). Bound to the
         // production clients by default; both are gated on config and report
         // unavailable until configured. Tests swap in fakes.

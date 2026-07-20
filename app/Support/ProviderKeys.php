@@ -70,6 +70,15 @@ class ProviderKeys
                     'stripe_webhook_secret' => ['label' => 'Stripe — Webhook Secret', 'config' => 'services.stripe.webhook_secret', 'env' => 'STRIPE_WEBHOOK_SECRET', 'secret' => true, 'hint' => 'Developers → Webhooks → signing secret (whsec_…).'],
                 ],
             ],
+            'identity' => [
+                'label' => 'Identity / KYC',
+                'fields' => [
+                    'smileid_partner_id' => ['label' => 'Smile ID — Partner ID', 'config' => 'services.smileid.partner_id', 'env' => 'SMILEID_PARTNER_ID', 'secret' => false, 'hint' => 'portal.smileidentity.com → Settings. Pan-African BVN/NIN + liveness (good default). Then set the active provider on Admin → Payouts.'],
+                    'smileid_api_key' => ['label' => 'Smile ID — API Key', 'config' => 'services.smileid.api_key', 'env' => 'SMILEID_API_KEY', 'secret' => true, 'hint' => 'Same page — API key. Also verifies the result callback.'],
+                    'dojah_app_id' => ['label' => 'Dojah — App ID', 'config' => 'services.dojah.app_id', 'env' => 'DOJAH_APP_ID', 'secret' => false, 'hint' => 'app.dojah.io → your app. Fast BVN/NIN/document checks.'],
+                    'dojah_api_key' => ['label' => 'Dojah — API Key', 'config' => 'services.dojah.api_key', 'env' => 'DOJAH_API_KEY', 'secret' => true, 'hint' => 'Same app — the private/secret key.'],
+                ],
+            ],
             'integrations' => [
                 'label' => 'Integrations',
                 'fields' => [

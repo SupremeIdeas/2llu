@@ -9,6 +9,31 @@
 
 ## DONE
 
+### ✅ KYC / identity gate (ROADMAP §Layer 0.3) — built 2026-07-21
+The identity foundation that gates withdrawals (L2) and merchant migration (L3).
+Works out of the box via manual admin review; the owner switches to a real
+provider once keys are saved.
+- **Model + service** — `kyc_verifications` + `KycVerification` (L2 individual /
+  L3 business; pending→approved|rejected|failed). `KycService` is the single
+  owner: picks the admin-chosen provider (falls back to manual), records each
+  attempt, applies synchronous or webhook decisions idempotently, and answers
+  `hasLevel(user, N)` for the gates. Raw ID numbers are NEVER persisted — only
+  the provider's structured result.
+- **Providers** — `KycProviderInterface` + `ManualKycProvider` (always-available
+  admin-review fallback), `SmileIdKycProvider` (pan-African, signed callback),
+  `DojahKycProvider` (synchronous BVN/NIN). Real-shaped + key-gated; resolved via
+  `app("kyc.$provider")`. Keys added to ProviderKeys under a new "Identity / KYC"
+  group; active provider is `kyc.provider` (default manual).
+- **Gate** — `EnsureKycLevel` middleware aliased `kyc` (`kyc:2` withdraw,
+  `kyc:3` merchant) — ready for Layer 1/3 to apply.
+- **UI** — customer `/account/verify` (submit ID, see status) + Admin → Identity
+  (choose provider, approve/reject the manual queue). Webhook
+  `POST /webhooks/kyc/{provider}` verifies before touching the payload.
+  `KycTest` (9).
+
+**→ Layer 0.3 done. Now Layer 1 (NaaraCredit → cash) can gate withdrawals on
+`kyc:2`, and Layer 3 (merchants) on `kyc:3`.** 9 new tests (suite 473).
+
 ### ✅ Payout foundation (ROADMAP §Layer 0.1 + 0.2 + admin) — built 2026-07-21
 The money-OUT foundation that unblocks NaaraCredit cash-out (Layer 1) and the
 merchant system (Layer 3). Off by default behind `payouts.enabled`

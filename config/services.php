@@ -112,6 +112,21 @@ return [
         'base_url' => env('STRIPE_BASE_URL', 'https://api.stripe.com/v1'),
     ],
 
+    // Identity / KYC providers (ROADMAP §Layer 0.3). Admin-managed via the
+    // API-keys page; a provider is used only once its keys are present, else
+    // NaaraSim falls back to manual admin review.
+    'smileid' => [
+        'partner_id' => env('SMILEID_PARTNER_ID'),
+        'api_key' => env('SMILEID_API_KEY'),
+        'base_url' => env('SMILEID_BASE_URL', 'https://api.smileidentity.com'),
+    ],
+
+    'dojah' => [
+        'app_id' => env('DOJAH_APP_ID'),
+        'api_key' => env('DOJAH_API_KEY'),
+        'base_url' => env('DOJAH_BASE_URL', 'https://api.dojah.io'),
+    ],
+
     // Social login (Module 23). Keys are admin-managed via the API-keys page;
     // redirect defaults to our callback route on the current APP_URL.
     'google' => [

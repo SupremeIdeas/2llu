@@ -91,6 +91,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/account', \App\Livewire\Account::class)->name('account');
     // Security Center (Module 23) — also reachable unverified (to change email).
     Route::get('/account/security', \App\Livewire\SecurityCenter::class)->name('security');
+    // Identity verification (ROADMAP §Layer 0.3) — KYC L2 gate for withdrawals.
+    Route::get('/account/verify', \App\Livewire\IdentityVerification::class)->name('account.verify');
     // NaaraCare AI support chat (Module 24) — reachable unverified (they may need help).
     Route::get('/support', \App\Livewire\SupportChat::class)->name('support');
     // Private support voice clips (Module 25) — owner or ticket staff only.
@@ -130,6 +132,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/credits', \App\Livewire\Admin\Credits::class)->name('credits');
             Route::get('/developer-api', \App\Livewire\Admin\DeveloperApi::class)->name('developer-api');
             Route::get('/payouts', \App\Livewire\Admin\Payouts::class)->name('payouts');
+            Route::get('/kyc', \App\Livewire\Admin\KycReview::class)->name('kyc');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
             Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
         });
@@ -165,6 +168,11 @@ Route::post('/webhooks/payments/{gateway}', PaymentWebhookController::class)
 // idempotent payout-request settlement.
 Route::post('/webhooks/payouts/{provider}', \App\Http\Controllers\Webhooks\PayoutWebhookController::class)
     ->name('webhooks.payouts');
+
+// KYC result callbacks (ROADMAP §Layer 0.3): signature-verified, idempotent
+// verification decisions.
+Route::post('/webhooks/kyc/{provider}', \App\Http\Controllers\Webhooks\KycWebhookController::class)
+    ->name('webhooks.kyc');
 
 // Rewarded-ad / offerwall postback (loyalty module): HMAC-verified,
 // idempotent credit grant. Both verbs — networks vary.
