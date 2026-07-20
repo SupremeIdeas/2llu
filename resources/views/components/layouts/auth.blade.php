@@ -21,11 +21,17 @@
                     <img src="{{ $panel['media_url'] }}" alt="" aria-hidden="true"
                          class="absolute inset-0 h-full w-full object-cover opacity-70">
                 @else
-                    {{-- Branded default: floating glow orbs. --}}
+                    {{-- Branded default: a premium WebGL "connected planet" scene
+                         (Stay Connected · No Borders), with floating glow orbs as
+                         the reduced-motion / no-WebGL fallback beneath it. --}}
+                    <canvas data-webgl="login" aria-hidden="true"
+                            class="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-1000 [&.is-live]:opacity-100"></canvas>
                     <span class="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/25 blur-3xl"></span>
                     <span class="pointer-events-none absolute -bottom-24 -left-10 h-72 w-72 rounded-full bg-white/10 blur-3xl"></span>
                 @endif
-                <div class="absolute inset-0 bg-navy/45"></div>
+                {{-- Legibility wash: darkens the corners (logo, headline) while the
+                     planet stays vivid in the centre. --}}
+                <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-navy/55 via-navy/10 to-navy/65"></div>
 
                 <div class="relative flex h-full flex-col justify-between p-8 lg:p-12">
                     <a href="{{ route('home') }}" class="inline-flex">

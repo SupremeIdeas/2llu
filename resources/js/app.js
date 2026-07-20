@@ -127,3 +127,25 @@ function initScrollCraft() {
 
 document.addEventListener('DOMContentLoaded', initScrollCraft);
 document.addEventListener('livewire:navigated', initScrollCraft);
+
+// --- Premium WebGL login scene (lazy) ---------------------------------------
+// Three.js is dynamic-imported ONLY when the auth panel canvas is present, so it
+// never lands in the main bundle. Skipped for reduced-motion, where the CSS orb
+// fallback stays. Cleaned up on SPA navigation.
+let _loginSceneDestroy = null;
+function initLoginScene() {
+    if (_loginSceneDestroy) { _loginSceneDestroy(); _loginSceneDestroy = null; }
+    const canvas = document.querySelector('[data-webgl="login"]');
+    if (!canvas) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    import('./webgl/login-scene.js')
+        .then(({ mountLoginScene }) => {
+            _loginSceneDestroy = mountLoginScene(canvas);
+            canvas.classList.add('is-live'); // fades the canvas in over the fallback
+        })
+        .catch(() => { /* bundle/WebGL failure → CSS fallback stays */ });
+}
+
+document.addEventListener('DOMContentLoaded', initLoginScene);
+document.addEventListener('livewire:navigated', initLoginScene);

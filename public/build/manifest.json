@@ -2168,14 +2168,23 @@
     "src": "node_modules/flag-icons/flags/4x3/zw.svg"
   },
   "resources/css/app.css": {
-    "file": "assets/app-CGzqbwq2.css",
+    "file": "assets/app-AJdav4BB.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-Db2j0q1b.js",
+    "file": "assets/app-BYrwlGid.js",
     "name": "app",
     "src": "resources/js/app.js",
-    "isEntry": true
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/webgl/login-scene.js"
+    ]
+  },
+  "resources/js/webgl/login-scene.js": {
+    "file": "assets/login-scene-pgEMcZm-.js",
+    "name": "login-scene",
+    "src": "resources/js/webgl/login-scene.js",
+    "isDynamicEntry": true
   }
 }
