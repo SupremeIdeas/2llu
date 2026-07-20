@@ -18,6 +18,10 @@ Route::get('/about', fn () => view('marketing.about', ['sections' => \App\Suppor
 Route::get('/how-it-works', fn () => view('marketing.how-it-works', ['sections' => \App\Support\SiteContent::page('how-it-works')]))->name('how-it-works');
 Route::get('/contact', fn () => view('marketing.contact', ['sections' => \App\Support\SiteContent::page('contact')]))->name('contact');
 
+// Public Developer API documentation (ROADMAP §Layer 2) — renders the canonical
+// docs/DEVELOPER-API.md reference as a browsable, branded page.
+Route::get('/developers', \App\Http\Controllers\DeveloperDocsController::class)->name('developers');
+
 // Web installer (blueprint Section 22.1). Active only until the lock file
 // exists (EnsureNotInstalled).
 Route::middleware('installer')->prefix('install')->group(function () {
