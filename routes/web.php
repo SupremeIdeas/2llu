@@ -22,6 +22,11 @@ Route::get('/contact', fn () => view('marketing.contact', ['sections' => \App\Su
 // docs/DEVELOPER-API.md reference as a browsable, branded page.
 Route::get('/developers', \App\Http\Controllers\DeveloperDocsController::class)->name('developers');
 
+// Admin-authored custom-HTML pages (CMS). Prefixed to /p/ so it can never shadow
+// a built-in route; only published, non-reserved slugs resolve.
+Route::get('/p/{slug}', \App\Http\Controllers\CustomPageController::class)
+    ->where('slug', '[a-z0-9-]+')->name('custom-page');
+
 // Web installer (blueprint Section 22.1). Active only until the lock file
 // exists (EnsureNotInstalled).
 Route::middleware('installer')->prefix('install')->group(function () {
@@ -118,6 +123,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/chrome', \App\Livewire\Admin\SiteChromePage::class)->name('chrome');
             Route::get('/legal', \App\Livewire\Admin\LegalEditor::class)->name('legal');
             Route::get('/blog', \App\Livewire\Admin\Posts::class)->name('blog');
+            Route::get('/pages', \App\Livewire\Admin\CustomPages::class)->name('pages');
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
             Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');

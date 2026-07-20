@@ -16,6 +16,9 @@
                     <a href="{{ route('blog') }}" class="transition hover:text-primary">Blog</a>
                     <a href="{{ route('developers') }}" class="transition hover:text-primary">Developers</a>
                     <a href="{{ route('about') }}" class="transition hover:text-primary">About</a>
+                    @foreach (\App\Models\CustomPage::navLinks() as $navPage)
+                        <a href="{{ url('/p/'.$navPage['slug']) }}" class="transition hover:text-primary">{{ $navPage['title'] }}</a>
+                    @endforeach
                     <a href="{{ route('faq') }}" class="transition hover:text-primary">FAQ</a>
                     <a href="{{ route('contact') }}" class="transition hover:text-primary">Contact</a>
                 </div>
