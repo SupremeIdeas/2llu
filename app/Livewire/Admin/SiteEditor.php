@@ -32,6 +32,9 @@ class SiteEditor extends Component
 
     public ?string $imageSection = null;
 
+    /** field key an inline artwork (`*_image`) is being uploaded for. */
+    public ?string $imageField = null;
+
     public ?string $saved = null;
 
     public function mount(): void
@@ -124,6 +127,33 @@ class SiteEditor extends Component
     public function removeImage(string $section): void
     {
         $this->sections[$section]['image'] = '';
+    }
+
+    /**
+     * Swap an inline artwork field (any key ending in `_image`, e.g. the three
+     * "Connected in Three Steps" step renders). Stored as a normal field value,
+     * so it persists through the same override diff as the copy fields and
+     * "Reset section" returns it to the shipped default.
+     */
+    public function uploadFieldImage(string $section, string $field): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        abort_unless(str_ends_with($field, '_image'), 403);
+
+        $this->validate(['imageUpload' => 'required|image|max:2048']);
+
+        $this->sections[$section][$field] = MediaStorage::storePublic($this->imageUpload, 'site');
+        $this->imageUpload = null;
+        $this->imageSection = null;
+        $this->imageField = null;
+    }
+
+    public function removeFieldImage(string $section, string $field): void
+    {
+        abort_unless(str_ends_with($field, '_image'), 403);
+
+        // Back to the shipped default artwork rather than a blank slot.
+        $this->sections[$section][$field] = SiteContent::defaults()[$this->page][$section][$field] ?? '';
     }
 
     public function resetSection(string $key): void

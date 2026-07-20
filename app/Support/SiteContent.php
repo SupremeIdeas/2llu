@@ -45,10 +45,13 @@ class SiteContent
                     'subtext' => 'No store visits. No paperwork. No waiting. Just a phone and two minutes.',
                     'step_1_title' => 'Pick Your Destination',
                     'step_1_text' => "Choose the country or region you're traveling to and select a data plan that fits your trip — from a weekend pass to a 30-day plan.",
-                    'step_2_title' => 'Activate on Your Phone',
-                    'step_2_text' => 'Scan the QR code we send you or follow our guided setup. Your eSIM installs directly on your device. Takes about two minutes.',
-                    'step_3_title' => 'Land and Go',
-                    'step_3_text' => "The moment you touch down, your NaaraSim connects to local networks automatically. Open your phone. You're online.",
+                    'step_1_image' => '/images/steps/choose-destination.webp',
+                    'step_2_title' => 'Select Your Data Plan',
+                    'step_2_text' => 'Compare local, regional and global plans by size and duration, then pay securely. Your eSIM QR code lands in your inbox the moment you check out.',
+                    'step_2_image' => '/images/steps/select-data-plan.webp',
+                    'step_3_title' => 'Activate on Your Phone',
+                    'step_3_text' => "Scan the QR code or follow our guided setup — the eSIM installs in about two minutes. The moment you land, NaaraSim connects to local networks automatically.",
+                    'step_3_image' => '/images/steps/activate-on-phone.webp',
                     'cta' => "Start Now — It's Instant",
                 ],
                 'features' => [
@@ -293,6 +296,21 @@ class SiteContent
     public static function isSiteKey(string $key): bool
     {
         return str_starts_with($key, 'site.');
+    }
+
+    /**
+     * Resolve a section/step image value to a servable URL. Shipped defaults are
+     * relative public paths (/images/...); admin overrides are absolute Wasabi
+     * (or /storage) URLs. Empty stays empty so callers can hide the slot.
+     */
+    public static function imageUrl(?string $value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+
+        return preg_match('#^(https?:)?//#', $value) === 1 ? $value : asset($value);
     }
 
     private static function cacheKey(string $page): string

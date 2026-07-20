@@ -83,6 +83,56 @@ class MarketingSiteTest extends TestCase
         $this->get('/')->assertSee('Custom Headline From The Editor');
     }
 
+    public function test_the_three_step_showcase_renders_its_artwork(): void
+    {
+        $this->get('/')->assertOk()
+            ->assertSee('Pick Your Destination')
+            ->assertSee('Select Your Data Plan')
+            ->assertSee('Activate on Your Phone')
+            // Each stacking card shows its shipped step render.
+            ->assertSee('/images/steps/choose-destination.webp', false)
+            ->assertSee('/images/steps/select-data-plan.webp', false)
+            ->assertSee('/images/steps/activate-on-phone.webp', false);
+    }
+
+    public function test_admin_can_swap_a_step_image_and_reset_it(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $file = \Illuminate\Http\UploadedFile::fake()->image('new-step.jpg', 800, 600);
+
+        Livewire::actingAs($admin)->test(SiteEditor::class)
+            ->set('imageUpload', $file)
+            ->call('uploadFieldImage', 'how', 'step_1_image')
+            ->assertHasNoErrors()
+            ->call('save')
+            ->assertHasNoErrors();
+
+        // The public page now shows the uploaded artwork, not the shipped default.
+        $this->get('/')->assertOk()->assertDontSee('/images/steps/choose-destination.webp', false);
+
+        // Reset returns the shipped default.
+        Livewire::actingAs($admin)->test(SiteEditor::class)
+            ->call('removeFieldImage', 'how', 'step_1_image')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->get('/')->assertOk()->assertSee('/images/steps/choose-destination.webp', false);
+    }
+
+    public function test_a_non_image_field_cannot_be_swapped_as_artwork(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(SiteEditor::class)
+            ->set('imageUpload', \Illuminate\Http\UploadedFile::fake()->image('x.jpg'))
+            ->call('uploadFieldImage', 'how', 'headline')
+            ->assertForbidden();
+    }
+
     public function test_guest_contact_message_is_emailed_when_mail_is_configured(): void
     {
         Notification::fake();

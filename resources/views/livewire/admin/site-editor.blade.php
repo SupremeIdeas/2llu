@@ -54,16 +54,38 @@
                 <div class="space-y-3 border-t border-slate-100 p-4 dark:border-[#243352]">
                     @foreach ($fields as $field => $value)
                         @continue(in_array($field, ['visible', 'order', 'image'], true))
-                        <div wire:key="f-{{ $page }}-{{ $key }}-{{ $field }}">
-                            <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-400">{{ str_replace('_', ' ', $field) }}</label>
-                            @if (mb_strlen((string) $value) > 90)
-                                <textarea wire:model="sections.{{ $key }}.{{ $field }}" rows="3"
-                                          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100"></textarea>
-                            @else
-                                <input type="text" wire:model="sections.{{ $key }}.{{ $field }}"
-                                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
-                            @endif
-                        </div>
+                        {{-- Inline artwork fields (e.g. the three step renders) get an
+                             image control instead of a text box. --}}
+                        @if (str_ends_with($field, '_image'))
+                            @php($fieldImg = \App\Support\SiteContent::imageUrl((string) $value))
+                            <div wire:key="fi-{{ $page }}-{{ $key }}-{{ $field }}" class="flex flex-wrap items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-[#243352]/50">
+                                <span class="text-[11px] font-medium uppercase tracking-wide text-slate-400">{{ str_replace(['_image', '_'], ['', ' '], $field) }} image</span>
+                                @if ($fieldImg)
+                                    <img src="{{ $fieldImg }}" class="h-14 w-20 rounded-lg border border-slate-200 bg-white object-contain p-1 dark:border-[#2D4060] dark:bg-[#16233d]">
+                                @endif
+                                @if ($imageSection === $key && $imageField === $field)
+                                    <input type="file" wire:model="imageUpload" accept="image/png,image/jpeg,image/webp"
+                                           class="text-xs text-slate-500 file:mr-2 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white dark:text-slate-400">
+                                    <button type="button" wire:click="uploadFieldImage('{{ $key }}', '{{ $field }}')" wire:loading.attr="disabled"
+                                            class="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark disabled:opacity-60">Use image</button>
+                                    @error('imageUpload') <p class="w-full text-xs text-red-600">{{ $message }}</p> @enderror
+                                @else
+                                    <button type="button" wire:click="$set('imageSection', '{{ $key }}'); $set('imageField', '{{ $field }}')" class="text-xs font-medium text-primary hover:underline">Replace</button>
+                                    <button type="button" wire:click="removeFieldImage('{{ $key }}', '{{ $field }}')" class="text-xs font-medium text-slate-400 hover:text-red-600 hover:underline">Reset to default</button>
+                                @endif
+                            </div>
+                        @else
+                            <div wire:key="f-{{ $page }}-{{ $key }}-{{ $field }}">
+                                <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-400">{{ str_replace('_', ' ', $field) }}</label>
+                                @if (mb_strlen((string) $value) > 90)
+                                    <textarea wire:model="sections.{{ $key }}.{{ $field }}" rows="3"
+                                              class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100"></textarea>
+                                @else
+                                    <input type="text" wire:model="sections.{{ $key }}.{{ $field }}"
+                                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                @endif
+                            </div>
+                        @endif
                     @endforeach
 
                     {{-- Section image --}}
