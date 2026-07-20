@@ -103,6 +103,66 @@ class PricingEngine
     }
 
     /**
+     * Developer-lane price (USD) for an eSIM plan — the "wholesale + small admin
+     * markup" a Developer API client pays (ROADMAP §Layer 2). It is deliberately
+     * BELOW retail (a real deal) but MarginGuard still floors it at cost +
+     * minimum profit, so the admin never sells at a loss no matter how the
+     * developer markup is (mis)configured. Cost is never returned or exposed.
+     */
+    public function developerEsimPrice(EsimPlan $plan, bool $log = true): float
+    {
+        $cost = (float) $plan->cost_price_usd;
+        $markup = (float) Setting::getValue('pricing.developer_markup_pct', 10);
+        $computed = round($cost * (1 + $markup / 100), 4);
+
+        // MarginGuard: never at/below cost + minimum profit (same floor as retail).
+        $minProfit = (float) Setting::getValue('pricing.minimum_profit_usd', 0.50);
+        $final = max($computed, round($cost + $minProfit, 4));
+
+        if ($log) {
+            $this->log(
+                planId: $plan->id,
+                provider: 'dev:'.$plan->provider, // marks the developer lane in the audit log
+                cost: $cost,
+                markup: $markup,
+                computed: $computed,
+                final: $final,
+                guard: $final > $computed ? 'margin_guard' : 'none',
+            );
+        }
+
+        return $final;
+    }
+
+    /**
+     * Developer-lane price (USD) for a per-number / OTP charge. Live cost in,
+     * developer markup applied, MarginGuard-floored at cost + the per-SMS profit
+     * floor. Mirrors calculateSmsRetail but on the cheaper developer markup.
+     */
+    public function developerSmsPrice(float $cost, string $provider, bool $log = true): float
+    {
+        $markup = (float) Setting::getValue('pricing.developer_sms_markup_pct', 15);
+        $computed = round($cost * (1 + $markup / 100), 4);
+
+        $minProfit = (float) Setting::getValue('pricing.sms_min_profit', 0.01);
+        $final = max($computed, round($cost + $minProfit, 4));
+
+        if ($log) {
+            $this->log(
+                planId: null,
+                provider: 'dev:'.$provider,
+                cost: $cost,
+                markup: $markup,
+                computed: $computed,
+                final: $final,
+                guard: $final > $computed ? 'margin_guard' : 'none',
+            );
+        }
+
+        return $final;
+    }
+
+    /**
      * Cost / retail / profit breakdown for a plan (admin-only view). The cost
      * is included here for the admin profit panel and must never be surfaced
      * to end users.

@@ -33,6 +33,14 @@ class PricingSettingsSeeder extends Seeder
             ['pricing.minimum_profit_usd', 0.50, 'pricing', 'MarginGuard absolute floor (USD)'],
             ['pricing.sms_min_profit', 0.01, 'pricing', 'Per-SMS profit floor (USD)'],
 
+            // Developer API reselling lane (ROADMAP §Layer 2). Wholesale + a small
+            // admin markup — below retail (a real deal for developers) but still
+            // above cost + minimum profit (MarginGuard floors it, exactly like
+            // retail). Keep these BELOW the retail markups above so the developer
+            // price stays a discount; the floor guarantees the admin never loses.
+            ['pricing.developer_markup_pct', 10, 'pricing', 'Developer eSIM markup % (over cost)'],
+            ['pricing.developer_sms_markup_pct', 15, 'pricing', 'Developer number/SMS markup % (over cost)'],
+
             // Currency display
             ['pricing.currency_display', 'USD', 'pricing', 'User-facing currency'],
             ['pricing.ngn_rate_source', 'auto', 'pricing', 'NGN rate source (auto|manual)'],
