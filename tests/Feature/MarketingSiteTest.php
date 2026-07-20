@@ -105,7 +105,12 @@ class MarketingSiteTest extends TestCase
 
         $this->get('/')->assertOk()
             ->assertSee('https://cdn.example.com/hero.jpg', false)
-            ->assertDontSee('data-webgl-hero', false);
+            ->assertDontSee('data-webgl-hero="planet"', false);
+    }
+
+    public function test_the_marketing_footer_renders_the_water_webgl_scene(): void
+    {
+        $this->get('/')->assertOk()->assertSee('data-webgl-hero="water"', false);
     }
 
     public function test_the_three_step_showcase_renders_its_artwork(): void

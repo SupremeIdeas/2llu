@@ -288,7 +288,84 @@ function mountLiquid(canvas) {
     });
 }
 
-const VARIANTS = { planet: mountPlanet, liquid: mountLiquid };
+// ── Variant: water particles (footer) ───────────────────────────────────────
+// A rippling field of teal points receding into the navy footer — a calm "cross
+// the water, no borders" motif. A point grid whose height is a sum of travelling
+// sine waves; scene fog melts distant points into the footer so it reads as a
+// horizon. A handful of brighter gold points drift on the surface like signal
+// buoys. Renders only while the footer is on-screen.
+function mountWater(canvas) {
+    const stage = createStage(canvas);
+    if (!stage) return () => {};
+    const { scene, camera } = stage;
+    camera.position.set(0, 2.4, 6);
+    camera.lookAt(0, 0, -4);
+    scene.fog = new THREE.FogExp2(0x0d1b2a, 0.11);
+
+    const COLS = 110, ROWS = 60, GAP = 0.34;
+    const count = COLS * ROWS;
+    const positions = new Float32Array(count * 3);
+    const gold = new Float32Array(count); // 1 for the scattered buoys
+    let g = 0;
+    for (let iz = 0; iz < ROWS; iz++) {
+        for (let ix = 0; ix < COLS; ix++) {
+            const i = iz * COLS + ix;
+            positions[i * 3] = (ix - COLS / 2) * GAP;
+            positions[i * 3 + 1] = 0;
+            positions[i * 3 + 2] = -iz * GAP;
+            if (Math.random() < 0.015) { gold[i] = 1; g++; }
+        }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const teal = new THREE.Points(geo, new THREE.PointsMaterial({
+        color: TEAL_LIGHT, size: 0.05, transparent: true, opacity: 0.7, depthWrite: false, fog: true,
+    }));
+    scene.add(teal);
+
+    // Gold buoys as a second, brighter overlay sharing the same geometry — we
+    // just draw a sparse points cloud with its own positions.
+    const goldPos = new Float32Array(g * 3);
+    let gi = 0;
+    for (let i = 0; i < count; i++) {
+        if (gold[i]) { goldPos[gi * 3] = positions[i * 3]; goldPos[gi * 3 + 1] = 0; goldPos[gi * 3 + 2] = positions[i * 3 + 2]; gi++; }
+    }
+    const goldGeo = new THREE.BufferGeometry();
+    goldGeo.setAttribute('position', new THREE.BufferAttribute(goldPos, 3));
+    const goldPts = new THREE.Points(goldGeo, new THREE.PointsMaterial({
+        color: GOLD, size: 0.1, transparent: true, opacity: 0.9, depthWrite: false, fog: true,
+    }));
+    scene.add(goldPts);
+
+    const wave = (x, z, t) => (
+        0.18 * Math.sin(x * 0.6 + t * 1.1) +
+        0.14 * Math.sin(z * 0.8 + t * 0.9) +
+        0.10 * Math.sin((x + z) * 0.5 - t * 1.3)
+    );
+
+    stage.setUpdate((t) => {
+        const arr = geo.attributes.position.array;
+        for (let i = 0; i < count; i++) {
+            arr[i * 3 + 1] = wave(arr[i * 3], arr[i * 3 + 2], t);
+        }
+        geo.attributes.position.needsUpdate = true;
+        const garr = goldGeo.attributes.position.array;
+        for (let i = 0; i < g; i++) {
+            garr[i * 3 + 1] = wave(garr[i * 3], garr[i * 3 + 2], t) + 0.06;
+        }
+        goldGeo.attributes.position.needsUpdate = true;
+    });
+
+    return () => stage.teardown(() => {
+        geo.dispose();
+        teal.material.dispose();
+        goldGeo.dispose();
+        goldPts.material.dispose();
+    });
+}
+
+const VARIANTS = { planet: mountPlanet, liquid: mountLiquid, water: mountWater };
 
 export function mountHeroScene(canvas, variant) {
     const mounter = VARIANTS[variant];

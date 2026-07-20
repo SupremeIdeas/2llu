@@ -11,9 +11,19 @@
     $ext = fn ($url) => preg_match('#^https?://#i', $url) === 1;
 @endphp
 
-<footer {{ $attributes->merge(['class' => 'border-t border-white/10 bg-navy text-slate-300']) }}>
+<footer {{ $attributes->merge(['class' => 'relative overflow-hidden border-t border-white/10 bg-navy text-slate-300']) }}>
     @if ($variant === 'full')
-        <div class="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-4">
+        {{-- Branded WebGL "water particles" backdrop (lazy, bundled, CSP-safe).
+             Renders only while the footer is on-screen; the CSS glow is the
+             reduced-motion / no-WebGL fallback. Footer is always navy, so no
+             light-mode variant is needed. --}}
+        <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+            <span class="absolute bottom-0 left-1/2 h-72 w-[42rem] -translate-x-1/2 rounded-full bg-primary/20 blur-3xl"></span>
+            <canvas data-webgl-hero="water"
+                    class="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-[1200ms] [&.is-live]:opacity-100"></canvas>
+            <div class="absolute inset-0 bg-gradient-to-b from-navy via-navy/40 to-navy/80"></div>
+        </div>
+        <div class="relative z-10 mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-4">
             <div class="md:col-span-2">
                 <x-brand-logo variant="product" theme="dark" class="h-9 max-w-[170px]" />
                 <p class="mt-4 max-w-md text-sm leading-relaxed text-slate-400">
@@ -38,7 +48,7 @@
         </div>
     @endif
 
-    <div class="border-t border-white/10">
+    <div class="relative z-10 border-t border-white/10">
         <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-5 text-xs text-slate-500 sm:flex-row">
             <span>&copy; {{ date('Y') }} {{ $brand }}. A product of <span class="text-slate-300">Supreme Ideas Agency</span>. All rights reserved.</span>
             <span class="flex flex-wrap items-center justify-center gap-4">
