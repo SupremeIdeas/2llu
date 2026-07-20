@@ -90,6 +90,13 @@ class MarketingSiteTest extends TestCase
             ->assertSee('blur-3xl', false);                // the glow-orb fallback beneath it
     }
 
+    public function test_the_about_hero_renders_the_liquid_webgl_scene(): void
+    {
+        $this->get('/about')->assertOk()
+            ->assertSee('data-webgl-hero="liquid"', false)
+            ->assertSee('blur-3xl', false);
+    }
+
     public function test_an_admin_hero_image_replaces_the_webgl_backdrop(): void
     {
         SiteContent::saveOverrides('home', [

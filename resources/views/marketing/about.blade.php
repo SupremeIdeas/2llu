@@ -1,13 +1,27 @@
 <x-layouts.marketing :title="\App\Support\BrandSettings::name().' — About Us'">
     @php($hero = $sections['hero'] ?? null)
     @if ($hero)
-        <section class="mx-auto max-w-4xl px-4 pb-14 pt-16 text-center">
-            <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $hero['eyebrow'] }}</p>
-            <h1 data-reveal class="mt-4 text-4xl font-bold text-slate-900 sm:text-5xl dark:text-white">{{ $hero['headline'] }}</h1>
-            <p data-reveal class="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">{{ $hero['subtext'] }}</p>
-            @if (! empty($hero['image']))
-                <img data-reveal src="{{ $hero['image'] }}" alt="" class="mx-auto mt-10 w-full max-w-3xl rounded-3xl shadow-2xl">
+        <section class="relative overflow-hidden">
+            @if (empty($hero['image']))
+                {{-- Branded WebGL "liquid morphology" backdrop (lazy, bundled,
+                     CSP-safe, self-pausing off-screen). Glow orbs are the
+                     reduced-motion / no-WebGL fallback. --}}
+                <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                    <span class="absolute left-1/2 top-1/2 h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl dark:bg-primary/25"></span>
+                    <span class="absolute right-1/4 top-1/3 h-40 w-40 rounded-full bg-accent/20 blur-3xl"></span>
+                    <canvas data-webgl-hero="liquid"
+                            class="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-[1200ms] [&.is-live]:opacity-100"></canvas>
+                    <div class="absolute inset-0 bg-gradient-to-b from-[#F8F9FA] via-[#F8F9FA]/55 to-[#F8F9FA] dark:from-[#0D1B2A] dark:via-[#0D1B2A]/20 dark:to-[#0D1B2A]"></div>
+                </div>
             @endif
+            <div class="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-20 text-center sm:pt-24">
+                <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $hero['eyebrow'] }}</p>
+                <h1 data-reveal class="mt-4 text-4xl font-bold text-slate-900 sm:text-5xl dark:text-white">{{ $hero['headline'] }}</h1>
+                <p data-reveal class="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">{{ $hero['subtext'] }}</p>
+                @if (! empty($hero['image']))
+                    <img data-reveal src="{{ $hero['image'] }}" alt="" class="mx-auto mt-10 w-full max-w-3xl rounded-3xl shadow-2xl">
+                @endif
+            </div>
         </section>
     @endif
 

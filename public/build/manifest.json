@@ -1,6 +1,6 @@
 {
-  "_three.module-SLF8NeLb.js": {
-    "file": "assets/three.module-SLF8NeLb.js",
+  "_three.module-DqLNQXv1.js": {
+    "file": "assets/three.module-DqLNQXv1.js",
     "name": "three.module"
   },
   "node_modules/flag-icons/flags/1x1/ad.svg": {
@@ -2172,12 +2172,12 @@
     "src": "node_modules/flag-icons/flags/4x3/zw.svg"
   },
   "resources/css/app.css": {
-    "file": "assets/app-D0G6eKvd.css",
+    "file": "assets/app-CKgc4kF3.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-DkMCFSKy.js",
+    "file": "assets/app-16B9bIWj.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -2187,21 +2187,21 @@
     ]
   },
   "resources/js/webgl/hero-scene.js": {
-    "file": "assets/hero-scene-DXhleSrb.js",
+    "file": "assets/hero-scene-BJzMxShl.js",
     "name": "hero-scene",
     "src": "resources/js/webgl/hero-scene.js",
     "isDynamicEntry": true,
     "imports": [
-      "_three.module-SLF8NeLb.js"
+      "_three.module-DqLNQXv1.js"
     ]
   },
   "resources/js/webgl/login-scene.js": {
-    "file": "assets/login-scene-DdspNWuL.js",
+    "file": "assets/login-scene-C_dwR1aS.js",
     "name": "login-scene",
     "src": "resources/js/webgl/login-scene.js",
     "isDynamicEntry": true,
     "imports": [
-      "_three.module-SLF8NeLb.js"
+      "_three.module-DqLNQXv1.js"
     ]
   }
 }

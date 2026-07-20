@@ -203,7 +203,92 @@ function mountPlanet(canvas) {
     });
 }
 
-const VARIANTS = { planet: mountPlanet };
+// ── Variant: liquid morphology (about hero) ─────────────────────────────────
+// A slow, continuously morphing teal "liquid" orb with a gold fresnel rim —
+// organic brand motion for the story page. Displacement is a cheap sum of sine
+// fields (no noise lib, no custom shader) whose phases drift over time, so the
+// form keeps evolving through an endless slideshow of shapes. Vertex work is
+// bounded (one moderate-detail icosahedron) and the whole thing idles when it
+// scrolls off-screen.
+function mountLiquid(canvas) {
+    const stage = createStage(canvas);
+    if (!stage) return () => {};
+    const { scene, camera } = stage;
+    camera.position.set(0, 0, 5.4);
+
+    const blob = new THREE.Group();
+    scene.add(blob);
+
+    const geo = new THREE.IcosahedronGeometry(1.6, 4);
+    const base = geo.attributes.position.array.slice(); // rest positions
+    const pos = geo.attributes.position;
+    const v = new THREE.Vector3();
+    const mesh = new THREE.Mesh(
+        geo,
+        new THREE.MeshStandardMaterial({ color: TEAL, roughness: 0.18, metalness: 0.6 }),
+    );
+    blob.add(mesh);
+
+    // A gold wireframe shell a hair larger, morphed in lock-step for a subtle
+    // connectivity lattice over the liquid.
+    const shellGeo = new THREE.IcosahedronGeometry(1.63, 4);
+    const shellBase = shellGeo.attributes.position.array.slice();
+    const shell = new THREE.Mesh(
+        shellGeo,
+        new THREE.MeshBasicMaterial({ color: GOLD, wireframe: true, transparent: true, opacity: 0.12 }),
+    );
+    blob.add(shell);
+
+    scene.add(new THREE.AmbientLight(0x0d1b2a, 1.0));
+    const key = new THREE.DirectionalLight(TEAL_LIGHT, 2.6);
+    key.position.set(-3, 2, 4);
+    scene.add(key);
+    const rim = new THREE.PointLight(GOLD, 10, 18);
+    rim.position.set(3.5, -1.5, 2.5);
+    scene.add(rim);
+
+    const { target, dispose: disposePointer } = pointerParallax(0.35);
+
+    const morph = (array, source, t, amp) => {
+        for (let i = 0; i < source.length; i += 3) {
+            const bx = source[i], by = source[i + 1], bz = source[i + 2];
+            // Sum of drifting sine fields over the vertex direction → organic swell.
+            const d = 1 + amp * (
+                0.35 * Math.sin(bx * 1.8 + t * 0.7) +
+                0.30 * Math.sin(by * 2.2 - t * 0.9) +
+                0.28 * Math.sin(bz * 2.0 + t * 0.6) +
+                0.22 * Math.sin((bx + by + bz) * 1.5 + t * 1.1)
+            );
+            array[i] = bx * d;
+            array[i + 1] = by * d;
+            array[i + 2] = bz * d;
+        }
+    };
+
+    stage.setUpdate((t) => {
+        morph(pos.array, base, t, 0.16);
+        pos.needsUpdate = true;
+        geo.computeVertexNormals();
+        morph(shellGeo.attributes.position.array, shellBase, t, 0.16);
+        shellGeo.attributes.position.needsUpdate = true;
+
+        blob.rotation.y = t * 0.12;
+        blob.rotation.x = Math.sin(t * 0.15) * 0.15;
+        camera.position.x += (target.x * 1.1 - camera.position.x) * 0.04;
+        camera.position.y += (-target.y * 1.1 - camera.position.y) * 0.04;
+        camera.lookAt(0, 0, 0);
+    });
+
+    return () => stage.teardown(() => {
+        disposePointer();
+        geo.dispose();
+        mesh.material.dispose();
+        shellGeo.dispose();
+        shell.material.dispose();
+    });
+}
+
+const VARIANTS = { planet: mountPlanet, liquid: mountLiquid };
 
 export function mountHeroScene(canvas, variant) {
     const mounter = VARIANTS[variant];
