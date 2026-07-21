@@ -21,16 +21,25 @@
                 <span>{{ $plan->data_mb ? number_format($plan->data_mb / 1024, 1).' GB' : 'Unlimited' }}</span>
                 <span>{{ $plan->validity_days ? $plan->validity_days.' days' : '—' }}</span>
             </div>
+            {{-- Localized price (owner request): USD default + the viewer's
+                 local-currency equivalent (live FX; charge is always in USD). --}}
+            @php($__cur = \App\Support\LocaleCurrency::resolve(auth()->user()))
+            @php($__fx = app(\App\Services\Pricing\CurrencyService::class))
             <div class="mt-4 flex items-end justify-between border-t border-slate-200 pt-4 dark:border-[#2D4060]">
                 <span class="text-sm text-slate-500 dark:text-slate-400">You pay</span>
                 <div class="text-right">
                     @if ($couponPrice !== null)
                         <div class="text-xs text-slate-400 line-through dark:text-slate-500">{{ $plan->display_price['usd'] }}</div>
                         <div class="text-2xl font-bold text-primary dark:text-teal-300">${{ number_format($couponPrice, 2) }}</div>
+                        @if ($__cur !== 'USD')<div class="text-xs text-slate-400 dark:text-slate-500">≈ {{ $__fx->format($couponPrice, $__cur) }}</div>@endif
                         <div class="text-xs font-medium text-green-600 dark:text-green-400">You save ${{ number_format($couponSaved, 2) }}</div>
                     @else
                         <div class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ $plan->display_price['usd'] }}</div>
-                        <div class="text-xs text-slate-500 dark:text-slate-400">{{ $plan->display_price['ngn'] }}</div>
+                        @if ($__cur !== 'USD')
+                            <div class="text-xs text-slate-500 dark:text-slate-400">≈ {{ $__fx->format((float) $plan->final_retail_usd, $__cur) }}</div>
+                        @else
+                            <div class="text-xs text-slate-500 dark:text-slate-400">{{ $plan->display_price['ngn'] }}</div>
+                        @endif
                     @endif
                 </div>
             </div>

@@ -279,21 +279,25 @@
                                 <span class="text-slate-500 dark:text-slate-400">Price</span>
                                 <span class="font-semibold text-slate-900 dark:text-slate-100">${{ number_format($quoteRetail, 2) }}</span>
                             </div>
+                            {{-- Localized total (owner request): USD default +
+                                 the viewer's local equivalent (live FX). --}}
+                            @php
+                                $__cur = \App\Support\LocaleCurrency::resolve(auth()->user());
+                                $__total = $quoteRetail + ($this->wizardFee > 0 ? $this->wizardFee : 0);
+                            @endphp
                             @if ($this->wizardFee > 0)
                                 <div class="mt-1 flex items-center justify-between text-sm">
                                     <span class="text-slate-500 dark:text-slate-400">Wizard help</span>
                                     <span class="font-semibold text-slate-900 dark:text-slate-100">${{ number_format($this->wizardFee, 2) }}</span>
                                 </div>
-                                <div class="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 text-sm dark:border-[#2D4060]">
-                                    <span class="text-slate-500 dark:text-slate-400">Total</span>
-                                    <span class="text-lg font-bold text-primary-dark dark:text-primary">${{ number_format($quoteRetail + $this->wizardFee, 2) }}</span>
-                                </div>
-                            @else
-                                <div class="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 text-sm dark:border-[#2D4060]">
-                                    <span class="text-slate-500 dark:text-slate-400">Total</span>
-                                    <span class="text-lg font-bold text-primary-dark dark:text-primary">${{ number_format($quoteRetail, 2) }}</span>
-                                </div>
                             @endif
+                            <div class="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 text-sm dark:border-[#2D4060]">
+                                <span class="text-slate-500 dark:text-slate-400">Total</span>
+                                <span class="text-right">
+                                    <span class="text-lg font-bold text-primary-dark dark:text-primary">${{ number_format($__total, 2) }}</span>
+                                    @if ($__cur !== 'USD')<span class="block text-xs font-normal text-slate-400 dark:text-slate-500">≈ {{ app(\App\Services\Pricing\CurrencyService::class)->format($__total, $__cur) }}</span>@endif
+                                </span>
+                            </div>
                             <div class="mt-1 flex items-center justify-between text-xs text-slate-400">
                                 <span>Wallet balance</span><span>${{ number_format($balance, 2) }}</span>
                             </div>
