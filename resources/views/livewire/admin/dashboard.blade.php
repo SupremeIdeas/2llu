@@ -114,6 +114,66 @@
         @endforeach
     </div>
 
+    {{-- Oversight metrics (owner request): users, weekly/monthly profit, API. --}}
+    <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        @php
+            $oversight = [
+                ['Registered users', number_format($totalUsers), '+'.number_format($newUsersWeek).' this week', 'id-card', 'text-slate-900 dark:text-slate-100'],
+                ['Profit — this week', '$'.number_format($profitWeek, 2), 'revenue − provider cost', 'zap', 'text-green-600 dark:text-green-400'],
+                ['Profit — this month', '$'.number_format($profitMonth, 2), 'month to date', 'wallet', 'text-green-600 dark:text-green-400'],
+                ['API orders — week', number_format($apiOrdersWeek), '$'.number_format($apiRevenueWeek, 2).' billed', 'key', 'text-slate-900 dark:text-slate-100'],
+            ];
+        @endphp
+        @foreach ($oversight as [$label, $value, $sub, $icon, $valueClass])
+            <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <x-icon :name="$icon" class="h-4 w-4" /> {{ $label }}
+                </div>
+                <div class="mt-1.5 text-2xl font-bold {{ $valueClass }}">{{ $value }}</div>
+                <div class="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">{{ $sub }}</div>
+            </div>
+        @endforeach
+    </div>
+
+    {{-- Most-bought by country + most-used models (owner request). --}}
+    <div class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                <x-icon name="globe" class="h-4 w-4" /> Most-bought numbers by country <span class="text-xs font-normal text-slate-400">· 30d</span>
+            </h3>
+            @forelse ($topCountries as $row)
+                @php($__max = max(array_column($topCountries, 'count')) ?: 1)
+                <div class="mb-2 flex items-center gap-3" wire:key="tc-{{ $row['country'] }}">
+                    <span class="w-28 shrink-0 truncate text-sm capitalize text-slate-700 dark:text-slate-200">{{ str_replace('_', ' ', $row['country']) }}</span>
+                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-[#243352]">
+                        <div class="h-full rounded-full bg-primary" style="width: {{ round($row['count'] / $__max * 100) }}%"></div>
+                    </div>
+                    <span class="w-8 shrink-0 text-right text-xs font-semibold text-slate-500 dark:text-slate-400">{{ $row['count'] }}</span>
+                </div>
+            @empty
+                <p class="text-sm text-slate-400 dark:text-slate-500">No number orders yet.</p>
+            @endforelse
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                <x-icon name="grid" class="h-4 w-4" /> Most-used NaaraSim models <span class="text-xs font-normal text-slate-400">· 30d</span>
+            </h3>
+            @forelse ($topModels as $row)
+                @php($__mmax = max(array_column($topModels, 'count')) ?: 1)
+                <div class="mb-2 flex items-center gap-3" wire:key="tm-{{ $row['label'] }}">
+                    <span class="w-28 shrink-0 truncate text-sm text-slate-700 dark:text-slate-200">{{ $row['label'] }}</span>
+                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-[#243352]">
+                        <div class="h-full rounded-full bg-accent" style="width: {{ round($row['count'] / $__mmax * 100) }}%"></div>
+                    </div>
+                    <span class="w-8 shrink-0 text-right text-xs font-semibold text-slate-500 dark:text-slate-400">{{ $row['count'] }}</span>
+                </div>
+            @empty
+                <p class="text-sm text-slate-400 dark:text-slate-500">No orders yet.</p>
+            @endforelse
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {{-- Provider wallet health --}}
         <section>

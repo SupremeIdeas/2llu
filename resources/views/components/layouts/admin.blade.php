@@ -50,6 +50,7 @@
     // People & support — ticket-workers (staff scope) and admins.
     $support = [];
     if ($isPrivileged) {
+        $support[] = ['route' => 'admin.users', 'label' => 'Users', 'icon' => 'id-card'];
         $support[] = ['route' => 'admin.support-agent', 'label' => 'Support agent', 'icon' => 'message-circle'];
         $support[] = ['route' => 'admin.deletions', 'label' => 'Deletions', 'icon' => 'trash'];
     }

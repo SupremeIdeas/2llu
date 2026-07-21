@@ -12,6 +12,7 @@ class SmsOrder extends Model
         'provider',
         'service_id',
         'service_name',
+        'country',
         'type',
         'getatext_id',
         'phone_number',

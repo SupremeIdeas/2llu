@@ -167,6 +167,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/payouts', \App\Livewire\Admin\Payouts::class)->name('payouts');
             Route::get('/kyc', \App\Livewire\Admin\KycReview::class)->name('kyc');
             Route::get('/merchants', \App\Livewire\Admin\Merchants::class)->name('merchants');
+            Route::get('/users', \App\Livewire\Admin\Users::class)->name('users');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
             Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
         });

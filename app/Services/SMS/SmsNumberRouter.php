@@ -108,6 +108,7 @@ class SmsNumberRouter
                     'user_id' => $request->user->id,
                     'provider' => $provider,
                     'service_name' => $request->service,
+                    'country' => $request->country, // for admin "by country" analytics
                     'type' => $request->type, // otp|rental — badges the number's Model
                     'getatext_id' => $buy['provider_ref'], // provider order ref (any provider)
                     'phone_number' => $buy['number'],

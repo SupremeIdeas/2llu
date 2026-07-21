@@ -2,9 +2,12 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\ApiOrder;
 use App\Models\EsimOrder;
 use App\Models\OrderLog;
 use App\Models\SmsOrder;
+use App\Models\User;
+use App\Support\ProviderModels;
 use App\Support\ProviderStatus;
 use App\Support\StaffScopes;
 use Illuminate\Support\Facades\Auth;
@@ -89,8 +92,69 @@ class Dashboard extends Component
         }
         $splitGradient = 'conic-gradient('.implode(', ', $stops).')';
 
+        // ── Oversight metrics (owner request) ────────────────────────────────
+        $weekStart = now()->subDays(7);
+        $monthStart = now()->startOfMonth();
+
+        // Users: total registered + new this week.
+        $totalUsers = User::count();
+        $newUsersWeek = User::where('created_at', '>=', $weekStart)->count();
+
+        // Weekly / monthly profit (revenue − provider cost).
+        $profitWindow = function ($from) {
+            $rev = (float) EsimOrder::where('created_at', '>=', $from)->sum('price_charged')
+                + (float) SmsOrder::where('created_at', '>=', $from)
+                    ->whereNotIn('status', ['timeout', 'cancelled'])->sum('charged_to_user');
+            $cst = (float) OrderLog::where('created_at', '>=', $from)->sum('provider_cost')
+                + (float) SmsOrder::where('created_at', '>=', $from)
+                    ->whereNotIn('status', ['timeout', 'cancelled'])->sum('provider_cost');
+
+            return round($rev - $cst, 2);
+        };
+        $profitWeek = $profitWindow($weekStart);
+        $profitMonth = $profitWindow($monthStart);
+
+        // Most-bought numbers by country (top 6, last 30 days).
+        $topCountries = SmsOrder::where('created_at', '>=', $since)
+            ->whereNotIn('status', ['timeout', 'cancelled'])
+            ->whereNotNull('country')
+            ->selectRaw('country, count(*) as n')
+            ->groupBy('country')->orderByDesc('n')->limit(6)->get()
+            ->map(fn ($r) => ['country' => $r->country, 'count' => (int) $r->n])->all();
+
+        // Most-used NaaraSim models (by orders in the last 30 days).
+        $modelCounts = [];
+        foreach (EsimOrder::where('created_at', '>=', $since)->count() ? ['naara_data' => EsimOrder::where('created_at', '>=', $since)->count()] : [] as $k => $v) {
+            $modelCounts[$k] = $v;
+        }
+        SmsOrder::where('created_at', '>=', $since)->whereNotIn('status', ['timeout', 'cancelled'])
+            ->get(['type', 'provider'])
+            ->each(function ($o) use (&$modelCounts) {
+                $model = ProviderModels::forNumberType($o->type)
+                    ?? ProviderModels::forProvider((string) $o->provider)
+                    ?? ProviderModels::find('naara_verify');
+                $key = $model['key'] ?? 'naara_verify';
+                $modelCounts[$key] = ($modelCounts[$key] ?? 0) + 1;
+            });
+        arsort($modelCounts);
+        $topModels = collect($modelCounts)->take(4)
+            ->map(fn ($n, $key) => ['label' => ProviderModels::find($key)['name'] ?? $key, 'count' => $n])
+            ->values()->all();
+
+        // Developer API activity this week.
+        $apiOrdersWeek = ApiOrder::where('created_at', '>=', $weekStart)->count();
+        $apiRevenueWeek = round((float) ApiOrder::where('created_at', '>=', $weekStart)->sum('price_usd'), 2);
+
         return view('livewire.admin.dashboard', [
             'privileged' => true,
+            'totalUsers' => $totalUsers,
+            'newUsersWeek' => $newUsersWeek,
+            'profitWeek' => $profitWeek,
+            'profitMonth' => $profitMonth,
+            'topCountries' => $topCountries,
+            'topModels' => $topModels,
+            'apiOrdersWeek' => $apiOrdersWeek,
+            'apiRevenueWeek' => $apiRevenueWeek,
             'health' => Cache::get('providers:health', []),
             'statuses' => ProviderStatus::all(),
             'revenue' => $revenue,
