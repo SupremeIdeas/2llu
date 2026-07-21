@@ -37,13 +37,8 @@ class GetNumber extends Component
 
     public ?string $couponNote = null;
 
-    /** Curated list until provider country/service sync (5sim /guest/*) runs. */
-    public array $countries = [
-        'usa' => 'United States', 'nigeria' => 'Nigeria', 'ghana' => 'Ghana',
-        'kenya' => 'Kenya', 'south africa' => 'South Africa', 'england' => 'United Kingdom',
-    ];
-
-    public array $services = ['whatsapp', 'google', 'telegram', 'facebook', 'instagram', 'tiktok'];
+    /** Client-side filter for the (large) service picker. */
+    public string $serviceSearch = '';
 
     public function order(WalletService $wallet, SmsNumberRouter $router, CouponEngine $coupons): void
     {
@@ -150,6 +145,13 @@ class GetNumber extends Component
     {
         $order = $this->orderId ? SmsOrder::find($this->orderId) : null;
 
-        return view('livewire.get-number', ['order' => $order]);
+        // The FULL catalogue (static base + synced provider lists) — never a
+        // curated handful. Provided at render time so the Livewire snapshot
+        // isn't bloated with the whole list.
+        return view('livewire.get-number', [
+            'order' => $order,
+            'countries' => \App\Support\NumberCatalogue::countries(),
+            'services' => \App\Support\NumberCatalogue::services(),
+        ]);
     }
 }

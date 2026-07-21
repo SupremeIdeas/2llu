@@ -62,22 +62,27 @@
                         </select>
                     </div>
                 </div>
-                <div>
-                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Service</label>
-                    {{-- Service picker with brand logos (Module 27.5): each option
-                         shows its mark — admin-uploaded official logo, provider
-                         artwork once APIs are live, or the built-in glyph. --}}
-                    <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Service">
-                        @foreach ($services as $svc)
+                <div x-data="{ q: '' }">
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Service <span class="text-slate-400">· {{ count($services) }} available</span></label>
+                    {{-- Full service catalogue (searchable). Each option shows its
+                         mark — admin-uploaded logo, provider artwork, or glyph. --}}
+                    <div class="relative mb-2">
+                        <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input type="text" x-model="q" placeholder="Search {{ count($services) }} services…"
+                               class="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    </div>
+                    <div class="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto pr-1" role="radiogroup" aria-label="Service">
+                        @foreach ($services as $svc => $label)
                             <button type="button" wire:key="svc-{{ $svc }}" wire:click="$set('service', '{{ $svc }}')"
+                                    x-show="q === '' || '{{ Str::lower($label) }}'.includes(q.toLowerCase())"
                                     role="radio" aria-checked="{{ $service === $svc ? 'true' : 'false' }}"
                                     @class([
-                                        'flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs font-medium capitalize transition',
+                                        'flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center text-[11px] font-medium leading-tight transition',
                                         'border-primary bg-primary/5 text-primary shadow-sm dark:bg-primary/15 dark:text-teal-300' => $service === $svc,
                                         'border-slate-200 text-slate-600 hover:border-primary/40 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]' => $service !== $svc,
                                     ])>
                                 <x-service-icon :slug="$svc" class="h-7 w-7" />
-                                {{ ucfirst($svc) }}
+                                <span class="line-clamp-2">{{ $label }}</span>
                             </button>
                         @endforeach
                     </div>

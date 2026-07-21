@@ -135,31 +135,41 @@
                             </p>
                         @endforelse
 
-                    {{-- 2) Country --}}
+                    {{-- 2) Country (full catalogue, searchable) --}}
                     @elseif ($step === 'country')
-                        <p class="text-sm text-slate-600 dark:text-slate-300">Which country?</p>
-                        <div class="grid grid-cols-1 gap-2">
-                            @foreach ($countries as $slug => $label)
-                                <button type="button" wire:click="chooseCountry('{{ $slug }}')" wire:key="country-{{ $slug }}"
-                                        class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left text-sm text-slate-800 transition hover:border-primary hover:bg-primary/5 dark:border-[#2D4060] dark:bg-[#182742] dark:text-slate-100 dark:hover:border-primary">
-                                    <x-country-flag :country="$slug" class="h-4 w-6 shrink-0" wire:key="wflag-{{ $slug }}" />
-                                    {{ $label }}
-                                </button>
-                            @endforeach
+                        <div x-data="{ cq: '' }">
+                            <p class="text-sm text-slate-600 dark:text-slate-300">Which country?</p>
+                            <input type="text" x-model="cq" placeholder="Search countries…"
+                                   class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            <div class="mt-2 grid max-h-56 grid-cols-1 gap-2 overflow-y-auto pr-1">
+                                @foreach ($countries as $slug => $label)
+                                    <button type="button" wire:click="chooseCountry('{{ $slug }}')" wire:key="country-{{ $slug }}"
+                                            x-show="cq === '' || '{{ Str::lower($label) }}'.includes(cq.toLowerCase())"
+                                            class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left text-sm text-slate-800 transition hover:border-primary hover:bg-primary/5 dark:border-[#2D4060] dark:bg-[#182742] dark:text-slate-100 dark:hover:border-primary">
+                                        <x-country-flag :country="$slug" class="h-4 w-6 shrink-0" wire:key="wflag-{{ $slug }}" />
+                                        {{ $label }}
+                                    </button>
+                                @endforeach
+                            </div>
                         </div>
 
-                    {{-- 3a) Service (OTP / rental) --}}
+                    {{-- 3a) Service (OTP / rental) — full catalogue, searchable --}}
                     @elseif ($step === 'service')
-                        <p class="text-sm text-slate-600 dark:text-slate-300">Which service is the number for?</p>
-                        <div class="grid grid-cols-3 gap-2">
-                            @foreach ($services as $svc)
-                                <button type="button" wire:click="chooseService('{{ $svc }}')" wire:key="svc-{{ $svc }}"
-                                        wire:loading.attr="disabled"
-                                        class="flex flex-col items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-3 text-xs font-medium text-slate-700 transition hover:border-primary hover:bg-primary/5 disabled:opacity-50 dark:border-[#2D4060] dark:bg-[#182742] dark:text-slate-200 dark:hover:border-primary">
-                                    <x-service-icon :slug="$svc" class="h-5 w-5" />
-                                    {{ ucfirst($svc) }}
-                                </button>
-                            @endforeach
+                        <div x-data="{ sq: '' }">
+                            <p class="text-sm text-slate-600 dark:text-slate-300">Which service is the number for?</p>
+                            <input type="text" x-model="sq" placeholder="Search services…"
+                                   class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            <div class="mt-2 grid max-h-56 grid-cols-3 gap-2 overflow-y-auto pr-1">
+                                @foreach ($services as $svc)
+                                    <button type="button" wire:click="chooseService('{{ $svc }}')" wire:key="svc-{{ $svc }}"
+                                            wire:loading.attr="disabled"
+                                            x-show="sq === '' || '{{ Str::lower(\App\Support\NumberCatalogue::serviceLabel($svc)) }}'.includes(sq.toLowerCase())"
+                                            class="flex flex-col items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-3 text-center text-[11px] font-medium leading-tight text-slate-700 transition hover:border-primary hover:bg-primary/5 disabled:opacity-50 dark:border-[#2D4060] dark:bg-[#182742] dark:text-slate-200 dark:hover:border-primary">
+                                        <x-service-icon :slug="$svc" class="h-5 w-5" />
+                                        <span class="line-clamp-2">{{ \App\Support\NumberCatalogue::serviceLabel($svc) }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
                         </div>
                         <div wire:loading wire:target="chooseService" class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                             <x-icon name="refresh" class="h-4 w-4 animate-spin text-primary" /> Checking availability…

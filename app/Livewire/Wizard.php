@@ -92,13 +92,23 @@ class Wizard extends Component
      */
     public int $dismissedOtpId = 0;
 
-    /** Curated countries (until a provider country sync lands); label per slug. */
-    public array $countries = [
-        'usa' => 'United States', 'nigeria' => 'Nigeria', 'ghana' => 'Ghana',
-        'kenya' => 'Kenya', 'south africa' => 'South Africa', 'england' => 'United Kingdom',
-    ];
+    /**
+     * The FULL country + service catalogue (static base + live provider sync) —
+     * never a curated handful. Sourced from NumberCatalogue and passed to the
+     * view at render time, so the Livewire snapshot stays lean.
+     *
+     * @return array<string, string> slug => label
+     */
+    private function catalogueCountries(): array
+    {
+        return \App\Support\NumberCatalogue::countries();
+    }
 
-    public array $services = ['whatsapp', 'google', 'telegram', 'facebook', 'instagram', 'tiktok'];
+    /** @return list<string> service slugs */
+    private function catalogueServiceSlugs(): array
+    {
+        return array_keys(\App\Support\NumberCatalogue::services());
+    }
 
     /** Model key → number type for the routers (eSIM has no number type). */
     private const MODEL_TYPE = [
@@ -232,7 +242,7 @@ class Wizard extends Component
             return;
         }
 
-        $parsed = $intent->parse($text, array_column($this->purposes(), 'key'), $this->countries, $this->services);
+        $parsed = $intent->parse($text, array_column($this->purposes(), 'key'), $this->catalogueCountries(), $this->catalogueServiceSlugs());
         $this->freeText = '';
 
         if (! $parsed || empty($parsed['model'])) {
@@ -278,7 +288,7 @@ class Wizard extends Component
 
     public function chooseCountry(string $slug): void
     {
-        if (! isset($this->countries[$slug])) {
+        if (! isset($this->catalogueCountries()[$slug])) {
             return;
         }
         $this->country = $slug;
@@ -299,7 +309,7 @@ class Wizard extends Component
 
     public function chooseService(string $service, SmsNumberRouter $router): void
     {
-        if (! in_array($service, $this->services, true)) {
+        if (! in_array($service, $this->catalogueServiceSlugs(), true)) {
             return;
         }
         $this->service = $service;
@@ -337,7 +347,7 @@ class Wizard extends Component
      */
     public function goToEsims()
     {
-        $label = $this->countries[$this->country] ?? '';
+        $label = $this->catalogueCountries()[$this->country] ?? '';
         $this->finish();
 
         return $this->redirect(route('catalogue', ['q' => $label]), navigate: true);
@@ -626,6 +636,8 @@ class Wizard extends Component
             'order' => $order,
             'vnumber' => $vnumber,
             'balance' => $balance,
+            'countries' => $this->catalogueCountries(),
+            'services' => $this->catalogueServiceSlugs(),
         ]);
     }
 }

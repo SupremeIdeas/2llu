@@ -161,6 +161,9 @@ class AppServiceProvider extends ServiceProvider
             if (\App\Support\SiteContent::isSiteKey($setting->key)) {
                 \App\Support\SiteContent::flush();
             }
+            if (\App\Support\NumberCatalogue::isCatalogueKey($setting->key)) {
+                \App\Support\NumberCatalogue::flush();
+            }
             if (\App\Support\ServiceIcons::isServiceIconKey($setting->key)) {
                 \App\Support\ServiceIcons::flush();
             }

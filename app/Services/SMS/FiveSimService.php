@@ -102,6 +102,51 @@ class FiveSimService implements SmsProviderInterface
         return (float) ($this->client()->get('/user/profile')->json()['balance'] ?? 0);
     }
 
+    /**
+     * The provider's FULL country list (slug => English label) for the catalogue
+     * sync. 5sim is slug-based, matching the buy flow's country format.
+     *
+     * @return array<string, string>
+     */
+    public function catalogueCountries(): array
+    {
+        $data = $this->client()->get('/guest/countries')->throw()->json() ?? [];
+        $out = [];
+        foreach ($data as $slug => $meta) {
+            if (! is_string($slug) || $slug === 'any' || ! is_array($meta)) {
+                continue;
+            }
+            $out[$slug] = (string) (data_get($meta, 'text_en') ?: ucwords(str_replace('_', ' ', $slug)));
+        }
+
+        return $out;
+    }
+
+    /**
+     * The provider's service (product) slugs, unioned across a few
+     * high-coverage countries (5sim has no single global-products endpoint).
+     *
+     * @return list<string>
+     */
+    public function catalogueServices(): array
+    {
+        $slugs = [];
+        foreach (['russia', 'usa', 'england', 'india'] as $country) {
+            try {
+                $data = $this->client()->get("/guest/products/{$country}/any")->throw()->json() ?? [];
+            } catch (\Throwable) {
+                continue;
+            }
+            foreach ($data as $slug => $meta) {
+                if (is_string($slug) && $slug !== '') {
+                    $slugs[$slug] = true;
+                }
+            }
+        }
+
+        return array_keys($slugs);
+    }
+
     private function normalizeBuy(array $json): array
     {
         return [

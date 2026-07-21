@@ -39,6 +39,10 @@ Schedule::command('virtual:renew')->dailyAt('04:00')->withoutOverlapping();
 // Refresh eSIM catalogues + recompute retail via the PricingEngine.
 Schedule::command('esim:sync')->dailyAt('03:00')->withoutOverlapping();
 
+// Refresh the number country + service catalogue from the providers so the
+// storefront always lists everything they support (blueprint Section 12).
+Schedule::command('numbers:catalogue-sync')->weekly()->sundays()->at('03:30')->withoutOverlapping();
+
 // Nightly encrypted database backup + cleanup of old archives (Section 28).
 Schedule::command('backup:clean')->dailyAt('02:30')->withoutOverlapping();
 Schedule::command('backup:run --only-db')->dailyAt('02:45')->withoutOverlapping();
