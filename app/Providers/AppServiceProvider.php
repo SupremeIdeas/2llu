@@ -123,6 +123,13 @@ class AppServiceProvider extends ServiceProvider
             \App\Listeners\ReturnWithdrawnCredits::class,
         );
 
+        // A reversed/failed merchant-earnings withdrawal returns the held
+        // earnings to the merchant bucket (ROADMAP §Layer 3.4).
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\PayoutReversed::class,
+            \App\Listeners\ReturnMerchantEarnings::class,
+        );
+
         // Overlay any admin-saved API credentials on top of config() so every
         // service keeps reading config('services.*') unchanged and providers
         // flip Active the moment a key is saved (blueprint Section 17.4, money

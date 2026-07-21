@@ -108,7 +108,7 @@ class Checkout extends Component
         }
     }
 
-    public function purchase(WalletService $wallet, ProviderRouter $router, CouponEngine $coupons, CreditService $credits): void
+    public function purchase(WalletService $wallet, ProviderRouter $router, CouponEngine $coupons, CreditService $credits, \App\Services\Pricing\PricingEngine $pricing, \App\Services\Merchants\MerchantEarningsService $earnings): void
     {
         $user = auth()->user();
 
@@ -129,7 +129,20 @@ class Checkout extends Component
         }
         RateLimiter::hit($key, 60);
 
-        $retail = (float) $this->plan->final_retail_usd;
+        // Merchant lane (ROADMAP §Layer 3.2/3.4): a customer who joined through a
+        // reseller pays the merchant price (retail + admin-set reseller margin);
+        // the M−R upcharge is later accrued to that merchant. Everyone else pays
+        // plain retail. plainRetail is kept as the accrual floor.
+        $merchant = \App\Support\MerchantBranding::forCustomer($user);
+        if ($merchant !== null) {
+            // Compute the plain retail through the engine (never the possibly-
+            // stale generated column) so the accrual floor is exact.
+            $plainRetail = $pricing->calculateRetail($this->plan, log: false);
+            $retail = $pricing->merchantEsimPrice($this->plan, $merchant);
+        } else {
+            $plainRetail = (float) $this->plan->final_retail_usd;
+            $retail = $plainRetail;
+        }
 
         // Coupon is re-resolved server-side at purchase time — the preview shown
         // by applyCoupon() is never trusted. CouponEngine clamps the discount to
@@ -246,6 +259,13 @@ class Checkout extends Component
         // abandoned/refunded purchase never burns the user's coupon use.
         if ($couponModel) {
             $coupons->redeem($couponModel, $user, 'esim', $ref, $listRetail, $retail, $couponClamped);
+        }
+
+        // Merchant earnings (ROADMAP §Layer 3.4): accrue the cash collected ABOVE
+        // plain retail to the customer's merchant — only what was actually paid,
+        // so the admin's own margin is never touched. Idempotent on $ref.
+        if ($merchant !== null) {
+            $earnings->accrue($merchant, $user, 'esim', $plainRetail, $walletCharge, 'earn:'.$ref);
         }
 
         // Order-confirmation email (best-effort; never blocks the money path) —

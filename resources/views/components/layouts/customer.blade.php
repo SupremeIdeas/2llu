@@ -26,6 +26,11 @@
         array_splice($more, 4, 0, [['route' => 'developer', 'label' => 'Developer API', 'icon' => 'key']]);
     }
 
+    // Active merchants get a link to their reseller storefront (ROADMAP §3.5).
+    if ($u && $u->merchantAccount && $u->merchantAccount->isActive()) {
+        array_unshift($more, ['route' => 'merchant.dashboard', 'label' => 'My Storefront', 'icon' => 'package']);
+    }
+
     // Staff/admins use the same end-user app and can jump to their panel.
     if ($u && $u->hasAnyRole(['super_admin', 'admin', 'staff'])) {
         $more[] = ['route' => 'admin.dashboard', 'label' => 'Admin', 'icon' => 'id-card'];
@@ -50,4 +55,21 @@
     {{-- NaaraSim Wizard — guided, buttons-only purchase widget (roadmap §3/§11).
          Only rendered for verified end-users (this layout is behind auth). --}}
     @livewire('wizard')
+
+    {{-- Merchant co-branding (ROADMAP §Layer 3.3): a subtle footer badge for
+         customers who joined through a reseller — merchant mark + "Powered by
+         NaaraSim". NaaraSim branding is never replaced, only accompanied. --}}
+    @php($coBrand = \App\Support\MerchantBranding::forCustomer($u))
+    @if ($coBrand)
+        <div class="fixed bottom-24 left-4 z-30 hidden items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs shadow-sm backdrop-blur lg:flex dark:border-[#2D4060] dark:bg-[#1A2840]/90">
+            @if ($coBrand->logo_url)
+                <img src="{{ $coBrand->logo_url }}" alt="{{ $coBrand->business_name }}" class="h-5 w-5 rounded object-contain">
+            @else
+                <span class="flex h-5 w-5 items-center justify-center rounded text-[9px] font-bold uppercase text-white" style="background-color: {{ $coBrand->brand_color ?: '#0A6E6E' }};">{{ \Illuminate\Support\Str::of($coBrand->business_name)->trim()->substr(0, 1) }}</span>
+            @endif
+            <span class="font-medium text-slate-600 dark:text-slate-300">{{ $coBrand->business_name }}</span>
+            <span class="text-slate-300 dark:text-slate-600">·</span>
+            <span class="text-slate-400 dark:text-slate-500">Powered by NaaraSim</span>
+        </div>
+    @endif
 </x-layouts.app>

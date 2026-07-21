@@ -87,7 +87,7 @@ Replaced the ~6 hard-coded countries/services with the complete catalogue
 `numbers:catalogue-sync` from 5sim, scheduled weekly). GetNumber + the Wizard now
 source both pickers (searchable) from it. `NumberCatalogueTest` (5).
 
-### 🔨 Merchant / reseller system (ROADMAP §Layer 3) — IN PROGRESS 2026-07-21
+### ✅ Merchant / reseller system (ROADMAP §Layer 3) — COMPLETE 2026-07-21
 The co-branded reseller layer. Off by default (`merchants.enabled`).
 - **3.1 Onboarding** ✅ — `merchants` table + `Merchant` model; `users.merchant_id`
   (customer linking, for co-branding). New additive `merchant` role.
@@ -101,12 +101,27 @@ The co-branded reseller layer. Off by default (`merchants.enabled`).
   the merchant earns M−R. Per-merchant override beats the global margin; merchant
   never prices their own goods; MarginGuard still floors. Logged under `merchant:`.
   `MerchantPricingTest` (4).
-- **NEXT (still to build):** 3.3 co-branding + invite links (`/merchant/{slug}/join`,
-  set `merchant_id` on signup, merchant logo big + "Powered by NaaraSim") ·
-  3.4 merchant earnings ledger + settlement (accrue M−R on a merchant-customer's
-  purchase, merchant withdraws via the payout engine; merchant-referred credits
-  funded from the merchant's earnings, §3.3) · 3.5 merchant dashboard (storefront
-  setup, customers, earnings, payouts). Suite 498.
+- **3.3 Co-branding + invite links** ✅ — public `/merchant/{slug}/join` landing
+  (active merchants only; merchant logo big + "Powered by NaaraSim"). `Merchant
+  Branding` captures the invite in the session and `CreateNewUser` stamps
+  `users.merchant_id` on signup (set once, permanent). The register form + a
+  subtle customer-shell footer badge show the merchant alongside NaaraSim (never
+  replacing it). `MerchantInviteTest` (5).
+- **3.4 Earnings ledger + settlement** ✅ — `merchant_earnings` append-only ledger
+  (balance_after + unique reference, mirrors wallet_transactions).
+  `MerchantEarningsService` accrues the cash collected ABOVE plain retail on a
+  merchant-customer's purchase (never the admin's own margin — floored at 0), and
+  holds/releases for cash-outs, all atomic + idempotent. Both checkouts (eSIM +
+  numbers) now charge the merchant price M for a reseller's customer and accrue
+  M−R. `MerchantWithdrawalService` cashes earnings out through the SAME payout
+  engine (`merchant_earnings` bucket); `ReturnMerchantEarnings` returns the exact
+  hold on a reversed/failed transfer. `MerchantEarningsTest` (8).
+- **3.5 Merchant dashboard** ✅ — `/merchant` (active merchants only, 404 else):
+  storefront branding (name / colour / logo — never pricing), copyable invite
+  link, customer list, available + lifetime earnings, the earnings ledger, and a
+  withdraw form. Linked from the customer nav ("My Storefront") for active
+  merchants. `MerchantDashboardTest` (4).
+- **Layer 3 is complete.** Suite 562.
 
 ### ✅ NaaraCredit → cash withdrawals (ROADMAP §Layer 1) — built 2026-07-21
 Users turn their WITHDRAWABLE credits (first-referral rewards only) into real

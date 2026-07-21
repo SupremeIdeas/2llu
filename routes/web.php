@@ -59,6 +59,10 @@ Route::get('/blog/{post:slug}', [\App\Http\Controllers\BlogController::class, 's
 // Public pricing page (Module 29) — real plans when live, estimate tiers before.
 Route::get('/pricing', \App\Livewire\PricingPage::class)->name('pricing');
 
+// Merchant invite landing (ROADMAP §Layer 3.3) — a reseller's co-branded
+// storefront link. Captures the invite and sends the visitor to register.
+Route::get('/merchant/{slug}/join', \App\Livewire\MerchantJoin::class)->name('merchant.join');
+
 // Authenticated customer app (blueprint Sections 4, 12, 14, 16). `active`
 // confines a self-paused account to the account page until it reactivates
 // (Section 26.1).
@@ -103,6 +107,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         // Become a merchant (ROADMAP §Layer 3.1) — KYB + application flow. The
         // page self-gates on the programme flag + KYC L3.
         Route::get('/merchant/apply', \App\Livewire\BecomeMerchant::class)->name('merchant.apply');
+        // Merchant storefront dashboard (ROADMAP §Layer 3.5) — active merchants
+        // only (404 otherwise): storefront, invite link, customers, earnings, payouts.
+        Route::get('/merchant', \App\Livewire\MerchantDashboard::class)->name('merchant.dashboard');
     });
 
     // Account & data rights (blueprint Section 26) — reachable while unverified

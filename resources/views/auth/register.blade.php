@@ -1,4 +1,23 @@
 <x-layouts.auth title="Create account — NaaraSim" heading="Join NaaraSim" subheading="One account for eSIM data and phone numbers, worldwide.">
+    {{-- Merchant co-branding (ROADMAP §Layer 3.3): shown when signing up via a
+         reseller invite. NaaraSim branding is never removed — the merchant sits
+         alongside it with "Powered by NaaraSim". --}}
+    @isset($inviteMerchant)
+        @if ($inviteMerchant)
+            @php($accent = $inviteMerchant->brand_color ?: '#0A6E6E')
+            <div class="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+                @if ($inviteMerchant->logo_url)
+                    <img src="{{ $inviteMerchant->logo_url }}" alt="{{ $inviteMerchant->business_name }}" class="h-11 w-11 rounded-xl object-contain ring-1 ring-black/5 dark:ring-white/10">
+                @else
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl text-sm font-bold uppercase text-white" style="background-color: {{ $accent }};">{{ \Illuminate\Support\Str::of($inviteMerchant->business_name)->trim()->substr(0, 2) }}</span>
+                @endif
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">You're joining via {{ $inviteMerchant->business_name }}</p>
+                    <p class="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500"><x-icon name="signal" class="h-3 w-3" /> Powered by NaaraSim</p>
+                </div>
+            </div>
+        @endif
+    @endisset
     <form method="POST" action="/register"
           class="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
         @csrf

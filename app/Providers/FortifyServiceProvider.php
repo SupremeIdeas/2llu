@@ -36,7 +36,11 @@ class FortifyServiceProvider extends ServiceProvider
     {
         // Auth views (blueprint Section 3.1 / 19.1). Dark-mode Blade forms.
         Fortify::loginView(fn () => view('auth.login'));
-        Fortify::registerView(fn () => view('auth.register'));
+        Fortify::registerView(fn () => view('auth.register', [
+            // Co-branding (ROADMAP §Layer 3.3): if the visitor arrived via a
+            // merchant invite, show the merchant on the signup form.
+            'inviteMerchant' => \App\Support\MerchantBranding::inviteMerchant(),
+        ]));
 
         // The 2FA challenge page (TOTP — Google Authenticator/Authy/1Password —
         // or a recovery code). MUST be registered or a 2FA-enabled user (incl.

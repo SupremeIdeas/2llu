@@ -49,6 +49,11 @@ class CreateNewUser implements CreatesNewUsers
             // swallow — welcome mail is best-effort.
         }
 
+        // Merchant invite (ROADMAP §Layer 3.3): if this signup came through a
+        // /merchant/{slug}/join link, permanently link the account to that
+        // merchant so co-branding + earnings follow.
+        \App\Support\MerchantBranding::consumeInviteFor($user);
+
         // NaaraCredits signup bonus (loyalty module) — best-effort, idempotent.
         app(\App\Services\Credits\CreditService::class)->grantOnce(
             $user,

@@ -48,7 +48,7 @@ class GetNumber extends Component
         }
     }
 
-    public function order(WalletService $wallet, SmsNumberRouter $router, CouponEngine $coupons): void
+    public function order(WalletService $wallet, SmsNumberRouter $router, CouponEngine $coupons, \App\Services\Pricing\PricingEngine $pricing, \App\Services\Merchants\MerchantEarningsService $earnings): void
     {
         $this->error = null;
         $this->couponNote = null;
@@ -71,7 +71,15 @@ class GetNumber extends Component
             return;
         }
 
-        $retail = $quote['retail'];
+        // Merchant lane (ROADMAP §Layer 3.2/3.4): a reseller's customer pays the
+        // merchant price (retail + admin-set reseller margin); the M−R upcharge is
+        // accrued to that merchant after the number is reserved. plainRetail is
+        // the accrual floor so the admin's own margin is never given away.
+        $merchant = \App\Support\MerchantBranding::forCustomer($user);
+        $plainRetail = (float) $quote['retail'];
+        $retail = $merchant !== null
+            ? $pricing->merchantSmsPrice((float) $quote['cost'], $quote['provider'], $merchant)
+            : $plainRetail;
         $listRetail = $retail;
 
         // Coupon (Module 31): re-validated here, priced off the LIVE quote and
@@ -122,6 +130,12 @@ class GetNumber extends Component
         if ($couponModel) {
             $coupons->redeem($couponModel, $user, 'number', $ref, $listRetail, $retail, $couponClamped);
             $this->couponNote = 'Coupon applied — you saved $'.number_format($listRetail - $retail, 2).'.';
+        }
+
+        // Merchant earnings (ROADMAP §Layer 3.4): accrue the upcharge collected
+        // above plain retail to the customer's merchant. Idempotent on $ref.
+        if ($merchant !== null) {
+            $earnings->accrue($merchant, $user, 'number', $plainRetail, $retail, 'earn:'.$ref);
         }
 
         // Order-confirmation email (best-effort; never blocks the money path).
