@@ -117,6 +117,22 @@ return [
         'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
     ],
 
+    // PayPal (Orders v2). client_id/secret gate it Active; webhook_id verifies
+    // inbound webhooks via PayPal's verify-webhook-signature API.
+    'paypal' => [
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+        'webhook_id' => env('PAYPAL_WEBHOOK_ID'),
+        'base_url' => env('PAYPAL_BASE_URL', 'https://api-m.paypal.com'),
+    ],
+
+    // Binance Pay (merchant API v3, crypto rail). HMAC-SHA512 signed requests.
+    'binance' => [
+        'api_key' => env('BINANCE_PAY_API_KEY'),
+        'api_secret' => env('BINANCE_PAY_API_SECRET'),
+        'base_url' => env('BINANCE_PAY_BASE_URL', 'https://bpay.binanceapi.com'),
+    ],
+
     'stripe' => [
         'secret_key' => env('STRIPE_SECRET_KEY'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),

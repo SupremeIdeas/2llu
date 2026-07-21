@@ -48,6 +48,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('pay.flutterwave', \App\Services\Payments\FlutterwaveGateway::class);
         $this->app->singleton('pay.paystack', \App\Services\Payments\PaystackGateway::class);
         $this->app->singleton('pay.stripe', \App\Services\Payments\StripeGateway::class);
+        $this->app->singleton('pay.paypal', \App\Services\Payments\PaypalGateway::class);
+        $this->app->singleton('pay.binance', \App\Services\Payments\BinancePayGateway::class);
 
         // Payout account resolution (ROADMAP §Layer 0.1). Paystack first for its
         // markets, Flutterwave as the wider-net resolver. Injected as a list so

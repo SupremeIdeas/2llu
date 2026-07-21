@@ -23,6 +23,8 @@ class ProviderStatus
         'paystack' => ['services.paystack.secret_key'],
         'flutterwave' => ['services.flutterwave.secret_key'],
         'stripe' => ['services.stripe.secret_key'],
+        'paypal' => ['services.paypal.client_id', 'services.paypal.client_secret'],
+        'binance' => ['services.binance.api_key', 'services.binance.api_secret'],
     ];
 
     public static function isActive(string $provider): bool

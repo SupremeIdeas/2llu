@@ -15,16 +15,43 @@ use Livewire\Component;
 #[Layout('components.layouts.customer')]
 class Wallet extends Component
 {
+    /** All wallet-funding gateways (slug => [label, hint]). */
+    public const GATEWAYS = [
+        'paystack' => ['Paystack', 'Cards, bank transfer & USSD'],
+        'flutterwave' => ['Flutterwave', 'Cards, mobile money & banks'],
+        'stripe' => ['Stripe', 'International cards (USD)'],
+        'paypal' => ['PayPal', 'PayPal balance & cards'],
+        'binance' => ['Binance Pay', 'Pay with crypto — USDT & more'],
+    ];
+
     #[Validate('required|numeric|min:1')]
     public $amount = '';
 
-    #[Validate('required|in:paystack,flutterwave,stripe')]
+    #[Validate('required|in:paystack,flutterwave,stripe,paypal,binance')]
     public string $gateway = 'paystack';
 
     #[Validate('required|in:NGN,USD')]
     public string $currency = 'NGN';
 
     public ?string $error = null;
+
+    public function mount(): void
+    {
+        // Default to the first Active gateway so the selector never opens on a
+        // "Coming Soon" one; falls back to the first known if none configured yet.
+        $active = array_keys($this->availableGateways());
+        $this->gateway = $active[0] ?? array_key_first(self::GATEWAYS);
+    }
+
+    /** Gateways the admin has configured (keys present) — the selectable set. */
+    public function availableGateways(): array
+    {
+        return array_filter(
+            self::GATEWAYS,
+            fn ($slug) => \App\Support\ProviderStatus::isActive($slug),
+            ARRAY_FILTER_USE_KEY,
+        );
+    }
 
     public function topUp()
     {
@@ -82,6 +109,9 @@ class Wallet extends Component
 
         return view('livewire.wallet', compact(
             'wallet', 'transactions', 'spentUsd', 'topupUsd', 'topupNgn', 'sparkline'
-        ) + ['hasSpendData' => $daily->sum() > 0]);
+        ) + [
+            'hasSpendData' => $daily->sum() > 0,
+            'gateways' => $this->availableGateways(),
+        ]);
     }
 }

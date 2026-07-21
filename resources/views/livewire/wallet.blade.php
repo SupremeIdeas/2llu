@@ -157,38 +157,48 @@
                             @error('amount') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                         </div>
 
-                        {{-- Payment mode radio rows --}}
+                        {{-- Payment mode radio rows (only Active gateways show) --}}
                         <div>
                             <label class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-slate-400">Pay with</label>
-                            <div class="space-y-2">
-                                @foreach ([
-                                    'paystack' => ['Paystack', 'Cards, bank transfer & USSD'],
-                                    'flutterwave' => ['Flutterwave', 'Cards, mobile money & banks'],
-                                    'stripe' => ['Stripe', 'International cards (USD)'],
-                                ] as $gw => [$gwLabel, $gwHint])
-                                    <label wire:key="gw-{{ $gw }}"
-                                           @class([
-                                               'flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition',
-                                               'border-primary bg-primary/5 shadow-sm dark:bg-primary/15' => $gateway === $gw,
-                                               'border-slate-200 hover:border-primary/40 dark:border-[#2D4060]' => $gateway !== $gw,
-                                           ])>
-                                        <input type="radio" wire:model.live="gateway" value="{{ $gw }}" class="text-primary focus:ring-primary/40">
-                                        <x-payment-icon :slug="$gw" class="h-9 w-9 shadow-sm ring-1 ring-black/5 dark:ring-white/10" />
-                                        <span class="min-w-0">
-                                            <span class="block text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $gwLabel }}</span>
-                                            <span class="block truncate text-[11px] text-slate-400 dark:text-slate-500">{{ $gwHint }}</span>
-                                        </span>
-                                    </label>
-                                @endforeach
-                            </div>
+                            @if (empty($gateways))
+                                <div class="rounded-xl border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500 dark:border-[#2D4060] dark:text-slate-400">
+                                    Online top-up is being set up. Please check back shortly.
+                                </div>
+                            @else
+                                <div class="space-y-2">
+                                    @foreach ($gateways as $gw => [$gwLabel, $gwHint])
+                                        <label wire:key="gw-{{ $gw }}"
+                                               @class([
+                                                   'flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition',
+                                                   'border-primary bg-primary/5 shadow-sm dark:bg-primary/15' => $gateway === $gw,
+                                                   'border-slate-200 hover:border-primary/40 dark:border-[#2D4060]' => $gateway !== $gw,
+                                               ])>
+                                            <input type="radio" wire:model.live="gateway" value="{{ $gw }}" class="text-primary focus:ring-primary/40">
+                                            <x-payment-icon :slug="$gw" class="h-9" />
+                                            <span class="min-w-0">
+                                                <span class="block text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $gwLabel }}</span>
+                                                <span class="block truncate text-[11px] text-slate-400 dark:text-slate-500">{{ $gwHint }}</span>
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
                             @error('gateway') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                         </div>
 
-                        <button type="submit" wire:loading.attr="disabled" wire:target="topUp"
+                        <button type="submit" @disabled(empty($gateways)) wire:loading.attr="disabled" wire:target="topUp"
                                 class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60">
                             <span wire:loading.remove wire:target="topUp" class="inline-flex items-center gap-2"><x-icon name="credit-card" class="h-4 w-4" /> Continue to payment</span>
                             <span wire:loading wire:target="topUp" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Starting…</span>
                         </button>
+
+                        {{-- Accepted methods (real brand logos) — trust strip. --}}
+                        <div class="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+                            <span class="mr-1 text-[11px] text-slate-400 dark:text-slate-500">We accept</span>
+                            @foreach (['visa', 'mastercard', 'googlepay', 'applepay'] as $mark)
+                                <x-payment-icon :slug="$mark" class="h-6" />
+                            @endforeach
+                        </div>
                         <p class="text-center text-[11px] text-slate-400 dark:text-slate-500">You’ll be redirected to a secure payment page.</p>
                     </form>
                 </div>
