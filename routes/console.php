@@ -45,4 +45,7 @@ Schedule::command('numbers:catalogue-sync')->weekly()->sundays()->at('03:30')->w
 
 // Nightly encrypted database backup + cleanup of old archives (Section 28).
 Schedule::command('backup:clean')->dailyAt('02:30')->withoutOverlapping();
+
+// Refresh live currency-display FX rates (localized pricing) — display only.
+Schedule::command('fx:sync')->dailyAt('05:00')->withoutOverlapping();
 Schedule::command('backup:run --only-db')->dailyAt('02:45')->withoutOverlapping();

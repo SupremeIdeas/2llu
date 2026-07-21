@@ -44,8 +44,13 @@
 
                 <div class="mt-4 flex items-end justify-between border-t border-slate-100 pt-4 dark:border-[#243352]">
                     <div>
-                        <div class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ $plan->display_price['usd'] }}</div>
-                        <div class="text-xs text-slate-500 dark:text-slate-400">{{ $plan->display_price['ngn'] }}</div>
+                        {{-- Localized price (owner request): USD default + the
+                             viewer's local-currency equivalent (live FX). --}}
+                        @php($__loc = app(\App\Services\Pricing\CurrencyService::class)->localPrice((float) $plan->final_retail_usd, \App\Support\LocaleCurrency::resolve(auth()->user())))
+                        <div class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ $__loc['usd'] }}</div>
+                        @if ($__loc['local'])
+                            <div class="text-xs text-slate-500 dark:text-slate-400">≈ {{ $__loc['local'] }}</div>
+                        @endif
                     </div>
                     <a href="{{ route('checkout', $plan) }}"
                        class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/50">

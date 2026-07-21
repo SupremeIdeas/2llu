@@ -35,12 +35,23 @@ class Wallet extends Component
 
     public ?string $error = null;
 
+    /** The currency the user sees prices in (display only; USD is settlement). */
+    public string $displayCurrency = 'USD';
+
     public function mount(): void
     {
         // Default to the first Active gateway so the selector never opens on a
         // "Coming Soon" one; falls back to the first known if none configured yet.
         $active = array_keys($this->availableGateways());
         $this->gateway = $active[0] ?? array_key_first(self::GATEWAYS);
+
+        $this->displayCurrency = \App\Support\LocaleCurrency::resolve(auth()->user());
+    }
+
+    /** Switch the display currency (persists to session + profile). */
+    public function setCurrency(string $code): void
+    {
+        $this->displayCurrency = \App\Support\LocaleCurrency::choose(auth()->user(), $code);
     }
 
     /** Gateways the admin has configured (keys present) — the selectable set. */
@@ -112,6 +123,12 @@ class Wallet extends Component
         ) + [
             'hasSpendData' => $daily->sum() > 0,
             'gateways' => $this->availableGateways(),
+            // Localized display (owner request): the USD balance shown in the
+            // user's local currency too. Display only — the wallet holds USD/NGN.
+            'currencyOptions' => \App\Support\LocaleCurrency::options(),
+            'usdLocal' => $this->displayCurrency === 'USD' || $this->displayCurrency === 'NGN'
+                ? null
+                : app(\App\Services\Pricing\CurrencyService::class)->format((float) $wallet->usd_balance, $this->displayCurrency),
         ]);
     }
 }

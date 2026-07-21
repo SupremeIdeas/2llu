@@ -51,6 +51,33 @@
         </div>
 
         {{-- Balances --}}
+        {{-- Display-currency switcher (owner request). USD stays the settlement
+             currency; this only changes what prices are SHOWN in. --}}
+        <div class="mb-3 flex items-center justify-end gap-2">
+            <span class="text-xs text-slate-400 dark:text-slate-500">Show prices in</span>
+            <div class="relative" x-data="{ open: false }">
+                <button type="button" x-on:click="open = !open" x-on:click.outside="open = false"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-200">
+                    <x-icon name="globe" class="h-3.5 w-3.5" /> {{ $displayCurrency }}
+                    <x-icon name="chevron-right" class="h-3 w-3 rotate-90" />
+                </button>
+                <div x-show="open" x-cloak x-transition
+                     class="absolute right-0 z-20 mt-1 max-h-64 w-48 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-[#2D4060] dark:bg-[#1A2840]">
+                    @foreach ($currencyOptions as $code => $meta)
+                        <button type="button" wire:key="cur-{{ $code }}" x-on:click="open = false" wire:click="setCurrency('{{ $code }}')"
+                                @class([
+                                    'flex w-full items-center justify-between px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-[#243352]',
+                                    'font-bold text-primary dark:text-teal-300' => $displayCurrency === $code,
+                                    'text-slate-600 dark:text-slate-300' => $displayCurrency !== $code,
+                                ])>
+                            <span>{{ $meta[1] }}</span>
+                            <span class="text-slate-400">{{ $meta[0] }} {{ $code }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-4">
             <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
                 <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
@@ -63,6 +90,9 @@
                     <x-icon name="credit-card" class="h-4 w-4" /> USD balance
                 </div>
                 <div class="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">${{ number_format((float) $wallet->usd_balance, 2) }}</div>
+                @if ($usdLocal)
+                    <div class="mt-0.5 text-xs text-slate-400 dark:text-slate-500">≈ {{ $usdLocal }} <span class="text-slate-300 dark:text-slate-600">· live rate</span></div>
+                @endif
             </div>
         </div>
 

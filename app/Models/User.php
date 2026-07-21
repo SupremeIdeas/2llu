@@ -27,6 +27,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar',
         'phone',
         'country_code',
+        'display_currency',
         'referral_code',
         'referred_by',
         'kyc_status',
