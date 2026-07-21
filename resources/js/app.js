@@ -176,3 +176,20 @@ function initHeroScenes() {
 
 document.addEventListener('DOMContentLoaded', initHeroScenes);
 document.addEventListener('livewire:navigated', initHeroScenes);
+
+// --- In-browser dialer (Live Voice — Part B, lazy) --------------------------
+// The Twilio Voice SDK is heavy + only needed on the dialer page, so the module
+// (and the SDK it imports) is dynamic-imported only when [data-dialer] is on the
+// page. Bundled via Vite — never a CDN — and re-initialised on SPA navigation.
+function initDialer() {
+    const root = document.querySelector('[data-dialer]');
+    if (!root || root.dataset.dialerMounted) return;
+    root.dataset.dialerMounted = '1';
+
+    import('./dialer.js')
+        .then(({ mountDialer }) => mountDialer(root))
+        .catch(() => { /* SDK/bundle failure → the money path is untouched */ });
+}
+
+document.addEventListener('DOMContentLoaded', initDialer);
+document.addEventListener('livewire:navigated', initDialer);

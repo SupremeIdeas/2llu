@@ -37,4 +37,19 @@ interface VoiceProviderInterface
      * click-to-call). Returns the provider call ref.
      */
     public function bridgeCall(string $from, string $to, string $twimlUrl): string;
+
+    /**
+     * Mint a short-lived WebRTC access token for the in-browser dialer
+     * (Live Voice — Part B), scoped to one authenticated user identity and the
+     * outbound TwiML Application. Returns the signed token string the browser
+     * SDK loads. Built to the documented Twilio JWT shape — never invented.
+     */
+    public function accessToken(string $identity, int $ttl = 3600): string;
+
+    /**
+     * Live wholesale per-minute COST (USD) to place an outbound call to a
+     * destination number. Never returned to the user — it feeds PricingEngine,
+     * which applies the margin. Falls back to a configured default off-line.
+     */
+    public function voiceRate(string $destination): float;
 }

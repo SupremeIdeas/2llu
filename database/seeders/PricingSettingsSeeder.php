@@ -29,9 +29,16 @@ class PricingSettingsSeeder extends Seeder
             ['pricing.sms_markup_pct.twilio', 45, 'pricing', 'Twilio number markup %'],
             ['pricing.sms_markup_pct.telnyx', 45, 'pricing', 'Telnyx number markup %'],
 
+            // In-browser dialer per-minute voice markup (Live Voice — Part B)
+            ['pricing.voice_markup_pct.twilio', 40, 'pricing', 'Twilio outbound-call per-minute markup %'],
+
             // Profit floors (MarginGuard)
             ['pricing.minimum_profit_usd', 0.50, 'pricing', 'MarginGuard absolute floor (USD)'],
             ['pricing.sms_min_profit', 0.01, 'pricing', 'Per-SMS profit floor (USD)'],
+            ['pricing.voice_min_profit', 0.02, 'pricing', 'Per-minute call profit floor (USD)'],
+
+            // Dialer safety cap: the largest funded block a single call may hold.
+            ['voice.max_call_minutes', 60, 'pricing', 'Max funded minutes held per in-browser call'],
 
             // Developer API reselling lane (ROADMAP §Layer 2). Wholesale + a small
             // admin markup — below retail (a real deal for developers) but still

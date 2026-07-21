@@ -103,6 +103,34 @@ class PricingEngine
     }
 
     /**
+     * Retail (USD) per-MINUTE for an outbound in-browser call (Live Voice —
+     * Part B). Live wholesale cost in, per-provider voice markup applied, floored
+     * by a per-minute minimum-profit MarginGuard. Same discipline as SMS: cost is
+     * fetched live before quoting and never returned or exposed to the user.
+     */
+    public function calculateVoiceRetail(float $costPerMin, string $provider = 'twilio'): float
+    {
+        $markup = (float) Setting::getValue("pricing.voice_markup_pct.$provider", 40);
+        $computed = round($costPerMin * (1 + $markup / 100), 4);
+
+        $minProfit = (float) Setting::getValue('pricing.voice_min_profit', 0.02);
+        $floor = $costPerMin + $minProfit;
+        $final = max($computed, round($floor, 4));
+
+        $this->log(
+            planId: null,
+            provider: 'voice:'.$provider,
+            cost: $costPerMin,
+            markup: $markup,
+            computed: $computed,
+            final: $final,
+            guard: $final > $computed ? 'margin_guard' : 'none',
+        );
+
+        return $final;
+    }
+
+    /**
      * Developer-lane price (USD) for an eSIM plan — the "wholesale + small admin
      * markup" a Developer API client pays (ROADMAP §Layer 2). It is deliberately
      * BELOW retail (a real deal) but MarginGuard still floors it at cost +

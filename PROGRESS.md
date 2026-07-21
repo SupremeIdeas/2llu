@@ -27,8 +27,37 @@ hides until Twilio is Active.
   linked from the Numbers page only when Twilio is Active. `CallForwardingTest` (7).
 - **Acceptance check (real inbound call → forward) needs live Twilio sandbox keys**
   — deferred per CLAUDE.md (real keys go in last). Code follows the documented
-  Twilio Voice API + is signature-safe and gated. **Part B (in-browser dialer) +
-  Part C (contact book) are the next steps.**
+  Twilio Voice API + is signature-safe and gated.
+
+### 🔨 Live Voice (Twilio) — Part B: In-Browser Dialer — built 2026-07-21
+A WebRTC softphone: the user dials any international number from the browser —
+no app, no physical phone (Twilio Voice JS SDK, bundled via Vite, code-split so
+the 180 kB SDK never touches the main bundle and only loads when a call is
+placed). Feature-gated on the existing Twilio status (voice rides the same keys);
+`/numbers/dialer` + the token endpoint 404 until Twilio is Active.
+- **Money path (rules 1–7).** `VoiceDialerService`: quote the LIVE per-minute
+  retail via `PricingEngine::calculateVoiceRetail` (per-minute markup + a voice
+  MarginGuard floor — cost fetched live, never exposed); pre-authorise a funded
+  block with an ATOMIC wallet debit (balance_before/after); settle on hang-up —
+  bill only the minutes used, refund the rest (a call that never connects is
+  refunded in full). Settlement is idempotent (row lock + settled_at) so the
+  status webhook and a client hang-up can't double-bill. `voice_calls` table +
+  model (provider_rate hidden). Funded seconds also become the TwiML
+  `<Dial timeLimit>` — a HARD server-side hangup so a call can't outrun its hold.
+- **Twilio plumbing.** `TwilioService::accessToken` (hand-built Voice-grant JWT,
+  signed with the API Key secret — never the auth token) + `voiceRate` (live
+  Voice Pricing API, config fallback). `VoiceTokenController` (auth, gated,
+  per-user identity). `TwilioDialerWebhookController` (signature-verified outbound
+  `<Dial>` TwiML, owner-checked against the client identity) + `TwilioDialStatus
+  WebhookController` (signature-verified settlement). `LogVoiceCdrJob` (queued CDR
+  — rule 8). `Dialer` Livewire + keypad UI (SVG icons, dark mode, disabled-in-
+  flight, live call-state panel), linked from Numbers only when Twilio is Active.
+  `resources/js/dialer.js` (lazy, no CDN). `VoiceDialerTest` (11) + `VoiceDial
+  WebhookTest` (5). Suite 535.
+- **Acceptance check (live WebRTC audio + per-minute debit) needs live Twilio
+  sandbox keys** — deferred per CLAUDE.md (real keys go in last). The money math,
+  gating, idempotency + signature verification are fully unit-tested and the UI
+  renders in both themes. **Part C (in-app contact book) is the next step.**
 
 ### ✅ Number catalogue — full countries + services — built 2026-07-21
 Replaced the ~6 hard-coded countries/services with the complete catalogue

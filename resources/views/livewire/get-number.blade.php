@@ -2,8 +2,15 @@
     <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Get a Number</h1>
     <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">Receive verification codes for any country. We pick the best network for you.</p>
 
-    {{-- Live Voice — Part A: call forwarding, only when Twilio (voice) is Active. --}}
+    {{-- Live Voice (Twilio) — only when voice is Active (rides the same keys). --}}
     @if (\App\Support\ProviderStatus::isActive('twilio'))
+        {{-- Part B: in-browser international dialer. --}}
+        <a href="{{ route('numbers.dialer') }}" wire:navigate
+           class="mb-3 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary transition hover:bg-primary/10 dark:border-primary/30 dark:bg-primary/10 dark:text-teal-300">
+            <x-icon name="phone" class="h-4 w-4" /> Call any international number from your browser
+            <x-icon name="chevron-right" class="ml-auto h-4 w-4" />
+        </a>
+        {{-- Part A: call forwarding on a permanent number. --}}
         <a href="{{ route('numbers.forwarding') }}" wire:navigate
            class="mb-6 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary transition hover:bg-primary/10 dark:border-primary/30 dark:bg-primary/10 dark:text-teal-300">
             <x-icon name="phone" class="h-4 w-4" /> Forward calls on your permanent number to your phone

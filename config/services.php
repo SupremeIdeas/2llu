@@ -90,6 +90,17 @@ return [
         'account_sid' => env('TWILIO_ACCOUNT_SID'),
         'auth_token' => env('TWILIO_AUTH_TOKEN'),
         'base_url' => env('TWILIO_BASE_URL', 'https://api.twilio.com/2010-04-01'),
+        // In-browser dialer (Live Voice — Part B). A standalone API Key (NOT the
+        // auth token) signs the short-lived WebRTC access tokens; the TwiML App
+        // owns the outbound-call webhook. caller_id is the verified NaaraSim
+        // number shown to the party being dialled. default_voice_cost is the
+        // per-minute wholesale fallback when the live Pricing API is unreachable.
+        'api_key_sid' => env('TWILIO_API_KEY_SID'),
+        'api_key_secret' => env('TWILIO_API_KEY_SECRET'),
+        'twiml_app_sid' => env('TWILIO_TWIML_APP_SID'),
+        'caller_id' => env('TWILIO_CALLER_ID'),
+        'default_voice_cost' => env('TWILIO_DEFAULT_VOICE_COST', 0.02),
+        'default_monthly_cost' => env('TWILIO_DEFAULT_MONTHLY_COST', 1.15),
     ],
 
     // -- Payment gateways (blueprint Sections 14.2 & 19.3) ----------------

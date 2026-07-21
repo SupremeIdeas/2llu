@@ -96,6 +96,86 @@ class TwilioService implements NumberProviderInterface, VoiceProviderInterface
             ->throw()->json('sid');
     }
 
+    /**
+     * A Twilio Access Token is a JWT signed (HS256) with the API Key SECRET,
+     * carrying a Voice grant scoped to the outbound TwiML Application. Shape per
+     * twilio.com/docs (header cty "twilio-fpa;v=1"). We build it by hand — no SDK
+     * — so the dialer stays dependency-light and CSP-safe. Uses the standalone
+     * API Key (never the account auth token) so it can be rotated independently.
+     */
+    public function accessToken(string $identity, int $ttl = 3600): string
+    {
+        $keySid = (string) config('services.twilio.api_key_sid');
+        $keySecret = (string) config('services.twilio.api_key_secret');
+        $accountSid = (string) config('services.twilio.account_sid');
+        $appSid = (string) config('services.twilio.twiml_app_sid');
+
+        if ($keySid === '' || $keySecret === '' || $accountSid === '' || $appSid === '') {
+            throw new OutOfStockException('Twilio dialer is not configured.');
+        }
+
+        $now = time();
+        $header = ['typ' => 'JWT', 'alg' => 'HS256', 'cty' => 'twilio-fpa;v=1'];
+        $payload = [
+            'jti' => $keySid.'-'.$now,
+            'iss' => $keySid,
+            'sub' => $accountSid,
+            'iat' => $now,
+            'exp' => $now + $ttl,
+            'grants' => [
+                'identity' => $identity,
+                'voice' => [
+                    'incoming' => ['allow' => true],
+                    'outgoing' => ['application_sid' => $appSid],
+                ],
+            ],
+        ];
+
+        $segments = [
+            $this->base64url(json_encode($header, JSON_UNESCAPED_SLASHES)),
+            $this->base64url(json_encode($payload, JSON_UNESCAPED_SLASHES)),
+        ];
+        $signature = hash_hmac('sha256', implode('.', $segments), $keySecret, true);
+        $segments[] = $this->base64url($signature);
+
+        return implode('.', $segments);
+    }
+
+    /**
+     * Live wholesale per-minute COST (USD) for an outbound call to a destination,
+     * from the Twilio Voice Pricing API (pricing.twilio.com/v2). We take the
+     * dearest of the returned outbound prices so a quote never under-prices a
+     * more expensive route. Falls back to the configured default off-line — the
+     * PricingEngine + MarginGuard still floor the retail regardless.
+     */
+    public function voiceRate(string $destination): float
+    {
+        $fallback = (float) config('services.twilio.default_voice_cost', 0.02);
+        if (! $this->configured()) {
+            return $fallback;
+        }
+        try {
+            $res = Http::withBasicAuth(
+                (string) config('services.twilio.account_sid'),
+                (string) config('services.twilio.auth_token'),
+            )->timeout(20)->get('https://pricing.twilio.com/v2/Voice/Numbers/'.$destination);
+
+            $prices = collect($res->json('outbound_call_prices', []))
+                ->pluck('current_price')
+                ->filter(fn ($p) => $p !== null)
+                ->map(fn ($p) => (float) $p);
+
+            return $prices->isNotEmpty() ? (float) $prices->max() : $fallback;
+        } catch (\Throwable) {
+            return $fallback;
+        }
+    }
+
+    private function base64url(string $data): string
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
     private function client()
     {
         return Http::withBasicAuth(

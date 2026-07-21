@@ -75,6 +75,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         // Call forwarding for permanent numbers (Live Voice — Part A). The
         // component 404s unless Twilio is Active (voice rides the same keys).
         Route::get('/numbers/forwarding', \App\Livewire\CallForwarding::class)->name('numbers.forwarding');
+        // In-browser international dialer (Live Voice — Part B). Also 404s until
+        // Twilio is Active. The token endpoint mints the short-lived WebRTC token.
+        Route::get('/numbers/dialer', \App\Livewire\Dialer::class)->name('numbers.dialer');
+        Route::post('/voice/token', \App\Http\Controllers\VoiceTokenController::class)->name('voice.token');
         Route::get('/referrals', Referrals::class)->name('referrals');
 
         // NaaraCredits rewards area (loyalty module) — opt-in earning.
@@ -183,6 +187,14 @@ Route::post('/webhooks/getatext', GetatextWebhookController::class)
 // TwiML that forwards the call to the user's configured target.
 Route::post('/webhooks/twilio/voice', \App\Http\Controllers\Webhooks\TwilioVoiceWebhookController::class)
     ->name('webhooks.twilio.voice');
+
+// Twilio in-browser dialer webhooks (Live Voice — Part B): signature-verified.
+// `dial` returns the outbound <Dial> TwiML (with a funded timeLimit) for a
+// pre-authorised call; `dial-status` settles the wallet on hang-up.
+Route::post('/webhooks/twilio/dial', \App\Http\Controllers\Webhooks\TwilioDialerWebhookController::class)
+    ->name('webhooks.twilio.dial');
+Route::post('/webhooks/twilio/dial-status', \App\Http\Controllers\Webhooks\TwilioDialStatusWebhookController::class)
+    ->name('webhooks.twilio.dial-status');
 
 // Payment gateway webhooks (blueprint Section 19.3): signature-verified,
 // idempotent wallet credit.

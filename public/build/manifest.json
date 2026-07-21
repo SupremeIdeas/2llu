@@ -3,6 +3,12 @@
     "file": "assets/three.module-DAbQJLGd.js",
     "name": "three.module"
   },
+  "node_modules/@twilio/voice-sdk/esm/twilio.js": {
+    "file": "assets/twilio-D3I-d2Mf.js",
+    "name": "twilio",
+    "src": "node_modules/@twilio/voice-sdk/esm/twilio.js",
+    "isDynamicEntry": true
+  },
   "node_modules/flag-icons/flags/1x1/ad.svg": {
     "file": "assets/ad-Blhdm5jl.svg",
     "src": "node_modules/flag-icons/flags/1x1/ad.svg"
@@ -2172,18 +2178,31 @@
     "src": "node_modules/flag-icons/flags/4x3/zw.svg"
   },
   "resources/css/app.css": {
-    "file": "assets/app-D9h2c1-h.css",
+    "file": "assets/app-CICusETJ.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-hX_3vXix.js",
+    "file": "assets/app-DUTAlgnD.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "dynamicImports": [
       "resources/js/webgl/login-scene.js",
-      "resources/js/webgl/hero-scene.js"
+      "resources/js/webgl/hero-scene.js",
+      "resources/js/dialer.js"
+    ]
+  },
+  "resources/js/dialer.js": {
+    "file": "assets/dialer-D18HDwvX.js",
+    "name": "dialer",
+    "src": "resources/js/dialer.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "dynamicImports": [
+      "node_modules/@twilio/voice-sdk/esm/twilio.js"
     ]
   },
   "resources/js/webgl/hero-scene.js": {
