@@ -28,6 +28,13 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'country_code',
         'display_currency',
+        'bio',
+        'city',
+        'address_line',
+        'postal_code',
+        'date_of_birth',
+        'language',
+        'timezone',
         'referral_code',
         'referred_by',
         'kyc_status',
@@ -60,6 +67,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'date_of_birth' => 'date',
             'is_active' => 'boolean',
             'deactivated_at' => 'datetime',
             'data_export_ready_at' => 'datetime',
@@ -81,6 +89,21 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
+
+    /**
+     * Profile completeness (owner request) — 0–100%, to nudge users toward a
+     * solid profile. Weighted across the fields that make a profile useful.
+     */
+    public function profileCompleteness(): int
+    {
+        $fields = [
+            'name', 'email', 'phone', 'country_code', 'city',
+            'bio', 'avatar', 'date_of_birth', 'address_line',
+        ];
+        $filled = collect($fields)->filter(fn ($f) => filled($this->{$f}))->count();
+
+        return (int) round($filled / count($fields) * 100);
     }
 
     // -- Account lifecycle (blueprint Section 26) --------------------------

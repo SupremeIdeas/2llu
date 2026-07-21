@@ -17,6 +17,7 @@
         ['route' => 'rewards', 'label' => 'Rewards', 'icon' => 'gift'],
         ['route' => 'referrals', 'label' => 'Referrals', 'icon' => 'gift'],
         ['route' => 'data-estimator', 'label' => 'Estimator', 'icon' => 'signal'],
+        ['route' => 'profile', 'label' => 'Profile', 'icon' => 'id-card'],
         ['route' => 'account', 'label' => 'Account', 'icon' => 'settings'],
         ['route' => 'security', 'label' => 'Security', 'icon' => 'shield'],
     ];

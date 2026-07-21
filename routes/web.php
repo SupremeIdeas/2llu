@@ -115,6 +115,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Account & data rights (blueprint Section 26) — reachable while unverified
     // so a user can still manage or delete their account and resend the email.
     Route::get('/account', \App\Livewire\Account::class)->name('account');
+    // Extended self-service profile (owner request).
+    Route::get('/account/profile', \App\Livewire\Profile::class)->name('profile');
     // Security Center (Module 23) — also reachable unverified (to change email).
     Route::get('/account/security', \App\Livewire\SecurityCenter::class)->name('security');
     // Identity verification (ROADMAP §Layer 0.3) — KYC L2 gate for withdrawals.
