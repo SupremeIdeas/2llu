@@ -116,7 +116,12 @@
                     @if ($type === 'rental')
                         <p class="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
                             A rental keeps your number for the subscription period — it receives
-                            <strong>unlimited</strong> SMS@if ($fullRentAvailable) (pick <em>Any service</em> below to receive codes from <strong>every</strong> service, or one service to save)@else for the service you pick@endif.
+                            <strong>unlimited</strong> SMS
+                            @if ($fullRentAvailable)
+                                (pick <em>Any service</em> below to receive codes from <strong>every</strong> service, or one service to save).
+                            @else
+                                for the service you pick.
+                            @endif
                         </p>
                         @if ($fullRentAvailable)
                             <button type="button" wire:click="$set('service', '{{ \App\Services\SMS\NumberRequest::SERVICE_ANY }}')"

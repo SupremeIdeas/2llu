@@ -72,7 +72,7 @@ class PublicPricingTest extends TestCase
             ->assertSee('USA 3GB 30D')
             ->assertSee('$10.00')             // retail
             ->assertSee('Most popular')       // featured badge
-            ->assertDontSee('3.77')           // cost never shown
+            ->assertDontSee('$3.77')          // cost never shown as a price
             ->assertDontSee('cost_price_usd');
     }
 

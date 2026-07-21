@@ -24,12 +24,14 @@ class ServiceIcons
 
     private const CACHE_KEY = 'service_icons.resolved';
 
-    /** Slugs that have a bundled sprite symbol (svc-{slug}). */
+    /** Slugs that have a bundled sprite symbol (svc-{slug}) — real brand logos. */
     public const BUNDLED = [
-        'whatsapp', 'telegram', 'facebook', 'google', 'instagram', 'tiktok',
-        'x', 'snapchat', 'discord', 'tinder', 'okcupid', 'pof', 'uber',
-        'apple', 'amazon', 'netflix', 'paypal', 'microsoft', 'viber',
-        'signal', 'linkedin', 'wechat',
+        'whatsapp', 'telegram', 'facebook', 'google', 'instagram', 'tiktok', 'x', 'snapchat',
+        'discord', 'tinder', 'okcupid', 'uber', 'apple', 'netflix', 'paypal', 'viber',
+        'signal', 'wechat', 'binance', 'coinbase', 'revolut', 'cashapp', 'venmo', 'twitch',
+        'spotify', 'airbnb', 'aliexpress', 'ebay', 'steam', 'epicgames', 'protonmail', 'line',
+        'grab', 'doordash', 'deliveroo', 'wise', 'payoneer', 'zoom', 'reddit', 'pinterest',
+        'shopee', 'tumblr', 'vk', 'naver', 'kakaotalk', 'badoo', 'microsoft',
     ];
 
     /** Common provider aliases → our slugs (5sim/SMS-Activate naming). */
