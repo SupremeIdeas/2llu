@@ -25,6 +25,10 @@ class ProviderStatus
         'stripe' => ['services.stripe.secret_key'],
         'paypal' => ['services.paypal.client_id', 'services.paypal.client_secret'],
         'binance' => ['services.binance.api_key', 'services.binance.api_secret'],
+        'nowpayments' => ['services.nowpayments.api_key'],
+        'cryptomus' => ['services.cryptomus.merchant_id', 'services.cryptomus.api_key'],
+        'coinpayments' => ['services.coinpayments.public_key', 'services.coinpayments.private_key'],
+        'payssion' => ['services.payssion.api_key', 'services.payssion.secret_key'],
     ];
 
     public static function isActive(string $provider): bool

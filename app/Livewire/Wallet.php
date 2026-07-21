@@ -22,12 +22,16 @@ class Wallet extends Component
         'stripe' => ['Stripe', 'International cards (USD)'],
         'paypal' => ['PayPal', 'PayPal balance & cards'],
         'binance' => ['Binance Pay', 'Pay with crypto — USDT & more'],
+        'nowpayments' => ['NOWPayments', 'Bitcoin, USDT & 100+ coins'],
+        'cryptomus' => ['Cryptomus', 'Crypto wallet & exchange'],
+        'coinpayments' => ['CoinPayments', 'Bitcoin & altcoins'],
+        'payssion' => ['Payssion', 'Local payment methods'],
     ];
 
     #[Validate('required|numeric|min:1')]
     public $amount = '';
 
-    #[Validate('required|in:paystack,flutterwave,stripe,paypal,binance')]
+    #[Validate('required|in:paystack,flutterwave,stripe,paypal,binance,nowpayments,cryptomus,coinpayments,payssion')]
     public string $gateway = 'paystack';
 
     #[Validate('required|in:NGN,USD')]

@@ -133,6 +133,38 @@ return [
         'base_url' => env('BINANCE_PAY_BASE_URL', 'https://bpay.binanceapi.com'),
     ],
 
+    // NOWPayments (crypto). api_key gates it; ipn_secret verifies webhooks.
+    'nowpayments' => [
+        'api_key' => env('NOWPAYMENTS_API_KEY'),
+        'ipn_secret' => env('NOWPAYMENTS_IPN_SECRET'),
+        'base_url' => env('NOWPAYMENTS_BASE_URL', 'https://api.nowpayments.io'),
+    ],
+
+    // Cryptomus (crypto). merchant_id + api_key sign every request + webhook.
+    'cryptomus' => [
+        'merchant_id' => env('CRYPTOMUS_MERCHANT_ID'),
+        'api_key' => env('CRYPTOMUS_API_KEY'),
+        'base_url' => env('CRYPTOMUS_BASE_URL', 'https://api.cryptomus.com'),
+    ],
+
+    // CoinPayments (crypto). public/private keys sign requests; ipn_secret +
+    // merchant_id verify IPNs. pay_currency is the coin the buyer pays in.
+    'coinpayments' => [
+        'public_key' => env('COINPAYMENTS_PUBLIC_KEY'),
+        'private_key' => env('COINPAYMENTS_PRIVATE_KEY'),
+        'ipn_secret' => env('COINPAYMENTS_IPN_SECRET'),
+        'merchant_id' => env('COINPAYMENTS_MERCHANT_ID'),
+        'pay_currency' => env('COINPAYMENTS_PAY_CURRENCY', 'USDT.TRC20'),
+    ],
+
+    // Payssion (local payment methods). api_key + secret_key sign + verify.
+    'payssion' => [
+        'api_key' => env('PAYSSION_API_KEY'),
+        'secret_key' => env('PAYSSION_SECRET_KEY'),
+        'pm_id' => env('PAYSSION_PM_ID', 'alipay_cn'),
+        'base_url' => env('PAYSSION_BASE_URL', 'https://www.payssion.com'),
+    ],
+
     'stripe' => [
         'secret_key' => env('STRIPE_SECRET_KEY'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),

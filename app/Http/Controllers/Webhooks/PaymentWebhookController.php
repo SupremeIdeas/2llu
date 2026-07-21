@@ -18,7 +18,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 class PaymentWebhookController extends Controller
 {
-    private const GATEWAYS = ['flutterwave', 'paystack', 'stripe', 'paypal', 'binance'];
+    private const GATEWAYS = ['flutterwave', 'paystack', 'stripe', 'paypal', 'binance', 'nowpayments', 'cryptomus', 'coinpayments', 'payssion'];
 
     public function __invoke(Request $request, string $gateway): JsonResponse
     {
@@ -38,7 +38,11 @@ class PaymentWebhookController extends Controller
                 ?? $request->header('x-paystack-signature')
                 ?? $request->header('verif-hash')
                 ?? $request->header('paypal-transmission-sig')
-                ?? $request->header('BinancePay-Signature'),
+                ?? $request->header('BinancePay-Signature')
+                ?? $request->header('x-nowpayments-sig')
+                ?? $request->header('HMAC')
+                ?? $request->input('sign')          // cryptomus (in-body)
+                ?? $request->input('notify_sig'),   // payssion (in-body)
             'verified' => $verified,
             'processed' => false,
         ]);
