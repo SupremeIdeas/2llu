@@ -57,7 +57,29 @@ placed). Feature-gated on the existing Twilio status (voice rides the same keys)
 - **Acceptance check (live WebRTC audio + per-minute debit) needs live Twilio
   sandbox keys** — deferred per CLAUDE.md (real keys go in last). The money math,
   gating, idempotency + signature verification are fully unit-tested and the UI
-  renders in both themes. **Part C (in-app contact book) is the next step.**
+  renders in both themes.
+
+### ✅ Live Voice (Twilio) — Part C: In-App Contact Book — built 2026-07-21
+A per-user address book that feeds the dialer — "tap a name, call it". Not a
+provider-billed feature, so NO feature gate; standard auth-scoped CRUD.
+- `contacts` table + model (unique on user_id+phone_number so re-imports update,
+  never duplicate). `Contacts` Livewire: add / edit / delete, live search, and
+  bulk import from **CSV** or **vCard (.vcf)** via `ContactImport` (forgiving
+  parser — optional header, quoted fields, multi-card vCards; normalises every
+  number, de-dupes, drops rows with no usable phone). Numbers are normalised on
+  save so messy exports (`+234 801-234-5678`) tidy to E.164.
+- Dialer integration: a contact's Call button links to `/numbers/dialer?to=…`
+  which prefills the field on mount; the dialer also shows a "Your contacts"
+  quick-pick strip (tap fills the number) + a Contacts link. The Call button in
+  the book is the only Twilio-gated bit (no dead link when voice is off) — the
+  book itself works identically on desktop, iOS Safari and Android Chrome.
+- Progressive enhancement (Android Chrome only): an "Import from phone" button
+  reads the OS Contact Picker (`navigator.contacts.select`) into the same book —
+  hidden (`x-show`) everywhere it isn't supported, so it's a bonus, never the
+  primary path. `ContactBookTest` (10). Suite 545.
+- **Live Voice module (Parts A + B + C) is functionally complete.** The two
+  live-hardware acceptance checks (inbound-call forward, in-browser WebRTC audio)
+  remain deferred until real Twilio keys go in (CLAUDE.md — real keys go in last).
 
 ### ✅ Number catalogue — full countries + services — built 2026-07-21
 Replaced the ~6 hard-coded countries/services with the complete catalogue

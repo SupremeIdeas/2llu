@@ -39,6 +39,13 @@ class Dialer extends Component
     public function mount(): void
     {
         abort_unless(ProviderStatus::isActive('twilio'), 404);
+
+        // "Tap a name, call it" (Part C): a contact's Call button links here with
+        // ?to=, prefilling the destination field.
+        $to = (string) request()->query('to', '');
+        if ($to !== '' && preg_match('/^\+?[0-9]{6,15}$/', $to)) {
+            $this->destination = \App\Models\Contact::normalizePhone($to);
+        }
     }
 
     /** Live per-minute retail + how many minutes the wallet can fund right now. */
@@ -118,6 +125,10 @@ class Dialer extends Component
             ->whereNotNull('settled_at')
             ->latest('id')->limit(8)->get();
 
-        return view('livewire.dialer', ['recent' => $recent]);
+        // A quick-pick strip of saved contacts (Part C) — tap to fill the field.
+        $contacts = \App\Models\Contact::where('user_id', Auth::id())
+            ->orderBy('name')->limit(12)->get();
+
+        return view('livewire.dialer', ['recent' => $recent, 'contacts' => $contacts]);
     }
 }

@@ -79,6 +79,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         // Twilio is Active. The token endpoint mints the short-lived WebRTC token.
         Route::get('/numbers/dialer', \App\Livewire\Dialer::class)->name('numbers.dialer');
         Route::post('/voice/token', \App\Http\Controllers\VoiceTokenController::class)->name('voice.token');
+        // In-app contact book (Live Voice — Part C). Not provider-billed, so no
+        // feature gate — standard auth-scoped CRUD that feeds the dialer.
+        Route::get('/numbers/contacts', \App\Livewire\Contacts::class)->name('numbers.contacts');
         Route::get('/referrals', Referrals::class)->name('referrals');
 
         // NaaraCredits rewards area (loyalty module) — opt-in earning.

@@ -5,11 +5,17 @@
         You're charged per minute from your wallet, and unused minutes come straight back.
     </p>
 
-    {{-- Back to the Numbers hub. --}}
-    <a href="{{ route('numbers') }}" wire:navigate
-       class="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline dark:text-teal-300">
-        <x-icon name="chevron-right" class="h-4 w-4 rotate-180" /> Back to Numbers
-    </a>
+    {{-- Nav: back to Numbers, and the contact book. --}}
+    <div class="mb-6 flex items-center justify-between">
+        <a href="{{ route('numbers') }}" wire:navigate
+           class="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline dark:text-teal-300">
+            <x-icon name="chevron-right" class="h-4 w-4 rotate-180" /> Back to Numbers
+        </a>
+        <a href="{{ route('numbers.contacts') }}" wire:navigate
+           class="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline dark:text-teal-300">
+            <x-icon name="id-card" class="h-4 w-4" /> Contacts
+        </a>
+    </div>
 
     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]"
          x-data="{ press(d) { $wire.destination = ($wire.destination || '') + d; }, back() { $wire.destination = ($wire.destination || '').slice(0, -1); } }">
@@ -70,6 +76,28 @@
             We reserve your funded minutes before dialling and refund whatever you don't use.
         </p>
     </div>
+
+    {{-- Contacts quick-pick (Part C) — tap a saved name to fill the field. --}}
+    @if ($contacts->isNotEmpty())
+        <div class="mt-6" x-data="{ fill(n) { $wire.destination = n; } }">
+            <div class="mb-2 flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Your contacts</h2>
+                <a href="{{ route('numbers.contacts') }}" wire:navigate class="text-xs font-medium text-primary hover:underline dark:text-teal-300">Manage</a>
+            </div>
+            <div class="flex gap-2 overflow-x-auto pb-1">
+                @foreach ($contacts as $contact)
+                    <button type="button" wire:key="dc-{{ $contact->id }}"
+                            x-on:click="fill('{{ $contact->phone_number }}')"
+                            class="flex shrink-0 flex-col items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2.5 text-center transition hover:border-primary/40 hover:bg-slate-50 dark:border-[#2D4060] dark:hover:bg-[#243352]">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold uppercase text-primary dark:bg-primary/20 dark:text-teal-300">
+                            {{ \Illuminate\Support\Str::of($contact->name)->trim()->substr(0, 2) }}
+                        </span>
+                        <span class="max-w-[4.5rem] truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">{{ $contact->name }}</span>
+                    </button>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     {{-- Live-call panel — shown by the dialer JS once a call is placed. --}}
     <div data-dialer-panel class="hidden fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg p-4">
