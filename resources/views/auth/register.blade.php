@@ -28,7 +28,7 @@
                 </ul>
             </div>
         @endif
-        <x-auth.google-button />
+        <x-auth.social-buttons />
         <div>
             <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Name</label>
             <input type="text" name="name" value="{{ old('name') }}" required autofocus

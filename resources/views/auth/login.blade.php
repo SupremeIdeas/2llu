@@ -7,7 +7,7 @@
                 <x-icon name="x" class="mt-0.5 h-4 w-4 shrink-0" /> <span>{{ $errors->first() }}</span>
             </div>
         @endif
-        <x-auth.google-button />
+        <x-auth.social-buttons />
         <div>
             <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Email</label>
             <input type="email" name="email" value="{{ old('email') }}" required autofocus

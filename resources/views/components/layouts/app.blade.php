@@ -49,6 +49,7 @@
     @php($brandCss = \App\Support\BrandSettings::themeCss())
     @if ($brandCss)<style id="brand-vars">{!! $brandCss !!}</style>@endif
     @stack('head')
+    @include('partials.tracking')
 </head>
 <body class="min-h-screen bg-[#F8F9FA] text-[#0F172A] antialiased dark:bg-navy dark:text-slate-100">
     @include('partials.icon-sprite')

@@ -48,6 +48,22 @@
         </div>
     @endif
 
+    {{-- Social links (owner request): shown only for platforms the admin has
+         configured — hidden entirely until any account exists. --}}
+    @php($socials = \App\Support\SocialLinks::forFooter())
+    @if (! empty($socials))
+        <div class="relative z-10 border-t border-white/10">
+            <div class="mx-auto flex max-w-6xl items-center justify-center gap-3 px-4 py-4">
+                @foreach ($socials as $s)
+                    <a href="{{ $s['url'] }}" target="_blank" rel="noopener" aria-label="{{ $s['label'] }}"
+                       class="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white">
+                        <x-service-icon :slug="$s['icon']" class="h-4 w-4" />
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <div class="relative z-10 border-t border-white/10">
         <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-5 text-xs text-slate-500 sm:flex-row">
             <span>&copy; {{ date('Y') }} {{ $brand }}. A product of <span class="text-slate-300">Supreme Ideas Agency</span>. All rights reserved.</span>

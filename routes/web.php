@@ -170,6 +170,8 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/kyc', \App\Livewire\Admin\KycReview::class)->name('kyc');
             Route::get('/merchants', \App\Livewire\Admin\Merchants::class)->name('merchants');
             Route::get('/users', \App\Livewire\Admin\Users::class)->name('users');
+            // Growth stack: social links, tracking pixels, social sign-in guides.
+            Route::get('/integrations', \App\Livewire\Admin\Integrations::class)->name('integrations');
             Route::get('/deletions', \App\Livewire\Admin\AccountDeletions::class)->name('deletions');
             Route::get('/support-agent', \App\Livewire\Admin\SupportAgent::class)->name('support-agent');
         });

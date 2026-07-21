@@ -136,6 +136,15 @@ class AppServiceProvider extends ServiceProvider
             \App\Listeners\ReturnMerchantEarnings::class,
         );
 
+        // Extend Socialite with the extra sign-in providers (owner request).
+        // Google/Facebook/Twitter are core drivers; Apple/Microsoft/Discord are
+        // registered here via their SocialiteProviders packages.
+        \Illuminate\Support\Facades\Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
+            $event->extendSocialite('apple', \SocialiteProviders\Apple\Provider::class);
+            $event->extendSocialite('microsoft', \SocialiteProviders\Microsoft\Provider::class);
+            $event->extendSocialite('discord', \SocialiteProviders\Discord\Provider::class);
+        });
+
         // Overlay any admin-saved API credentials on top of config() so every
         // service keeps reading config('services.*') unchanged and providers
         // flip Active the moment a key is saved (blueprint Section 17.4, money
