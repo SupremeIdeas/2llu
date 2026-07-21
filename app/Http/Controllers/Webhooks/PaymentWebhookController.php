@@ -53,13 +53,22 @@ class PaymentWebhookController extends Controller
 
         $event = $svc->parseWebhook($request);
         if ($event !== null && $event->isSuccessful() && $event->userId !== null) {
-            CreditWalletJob::dispatch(
-                $event->gateway,
-                $event->reference,
-                $event->userId,
-                $event->amount,
-                $event->currency,
-            );
+            // Local-currency deposit: if the user paid in a non-USD/NGN currency,
+            // credit the USD amount LOCKED at initiation (TopUpIntent) — never the
+            // gateway's reported figure — so the wallet is credited exactly what we
+            // quoted. USD/NGN deposits have no intent and credit as reported.
+            $intent = \App\Models\TopUpIntent::where('gateway', $event->gateway)
+                ->where('reference', $event->reference)->first();
+
+            [$amount, $currency] = $intent
+                ? [(float) $intent->usd_amount, 'USD']
+                : [$event->amount, $event->currency];
+
+            CreditWalletJob::dispatch($event->gateway, $event->reference, $event->userId, $amount, $currency);
+
+            if ($intent && $intent->status !== 'credited') {
+                $intent->update(['status' => 'credited', 'credited_at' => now()]);
+            }
         }
 
         $log->update(['processed' => true, 'processed_at' => now()]);

@@ -150,9 +150,17 @@
                     @endif
 
                     <form wire:submit="topUp" class="space-y-4">
-                        {{-- Currency pills --}}
-                        <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Currency">
-                            @foreach (['NGN' => 'Naira (NGN)', 'USD' => 'Dollar (USD)'] as $cur => $curLabel)
+                        {{-- Pay-in currency (owner request): USD/NGN credit the
+                             wallet directly; your local currency is converted to a
+                             USD credit locked at the live rate. --}}
+                        @php
+                            $__payOptions = ['NGN' => 'Naira (NGN)', 'USD' => 'Dollar (USD)'];
+                            if (! in_array($displayCurrency, ['USD', 'NGN'], true)) {
+                                $__payOptions[$displayCurrency] = ($currencyOptions[$displayCurrency][1] ?? $displayCurrency).' ('.$displayCurrency.')';
+                            }
+                        @endphp
+                        <div class="grid grid-cols-{{ count($__payOptions) }} gap-2" role="radiogroup" aria-label="Pay in">
+                            @foreach ($__payOptions as $cur => $curLabel)
                                 <button type="button" wire:key="cur-{{ $cur }}" wire:click="$set('currency', '{{ $cur }}')"
                                         role="radio" aria-checked="{{ $currency === $cur ? 'true' : 'false' }}"
                                         @class([
@@ -162,6 +170,11 @@
                                         ])>{{ $curLabel }}</button>
                             @endforeach
                         </div>
+                        @if (! in_array($currency, ['USD', 'NGN'], true) && is_numeric($amount) && $amount > 0)
+                            <p class="-mt-2 text-xs text-slate-400 dark:text-slate-500">
+                                ≈ ${{ number_format(app(\App\Services\Pricing\CurrencyService::class)->toUsd((float) $amount, $currency), 2) }} credited to your wallet (live rate, locked at checkout).
+                            </p>
+                        @endif
 
                         {{-- Quick cash blocks --}}
                         <div>

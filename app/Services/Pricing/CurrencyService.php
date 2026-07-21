@@ -135,6 +135,17 @@ class CurrencyService
         return round($usd * $this->rate($currency), $decimals);
     }
 
+    /**
+     * Convert a LOCAL-currency amount back to USD (the wallet's settlement
+     * currency), rounded to cents. Used to lock the USD credit at top-up time.
+     */
+    public function toUsd(float $localAmount, string $currency): float
+    {
+        $rate = $this->rate($currency);
+
+        return $rate > 0 ? round($localAmount / $rate, 2) : round($localAmount, 2);
+    }
+
     /** Format a USD amount in a display currency, e.g. "£15.80" or "₦18,000". */
     public function format(float $usd, string $currency): string
     {

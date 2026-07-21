@@ -34,7 +34,9 @@ class Wallet extends Component
     #[Validate('required|in:paystack,flutterwave,stripe,paypal,binance,nowpayments,cryptomus,coinpayments,payssion')]
     public string $gateway = 'paystack';
 
-    #[Validate('required|in:NGN,USD')]
+    /** The currency the user PAYS in. USD/NGN credit their wallet column directly;
+     *  any other supported currency is converted to a locked USD credit. */
+    #[Validate('required|in:USD,NGN,GHS,KES,ZAR,GBP,EUR,CAD,INR')]
     public string $currency = 'NGN';
 
     public ?string $error = null;
@@ -73,9 +75,12 @@ class Wallet extends Component
         $this->validate();
         $this->error = null;
 
+        $user = auth()->user();
+        $amount = (float) $this->amount;
+        $currency = strtoupper($this->currency);
+
         try {
-            $result = app("pay.{$this->gateway}")
-                ->initialize(auth()->user(), (float) $this->amount, $this->currency);
+            $result = app("pay.{$this->gateway}")->initialize($user, $amount, $currency);
         } catch (\Throwable $e) {
             $this->error = 'We could not start the payment. Please try again.';
             $this->dispatch('nx-toast', variant: 'hero', type: 'error',
@@ -83,6 +88,25 @@ class Wallet extends Component
                 message: 'We couldn’t reach the payment provider — you were not charged. Please try again.');
 
             return null;
+        }
+
+        // Local-currency deposit (owner request, money-safe): USD and NGN credit
+        // their wallet column directly (unchanged). Any OTHER currency is
+        // converted to a USD credit LOCKED here at the live rate — recorded on a
+        // TopUpIntent so the webhook credits exactly this, never a figure
+        // re-derived from the gateway's reported currency.
+        if (! in_array($currency, ['USD', 'NGN'], true) && ! empty($result['reference'])) {
+            $fx = app(\App\Services\Pricing\CurrencyService::class);
+            \App\Models\TopUpIntent::create([
+                'user_id' => $user->id,
+                'gateway' => $this->gateway,
+                'reference' => $result['reference'],
+                'charge_amount' => $amount,
+                'charge_currency' => $currency,
+                'usd_amount' => $fx->toUsd($amount, $currency),
+                'rate_usd_to_local' => $fx->rate($currency),
+                'status' => 'pending',
+            ]);
         }
 
         return redirect()->away($result['redirect_url']);
