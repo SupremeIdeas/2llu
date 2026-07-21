@@ -39,13 +39,23 @@ class MerchantTest extends TestCase
         return $u;
     }
 
-    private function kybVerified(): User
+    /** KYB-verified only (NOT yet eligible to migrate). */
+    private function kybOnly(): User
     {
         $user = User::factory()->create(['is_active' => true]);
         KycVerification::create([
             'user_id' => $user->id, 'level' => 3, 'provider' => 'manual',
             'status' => KycVerification::APPROVED, 'reference' => 'kyb:'.$user->id,
         ]);
+
+        return $user;
+    }
+
+    /** KYB-verified AND eligible (fast-route enrollment marked paid). */
+    private function kybVerified(): User
+    {
+        $user = $this->kybOnly();
+        $user->forceFill(['merchant_enrollment_paid_at' => now()])->save();
 
         return $user;
     }
@@ -129,6 +139,53 @@ class MerchantTest extends TestCase
             ->call('apply')
             ->assertSet('error', null);
         $this->assertDatabaseHas('merchants', ['owner_user_id' => $verified->id, 'business_name' => 'Verified Co']);
+    }
+
+    public function test_a_kyb_user_who_is_not_eligible_cannot_apply(): void
+    {
+        $this->expectException(MerchantException::class);
+        $this->service()->apply($this->kybOnly(), ['business_name' => 'Acme']);
+    }
+
+    public function test_paying_the_fast_route_fee_unlocks_eligibility(): void
+    {
+        $user = $this->kybOnly();
+        app(\App\Services\Wallet\WalletService::class)->credit($user, 100, 'USD', ['reference' => 'seed:'.$user->id]);
+
+        $this->service()->payEnrollment($user->fresh());
+
+        $this->assertTrue($this->service()->eligibility($user->fresh())['eligible']);
+        // The $50 fee left the wallet exactly once.
+        $this->assertEqualsWithDelta(50.0, (float) $user->fresh()->wallet->usd_balance, 0.001);
+    }
+
+    public function test_the_fast_route_needs_a_funded_wallet(): void
+    {
+        $user = $this->kybOnly(); // empty wallet
+
+        $this->expectException(MerchantException::class);
+        $this->service()->payEnrollment($user);
+    }
+
+    public function test_the_spend_threshold_unlocks_eligibility(): void
+    {
+        $user = $this->kybOnly();
+        // Simulate lifetime spend by crediting then debiting (total_spent grows).
+        $wallet = app(\App\Services\Wallet\WalletService::class);
+        $wallet->credit($user, 100, 'USD', ['reference' => 'c:'.$user->id]);
+        $wallet->debit($user, 80, 'USD', ['reference' => 'd:'.$user->id]); // total_spent = 80 >= 75
+
+        $this->assertTrue($this->service()->eligibility($user->fresh())['eligible']);
+    }
+
+    public function test_the_referral_threshold_unlocks_eligibility(): void
+    {
+        \App\Models\Setting::setValue(\App\Support\MerchantSettings::MIN_REFERRALS, 2, 'merchants');
+        $user = $this->kybOnly();
+        \App\Models\Referral::create(['referrer_id' => $user->id, 'referred_id' => User::factory()->create()->id]);
+        \App\Models\Referral::create(['referrer_id' => $user->id, 'referred_id' => User::factory()->create()->id]);
+
+        $this->assertTrue($this->service()->eligibility($user->fresh())['eligible']);
     }
 
     public function test_admin_merchants_page_is_admin_only_and_approves(): void

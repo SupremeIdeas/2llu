@@ -24,6 +24,12 @@ class Merchants extends Component
 
     public $resellerMargin = 10;
 
+    public $minSpend = 75;
+
+    public $enrollmentFee = 50;
+
+    public $minReferrals = 1000;
+
     public ?string $saved = null;
 
     public function mount(): void
@@ -31,16 +37,30 @@ class Merchants extends Component
         abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
         $this->enabled = MerchantSettings::enabled();
         $this->resellerMargin = MerchantSettings::resellerMarginPct();
+        $this->minSpend = MerchantSettings::minSpendUsd();
+        $this->enrollmentFee = MerchantSettings::enrollmentFeeUsd();
+        $this->minReferrals = MerchantSettings::minReferrals();
     }
 
     public function save(): void
     {
         abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
-        $this->validate(['resellerMargin' => 'required|numeric|min:0|max:500']);
+        $this->validate([
+            'resellerMargin' => 'required|numeric|min:0|max:500',
+            'minSpend' => 'required|numeric|min:0|max:1000000',
+            'enrollmentFee' => 'required|numeric|min:0|max:1000000',
+            'minReferrals' => 'required|integer|min:0|max:10000000',
+        ]);
 
         Setting::setValue(MerchantSettings::FLAG, $this->enabled, 'merchants');
         Setting::setValue(MerchantSettings::MARGIN, (float) $this->resellerMargin, 'merchants');
-        Auditor::log('merchants.settings_updated', null, null, ['enabled' => $this->enabled, 'margin' => $this->resellerMargin]);
+        Setting::setValue(MerchantSettings::MIN_SPEND, (float) $this->minSpend, 'merchants');
+        Setting::setValue(MerchantSettings::ENROLLMENT_FEE, (float) $this->enrollmentFee, 'merchants');
+        Setting::setValue(MerchantSettings::MIN_REFERRALS, (int) $this->minReferrals, 'merchants');
+        Auditor::log('merchants.settings_updated', null, null, [
+            'enabled' => $this->enabled, 'margin' => $this->resellerMargin,
+            'min_spend' => $this->minSpend, 'enrollment_fee' => $this->enrollmentFee, 'min_referrals' => $this->minReferrals,
+        ]);
 
         $this->saved = 'Merchant settings saved.';
         $this->dispatch('nx-toast', type: 'success', message: 'Merchant settings saved.');

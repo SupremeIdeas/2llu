@@ -6,6 +6,7 @@ use App\Models\KycVerification;
 use App\Models\Merchant;
 use App\Models\User;
 use App\Services\Kyc\KycService;
+use App\Services\Wallet\WalletService;
 use App\Support\Auditor;
 use App\Support\MerchantSettings;
 use Illuminate\Support\Facades\DB;
@@ -20,13 +21,70 @@ use Illuminate\Support\Str;
  */
 class MerchantService
 {
-    public function __construct(private KycService $kyc)
+    public function __construct(private KycService $kyc, private WalletService $wallet)
     {
     }
 
     /**
-     * Apply to become a merchant. Requires the programme to be on and the user
-     * KYB-verified (L3). Returns the existing application if one is in flight.
+     * The three unlock paths (ROADMAP §Layer 3) — a user qualifies by meeting
+     * ANY one. Returned as structured criteria so the UI can show progress.
+     *
+     * @return array{eligible: bool, spend: array, enrollment: array, referrals: array}
+     */
+    public function eligibility(User $user): array
+    {
+        $spent = (float) ($user->wallet?->total_spent ?? 0);
+        $referrals = $user->referralsMade()->count();
+        $paidEnrollment = $user->merchant_enrollment_paid_at !== null;
+
+        $spendMet = $spent >= MerchantSettings::minSpendUsd();
+        $referralsMet = $referrals >= MerchantSettings::minReferrals();
+
+        return [
+            'eligible' => $spendMet || $paidEnrollment || $referralsMet,
+            'spend' => ['met' => $spendMet, 'current' => round($spent, 2), 'required' => MerchantSettings::minSpendUsd()],
+            'enrollment' => ['met' => $paidEnrollment, 'fee' => MerchantSettings::enrollmentFeeUsd()],
+            'referrals' => ['met' => $referralsMet, 'current' => $referrals, 'required' => MerchantSettings::minReferrals()],
+        ];
+    }
+
+    /**
+     * Fast-route: pay the one-time enrollment fee from the wallet. It's a service
+     * fee (not a product) — charged atomically and idempotently, never through
+     * PricingEngine. Requires a funded wallet; a short balance surfaces cleanly so
+     * the user tops up first.
+     *
+     * @throws MerchantException
+     */
+    public function payEnrollment(User $user): User
+    {
+        if (! MerchantSettings::enabled()) {
+            throw new MerchantException('The merchant programme is not open right now.');
+        }
+        if ($user->merchant_enrollment_paid_at !== null) {
+            return $user; // already paid — idempotent
+        }
+
+        $fee = MerchantSettings::enrollmentFeeUsd();
+        try {
+            $this->wallet->debit($user, $fee, 'USD', [
+                'reference' => 'merchant_enrollment:'.$user->id,
+                'description' => 'Merchant fast-route enrollment',
+            ]);
+        } catch (\App\Exceptions\InsufficientBalanceException $e) {
+            throw new MerchantException('Top up your wallet with at least $'.number_format($fee, 2).' to use the fast route.');
+        }
+
+        $user->forceFill(['merchant_enrollment_paid_at' => now()])->save();
+        Auditor::log('merchant.enrollment_paid', 'User', $user->id, ['fee' => $fee]);
+
+        return $user;
+    }
+
+    /**
+     * Apply to become a merchant. Requires the programme on, KYB (L3)
+     * verification, AND that the user has unlocked eligibility (spend / paid
+     * enrollment / referrals). Returns an existing application if one is in flight.
      *
      * @param  array{business_name: string, brand_color?: string|null}  $data
      *
@@ -39,6 +97,9 @@ class MerchantService
         }
         if (! $this->kyc->hasLevel($user, KycVerification::L3)) {
             throw new MerchantException('Complete business (KYB) verification first.');
+        }
+        if (! $this->eligibility($user)['eligible']) {
+            throw new MerchantException('Unlock membership first: spend the minimum, pay the one-time enrollment, or reach the referral target.');
         }
 
         $existing = Merchant::query()->where('owner_user_id', $user->id)

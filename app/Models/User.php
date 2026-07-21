@@ -64,6 +64,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'data_export_ready_at' => 'datetime',
             'deletion_requested_at' => 'datetime',
             'deletion_approved_at' => 'datetime',
+            'merchant_enrollment_paid_at' => 'datetime',
         ];
     }
 

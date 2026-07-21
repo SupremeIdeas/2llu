@@ -15,6 +15,13 @@ class MerchantSettings
 
     public const MARGIN = 'merchants.reseller_margin_pct';
 
+    // Eligibility to migrate to a merchant — meet ANY one (ROADMAP §Layer 3).
+    public const MIN_SPEND = 'merchants.min_spend_usd';        // lifetime spend
+
+    public const ENROLLMENT_FEE = 'merchants.enrollment_fee_usd'; // one-time fast route
+
+    public const MIN_REFERRALS = 'merchants.min_referrals';    // referred users
+
     public static function enabled(): bool
     {
         return (bool) Setting::getValue(self::FLAG, false);
@@ -24,5 +31,20 @@ class MerchantSettings
     public static function resellerMarginPct(): float
     {
         return (float) Setting::getValue(self::MARGIN, 10.0);
+    }
+
+    public static function minSpendUsd(): float
+    {
+        return (float) Setting::getValue(self::MIN_SPEND, 75.0);
+    }
+
+    public static function enrollmentFeeUsd(): float
+    {
+        return (float) Setting::getValue(self::ENROLLMENT_FEE, 50.0);
+    }
+
+    public static function minReferrals(): int
+    {
+        return (int) Setting::getValue(self::MIN_REFERRALS, 1000);
     }
 }

@@ -28,6 +28,33 @@
             @error('resellerMargin') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             <p class="mt-1 text-[11px] text-slate-400">Added over retail to form the merchant price. The merchant earns this; you keep your usual profit.</p>
         </div>
+
+        {{-- Eligibility to migrate — a user must meet ANY one. --}}
+        <div class="mt-6 border-t border-slate-100 pt-5 dark:border-[#243352]">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Eligibility to migrate (meet any one)</p>
+            <div class="mt-3 grid gap-4 sm:grid-cols-3">
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Min lifetime spend (USD)</label>
+                    <input type="number" step="1" min="0" wire:model="minSpend"
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @error('minSpend') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Fast-route fee (USD)</label>
+                    <input type="number" step="1" min="0" wire:model="enrollmentFee"
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @error('enrollmentFee') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Min referred users</label>
+                    <input type="number" step="1" min="0" wire:model="minReferrals"
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @error('minReferrals') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+            </div>
+            <p class="mt-2 text-[11px] text-slate-400">A user unlocks the programme by hitting the spend threshold, paying the one-time fast-route fee from their wallet, or reaching the referral target.</p>
+        </div>
+
         <button type="button" wire:click="save" wire:loading.attr="disabled" wire:target="save"
                 class="mt-5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">Save settings</button>
     </div>

@@ -52,6 +52,20 @@ class BecomeMerchant extends Component
         $this->dispatch('nx-toast', type: 'success', message: 'Business details submitted for verification.');
     }
 
+    public function payEnrollment(MerchantService $merchants): void
+    {
+        $this->error = null;
+        try {
+            $merchants->payEnrollment(Auth::user());
+        } catch (MerchantException $e) {
+            $this->error = $e->getMessage();
+
+            return;
+        }
+
+        $this->dispatch('nx-toast', type: 'success', message: 'Fast-route enrollment paid — you can apply now.');
+    }
+
     public function apply(MerchantService $merchants): void
     {
         $this->error = null;
@@ -74,14 +88,16 @@ class BecomeMerchant extends Component
         $this->dispatch('nx-toast', type: 'success', message: 'Application submitted — we’ll review it shortly.');
     }
 
-    public function render(KycService $kyc)
+    public function render(KycService $kyc, MerchantService $merchants)
     {
         $user = Auth::user();
+        $kybVerified = $kyc->hasLevel($user, KycVerification::L3);
 
         return view('livewire.become-merchant', [
             'programmeOpen' => MerchantSettings::enabled(),
-            'kybVerified' => $kyc->hasLevel($user, KycVerification::L3),
+            'kybVerified' => $kybVerified,
             'kybAttempt' => $kyc->latest($user, KycVerification::L3),
+            'eligibility' => $kybVerified ? $merchants->eligibility($user) : null,
             'merchant' => Merchant::where('owner_user_id', $user->id)->latest('id')->first(),
         ]);
     }
