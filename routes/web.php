@@ -72,6 +72,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/checkout/{plan}', Checkout::class)->name('checkout');
         Route::get('/wallet', Wallet::class)->name('wallet');
         Route::get('/numbers', GetNumber::class)->name('numbers');
+        // Call forwarding for permanent numbers (Live Voice — Part A). The
+        // component 404s unless Twilio is Active (voice rides the same keys).
+        Route::get('/numbers/forwarding', \App\Livewire\CallForwarding::class)->name('numbers.forwarding');
         Route::get('/referrals', Referrals::class)->name('referrals');
 
         // NaaraCredits rewards area (loyalty module) — opt-in earning.
@@ -175,6 +178,11 @@ Route::middleware(['admin', 'throttle:admin'])
 // delivery (blueprint Section 8.2).
 Route::post('/webhooks/getatext', GetatextWebhookController::class)
     ->name('webhooks.getatext');
+
+// Twilio inbound-call webhook (Live Voice — Part A): signature-verified, returns
+// TwiML that forwards the call to the user's configured target.
+Route::post('/webhooks/twilio/voice', \App\Http\Controllers\Webhooks\TwilioVoiceWebhookController::class)
+    ->name('webhooks.twilio.voice');
 
 // Payment gateway webhooks (blueprint Section 19.3): signature-verified,
 // idempotent wallet credit.

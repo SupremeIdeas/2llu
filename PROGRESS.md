@@ -9,6 +9,33 @@
 
 ## DONE
 
+### 🔨 Live Voice (Twilio) — Part A: Call Forwarding — built 2026-07-21
+Inbound calls to a permanent NaaraSim (Twilio) number forward to the user's real
+phone via signature-verified TwiML. Feature-gated on the existing Twilio provider
+status (voice rides the same keys — no new toggle); the whole screen 404s /
+hides until Twilio is Active.
+- `VoiceProviderInterface` (sibling to NumberProviderInterface) implemented on
+  `TwilioService`: attach/detach the number's inbound Voice URL, verify the
+  X-Twilio-Signature (HMAC-SHA1 of URL + sorted params, constant-time), build the
+  `<Dial>` TwiML (caller-ID preserved + no-answer fallback), and an outbound
+  `bridgeCall` (for Part B).
+- `call_forwarding_rules` + model (one rule per number). `TwilioVoiceWebhookController`
+  verifies BEFORE trusting, resolves the rule by the called number, returns the
+  dial TwiML (or a polite reject), and queues call logging. `call_events` +
+  `LogCallEventJob`; the VoiceUrl config runs in `SyncVoiceWebhookJob` (queued,
+  retry+backoff — rule 8). Customer `/numbers/forwarding` UI (set/edit/turn off),
+  linked from the Numbers page only when Twilio is Active. `CallForwardingTest` (7).
+- **Acceptance check (real inbound call → forward) needs live Twilio sandbox keys**
+  — deferred per CLAUDE.md (real keys go in last). Code follows the documented
+  Twilio Voice API + is signature-safe and gated. **Part B (in-browser dialer) +
+  Part C (contact book) are the next steps.**
+
+### ✅ Number catalogue — full countries + services — built 2026-07-21
+Replaced the ~6 hard-coded countries/services with the complete catalogue
+(`NumberCatalogue`: ~120-country + ~115-service static base, extended by a live
+`numbers:catalogue-sync` from 5sim, scheduled weekly). GetNumber + the Wizard now
+source both pickers (searchable) from it. `NumberCatalogueTest` (5).
+
 ### 🔨 Merchant / reseller system (ROADMAP §Layer 3) — IN PROGRESS 2026-07-21
 The co-branded reseller layer. Off by default (`merchants.enabled`).
 - **3.1 Onboarding** ✅ — `merchants` table + `Merchant` model; `users.merchant_id`

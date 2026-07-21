@@ -4,6 +4,8 @@ namespace App\Services\SMS\Numbers;
 
 use App\Exceptions\OutOfStockException;
 use App\Services\SMS\NumberProviderInterface;
+use App\Services\SMS\VoiceProviderInterface;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -14,12 +16,84 @@ use Illuminate\Support\Facades\Http;
  * Twilio sandbox at go-live (rule 1.1). When no key is set every method degrades
  * safely (empty search / OutOfStock) so the platform runs fine without it.
  */
-class TwilioService implements NumberProviderInterface
+class TwilioService implements NumberProviderInterface, VoiceProviderInterface
 {
     private function configured(): bool
     {
         return ! empty(config('services.twilio.account_sid'))
             && ! empty(config('services.twilio.auth_token'));
+    }
+
+    // ── Voice (Live Voice — Part A) ─────────────────────────────────────────
+
+    public function available(): bool
+    {
+        return $this->configured();
+    }
+
+    public function attachVoiceWebhook(string $numberSid, string $voiceUrl): void
+    {
+        if (! $this->configured()) {
+            return;
+        }
+        $this->client()->asForm()
+            ->post('/IncomingPhoneNumbers/'.$numberSid.'.json', ['VoiceUrl' => $voiceUrl, 'VoiceMethod' => 'POST'])
+            ->throw();
+    }
+
+    public function detachVoiceWebhook(string $numberSid): void
+    {
+        if (! $this->configured()) {
+            return;
+        }
+        $this->client()->asForm()
+            ->post('/IncomingPhoneNumbers/'.$numberSid.'.json', ['VoiceUrl' => ''])
+            ->throw();
+    }
+
+    /**
+     * Twilio signs each request: X-Twilio-Signature =
+     * base64(HMAC-SHA1(URL + sorted POST key/values, AuthToken)). Constant-time.
+     */
+    public function verifyWebhook(Request $request, string $url): bool
+    {
+        $signature = $request->header('X-Twilio-Signature');
+        if (! is_string($signature) || ! $this->configured()) {
+            return false;
+        }
+
+        $params = $request->post();
+        ksort($params);
+        $data = $url;
+        foreach ($params as $key => $value) {
+            $data .= $key.$value;
+        }
+
+        $expected = base64_encode(hash_hmac('sha1', $data, (string) config('services.twilio.auth_token'), true));
+
+        return hash_equals($expected, $signature);
+    }
+
+    public function forwardTwiml(string $to, ?string $callerId = null, ?string $fallback = null): string
+    {
+        $caller = $callerId ? ' callerId="'.htmlspecialchars($callerId, ENT_QUOTES).'"' : '';
+        $dial = '<Dial'.$caller.' timeout="20"><Number>'.htmlspecialchars($to, ENT_QUOTES).'</Number></Dial>';
+        if ($fallback) {
+            $dial .= '<Dial'.$caller.'><Number>'.htmlspecialchars($fallback, ENT_QUOTES).'</Number></Dial>';
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8"?><Response>'.$dial.'</Response>';
+    }
+
+    public function bridgeCall(string $from, string $to, string $twimlUrl): string
+    {
+        if (! $this->configured()) {
+            throw new OutOfStockException('Twilio is not configured.');
+        }
+
+        return (string) $this->client()->asForm()
+            ->post('/Calls.json', ['To' => $to, 'From' => $from, 'Url' => $twimlUrl])
+            ->throw()->json('sid');
     }
 
     private function client()
