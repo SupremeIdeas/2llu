@@ -90,6 +90,18 @@ class DeveloperApiEndpointsTest extends TestCase
         $this->getJson('/api/v1/catalogue')->assertUnauthorized();
     }
 
+    public function test_api_errors_are_json_even_without_an_accept_header(): void
+    {
+        // A client that forgets Accept: application/json must still get a JSON
+        // 401 — never an HTML 302 redirect to the login page.
+        $this->enable();
+        $res = $this->get('/api/v1/catalogue'); // no Accept header
+
+        $res->assertUnauthorized();
+        $res->assertHeader('content-type', 'application/json');
+        $res->assertJson(['message' => 'Unauthenticated.']);
+    }
+
     public function test_a_revoked_client_is_forbidden(): void
     {
         $this->enable();

@@ -59,6 +59,14 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Support\ErrorLogger::capture($e);
         });
 
+        // The Developer API (ROADMAP §Layer 2) is JSON-only: every error on an
+        // /api/* route renders as JSON — including an unauthenticated request —
+        // so a client is never redirected to an HTML login page (a 401 they can
+        // act on, not a confusing 302). Applies regardless of the Accept header.
+        $exceptions->shouldRenderJsonWhen(
+            fn (\Illuminate\Http\Request $request, \Throwable $e) => $request->is('api/*') || $request->expectsJson(),
+        );
+
         // Never show users the raw "419 Page Expired". A stale CSRF token (an
         // old tab, the back button, a slow connection) surfaces as a 419
         // HttpException; we auto-recover by sending them back to the form they
