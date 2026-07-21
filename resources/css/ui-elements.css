@@ -863,7 +863,7 @@
 @keyframes nx-gradient-pan { 0%, 100% { background-position: 0% center; } 50% { background-position: 100% center; } }
 @media (prefers-reduced-motion: reduce) { .nx-gradient-text { animation: none; } }
 
-/* --- Wizard launcher: glowing brand-gradient edge --------------------------- */
-.nx-wiz-glow { animation: nx-wiz-glow 3.4s ease-in-out infinite; }
-@keyframes nx-wiz-glow { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.06); } }
-@media (prefers-reduced-motion: reduce) { .nx-wiz-glow { animation: none; } }
+/* --- Wizard launcher: refined brand-gradient edge (subtle, professional) ---- */
+.nx-wiz-glow { animation: nx-wiz-glow 4.5s ease-in-out infinite; }
+@keyframes nx-wiz-glow { 0%, 100% { opacity: 0.22; } 50% { opacity: 0.4; } }
+@media (prefers-reduced-motion: reduce) { .nx-wiz-glow { animation: none; opacity: 0.28; } }

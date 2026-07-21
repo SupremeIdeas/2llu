@@ -32,7 +32,9 @@ class MarketingSiteTest extends TestCase
     public function test_the_landing_page_renders_the_brand_copy(): void
     {
         $this->get('/')->assertOk()
-            ->assertSee('Land Anywhere. Connect Instantly.')
+            // The hero headline's last word is wrapped in a gradient <span>, so
+            // assert the visible text (assertSeeText strips the inline markup).
+            ->assertSeeText('Land Anywhere. Connect Instantly.')
             ->assertSee('Connected in Three Steps')
             ->assertSee('Why Travelers Choose NaaraSim')
             ->assertSee('Your Next Trip Starts Here')
@@ -53,8 +55,8 @@ class MarketingSiteTest extends TestCase
         ]);
 
         $this->get('/')->assertOk()
-            ->assertSee('Fly Now. Connect Faster.')
-            ->assertDontSee('Land Anywhere. Connect Instantly.');
+            ->assertSeeText('Fly Now. Connect Faster.')
+            ->assertDontSeeText('Land Anywhere. Connect Instantly.');
     }
 
     public function test_a_hidden_section_disappears_from_the_public_page(): void
@@ -80,7 +82,7 @@ class MarketingSiteTest extends TestCase
             ->call('save')
             ->assertHasNoErrors();
 
-        $this->get('/')->assertSee('Custom Headline From The Editor');
+        $this->get('/')->assertSeeText('Custom Headline From The Editor');
     }
 
     public function test_the_home_hero_renders_the_webgl_planet_with_a_fallback(): void

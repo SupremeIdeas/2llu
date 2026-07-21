@@ -22,10 +22,11 @@
         @php $naaraFavicon = \App\Support\BrandSettings::favicon(); @endphp
         <button type="button" wire:click="toggle"
                 aria-label="Open the NaaraSim helper"
-                class="group relative rounded-full p-[2px] shadow-xl shadow-primary/30 transition hover:shadow-primary/50">
-            {{-- The glowing gradient edge + a blurred halo behind it. --}}
-            <span class="absolute inset-0 rounded-full bg-gradient-to-r from-primary via-accent to-primary" aria-hidden="true"></span>
-            <span class="nx-wiz-glow pointer-events-none absolute -inset-1 -z-10 rounded-full bg-gradient-to-r from-primary via-accent to-primary blur-md" aria-hidden="true"></span>
+                class="group relative rounded-full p-px shadow-lg shadow-primary/15 transition hover:shadow-primary/25">
+            {{-- A fine gradient edge + a restrained, soft halo (professional, not
+                 heavy). Most of the pill is a clean solid surface. --}}
+            <span class="absolute inset-0 rounded-full bg-gradient-to-r from-primary/70 via-accent/70 to-primary/70" aria-hidden="true"></span>
+            <span class="nx-wiz-glow pointer-events-none absolute -inset-px -z-10 rounded-full bg-gradient-to-r from-primary via-accent to-primary blur-[6px]" aria-hidden="true"></span>
             <span class="relative flex items-center gap-2 rounded-full bg-white px-3.5 py-2.5 dark:bg-[#101d33]">
                 <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full">
                     @if ($naaraFavicon)

@@ -27,9 +27,16 @@
     @endif
     <div class="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-16 text-center sm:pt-24 {{ ! empty($s['image']) ? 'text-white' : '' }}">
         <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $s['eyebrow'] }}</p>
+        @php
+            // Accent only the LAST word of the headline with the gradient — the
+            // rest stays solid so it reads clean and professional.
+            $hlWords = preg_split('/\s+/', trim($s['headline']));
+            $hlLast = array_pop($hlWords) ?: '';
+            $hlLead = implode(' ', $hlWords);
+        @endphp
         <h1 data-reveal style="--reveal-delay:.08s"
-            class="mx-auto mt-4 max-w-3xl text-4xl font-bold leading-tight sm:text-6xl {{ empty($s['image']) ? 'nx-gradient-text' : 'text-white' }}">
-            {{ $s['headline'] }}
+            class="mx-auto mt-4 max-w-3xl text-4xl font-bold leading-tight sm:text-6xl {{ empty($s['image']) ? 'text-slate-900 dark:text-white' : 'text-white' }}">
+            {{ $hlLead }}@if ($hlLead) @endif<span class="nx-gradient-text">{{ $hlLast }}</span>
         </h1>
         <p data-reveal style="--reveal-delay:.16s"
            class="mx-auto mt-5 max-w-2xl text-lg leading-relaxed {{ empty($s['image']) ? 'text-slate-600 dark:text-slate-300' : 'text-slate-200' }}">
