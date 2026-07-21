@@ -55,6 +55,9 @@ class Dashboard extends Component
             'greeting' => \App\Support\NaaraFacts::greeting($user),
             'greetingAsk' => \App\Support\NaaraFacts::askOfTheDay($user),
             'factOfTheDay' => \App\Support\NaaraFacts::dailyFor($user),
+            // Friendly coupon nudge for a not-yet-purchased account (owner
+            // request) — null when off / already bought / no live code.
+            'couponNudge' => \App\Support\MarketingCoupons::nudgeFor($user),
         ]);
     }
 

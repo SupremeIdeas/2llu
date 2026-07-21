@@ -96,12 +96,21 @@ class Coupons extends Component
         $coupon->delete();
     }
 
+    /** Flip the friendly first-purchase / comeback dashboard nudges on or off. */
+    public function toggleNudges(): void
+    {
+        $on = ! \App\Support\MarketingCoupons::enabled();
+        \App\Models\Setting::setValue(\App\Support\MarketingCoupons::FLAG, $on, 'marketing');
+        $this->saved = $on ? 'Marketing nudges are ON.' : 'Marketing nudges are OFF.';
+    }
+
     public function render()
     {
         return view('livewire.admin.coupons', [
             'coupons' => Coupon::withCount('redemptions')
                 ->withSum('redemptions as total_saved', 'amount_saved')
                 ->latest()->get(),
+            'nudgesOn' => \App\Support\MarketingCoupons::enabled(),
         ]);
     }
 }

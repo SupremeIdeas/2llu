@@ -93,6 +93,12 @@
                    class="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
         </div>
 
+        {{-- Skeleton while a search round-trips (premium loading feel). --}}
+        <div wire:loading.flex wire:target="search" class="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <x-ui.skeleton-rows :count="4" class="w-full" />
+        </div>
+
+        <div wire:loading.remove wire:target="search">
         @if ($contacts->isEmpty())
             <div class="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-400">
                 No contacts yet. Add one above or import a batch.
@@ -128,5 +134,6 @@
                 @endforeach
             </div>
         @endif
+        </div>{{-- /wire:loading.remove search --}}
     </div>
 </div>

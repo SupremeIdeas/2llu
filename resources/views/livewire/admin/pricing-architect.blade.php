@@ -57,6 +57,56 @@
         @endif
     </div>
 
+    {{-- Market competitiveness (always-on, admin-tunable model — owner request). --}}
+    <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <h2 class="mb-1 flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100">
+            <x-icon name="globe" class="h-5 w-5 text-primary" /> Market competitiveness
+        </h2>
+        <p class="mb-3 text-xs text-slate-500 dark:text-slate-400">{{ $market['verdict'] }}</p>
+        <div class="grid grid-cols-3 gap-3">
+            <div class="rounded-xl bg-green-50 p-3 text-center dark:bg-green-950/30">
+                <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $market['competitive'] }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Competitive</div>
+            </div>
+            <div class="rounded-xl bg-primary/5 p-3 text-center dark:bg-primary/10">
+                <div class="text-2xl font-bold text-primary dark:text-teal-300">{{ $market['keen'] }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Keen (below market)</div>
+            </div>
+            <div class="rounded-xl bg-amber-50 p-3 text-center dark:bg-amber-950/30">
+                <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ $market['premium'] }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Above market</div>
+            </div>
+        </div>
+        @if (! empty($market['rows']))
+            <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="text-xs uppercase tracking-wide text-slate-400">
+                        <tr><th class="py-2">Plan</th><th class="py-2 text-right">Our price</th><th class="py-2 text-right">Est. market</th><th class="py-2 text-right">vs market</th><th class="py-2 text-right">Position</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-[#243352]">
+                        @foreach (collect($market['rows'])->take(8) as $r)
+                            <tr wire:key="mkt-{{ $r['plan_id'] }}">
+                                <td class="py-2 text-slate-700 dark:text-slate-200">{{ $r['name'] }}</td>
+                                <td class="py-2 text-right font-semibold text-slate-900 dark:text-slate-100">${{ number_format($r['current_retail_usd'], 2) }}</td>
+                                <td class="py-2 text-right text-slate-500 dark:text-slate-400">${{ number_format($r['market_low'], 2) }}–${{ number_format($r['market_high'], 2) }}</td>
+                                <td class="py-2 text-right {{ $r['delta_pct'] > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-primary dark:text-teal-300' }}">{{ $r['delta_pct'] > 0 ? '+' : '' }}{{ $r['delta_pct'] }}%</td>
+                                <td class="py-2 text-right">
+                                    <span @class([
+                                        'rounded-full px-2 py-0.5 text-xs font-medium capitalize',
+                                        'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300' => $r['position'] === 'competitive',
+                                        'bg-primary/10 text-primary-dark dark:bg-primary/20 dark:text-teal-300' => $r['position'] === 'keen',
+                                        'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' => $r['position'] === 'premium',
+                                    ])>{{ $r['position'] }}</span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+        <p class="mt-3 text-[11px] text-slate-400 dark:text-slate-500">Market estimate is an illustrative, admin-tunable model (per-GB + per-day + base) — not scraped competitor data. When your Anthropic key is on, Claude enriches this with live research in its proposal below.</p>
+    </div>
+
     {{-- Generate / analyse --}}
     @unless ($proposal)
         <div class="mb-6 rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-6 text-center dark:border-primary/40 dark:bg-primary/10">

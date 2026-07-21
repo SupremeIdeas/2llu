@@ -40,6 +40,14 @@ class PricingSettingsSeeder extends Seeder
             // Dialer safety cap: the largest funded block a single call may hold.
             ['voice.max_call_minutes', 60, 'pricing', 'Max funded minutes held per in-browser call'],
 
+            // Market-competitiveness model (admin-tunable, illustrative — NOT
+            // scraped competitor data). Estimated typical eSIM market price =
+            // per_gb·GB + per_day·days + base; band_pct sets the ± tolerance.
+            ['pricing.market.per_gb_usd', 2.50, 'pricing', 'Market model: est. price per GB (USD)'],
+            ['pricing.market.per_day_usd', 0.08, 'pricing', 'Market model: est. price per validity day (USD)'],
+            ['pricing.market.base_usd', 0.99, 'pricing', 'Market model: est. base/activation price (USD)'],
+            ['pricing.market.band_pct', 15, 'pricing', 'Market model: ± band width (%) for "competitive"'],
+
             // Developer API reselling lane (ROADMAP §Layer 2). Wholesale + a small
             // admin markup — below retail (a real deal for developers) but still
             // above cost + minimum profit (MarginGuard floors it, exactly like

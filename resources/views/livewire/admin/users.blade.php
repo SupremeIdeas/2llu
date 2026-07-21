@@ -24,7 +24,12 @@
         </select>
     </div>
 
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-[#2D4060] dark:bg-[#1A2840]">
+    {{-- Skeleton while a search/filter round-trips (premium loading feel). --}}
+    <div wire:loading.flex wire:target="search,filter" class="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <x-ui.skeleton-rows :count="6" class="w-full" />
+    </div>
+
+    <div wire:loading.remove wire:target="search,filter" class="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-[#2D4060] dark:bg-[#1A2840]">
         <table class="w-full text-left text-sm">
             <thead class="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400 dark:border-[#243352]">
                 <tr>

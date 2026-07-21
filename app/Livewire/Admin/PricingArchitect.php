@@ -98,6 +98,7 @@ class PricingArchitect extends Component
         return view('livewire.admin.pricing-architect', [
             'enabled' => $architect->enabled(),
             'monitor' => $architect->monitor(),
+            'market' => $architect->marketBenchmark(),
             'proposal' => $proposal,
         ]);
     }

@@ -1,6 +1,26 @@
 <div class="mx-auto max-w-4xl">
     <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Coupons</h1>
-    <p class="mb-6 text-sm text-slate-500 dark:text-slate-400">Discount codes for banner offers. Every discount is margin-guarded: the charged price is automatically clamped above provider cost + minimum profit, so a coupon can never sell at a loss.</p>
+    <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">Discount codes for banner offers. Every discount is margin-guarded: the charged price is automatically clamped above provider cost + minimum profit, so a coupon can never sell at a loss.</p>
+
+    {{-- Marketing nudges toggle (owner request): friendly first-purchase /
+         comeback offers shown on the dashboard of not-yet-purchased accounts. --}}
+    <div class="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="flex items-center gap-3">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/15 text-accent dark:bg-accent/25"><x-icon name="gift" class="h-5 w-5" /></span>
+            <div>
+                <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Marketing nudges</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Show a friendly {{ \App\Support\MarketingCoupons::WELCOME_CODE }} / {{ \App\Support\MarketingCoupons::COMEBACK_CODE }} offer to accounts that haven't purchased yet.</p>
+            </div>
+        </div>
+        <button type="button" wire:click="toggleNudges" role="switch" aria-checked="{{ $nudgesOn ? 'true' : 'false' }}"
+                @class([
+                    'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition',
+                    'bg-primary' => $nudgesOn,
+                    'bg-slate-300 dark:bg-[#2D4060]' => ! $nudgesOn,
+                ])>
+            <span @class(['inline-block h-5 w-5 transform rounded-full bg-white transition', 'translate-x-5' => $nudgesOn, 'translate-x-0.5' => ! $nudgesOn])></span>
+        </button>
+    </div>
 
     @if ($saved)
         <div class="mb-6 flex items-center gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary-dark dark:bg-primary/20 dark:text-primary">

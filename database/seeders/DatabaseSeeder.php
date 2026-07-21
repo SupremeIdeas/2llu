@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             PricingSettingsSeeder::class,
             DefaultAdminSeeder::class,  // seeds the default super_admin
             DefaultBannerSeeder::class, // ships the five brand promo banners
+            MarketingCouponsSeeder::class, // welcome + comeback marketing coupons
         ]);
     }
 }

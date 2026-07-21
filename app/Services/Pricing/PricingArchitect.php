@@ -118,6 +118,61 @@ class PricingArchitect
     }
 
     /**
+     * Always-on market-competitiveness benchmark (no API call, owner request).
+     * Estimates a typical market price band for each data plan from a TRANSPARENT,
+     * admin-tunable model — a per-GB + per-day + base formula (NOT scraped
+     * competitor data) — and rates our retail against it: competitive (inside the
+     * band), keen (below it — great for users), or premium (above it — may cost
+     * conversions). Gives the admin an at-a-glance verdict on whether prices are
+     * sensible for the market, and enriches Claude's proposal when the key is on.
+     *
+     * @return array{rows: array<int, array<string, mixed>>, competitive: int, keen: int, premium: int, verdict: string}
+     */
+    public function marketBenchmark(): array
+    {
+        $perGb = (float) Setting::getValue('pricing.market.per_gb_usd', 2.50);
+        $perDay = (float) Setting::getValue('pricing.market.per_day_usd', 0.08);
+        $base = (float) Setting::getValue('pricing.market.base_usd', 0.99);
+        $bandPct = (float) Setting::getValue('pricing.market.band_pct', 15);
+
+        $rows = [];
+        $competitive = $keen = $premium = 0;
+
+        foreach ($this->snapshot() as $row) {
+            if (($row['type'] ?? 'data') !== 'data') {
+                continue; // the market model is for data plans
+            }
+            $gb = ($row['data_mb'] ?? 0) > 0 ? $row['data_mb'] / 1024 : 1;
+            $days = max(1, (int) ($row['validity_days'] ?? 30));
+
+            $mid = round($perGb * $gb + $perDay * $days + $base, 2);
+            $low = round($mid * (1 - $bandPct / 100), 2);
+            $high = round($mid * (1 + $bandPct / 100), 2);
+            $retail = (float) $row['current_retail_usd'];
+
+            $verdict = $retail < $low ? 'keen' : ($retail > $high ? 'premium' : 'competitive');
+            ${$verdict}++;
+
+            $rows[] = $row + [
+                'market_low' => $low,
+                'market_mid' => $mid,
+                'market_high' => $high,
+                'position' => $verdict, // keen | competitive | premium
+                'delta_pct' => $mid > 0 ? round(($retail - $mid) / $mid * 100, 1) : 0.0,
+            ];
+        }
+
+        $total = max(1, $competitive + $keen + $premium);
+        $verdict = match (true) {
+            $premium / $total > 0.4 => 'Several plans sit above the typical market band — consider trimming to lift conversion.',
+            $keen / $total > 0.5 => 'Prices are keen (below market) — great for growth; keep an eye on the margin monitor.',
+            default => 'Pricing looks competitive — most plans sit inside the typical market band.',
+        };
+
+        return compact('rows', 'competitive', 'keen', 'premium', 'verdict');
+    }
+
+    /**
      * Ask Claude to analyse the snapshot and propose optimal retail prices, then
      * build a PENDING proposal with every price re-clamped by the guard. Never
      * applies anything. Throws (RuntimeException) if the key is off or the call
