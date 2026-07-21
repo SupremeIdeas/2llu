@@ -89,7 +89,7 @@
     </div>
 
     {{-- ============ MOBILE: bottom navigation ============ --}}
-    <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/70 bg-white/85 backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/85"
+    <nav class="fixed inset-x-0 bottom-0 z-40 rounded-t-3xl border border-b-0 border-slate-200/70 bg-white/90 shadow-[0_-10px_30px_rgba(13,27,42,0.10)] backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/90 dark:shadow-[0_-10px_30px_rgba(0,0,0,0.4)]"
          style="padding-bottom: env(safe-area-inset-bottom);">
         <div class="mx-auto grid max-w-md grid-cols-5 items-center px-1">
             @foreach ([$slots[0], $slots[1]] as $item)

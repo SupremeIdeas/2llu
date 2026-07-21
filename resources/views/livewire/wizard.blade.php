@@ -1,7 +1,9 @@
 {{-- NaaraSim Wizard widget (roadmap §11). Floating, collapsible, glowing brand
      border, SVG icons only, dark-mode parity. Buttons-only state machine — fully
      usable with no LLM. Money actions disable while in flight (wire:loading). --}}
-<div class="fixed bottom-6 right-4 z-50 print:hidden" wire:key="naara-wizard"
+{{-- Sits above the mobile bottom nav (bottom-24) and drops to the corner on
+     desktop (lg:bottom-6) where there is no bottom bar. --}}
+<div class="fixed bottom-24 right-4 z-50 print:hidden lg:bottom-6" wire:key="naara-wizard"
      @if ($this->otpPending) wire:poll.4s @endif>
 
     @if (! $open)
@@ -14,13 +16,28 @@
                 <x-icon name="check" class="h-4 w-4" /> Your code is ready
             </button>
         @endif
+        {{-- Launcher: a glowing brand-gradient edge wrapping a clean pill that
+             carries the NaaraSim favicon mark (reused for a premium, on-brand
+             feel) instead of a generic icon. --}}
+        @php $naaraFavicon = \App\Support\BrandSettings::favicon(); @endphp
         <button type="button" wire:click="toggle"
                 aria-label="Open the NaaraSim helper"
-                class="group relative flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-dark motion-safe:animate-[naaraGlow_2.8s_ease-in-out_infinite]">
-            <x-icon name="zap" class="h-5 w-5" />
-            <span class="hidden sm:inline">Ask NaaraSim</span>
+                class="group relative rounded-full p-[2px] shadow-xl shadow-primary/30 transition hover:shadow-primary/50">
+            {{-- The glowing gradient edge + a blurred halo behind it. --}}
+            <span class="absolute inset-0 rounded-full bg-gradient-to-r from-primary via-accent to-primary" aria-hidden="true"></span>
+            <span class="nx-wiz-glow pointer-events-none absolute -inset-1 -z-10 rounded-full bg-gradient-to-r from-primary via-accent to-primary blur-md" aria-hidden="true"></span>
+            <span class="relative flex items-center gap-2 rounded-full bg-white px-3.5 py-2.5 dark:bg-[#101d33]">
+                <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                    @if ($naaraFavicon)
+                        <img src="{{ $naaraFavicon }}" alt="NaaraSim" class="h-6 w-6 object-contain">
+                    @else
+                        <x-icon name="zap" class="h-5 w-5 text-primary" />
+                    @endif
+                </span>
+                <span class="hidden pr-1 text-sm font-semibold text-slate-800 sm:inline dark:text-white">Ask NaaraSim</span>
+            </span>
             @if ($otp)
-                <span class="absolute -right-1 -top-1 flex h-3.5 w-3.5">
+                <span class="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5">
                     <span class="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 motion-safe:animate-ping"></span>
                     <span class="relative inline-flex h-3.5 w-3.5 rounded-full bg-accent ring-2 ring-white dark:ring-[#101d33]"></span>
                 </span>

@@ -838,3 +838,32 @@
     .nx-orbit__line { animation: none; }
     .nx-orbit__node { animation: none; }
 }
+
+/* --- Stripe-inspired gradient text (premium headline treatment) -------------
+   Brand-reactive: two of the three stops follow the admin brand vars, so a
+   re-skin flows through. Animated sheen (paused for reduced-motion). */
+.nx-gradient-text {
+    background-image: linear-gradient(100deg,
+        rgb(var(--brand-primary)) 0%,
+        #2dd4bf 42%,
+        rgb(var(--brand-accent)) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: nx-gradient-pan 8s ease-in-out infinite;
+}
+.dark .nx-gradient-text {
+    background-image: linear-gradient(100deg,
+        #5eead4 0%,
+        #2dd4bf 40%,
+        #f0c04a 100%);
+}
+@keyframes nx-gradient-pan { 0%, 100% { background-position: 0% center; } 50% { background-position: 100% center; } }
+@media (prefers-reduced-motion: reduce) { .nx-gradient-text { animation: none; } }
+
+/* --- Wizard launcher: glowing brand-gradient edge --------------------------- */
+.nx-wiz-glow { animation: nx-wiz-glow 3.4s ease-in-out infinite; }
+@keyframes nx-wiz-glow { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .nx-wiz-glow { animation: none; } }

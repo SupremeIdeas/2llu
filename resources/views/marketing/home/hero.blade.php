@@ -28,7 +28,7 @@
     <div class="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-16 text-center sm:pt-24 {{ ! empty($s['image']) ? 'text-white' : '' }}">
         <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $s['eyebrow'] }}</p>
         <h1 data-reveal style="--reveal-delay:.08s"
-            class="mx-auto mt-4 max-w-3xl text-4xl font-bold leading-tight sm:text-6xl {{ empty($s['image']) ? 'text-slate-900 dark:text-white' : '' }}">
+            class="mx-auto mt-4 max-w-3xl text-4xl font-bold leading-tight sm:text-6xl {{ empty($s['image']) ? 'nx-gradient-text' : 'text-white' }}">
             {{ $s['headline'] }}
         </h1>
         <p data-reveal style="--reveal-delay:.16s"
