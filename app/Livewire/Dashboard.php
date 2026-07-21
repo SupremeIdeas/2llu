@@ -50,6 +50,11 @@ class Dashboard extends Component
             'numbersArchived' => $numbers->filter($numberArchived)->values(),
             'wallet' => $user->wallet,
             'hasAny' => $esims->isNotEmpty() || $numbers->isNotEmpty(),
+            // Greeting + fact-of-the-day (owner request): welcome by name and
+            // teach the worth of what a NaaraSim number/eSIM can do globally.
+            'greeting' => \App\Support\NaaraFacts::greeting($user),
+            'greetingAsk' => \App\Support\NaaraFacts::askOfTheDay($user),
+            'factOfTheDay' => \App\Support\NaaraFacts::dailyFor($user),
         ]);
     }
 

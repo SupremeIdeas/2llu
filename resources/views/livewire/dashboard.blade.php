@@ -1,4 +1,21 @@
 <div>
+    {{-- Greeting + fact of the day (owner request): welcome by name, ask about
+         their day, and teach what a NaaraSim number/eSIM can do worldwide. --}}
+    <div class="mb-6 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.07] via-transparent to-accent/[0.06] p-5 dark:border-primary/25 dark:from-primary/15 dark:to-accent/10">
+        <div class="flex items-start gap-3">
+            <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300">
+                <x-icon name="signal" class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+                <p class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ $greeting }} <span class="font-normal text-slate-500 dark:text-slate-400">— {{ $greetingAsk }}</span></p>
+                <p class="mt-1 flex items-start gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+                    <x-icon name="zap" class="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                    <span><span class="font-semibold text-slate-700 dark:text-slate-200">Did you know?</span> {{ $factOfTheDay }}</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">My Connectivity</h1>
         <div class="flex gap-2">
