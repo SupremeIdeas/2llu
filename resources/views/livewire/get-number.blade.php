@@ -100,12 +100,29 @@
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Type</label>
                     <div class="grid grid-cols-2 gap-2">
                         <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5 dark:border-[#2D4060] dark:text-slate-200 dark:has-[:checked]:bg-primary/10">
-                            <input type="radio" wire:model="type" value="otp" class="text-primary"> One-time code
+                            <input type="radio" wire:model.live="type" value="otp" class="text-primary"> One-time code
                         </label>
                         <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5 dark:border-[#2D4060] dark:text-slate-200 dark:has-[:checked]:bg-primary/10">
-                            <input type="radio" wire:model="type" value="rental" class="text-primary"> Rental
+                            <input type="radio" wire:model.live="type" value="rental" class="text-primary"> Rental
                         </label>
                     </div>
+                    @if ($type === 'rental')
+                        <p class="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                            A rental keeps your number for the subscription period — it receives
+                            <strong>unlimited</strong> SMS@if ($fullRentAvailable) (pick <em>Any service</em> below to receive codes from <strong>every</strong> service, or one service to save)@else for the service you pick@endif.
+                        </p>
+                        @if ($fullRentAvailable)
+                            <button type="button" wire:click="$set('service', '{{ \App\Services\SMS\NumberRequest::SERVICE_ANY }}')"
+                                    @class([
+                                        'mt-2 flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition',
+                                        'border-primary bg-primary/5 text-primary dark:bg-primary/15 dark:text-teal-300' => $service === \App\Services\SMS\NumberRequest::SERVICE_ANY,
+                                        'border-slate-200 text-slate-700 hover:border-primary/40 dark:border-[#2D4060] dark:text-slate-200' => $service !== \App\Services\SMS\NumberRequest::SERVICE_ANY,
+                                    ])>
+                                <x-icon name="globe" class="h-4 w-4" />
+                                <span>Any service <span class="text-xs font-normal text-slate-400">· receive all SMS</span></span>
+                            </button>
+                        @endif
+                    @endif
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Coupon code <span class="font-normal text-slate-400">(optional)</span></label>

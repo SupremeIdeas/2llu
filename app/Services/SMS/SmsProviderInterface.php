@@ -24,11 +24,21 @@ interface SmsProviderInterface
     public function buyOtp(string $country, string $service, array $options = []): array;
 
     /**
-     * Buy a rental (hosting / long-rental) number.
+     * Buy a rental (hosting / long-rental) number. A rental receives UNLIMITED
+     * SMS for its period — from the chosen service, or (when $service is
+     * NumberRequest::SERVICE_ANY and the provider supportsFullRent()) from ANY
+     * service. So a user can subscribe to one number and use it broadly.
      *
      * @return array{provider_ref: string, number: string, cost: float, status: string}
      */
     public function buyRental(string $country, string $service, array $options = []): array;
+
+    /**
+     * Whether this provider offers "full rent" — a rented number that receives
+     * SMS from ANY service, not just one (e.g. SMS-Activate's `service=full`).
+     * 5sim hosting is per-service, so it returns false.
+     */
+    public function supportsFullRent(): bool;
 
     /**
      * Poll an order for its code.

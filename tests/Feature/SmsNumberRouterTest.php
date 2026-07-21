@@ -68,6 +68,29 @@ class SmsNumberRouterTest extends TestCase
         $this->assertDatabaseHas('sms_orders', ['provider' => 'fivesim', 'getatext_id' => '5S-1']);
     }
 
+    public function test_full_rent_any_service_only_routes_to_a_full_rent_provider(): void
+    {
+        // 5sim hosting is per-service (no full rent); SMS-Activate supports it.
+        $fivesim = new FakeSmsProvider(price: 0.20); // must be skipped for "any"
+        $smsactivate = new FakeSmsProvider(price: 0.50, buyResponse: [
+            'provider_ref' => 'SA-1', 'number' => '2348020000000', 'cost' => 0.50, 'status' => OtpStatus::PENDING,
+        ]);
+        $smsactivate->fullRent = true;
+        app()->instance('number.fivesim', $fivesim);
+        app()->instance('number.smsactivate', $smsactivate);
+
+        $request = new NumberRequest(
+            country: 'nigeria', type: NumberRequest::TYPE_RENTAL, service: NumberRequest::SERVICE_ANY,
+            user: User::factory()->create(), currency: 'USD', charged: 5.0,
+        );
+
+        $result = app(SmsNumberRouter::class)->attempt($request);
+
+        $this->assertSame('smsactivate', $result->provider);
+        $this->assertSame(0, $fivesim->buyCalls, '5sim must be skipped for full rent (per-service only)');
+        $this->assertSame(1, $smsactivate->buyCalls);
+    }
+
     public function test_out_of_stock_falls_back_within_the_same_lane(): void
     {
         // US OTP: Getatext out of stock -> 5sim serves it.

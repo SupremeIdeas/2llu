@@ -104,6 +104,11 @@ class GetatextService implements SmsProviderInterface
         return (float) ($this->client()->get('/balance')->throw()->json()['balance'] ?? 0);
     }
 
+    public function supportsFullRent(): bool
+    {
+        return false; // Getatext rentals are per-service
+    }
+
     /**
      * Map Getatext error strings (Section 8.3) onto the shared lane exceptions.
      * Returns the payload untouched when there is no error.

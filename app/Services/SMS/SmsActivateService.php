@@ -38,7 +38,17 @@ class SmsActivateService implements SmsProviderInterface
 
     public function buyRental(string $country, string $service, array $options = []): array
     {
+        // SMS-Activate "full rent" (service=full) receives SMS from ANY service;
+        // a specific service receives only that one. NumberRequest::SERVICE_ANY
+        // maps to full rent here. (The HTTP is wired at go-live like the other
+        // methods — the mapping is the contract the router relies on.)
         throw $this->unavailable();
+    }
+
+    /** SMS-Activate offers full rent (getRentNumber service=full). */
+    public function supportsFullRent(): bool
+    {
+        return $this->configured();
     }
 
     public function check(string $providerRef): array

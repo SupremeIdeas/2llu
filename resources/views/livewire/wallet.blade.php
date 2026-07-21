@@ -173,7 +173,7 @@
                                                'border-slate-200 hover:border-primary/40 dark:border-[#2D4060]' => $gateway !== $gw,
                                            ])>
                                         <input type="radio" wire:model.live="gateway" value="{{ $gw }}" class="text-primary focus:ring-primary/40">
-                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-display text-sm font-bold text-primary dark:bg-primary/20 dark:text-teal-300">{{ strtoupper(substr($gwLabel, 0, 1)) }}</span>
+                                        <x-payment-icon :slug="$gw" class="h-9 w-9 shadow-sm ring-1 ring-black/5 dark:ring-white/10" />
                                         <span class="min-w-0">
                                             <span class="block text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $gwLabel }}</span>
                                             <span class="block truncate text-[11px] text-slate-400 dark:text-slate-500">{{ $gwHint }}</span>

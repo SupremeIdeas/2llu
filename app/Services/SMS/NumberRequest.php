@@ -15,6 +15,9 @@ class NumberRequest
     public const TYPE_RENTAL = 'rental';
     public const TYPE_PERMANENT = 'permanent';
 
+    /** Rental "any service" (full rent) — receive SMS from every service. */
+    public const SERVICE_ANY = 'any';
+
     public function __construct(
         public readonly string $country,   // ISO code or provider slug
         public readonly string $type,      // otp | rental | permanent

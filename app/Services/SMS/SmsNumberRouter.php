@@ -75,6 +75,14 @@ class SmsNumberRouter
                 /** @var SmsProviderInterface $svc */
                 $svc = app("number.{$provider}");
 
+                // "Any service" (full rent) only routes to providers that support
+                // it — a rented number that receives SMS from EVERY service.
+                if ($this->isFullRent($request) && ! $svc->supportsFullRent()) {
+                    $errors[$provider] = 'no_full_rent';
+
+                    continue;
+                }
+
                 $cost = $svc->priceFor($request->country, $request->service); // live; throws OutOfStock
 
                 // The user was quoted+charged `charged` at checkout. Protect that
@@ -151,6 +159,9 @@ class SmsNumberRouter
             try {
                 /** @var SmsProviderInterface $svc */
                 $svc = app("number.{$provider}");
+                if ($this->isFullRent($request) && ! $svc->supportsFullRent()) {
+                    continue;
+                }
                 $cost = $svc->priceFor($request->country, $request->service);
 
                 return [
@@ -164,6 +175,13 @@ class SmsNumberRouter
         }
 
         throw new SmsException('No number available for that country right now.');
+    }
+
+    /** A rental for "any service" — needs a full-rent-capable provider. */
+    private function isFullRent(NumberRequest $request): bool
+    {
+        return $request->type === NumberRequest::TYPE_RENTAL
+            && $request->service === NumberRequest::SERVICE_ANY;
     }
 
     /**

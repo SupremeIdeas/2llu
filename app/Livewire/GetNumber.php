@@ -40,6 +40,14 @@ class GetNumber extends Component
     /** Client-side filter for the (large) service picker. */
     public string $serviceSearch = '';
 
+    /** Switching away from rental clears an "any service" (full-rent) pick. */
+    public function updatedType(): void
+    {
+        if ($this->type !== NumberRequest::TYPE_RENTAL && $this->service === NumberRequest::SERVICE_ANY) {
+            $this->service = 'whatsapp';
+        }
+    }
+
     public function order(WalletService $wallet, SmsNumberRouter $router, CouponEngine $coupons): void
     {
         $this->error = null;
@@ -152,6 +160,9 @@ class GetNumber extends Component
             'order' => $order,
             'countries' => \App\Support\NumberCatalogue::countries(),
             'services' => \App\Support\NumberCatalogue::services(),
+            // "Any service" (full rent) is only offered when a full-rent-capable
+            // provider is configured, so there's never a dead option.
+            'fullRentAvailable' => \App\Support\ProviderStatus::isActive('smsactivate'),
         ]);
     }
 }

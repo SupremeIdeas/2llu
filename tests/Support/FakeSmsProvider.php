@@ -19,11 +19,18 @@ class FakeSmsProvider implements SmsProviderInterface
 
     public int $cancelCalls = 0;
 
+    public bool $fullRent = false;
+
     public function __construct(
         private float|Throwable $price = 1.0,
         private array $buyResponse = ['provider_ref' => 'REF-1', 'number' => '15550001111', 'cost' => 1.0, 'status' => OtpStatus::PENDING],
         private array $checkResponse = ['status' => OtpStatus::PENDING, 'code' => null],
     ) {
+    }
+
+    public function supportsFullRent(): bool
+    {
+        return $this->fullRent;
     }
 
     public function priceFor(string $country, string $service): float

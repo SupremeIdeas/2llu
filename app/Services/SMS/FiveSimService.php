@@ -102,6 +102,11 @@ class FiveSimService implements SmsProviderInterface
         return (float) ($this->client()->get('/user/profile')->json()['balance'] ?? 0);
     }
 
+    public function supportsFullRent(): bool
+    {
+        return false; // 5sim hosting is per-service
+    }
+
     /**
      * The provider's FULL country list (slug => English label) for the catalogue
      * sync. 5sim is slug-based, matching the buy flow's country format.
