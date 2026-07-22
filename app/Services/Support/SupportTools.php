@@ -373,6 +373,17 @@ class SupportTools
             return ['done' => false, 'note' => 'A goodwill credit has already been applied to this ticket.'];
         }
 
+        // Anti-farming: per-ticket idempotency alone would let a user open many
+        // tickets to collect goodwill repeatedly. Cap it to once per user per
+        // rolling 7 days — anything more is a judgement call for a human.
+        $recent = \App\Models\CreditLedger::where('user_id', $this->user->id)
+            ->where('source', 'goodwill')
+            ->where('created_at', '>=', now()->subDays(7))
+            ->exists();
+        if ($recent) {
+            return ['done' => false, 'note' => 'This user already received goodwill recently — escalate for anything further.'];
+        }
+
         $credits = \App\Support\CreditSettings::usdToCredits($amountUsd);
         app(\App\Services\Credits\CreditService::class)->earn(
             $this->user, $credits, 'goodwill', $reference, 'NaaraCare goodwill: '.mb_substr($reason, 0, 120),

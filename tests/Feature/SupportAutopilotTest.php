@@ -129,6 +129,27 @@ class SupportAutopilotTest extends TestCase
         $this->assertSame(1, CreditLedger::where('user_id', $user->id)->where('source', 'goodwill')->count());
     }
 
+    public function test_goodwill_cannot_be_farmed_across_multiple_tickets(): void
+    {
+        CreditSettings::flush();
+        \App\Models\Setting::setValue('credits.enabled', true, 'credits');
+        \App\Models\Setting::setValue('credits.per_usd', 100, 'credits');
+        CreditSettings::flush();
+        $this->enableAutopilot(goodwillCapUsd: 2.00);
+        $user = User::factory()->create();
+
+        // First ticket: goodwill applies.
+        $first = (new SupportTools($user, $this->conv($user)))
+            ->execute('grant_goodwill_credit', ['amount_usd' => 1, 'reason' => 'a']);
+        $this->assertTrue($first['done']);
+
+        // A brand-new ticket for the SAME user is refused (7-day per-user cap).
+        $second = (new SupportTools($user, $this->conv($user)))
+            ->execute('grant_goodwill_credit', ['amount_usd' => 1, 'reason' => 'b']);
+        $this->assertFalse($second['done']);
+        $this->assertSame(1, CreditLedger::where('user_id', $user->id)->where('source', 'goodwill')->count());
+    }
+
     public function test_resolve_ticket_marks_it_resolved(): void
     {
         $this->enableAutopilot();
