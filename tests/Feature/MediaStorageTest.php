@@ -61,6 +61,26 @@ class MediaStorageTest extends TestCase
         $this->assertStringContainsString('<rect', $stored); // real content kept
     }
 
+    public function test_svg_sanitizer_strips_unquoted_and_obfuscated_xss_vectors(): void
+    {
+        // The regression: unquoted event handlers and a self-closing <script>
+        // are the payloads a quotes-only rule missed. Also cover <style> and a
+        // whitespace-obfuscated javascript: href.
+        $dirty = '<svg xmlns="http://www.w3.org/2000/svg" onload=alert(1)>'
+            .'<script src="x.js"/>'
+            .'<style>@import url(javascript:alert(3))</style>'
+            .'<a href="jav ascript:alert(4)"><rect width="10" height="10"/></a>'
+            .'</svg>';
+
+        $clean = MediaStorage::sanitizeSvg($dirty);
+
+        $this->assertStringNotContainsStringIgnoringCase('onload', $clean);
+        $this->assertStringNotContainsStringIgnoringCase('<script', $clean);
+        $this->assertStringNotContainsStringIgnoringCase('<style', $clean);
+        $this->assertStringNotContainsStringIgnoringCase('javascript:', str_replace(' ', '', $clean));
+        $this->assertStringContainsString('<rect', $clean); // real content kept
+    }
+
     public function test_default_admin_is_seeded_by_the_database_seeder(): void
     {
         $this->artisan('db:seed', ['--force' => true])->assertSuccessful();

@@ -130,6 +130,24 @@ class PaymentWebhookTest extends TestCase
         $this->assertNull($user->wallet);
     }
 
+    public function test_paystack_with_an_unconfigured_secret_cannot_be_forged(): void
+    {
+        // Secret unset (empty). An attacker computes hash_hmac(body, '') — which
+        // anyone can, since the "key" is blank — and sends it as the signature.
+        // Without the empty-secret guard this would validate and credit the
+        // attacker's own wallet for free. It must be rejected 401 instead.
+        config(['services.paystack.secret_key' => '']);
+        $user = User::factory()->create();
+        $payload = $this->paystackPayload($user);
+        $forged = hash_hmac('sha512', json_encode($payload), '');
+
+        $this->postRaw('/webhooks/payments/paystack', $payload, ['x-paystack-signature' => $forged])
+            ->assertStatus(401);
+
+        $this->assertNull($user->wallet);
+        $this->assertDatabaseHas('webhook_logs', ['provider' => 'paystack', 'verified' => false]);
+    }
+
     public function test_unknown_gateway_is_404(): void
     {
         $this->postRaw('/webhooks/payments/bitcoin', [])->assertNotFound();

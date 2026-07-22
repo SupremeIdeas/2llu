@@ -42,11 +42,17 @@ class PaystackGateway implements PaymentGatewayInterface
     public function verifySignature(Request $request): bool
     {
         $signature = $request->header('x-paystack-signature');
-        if (! is_string($signature)) {
+        $secret = (string) config('services.paystack.secret_key');
+
+        // An empty secret must never validate: hash_hmac(..., '') is computable
+        // by anyone (the key is "known" to be blank), so without this guard an
+        // unconfigured Paystack could have forged webhooks accepted and credit
+        // an attacker's own wallet for free.
+        if (! is_string($signature) || $secret === '') {
             return false;
         }
 
-        $expected = hash_hmac('sha512', $request->getContent(), (string) config('services.paystack.secret_key'));
+        $expected = hash_hmac('sha512', $request->getContent(), $secret);
 
         return hash_equals($expected, $signature);
     }

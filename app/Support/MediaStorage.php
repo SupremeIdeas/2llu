@@ -105,11 +105,23 @@ class MediaStorage
      */
     public static function sanitizeSvg(string $svg): string
     {
+        // Scripts (paired AND self-closing/unclosed), and <style> which can smuggle
+        // @import / url(javascript:) on legacy engines.
         $svg = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $svg) ?? $svg;
+        $svg = preg_replace('#<script\b[^>]*/?>#is', '', $svg) ?? $svg;
+        $svg = preg_replace('#<style\b[^>]*>.*?</style>#is', '', $svg) ?? $svg;
         $svg = preg_replace('#<foreignObject\b[^>]*>.*?</foreignObject>#is', '', $svg) ?? $svg;
-        $svg = preg_replace('#\son[a-z]+\s*=\s*"(?:[^"]*)"#i', '', $svg) ?? $svg;
-        $svg = preg_replace("#\son[a-z]+\s*=\s*'(?:[^']*)'#i", '', $svg) ?? $svg;
-        $svg = preg_replace('#(?:xlink:href|href)\s*=\s*(["\'])\s*javascript:[^"\']*\1#i', '', $svg) ?? $svg;
+
+        // Inline event handlers — quoted "…", '…', AND unquoted (on…=alert(1)).
+        // The unquoted form was the gap: <svg onload=alert(1)> is the classic SVG
+        // XSS payload and slipped past a quotes-only rule.
+        $svg = preg_replace('#\son[a-z]+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)#i', '', $svg) ?? $svg;
+
+        // javascript: URLs on href/xlink:href — quoted and unquoted. Tolerate the
+        // whitespace/newline obfuscation browsers ignore inside the scheme.
+        $svg = preg_replace('#(?:xlink:href|href)\s*=\s*"\s*j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t\s*:[^"]*"#i', '', $svg) ?? $svg;
+        $svg = preg_replace("#(?:xlink:href|href)\s*=\s*'\s*j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t\s*:[^']*'#i", '', $svg) ?? $svg;
+        $svg = preg_replace('#(?:xlink:href|href)\s*=\s*j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t\s*:[^\s>]*#i', '', $svg) ?? $svg;
 
         return $svg;
     }
