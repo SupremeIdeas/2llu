@@ -176,7 +176,12 @@ class GetNumber extends Component
 
     public function render()
     {
-        $order = $this->orderId ? SmsOrder::find($this->orderId) : null;
+        // orderId is a public (attacker-settable) property, so the lookup MUST be
+        // scoped to the owner — the view renders the phone number and OTP code,
+        // and an unscoped find() would let anyone read another user's SMS code.
+        $order = $this->orderId
+            ? SmsOrder::where('user_id', auth()->id())->find($this->orderId)
+            : null;
 
         // The FULL catalogue (static base + synced provider lists) — never a
         // curated handful. Provided at render time so the Livewire snapshot

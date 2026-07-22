@@ -628,8 +628,16 @@ class Wizard extends Component
 
     public function render()
     {
-        $order = $this->smsOrderId ? SmsOrder::find($this->smsOrderId) : null;
-        $vnumber = $this->virtualNumberId ? VirtualNumber::find($this->virtualNumberId) : null;
+        // smsOrderId / virtualNumberId are public (attacker-settable) properties,
+        // so both lookups MUST be scoped to the owner — the view renders the phone
+        // number and OTP code, and an unscoped find() would disclose another
+        // user's SMS verification code (account-takeover grade).
+        $order = $this->smsOrderId
+            ? SmsOrder::where('user_id', auth()->id())->find($this->smsOrderId)
+            : null;
+        $vnumber = $this->virtualNumberId
+            ? VirtualNumber::where('user_id', auth()->id())->find($this->virtualNumberId)
+            : null;
         $balance = (float) (auth()->user()?->wallet?->usd_balance ?? 0);
 
         return view('livewire.wizard', [
