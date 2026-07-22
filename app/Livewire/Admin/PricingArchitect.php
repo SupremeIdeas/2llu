@@ -28,6 +28,18 @@ class PricingArchitect extends Component
 
     public ?string $notice = null;
 
+    /**
+     * Enforce the admin gate on every request. Livewire method calls hit the
+     * shared `/livewire/update` endpoint, which does not re-run the route's
+     * `role:` middleware — so approve()/analyze() (which apply live pricing and
+     * spend Claude credits) must be re-authorized here, on initial load AND
+     * every update. See Pricing::booted() for the full rationale.
+     */
+    public function booted(): void
+    {
+        abort_unless(auth()->user()?->hasAnyRole(['super_admin', 'admin']), 403);
+    }
+
     public function analyze(Architect $architect): void
     {
         $this->error = $this->notice = null;

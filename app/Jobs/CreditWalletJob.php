@@ -43,10 +43,24 @@ class CreditWalletJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        $txn = $wallet->credit($user, $this->amount, $this->currency, [
-            'reference' => "topup:{$this->gateway}:{$this->reference}",
-            'description' => "Wallet top-up via {$this->gateway}",
-        ]);
+        // A verified payment must NEVER silently fail to credit. The wallet only
+        // holds USD/NGN, so an unsupported currency here (a rare edge — e.g. a
+        // local-currency deposit whose USD-locking intent didn't persist) is
+        // alerted for manual reconciliation rather than crash-looping the queue.
+        try {
+            $txn = $wallet->credit($user, $this->amount, $this->currency, [
+                'reference' => "topup:{$this->gateway}:{$this->reference}",
+                'description' => "Wallet top-up via {$this->gateway}",
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            AlertAdminJob::dispatch(
+                code: 'topup_uncreditable_currency',
+                message: "Verified {$this->gateway} top-up for user {$this->userId} could not be credited: {$e->getMessage()} — reconcile manually.",
+                context: ['user_id' => $this->userId, 'gateway' => $this->gateway, 'reference' => $this->reference, 'amount' => $this->amount, 'currency' => $this->currency],
+            );
+
+            return;
+        }
 
         // Receipt email — only on a genuinely new credit (idempotent replays
         // return the existing row and must not re-email). Best-effort.

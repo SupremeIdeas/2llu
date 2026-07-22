@@ -23,6 +23,17 @@ class ErrorLogViewer extends Component
 
     public string $severity = '';
 
+    /**
+     * Re-authorize on every request. The error log can carry sensitive context
+     * (user IDs, stack traces), and its CSV/JSON export methods run on the shared
+     * `/livewire/update` endpoint where the route's `role:` middleware is not
+     * re-applied. booted() runs on the initial load and every update alike.
+     */
+    public function booted(): void
+    {
+        abort_unless(auth()->user()?->hasAnyRole(['super_admin', 'admin']), 403);
+    }
+
     public function mount(): void
     {
         $this->date = now()->toDateString();

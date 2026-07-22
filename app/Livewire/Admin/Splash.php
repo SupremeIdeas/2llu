@@ -61,6 +61,17 @@ class Splash extends Component
 
     public ?string $saved = null;
 
+    /**
+     * Re-authorize on every request. save() writes splash.* settings and the
+     * file-upload hook stores media to public storage — both run on the shared
+     * `/livewire/update` endpoint where the route's `role:` middleware is not
+     * re-applied, so the admin gate is enforced here on load AND every update.
+     */
+    public function booted(): void
+    {
+        abort_unless(auth()->user()?->hasAnyRole(['super_admin', 'admin']), 403);
+    }
+
     public function mount(): void
     {
         $s = SplashSettings::current();

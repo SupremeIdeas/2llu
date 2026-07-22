@@ -45,6 +45,19 @@ class Pricing extends Component
 
     public ?string $saved = null;
 
+    /**
+     * Authorization runs on EVERY request — not just the initial load. Livewire
+     * dispatches method calls to a single `/livewire/update` endpoint that does
+     * NOT re-apply the route's `role:` middleware (only its persistent-middleware
+     * allow-list runs there), so a mount()-only or route-only check would leave
+     * saveGlobal/savePlan callable by any authenticated user holding a snapshot.
+     * booted() fires on both the initial render and every subsequent update.
+     */
+    public function booted(): void
+    {
+        abort_unless(auth()->user()?->hasAnyRole(['super_admin', 'admin']), 403);
+    }
+
     public function mount(): void
     {
         $this->default_markup_pct = Setting::getValue('pricing.default_markup_pct', 30);

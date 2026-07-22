@@ -26,6 +26,18 @@ class SupportQueue extends Component
 
     public ?string $flash = null;
 
+    /**
+     * Re-authorize on every request with the SAME predicate the route enforces
+     * (`permission:tickets.manage`; super_admin bypasses via Gate::before). The
+     * shared `/livewire/update` endpoint does not re-run route permission
+     * middleware, so assignToMe/sendReply/resolve — which reply to customers and
+     * mutate tickets — are re-checked here on load AND every update.
+     */
+    public function booted(): void
+    {
+        abort_unless(auth()->user()?->can('tickets.manage'), 403);
+    }
+
     public function select(int $id): void
     {
         $this->selectedId = $id;
