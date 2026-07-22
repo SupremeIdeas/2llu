@@ -125,6 +125,30 @@ class DeveloperApiOrderTest extends TestCase
         $this->assertSame(1, ApiOrder::count());
     }
 
+    public function test_a_concurrent_duplicate_reference_never_double_provisions(): void
+    {
+        $plan = $this->esimgoPlan(10.0); // dev price = 11.00
+        $this->fakeProvider();
+        [$token, $client] = $this->client(balance: 20.0);
+
+        // Simulate the race window the upfront ApiOrder check can't cover: a
+        // sibling request with the same reference has ALREADY charged the wallet
+        // (idempotent debit posted) but has not yet persisted its ApiOrder. The
+        // debit in this request must be recognised as a replay and NOT fulfil.
+        app(\App\Services\Api\ApiWalletService::class)->debit($client, 11.0, [
+            'reference' => 'api-order:dup', 'description' => 'sibling',
+        ]);
+
+        $this->withToken($token)->postJson('/api/v1/orders', [
+            'type' => 'esim', 'plan_id' => $plan->id, 'reference' => 'dup',
+        ])->assertStatus(409);
+
+        // No second charge, and the provider was never ordered again.
+        $this->assertSame('9.0000', (string) $client->fresh()->prepaid_balance_usd);
+        $this->assertSame(0, EsimOrder::count());
+        $this->assertSame(0, ApiOrder::count());
+    }
+
     public function test_status_endpoint_returns_the_order_for_the_owning_client_only(): void
     {
         $plan = $this->esimgoPlan();

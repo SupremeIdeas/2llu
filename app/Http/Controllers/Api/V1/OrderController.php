@@ -73,8 +73,12 @@ class OrderController extends Controller
 
         $price = round($pricing->developerEsimPrice($plan), 4);
 
-        if (($debit = $this->charge($wallet, $client, $price, $ref, "eSIM: {$plan->name}")) instanceof JsonResponse) {
+        $debit = $this->charge($wallet, $client, $price, $ref, "eSIM: {$plan->name}");
+        if ($debit instanceof JsonResponse) {
             return $debit;
+        }
+        if (! $debit->wasRecentlyCreated) {
+            return $this->duplicateInProgress($client, $ref);
         }
 
         try {
@@ -129,8 +133,12 @@ class OrderController extends Controller
         }
         $price = round($pricing->developerSmsPrice((float) $quote['cost'], $quote['provider']), 4);
 
-        if (($debit = $this->charge($wallet, $client, $price, $ref, "Number: {$data['service']}")) instanceof JsonResponse) {
+        $debit = $this->charge($wallet, $client, $price, $ref, "Number: {$data['service']}");
+        if ($debit instanceof JsonResponse) {
             return $debit;
+        }
+        if (! $debit->wasRecentlyCreated) {
+            return $this->duplicateInProgress($client, $ref);
         }
 
         // Fulfil with the developer price as the margin ceiling; no user wallet.
@@ -182,16 +190,38 @@ class OrderController extends Controller
 
     // ---- money-safety helpers ----------------------------------------------
 
-    /** Charge the API wallet; returns a 402 JsonResponse if the balance is short. */
-    private function charge(ApiWalletService $wallet, ApiClient $client, float $price, string $ref, string $desc): JsonResponse|true
+    /**
+     * Charge the API wallet. Returns a 402 JsonResponse if the balance is short,
+     * otherwise the debit transaction — whose wasRecentlyCreated flag lets the
+     * caller tell a fresh charge from an idempotent replay (the upfront ApiOrder
+     * check is read-then-act, so two concurrent calls with the same reference can
+     * both reach here; the debit is idempotent but fulfilment is not).
+     */
+    private function charge(ApiWalletService $wallet, ApiClient $client, float $price, string $ref, string $desc): JsonResponse|\App\Models\ApiWalletTransaction
     {
         try {
-            $wallet->debit($client, $price, ['reference' => "api-order:{$ref}", 'description' => $desc]);
-
-            return true;
+            return $wallet->debit($client, $price, ['reference' => "api-order:{$ref}", 'description' => $desc]);
         } catch (InsufficientBalanceException) {
             return response()->json(['error' => 'insufficient_balance', 'message' => 'Top up your API balance and retry.'], 402);
         }
+    }
+
+    /**
+     * A concurrent request with the same reference already charged for this order
+     * — never fulfil again (that would double the provider cost). Return the
+     * order if the sibling request has persisted it, else signal in-progress.
+     */
+    private function duplicateInProgress(ApiClient $client, string $ref): JsonResponse
+    {
+        $existing = ApiOrder::where('api_client_id', $client->id)->where('reference', $ref)->first();
+        if ($existing) {
+            return response()->json($existing->toApiArray(), 200);
+        }
+
+        return response()->json([
+            'error' => 'duplicate_in_progress',
+            'message' => 'An order with this reference is already being processed.',
+        ], 409);
     }
 
     private function refundAnd502(ApiWalletService $wallet, ApiClient $client, float $price, string $ref): JsonResponse
