@@ -66,6 +66,9 @@
          Only rendered for verified end-users (this layout is behind auth). --}}
     @livewire('wizard')
 
+    {{-- Self-hosted web-push opt-in (owner request) — closed-tab notifications. --}}
+    @include('partials.push-optin')
+
     {{-- Merchant co-branding (ROADMAP §Layer 3.3): a subtle footer badge for
          customers who joined through a reseller — merchant mark + "Powered by
          NaaraSim". NaaraSim branding is never replaced, only accompanied. --}}

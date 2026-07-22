@@ -44,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('number.twilio', \App\Services\SMS\Numbers\TwilioService::class);
         $this->app->singleton('number.telnyx', \App\Services\SMS\Numbers\TelnyxService::class);
 
+        // Web-push sender (self-hosted VAPID) — swapped for a fake in tests.
+        $this->app->bind(\App\Services\Push\WebPushSender::class, \App\Services\Push\MinishlinkPushSender::class);
+
         // Payment gateways, resolved by name via app("pay.$gateway").
         $this->app->singleton('pay.flutterwave', \App\Services\Payments\FlutterwaveGateway::class);
         $this->app->singleton('pay.paystack', \App\Services\Payments\PaystackGateway::class);
@@ -120,6 +123,13 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user, string $ability) {
             return $user->hasRole('super_admin') ? true : null;
         });
+
+        // Self-hosted web-push channel, addressable as 'webpush' in a
+        // notification's via() (owner request — closed-tab notifications).
+        \Illuminate\Support\Facades\Notification::extend(
+            'webpush',
+            fn ($app) => new \App\Notifications\Channels\WebPushChannel,
+        );
 
         // A reversed/failed credit withdrawal returns the held credits
         // (ROADMAP §Layer 1). Registered explicitly so it fires regardless of

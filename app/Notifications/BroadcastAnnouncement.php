@@ -21,7 +21,7 @@ class BroadcastAnnouncement extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'webpush'];
     }
 
     public function inApp(object $notifiable): array

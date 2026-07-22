@@ -16,6 +16,7 @@
         "laravel/tinker": "^2.9",
         "league/flysystem-aws-s3-v3": "^3.35",
         "livewire/livewire": "^3.0",
+        "minishlink/web-push": "^10.1",
         "sentry/sentry-laravel": "^4.26",
         "socialiteproviders/apple": "^5.10",
         "socialiteproviders/discord": "^4.2",

@@ -123,6 +123,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/account/verify', \App\Livewire\IdentityVerification::class)->name('account.verify');
     // In-app notification centre (owner request) — the bell's "see all" page.
     Route::get('/notifications', \App\Livewire\Notifications::class)->name('notifications');
+    // Self-hosted web-push subscribe/unsubscribe (owner request).
+    Route::post('/push/subscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'store'])->name('push.subscribe');
+    Route::post('/push/unsubscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
     // NaaraCare AI support chat (Module 24) — reachable unverified (they may need help).
     Route::get('/support', \App\Livewire\SupportChat::class)->name('support');
     // Private support voice clips (Module 25) — owner or ticket staff only.
