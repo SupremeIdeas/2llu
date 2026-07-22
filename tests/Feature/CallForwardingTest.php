@@ -146,4 +146,24 @@ class CallForwardingTest extends TestCase
         $this->assertSame('inactive', $rule->fresh()->status);
         Queue::assertPushed(SyncVoiceWebhookJob::class, fn ($job) => $job->attach === false);
     }
+
+    public function test_edit_does_not_disclose_another_users_forwarding_numbers(): void
+    {
+        // IDOR: numberId arrives from the client. edit() must not populate the
+        // form with a victim's private forward-to / fallback numbers.
+        $victim = User::factory()->create();
+        $victimNumber = $this->number($victim);
+        CallForwardingRule::create([
+            'user_id' => $victim->id, 'virtual_number_id' => $victimNumber->id,
+            'twilio_number' => '+15005550006', 'forward_to_number' => '+2348055556666',
+            'fallback_number' => '+2348077778888', 'status' => 'active',
+        ]);
+
+        $attacker = User::factory()->create();
+
+        Livewire::actingAs($attacker)->test(CallForwarding::class)
+            ->call('edit', $victimNumber->id)
+            ->assertSet('forwardTo', '')
+            ->assertSet('fallback', '');
+    }
 }

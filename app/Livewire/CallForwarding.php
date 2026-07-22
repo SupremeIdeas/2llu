@@ -45,7 +45,11 @@ class CallForwarding extends Component
     public function edit(int $numberId): void
     {
         $this->numberId = $numberId;
-        $rule = CallForwardingRule::where('virtual_number_id', $numberId)->first();
+        // Owner-scoped: numberId arrives from the client, and the rule exposes
+        // the user's private forward-to / fallback numbers — an unscoped lookup
+        // would disclose another user's forwarding destinations.
+        $rule = CallForwardingRule::where('user_id', Auth::id())
+            ->where('virtual_number_id', $numberId)->first();
         $this->forwardTo = $rule?->forward_to_number ?? '';
         $this->fallback = $rule?->fallback_number ?? '';
         $this->error = null;
