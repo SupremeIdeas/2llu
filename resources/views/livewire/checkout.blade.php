@@ -77,7 +77,7 @@
                     <input type="checkbox" wire:model.live="useCredits" class="mt-0.5 rounded text-primary focus:ring-primary/40">
                     <span class="min-w-0 flex-1">
                         <span class="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                            <x-icon name="gift" class="h-4 w-4 text-primary dark:text-teal-300" /> Use my NaaraCredits
+                            <x-naara-coin class="h-4 w-4" /> Use my NaaraCredits
                         </span>
                         <span class="mt-0.5 block text-xs text-slate-600 dark:text-slate-300">
                             You have {{ number_format($creditBalance, 0) }} credits. Apply

@@ -73,6 +73,40 @@
             @error('favicon') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
         </div>
 
+        {{-- Premium dashboard hero backgrounds (owner request). Optional light +
+             dark art behind the dashboard greeting, under a gradient overlay.
+             Leave blank to keep the default heading. --}}
+        <div class="rounded-xl border border-slate-200 p-4 dark:border-[#2D4060]">
+            <div class="mb-1 flex items-center justify-between">
+                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Dashboard hero background <span class="font-normal text-slate-400">(optional)</span></p>
+                @if (\App\Support\HeroBackground::isSet())
+                    <button type="button" wire:click="removeHero" wire:confirm="Remove the hero backgrounds and return to the default heading?"
+                            class="text-xs font-medium text-red-600 hover:underline">Remove</button>
+                @endif
+            </div>
+            <p class="mb-3 text-[11px] text-slate-400">Aurora/wave art behind the dashboard greeting. <strong>WebP or JPG, 1600×500px (16:5), under 600&nbsp;KB.</strong> The image sits under a gradient so text stays readable, and adds no extra height. Switches automatically with the user’s light/dark theme.</p>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                @foreach ([['hero_light', 'Light mode', \App\Support\HeroBackground::light()], ['hero_dark', 'Dark mode', \App\Support\HeroBackground::dark()]] as [$field, $label, $current])
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{{ $label }}</label>
+                        <div class="mb-2 flex aspect-[16/5] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-[#2D4060] dark:bg-[#243352]">
+                            @if ($this->{$field} && $this->{$field}->isPreviewable())
+                                <img src="{{ $this->{$field}->temporaryUrl() }}" class="h-full w-full object-cover">
+                            @elseif ($current)
+                                <img src="{{ $current }}" class="h-full w-full object-cover">
+                            @else
+                                <span class="text-[11px] text-slate-400">No image — default heading</span>
+                            @endif
+                        </div>
+                        <input type="file" wire:model="{{ $field }}" accept="image/webp,image/jpeg"
+                               class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary dark:text-slate-400">
+                        @error($field) <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
         <div class="flex justify-end">
             <button type="submit" wire:loading.attr="disabled" wire:target="save"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">

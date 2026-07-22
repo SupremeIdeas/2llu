@@ -193,6 +193,9 @@ class AppServiceProvider extends ServiceProvider
             if (\App\Support\BrandSettings::isBrandKey($setting->key)) {
                 \App\Support\BrandSettings::flush();
             }
+            if (\App\Support\HeroBackground::isHeroKey($setting->key)) {
+                \App\Support\HeroBackground::flush();
+            }
             if (\App\Support\SiteContent::isSiteKey($setting->key)) {
                 \App\Support\SiteContent::flush();
             }

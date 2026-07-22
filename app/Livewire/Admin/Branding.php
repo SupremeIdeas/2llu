@@ -51,6 +51,11 @@ class Branding extends Component
 
     public $favicon = null;
 
+    // Premium dashboard hero backgrounds (owner request) — light + dark, WebP/JPG.
+    public $hero_light = null;
+
+    public $hero_dark = null;
+
     public ?string $saved = null;
 
     /** field => setting key. */
@@ -60,6 +65,8 @@ class Branding extends Component
         'agency_light' => 'brand.logo_agency_light',
         'agency_dark' => 'brand.logo_agency_dark',
         'favicon' => 'brand.favicon',
+        'hero_light' => \App\Support\HeroBackground::LIGHT_KEY,
+        'hero_dark' => \App\Support\HeroBackground::DARK_KEY,
     ];
 
     public function mount(): void
@@ -136,6 +143,14 @@ class Branding extends Component
             'agency_light' => 'nullable|image|max:2048',
             'agency_dark' => 'nullable|image|max:2048',
             'favicon' => 'nullable|image|max:1024',
+            // Hero art: WebP or JPG only, kept small for fast in-app loading.
+            'hero_light' => 'nullable|mimes:webp,jpg,jpeg|max:600',
+            'hero_dark' => 'nullable|mimes:webp,jpg,jpeg|max:600',
+        ], [
+            'hero_light.mimes' => 'The hero image must be a WebP or JPG.',
+            'hero_dark.mimes' => 'The hero image must be a WebP or JPG.',
+            'hero_light.max' => 'Keep the hero image under 600 KB for fast loading.',
+            'hero_dark.max' => 'Keep the hero image under 600 KB for fast loading.',
         ]);
 
         Setting::setValue('brand.name', trim($this->brand_name), 'brand');
@@ -149,9 +164,23 @@ class Branding extends Component
         }
 
         BrandSettings::flush();
+        \App\Support\HeroBackground::flush();
         Auditor::log('brand.updated');
         $this->saved = 'Branding saved. Your logo and name now show across the platform.';
         $this->dispatch('nx-toast', type: 'success', message: 'Branding saved — live everywhere.');
+    }
+
+    /** Remove the hero backgrounds — the dashboard hero returns to its default. */
+    public function removeHero(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        foreach ([\App\Support\HeroBackground::LIGHT_KEY, \App\Support\HeroBackground::DARK_KEY] as $key) {
+            Setting::where('key', $key)->get()->each->delete();
+        }
+        \App\Support\HeroBackground::flush();
+        Auditor::log('brand.hero_removed');
+        $this->saved = 'Hero backgrounds removed — the dashboard uses the default heading.';
     }
 
     public function render()

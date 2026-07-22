@@ -14,9 +14,11 @@
             <div class="relative flex items-end justify-between gap-4">
                 <div>
                     <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-teal-100/90">
-                        <x-icon name="gift" class="h-4 w-4" /> NaaraCredits balance
+                        <x-naara-coin class="h-4 w-4" /> NaaraCredits balance
                     </p>
-                    <p class="mt-3 font-display text-4xl font-bold tracking-tight text-white">{{ number_format($balance, 0) }}</p>
+                    <p class="mt-3 flex items-center gap-2 font-display text-4xl font-bold tracking-tight text-white">
+                        <x-naara-coin class="h-7 w-7" /> {{ number_format($balance, 0) }}
+                    </p>
                     <p class="mt-1 text-sm text-teal-100/80">worth ${{ number_format($usdValue, 2) }} at checkout</p>
                 </div>
                 <div class="flex flex-col items-end gap-2">

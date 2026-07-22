@@ -1,7 +1,27 @@
 <div>
     {{-- Greeting + fact of the day (owner request): welcome by name, ask about
-         their day, and teach what a NaaraSim number/eSIM can do worldwide. --}}
-    <div class="mb-6 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.07] via-transparent to-accent/[0.06] p-5 dark:border-primary/25 dark:from-primary/15 dark:to-accent/10">
+         their day, and teach what a NaaraSim number/eSIM can do worldwide.
+         Premium hero (owner request): when an admin has uploaded hero art it
+         sits behind the greeting under a gradient overlay, theme-switched and
+         adding no extra height; otherwise the default gradient card shows. --}}
+    @php($heroLight = \App\Support\HeroBackground::light())
+    @php($heroDark = \App\Support\HeroBackground::dark())
+    @php($hasHero = \App\Support\HeroBackground::isSet())
+    <div class="relative mb-6 overflow-hidden rounded-2xl border p-5 {{ $hasHero ? 'border-slate-200/60 dark:border-white/10' : 'border-primary/15 bg-gradient-to-br from-primary/[0.07] via-transparent to-accent/[0.06] dark:border-primary/25 dark:from-primary/15 dark:to-accent/10' }}">
+        @if ($hasHero)
+            {{-- Background art layer (light + dark; one falls back to the other). --}}
+            <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+                <img src="{{ $heroLight ?: $heroDark }}" alt="" loading="lazy" decoding="async"
+                     class="absolute inset-0 h-full w-full object-cover object-center {{ $heroDark ? 'dark:hidden' : '' }}">
+                @if ($heroDark)
+                    <img src="{{ $heroDark }}" alt="" loading="lazy" decoding="async"
+                         class="absolute inset-0 hidden h-full w-full object-cover object-center dark:block">
+                @endif
+                {{-- Gradient overlay: image emerges at the top, solid surface where
+                     the text sits, so the heading always reads cleanly. --}}
+                <div class="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-white/40 dark:from-[#0D1B2A] dark:via-[#0D1B2A]/85 dark:to-[#0D1B2A]/40"></div>
+            </div>
+        @endif
         <div class="flex items-start gap-3">
             <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300">
                 <x-icon name="signal" class="h-5 w-5" />
