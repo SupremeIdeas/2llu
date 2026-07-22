@@ -188,7 +188,7 @@ class Checkout extends Component
         }
 
         try {
-            $wallet->debit($user, $walletCharge, 'USD', [
+            $debit = $wallet->debit($user, $walletCharge, 'USD', [
                 'reference' => $ref,
                 'description' => "eSIM: {$this->plan->name}",
             ]);
@@ -199,6 +199,18 @@ class Checkout extends Component
                 title: 'Payment failed',
                 message: 'Your wallet balance is too low — you were not charged. Top up and try again.',
                 cta: ['label' => 'Top up wallet', 'href' => route('wallet')]);
+
+            return;
+        }
+
+        // Double-submit guard (money-safety rule 7): the wallet debit is
+        // idempotent on $ref, but the provider order is not. A same-second
+        // re-submit returns the EXISTING debit (wasRecentlyCreated === false) —
+        // the order was already placed for this charge, so ordering again would
+        // buy a second eSIM at our cost against a single charge. Stop here.
+        if (! $debit->wasRecentlyCreated) {
+            $this->done = true;
+            $this->message = 'This order is already being processed — it will appear on your dashboard shortly.';
 
             return;
         }

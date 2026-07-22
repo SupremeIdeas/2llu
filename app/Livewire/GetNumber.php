@@ -101,13 +101,24 @@ class GetNumber extends Component
         $ref = "number-checkout:{$user->id}:".now()->timestamp;
 
         try {
-            $wallet->debit($user, $retail, 'USD', ['reference' => $ref, 'description' => "Number: {$this->service}"]);
+            $debit = $wallet->debit($user, $retail, 'USD', ['reference' => $ref, 'description' => "Number: {$this->service}"]);
         } catch (InsufficientBalanceException $e) {
             $this->error = 'Your wallet balance is too low. Please top up and try again.';
             $this->dispatch('nx-toast', variant: 'hero', type: 'error',
                 title: 'Payment failed',
                 message: 'Your wallet balance is too low — you were not charged. Top up and try again.',
                 cta: ['label' => 'Top up wallet', 'href' => route('wallet')]);
+
+            return;
+        }
+
+        // Double-submit guard (money-safety rule 7): the debit is idempotent on
+        // $ref but reserving a number is not. A same-second re-submit returns the
+        // EXISTING debit (wasRecentlyCreated === false) — a number was already
+        // reserved for this charge, so reserving again would rent a second number
+        // at our cost against a single charge. Stop here.
+        if (! $debit->wasRecentlyCreated) {
+            $this->error = 'This request is already being processed — your number will appear on your dashboard shortly.';
 
             return;
         }
