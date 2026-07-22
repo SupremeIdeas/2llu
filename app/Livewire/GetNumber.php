@@ -40,6 +40,13 @@ class GetNumber extends Component
     /** Client-side filter for the (large) service picker. */
     public string $serviceSearch = '';
 
+    public function mount(): void
+    {
+        // Pre-fill a coupon claimed from an offer (one-tap path); still validated
+        // + MarginGuard-clamped when applied.
+        $this->coupon = \App\Support\PendingCoupon::peek() ?? '';
+    }
+
     /** Switching away from rental clears an "any service" (full-rent) pick. */
     public function updatedType(): void
     {

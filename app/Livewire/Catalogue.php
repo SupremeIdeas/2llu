@@ -20,6 +20,17 @@ class Catalogue extends Component
     #[Url(as: 'q')]
     public string $search = '';
 
+    /** A coupon claimed from an announcement (?claim=CODE) — stashed for checkout. */
+    #[Url(as: 'claim')]
+    public string $claim = '';
+
+    public function mount(): void
+    {
+        if ($this->claim !== '') {
+            \App\Support\PendingCoupon::stash($this->claim);
+        }
+    }
+
     public function updatingSearch(): void
     {
         $this->resetPage();

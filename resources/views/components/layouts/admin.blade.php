@@ -25,6 +25,7 @@
         $more[] = ['heading' => 'Store & pricing'];
         $more[] = ['route' => 'admin.pricing-architect', 'label' => 'Price with Claude', 'icon' => 'zap'];
         $more[] = ['route' => 'admin.coupons', 'label' => 'Coupons', 'icon' => 'gift'];
+        $more[] = ['route' => 'admin.announcements', 'label' => 'Announcements', 'icon' => 'bell'];
         $more[] = ['route' => 'admin.banners', 'label' => 'Banners', 'icon' => 'image'];
         $more[] = ['route' => 'admin.credits', 'label' => 'NaaraCredits', 'icon' => 'gift'];
 

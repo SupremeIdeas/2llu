@@ -60,6 +60,9 @@ class Checkout extends Component
     public function mount(EsimPlan $plan): void
     {
         $this->plan = $plan;
+        // Pre-fill a coupon the user claimed from an offer (one-tap path). It is
+        // still validated + MarginGuard-clamped when applied/charged.
+        $this->coupon = \App\Support\PendingCoupon::peek() ?? '';
     }
 
     /** The retail the wallet is charged after a coupon (never below the floor). */
