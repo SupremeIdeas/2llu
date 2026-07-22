@@ -484,16 +484,32 @@
 }
 .mkt-sticky-cta.is-shown { transform: translate(-50%, 0); opacity: 1; }
 
-/* Premium card (feature/testimonial): lift + gradient edge glow on hover. */
+/* Premium card (feature/testimonial): glassmorphism + lift + gradient edge glow
+   on hover. Translucent + blurred so it reads as premium over hero art and
+   gradients, with enough opacity that text contrast stays strong on plain pages
+   (owner request — premium feel, must not hurt readability). Softer curves. */
 .nx-card {
     position: relative;
-    border-radius: 1.1rem;
+    border-radius: 1.25rem;
     padding: 1.5rem;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: rgb(255 255 255 / 0.72);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgb(255 255 255 / 0.6);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 6px 20px rgb(13 27 42 / 0.06);
     transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s;
 }
-.dark .nx-card { background: #16233d; border-color: #2d4060; }
+.dark .nx-card {
+    background: rgb(22 35 61 / 0.62);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px rgb(0 0 0 / 0.25);
+}
+/* Fallback: if the browser can't blur, fall back to a solid surface so the card
+   never looks washed-out. */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .nx-card { background: #ffffff; }
+    .dark .nx-card { background: #16233d; }
+}
 .nx-card::before {
     content: "";
     position: absolute;
@@ -512,6 +528,27 @@
 .nx-card:hover::before { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
     .nx-card, .nx-card:hover { transform: none; }
+}
+
+/* Reusable glass panel (owner request — premium feel for flat areas). Additive:
+   drop `nx-glass` on any container to give it a translucent, blurred, softly
+   curved surface. Readability-safe alpha; solid fallback where blur is absent. */
+.nx-glass {
+    background: rgb(255 255 255 / 0.68);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid rgb(255 255 255 / 0.55);
+    border-radius: 1.25rem;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 8px 24px rgb(13 27 42 / 0.07);
+}
+.dark .nx-glass {
+    background: rgb(16 27 42 / 0.55);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 8px 24px rgb(0 0 0 / 0.3);
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .nx-glass { background: #ffffff; }
+    .dark .nx-glass { background: #16233d; }
 }
 
 /* Pinned products crossfade (Module 27.5): panels only overlap when GSAP has
