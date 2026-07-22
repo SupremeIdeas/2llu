@@ -15,6 +15,7 @@ use Illuminate\Notifications\Notification;
  */
 class RefundNotification extends Notification implements ShouldQueue
 {
+    use \App\Notifications\Concerns\InApp;
     use Queueable;
 
     public function __construct(
@@ -26,7 +27,19 @@ class RefundNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
+    }
+
+    public function inApp(object $notifiable): array
+    {
+        return [
+            'category' => 'wallet',
+            'icon' => 'wallet',
+            'title' => 'Refunded to your wallet',
+            'body' => strtoupper($this->currency).' '.number_format($this->amount, 2).' is back in your wallet'.($this->reason ? ' — '.$this->reason : '.').'',
+            'action_url' => url('/wallet'),
+            'action_label' => 'Open wallet',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage

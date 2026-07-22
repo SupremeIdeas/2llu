@@ -40,6 +40,15 @@
 
 <x-layouts.app :title="$title ?? config('app.name')">
     <x-app-shell :primary="$primary" :more="$more" :promo="true" brand-label="NaaraSim" brand-icon="signal" :brand-route="route('dashboard')">
+        {{-- In-app notification bell (owner request). Two keyed instances so the
+             mobile header and desktop top strip each get their own Livewire id. --}}
+        <x-slot:headerActions>
+            <livewire:notification-center :key="'nc-mobile'" />
+        </x-slot:headerActions>
+        <x-slot:headerActionsDesktop>
+            <livewire:notification-center :key="'nc-desktop'" />
+        </x-slot:headerActionsDesktop>
+
         {{ $slot }}
     </x-app-shell>
 

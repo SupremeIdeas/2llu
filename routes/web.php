@@ -121,6 +121,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/account/security', \App\Livewire\SecurityCenter::class)->name('security');
     // Identity verification (ROADMAP §Layer 0.3) — KYC L2 gate for withdrawals.
     Route::get('/account/verify', \App\Livewire\IdentityVerification::class)->name('account.verify');
+    // In-app notification centre (owner request) — the bell's "see all" page.
+    Route::get('/notifications', \App\Livewire\Notifications::class)->name('notifications');
     // NaaraCare AI support chat (Module 24) — reachable unverified (they may need help).
     Route::get('/support', \App\Livewire\SupportChat::class)->name('support');
     // Private support voice clips (Module 25) — owner or ticket staff only.

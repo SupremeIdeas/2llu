@@ -13,11 +13,24 @@ use Illuminate\Notifications\Notification;
  */
 class HumanRepliedNotification extends Notification implements ShouldQueue
 {
+    use \App\Notifications\Concerns\InApp;
     use Queueable;
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
+    }
+
+    public function inApp(object $notifiable): array
+    {
+        return [
+            'category' => 'support',
+            'icon' => 'id-card',
+            'title' => 'Our team replied',
+            'body' => 'A support agent has responded to your conversation.',
+            'action_url' => url('/support'),
+            'action_label' => 'Open chat',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage

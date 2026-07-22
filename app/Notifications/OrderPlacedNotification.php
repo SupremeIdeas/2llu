@@ -14,6 +14,7 @@ use Illuminate\Notifications\Notification;
  */
 class OrderPlacedNotification extends Notification implements ShouldQueue
 {
+    use \App\Notifications\Concerns\InApp;
     use Queueable;
 
     /**
@@ -29,7 +30,21 @@ class OrderPlacedNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
+    }
+
+    public function inApp(object $notifiable): array
+    {
+        $isEsim = $this->product === 'esim';
+
+        return [
+            'category' => 'order',
+            'icon' => $isEsim ? 'signal' : 'phone',
+            'title' => $isEsim ? 'Your eSIM order is confirmed' : 'Your number is on the way',
+            'body' => $this->itemName.' — being provisioned now.',
+            'action_url' => url('/dashboard'),
+            'action_label' => 'View order',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage

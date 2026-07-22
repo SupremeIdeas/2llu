@@ -78,11 +78,22 @@
         <a href="{{ $brandRoute ?? '#' }}" class="flex items-center">
             <x-brand-logo variant="product" class="h-8 max-w-[150px]" :fallback-icon="$brandIcon" />
         </a>
-        <x-theme-toggle />
+        <div class="flex items-center gap-1">
+            {{ $headerActions ?? '' }}
+            <x-theme-toggle />
+        </div>
     </header>
 
     {{-- ============ Page content ============ --}}
     <div class="lg:pl-72 lg:transition-[padding] lg:duration-300" :class="navCollapsed ? 'lg:!pl-24' : ''">
+        {{-- Desktop top strip: header actions (e.g. the notification bell) sit
+             top-right of the content, mirroring the mobile header. A SEPARATE
+             slot from the mobile one so each Livewire instance has its own id. --}}
+        @isset($headerActionsDesktop)
+            <div class="sticky top-0 z-30 hidden items-center justify-end gap-1 border-b border-slate-200/60 bg-white/70 px-8 py-3 backdrop-blur-xl lg:flex dark:border-white/10 dark:bg-[#0D1B2A]/70">
+                {{ $headerActionsDesktop }}
+            </div>
+        @endisset
         <main class="mx-auto w-full max-w-6xl px-4 py-6 pb-28 lg:px-8 lg:py-10 lg:pb-10">
             {{ $slot }}
         </main>

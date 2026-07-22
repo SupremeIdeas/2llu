@@ -14,11 +14,24 @@ use Illuminate\Notifications\Notification;
  */
 class PasswordChangedNotification extends Notification implements ShouldQueue
 {
+    use \App\Notifications\Concerns\InApp;
     use Queueable;
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
+    }
+
+    public function inApp(object $notifiable): array
+    {
+        return [
+            'category' => 'security',
+            'icon' => 'shield-check',
+            'title' => 'Your password was changed',
+            'body' => 'If this wasn’t you, secure your account immediately.',
+            'action_url' => url('/account/security'),
+            'action_label' => 'Review security',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage

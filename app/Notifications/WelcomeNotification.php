@@ -12,11 +12,24 @@ use Illuminate\Notifications\Notification;
  */
 class WelcomeNotification extends Notification implements ShouldQueue
 {
+    use \App\Notifications\Concerns\InApp;
     use Queueable;
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
+    }
+
+    public function inApp(object $notifiable): array
+    {
+        return [
+            'category' => 'system',
+            'icon' => 'gift',
+            'title' => 'Welcome to '.config('app.name').'!',
+            'body' => 'Stay connected across 190+ countries — data plans and numbers in one place.',
+            'action_url' => url('/catalogue'),
+            'action_label' => 'Explore plans',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage
