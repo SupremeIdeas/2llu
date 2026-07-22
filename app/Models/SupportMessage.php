@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SupportMessage extends Model
 {
-    protected $fillable = ['conversation_id', 'role', 'body', 'meta', 'voice_path', 'voice_status'];
+    protected $fillable = [
+        'conversation_id', 'role', 'body', 'meta', 'voice_path', 'voice_status',
+        'attachment_path', 'attachment_mime', 'attachment_name',
+    ];
 
     protected function casts(): array
     {

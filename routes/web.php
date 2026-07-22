@@ -125,6 +125,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/support', \App\Livewire\SupportChat::class)->name('support');
     // Private support voice clips (Module 25) — owner or ticket staff only.
     Route::get('/support/voice/{message}', \App\Http\Controllers\SupportVoiceController::class)->name('support.voice');
+    // Private support evidence attachments — owner or ticket staff only.
+    Route::get('/support/attachment/{message}', \App\Http\Controllers\SupportAttachmentController::class)->name('support.attachment');
     Route::get('/account/export', \App\Http\Controllers\AccountExportController::class)
         ->name('account.export.download');
 });

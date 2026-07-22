@@ -115,6 +115,9 @@ class SupportQueue extends Component
                         'role' => $m->role,
                         'body' => $m->body,
                         'voice' => $m->voice_path ? route('support.voice', $m->id) : null,
+                        'attachment' => $m->attachment_path ? route('support.attachment', $m->id) : null,
+                        'attachment_name' => $m->attachment_name,
+                        'attachment_image' => \App\Support\SupportAttachment::isImage($m->attachment_mime),
                     ]);
             }
         }

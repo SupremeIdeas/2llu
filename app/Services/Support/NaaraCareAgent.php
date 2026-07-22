@@ -29,16 +29,30 @@ class NaaraCareAgent
     /**
      * Answer one user turn within a conversation.
      *
+     * @param  array<string, mixed>|null  $attachment  An Anthropic image/document
+     *   content block for evidence the user attached this turn (built by
+     *   SupportAttachment::toContentBlock). The model SEES it and diagnoses from it.
      * @return array{reply: string, nav: ?string, escalated: bool}
      */
-    public function respond(User $user, SupportConversation $conversation, string $userMessage): array
+    public function respond(User $user, SupportConversation $conversation, string $userMessage, ?array $attachment = null): array
     {
         $tools = new SupportTools($user, $conversation);
         $schemas = $tools->schemas();
         $system = $this->systemPrompt($user);
 
         $messages = $this->history($conversation);
-        $messages[] = ['role' => 'user', 'content' => $userMessage];
+        // Multimodal turn: when the user attached evidence, send the text and the
+        // image/PDF together as content blocks so the model can analyse the file.
+        if ($attachment !== null) {
+            $blocks = [];
+            if (trim($userMessage) !== '') {
+                $blocks[] = ['type' => 'text', 'text' => $userMessage];
+            }
+            $blocks[] = $attachment;
+            $messages[] = ['role' => 'user', 'content' => $blocks];
+        } else {
+            $messages[] = ['role' => 'user', 'content' => $userMessage];
+        }
 
         $nav = null;
         $escalated = false;
@@ -102,6 +116,8 @@ class NaaraCareAgent
         - Your job is to solve each customer's SPECIFIC problem. Use your tools to look at
           THEIR actual orders, device, numbers and balance before answering — diagnose, then
           give a concrete solution or the exact next step.
+        - When the customer attaches EVIDENCE (a screenshot, photo, or PDF), read it carefully
+          and use what it shows to diagnose — quote the specific error, code, or detail you see.
         - Always run check_device_compatibility when eSIM device support is in question.
         - Use suggest_navigation to give them a shortcut to the right page.
         - If something needs a manual action you cannot perform (a refund, a provider outage,

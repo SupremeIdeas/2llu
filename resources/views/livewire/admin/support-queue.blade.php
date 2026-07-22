@@ -66,6 +66,18 @@
                                     @if ($m['voice'])
                                         <audio controls preload="none" src="{{ $m['voice'] }}" class="mt-2 w-full"></audio>
                                     @endif
+                                    @if (! empty($m['attachment']))
+                                        @if ($m['attachment_image'])
+                                            <a href="{{ $m['attachment'] }}" target="_blank" rel="noopener">
+                                                <img src="{{ $m['attachment'] }}" alt="{{ $m['attachment_name'] }}" class="mt-2 max-h-56 rounded-lg border border-slate-200 dark:border-[#2D4060]" />
+                                            </a>
+                                        @else
+                                            <a href="{{ $m['attachment'] }}" target="_blank" rel="noopener"
+                                               class="mt-2 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs dark:border-[#2D4060]">
+                                                <x-icon name="file-text" class="h-4 w-4" /> {{ $m['attachment_name'] ?: 'Attachment' }}
+                                            </a>
+                                        @endif
+                                    @endif
                                 </div>
                             </div>
                         </div>

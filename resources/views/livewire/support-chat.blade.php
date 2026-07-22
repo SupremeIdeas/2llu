@@ -19,6 +19,18 @@
                     <div class="max-w-[80%] rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-sm text-white">
                         {{ $m['body'] }}
                         @if ($m['voice'])<audio controls preload="none" src="{{ $m['voice'] }}" class="mt-2 w-full"></audio>@endif
+                        @if (! empty($m['attachment']))
+                            @if ($m['attachment_image'])
+                                <a href="{{ $m['attachment'] }}" target="_blank" rel="noopener">
+                                    <img src="{{ $m['attachment'] }}" alt="{{ $m['attachment_name'] }}" class="mt-2 max-h-48 rounded-lg border border-white/20" />
+                                </a>
+                            @else
+                                <a href="{{ $m['attachment'] }}" target="_blank" rel="noopener"
+                                   class="mt-2 inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-xs">
+                                    <x-icon name="file-text" class="h-4 w-4" /> {{ $m['attachment_name'] ?: 'Attachment' }}
+                                </a>
+                            @endif
+                        @endif
                     </div>
                 </div>
             @else
@@ -72,6 +84,12 @@
                    class="flex-1 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100"
                    wire:loading.attr="disabled" wire:target="send,sendVoice">
 
+            {{-- Evidence: attach a screenshot / photo / PDF; sent with the message. --}}
+            <label class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-slate-300 text-slate-500 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]" title="Attach evidence (image or PDF)">
+                <x-icon name="upload" class="h-5 w-5" />
+                <input type="file" accept="{{ \App\Support\SupportAttachment::acceptAttribute() }}" class="hidden" wire:model="evidence">
+            </label>
+
             {{-- Voice note: attach an audio clip; auto-sends on select. --}}
             <label class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-slate-300 text-slate-500 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]" title="Send a voice note">
                 <x-icon name="mic" class="h-5 w-5" />
@@ -83,8 +101,21 @@
                 <x-icon name="send" class="h-5 w-5" />
             </button>
         </form>
+
+        {{-- Selected-evidence chip (before send). --}}
+        @if ($evidence)
+            <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                <span wire:loading wire:target="evidence" class="text-slate-400">Attaching…</span>
+                <span wire:loading.remove wire:target="evidence" class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 dark:bg-[#243352]">
+                    <x-icon name="file-text" class="h-3.5 w-3.5" /> Evidence ready to send
+                    <button type="button" wire:click="$set('evidence', null)" class="text-slate-400 hover:text-red-600"><x-icon name="x" class="h-3.5 w-3.5" /></button>
+                </span>
+            </div>
+        @endif
+
         @error('draft') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
         @error('voiceNote') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+        @error('evidence') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
         <p wire:loading wire:target="sendVoice" class="text-xs text-slate-400">Sending your voice note…</p>
     </div>
 </div>

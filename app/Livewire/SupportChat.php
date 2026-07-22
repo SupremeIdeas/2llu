@@ -34,6 +34,8 @@ class SupportChat extends Component
 
     public $voiceNote = null; // uploaded audio
 
+    public $evidence = null; // uploaded screenshot / photo / PDF
+
     /** @var array<int, array<string, mixed>> */
     public array $messages = [];
 
@@ -88,6 +90,9 @@ class SupportChat extends Component
                 'nav' => $m->meta['nav'] ?? null,
                 'voice' => $m->voice_status === 'ready' ? route('support.voice', $m->id) : null,
                 'voice_pending' => $m->voice_status === 'pending',
+                'attachment' => $m->attachment_path ? route('support.attachment', $m->id) : null,
+                'attachment_name' => $m->attachment_name,
+                'attachment_image' => \App\Support\SupportAttachment::isImage($m->attachment_mime),
             ])->all();
     }
 
@@ -101,18 +106,43 @@ class SupportChat extends Component
     public function send(NaaraCareAgent $agent): void
     {
         $text = trim($this->draft);
-        if ($text === '') {
+        $hasEvidence = $this->evidence !== null;
+
+        // Need either words or a file — but not nothing.
+        if ($text === '' && ! $hasEvidence) {
             return;
+        }
+        if ($hasEvidence) {
+            $this->validate(['evidence' => \App\Support\SupportAttachment::uploadRules()]);
         }
         if (! $this->throttleOk()) {
             return;
         }
 
-        $this->conversation->messages()->create(['role' => 'user', 'body' => $text]);
+        $attachmentBlock = null;
+        $attributes = ['role' => 'user', 'body' => $text ?: '[Attached evidence]'];
+
+        if ($hasEvidence) {
+            $bytes = file_get_contents($this->evidence->getRealPath());
+            $mime = $this->evidence->getMimeType();
+            $path = 'support-evidence/'.$this->conversation->id.'/'.Str::uuid()->toString().'.'.$this->evidence->extension();
+            Storage::disk(MediaStorage::privateDisk())->put($path, $bytes);
+
+            $attributes += [
+                'attachment_path' => $path,
+                'attachment_mime' => $mime,
+                'attachment_name' => Str::limit($this->evidence->getClientOriginalName(), 120, ''),
+            ];
+            // Build the content block for the model to SEE the evidence this turn.
+            $attachmentBlock = \App\Support\SupportAttachment::toContentBlock($bytes, $mime);
+        }
+
+        $this->conversation->messages()->create($attributes);
         $this->draft = '';
+        $this->evidence = null;
         $this->loadMessages();
 
-        $this->respondTo($agent, $text);
+        $this->respondTo($agent, $text ?: 'I have attached a file as evidence — please take a look and help.', $attachmentBlock);
     }
 
     /**
@@ -151,7 +181,7 @@ class SupportChat extends Component
         }
     }
 
-    private function respondTo(NaaraCareAgent $agent, string $text): void
+    private function respondTo(NaaraCareAgent $agent, string $text, ?array $attachment = null): void
     {
         if ($this->handledByHuman()) {
             return; // a human will reply
@@ -168,7 +198,7 @@ class SupportChat extends Component
         }
 
         try {
-            $result = $agent->respond(Auth::user(), $this->conversation->fresh(), $text);
+            $result = $agent->respond(Auth::user(), $this->conversation->fresh(), $text, $attachment);
             app(SupportReply::class)->deliver(
                 $this->conversation->fresh(),
                 'assistant',
