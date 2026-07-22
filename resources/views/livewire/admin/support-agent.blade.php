@@ -45,6 +45,26 @@
             </div>
         </div>
 
+        {{-- Autopilot: how much the AI may resolve on its own. --}}
+        <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1B2A44]">
+            <h2 class="mb-1 text-sm font-semibold text-slate-800 dark:text-slate-100">Autopilot resolution</h2>
+            <p class="mb-4 text-[11px] text-slate-400">Let {{ $agent_name ?: 'the agent' }} resolve safe tickets itself — re-fetch a stuck code, resend eSIM setup, and mark tickets resolved. Refunds, account changes, pricing and anything sensitive are always handed to staff.</p>
+
+            <label class="flex items-center gap-3">
+                <input type="checkbox" wire:model="autopilot_enabled"
+                       class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary dark:border-[#2D4060] dark:bg-[#243352]">
+                <span class="text-sm text-slate-700 dark:text-slate-200">Allow the AI to resolve safe tickets on autopilot</span>
+            </label>
+
+            <div class="mt-4 max-w-xs">
+                <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Goodwill ceiling (USD per ticket)</label>
+                <input type="number" step="0.01" min="0" max="20" wire:model="goodwill_cap_usd"
+                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                <p class="mt-1 text-[11px] text-slate-400">The most goodwill (in NaaraCredits value) the AI may grant for a genuine minor inconvenience. <strong>0 turns goodwill off</strong> — the AI escalates instead. Credits can never push a sale below cost.</p>
+                @error('goodwill_cap_usd') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+        </div>
+
         <div class="flex justify-end">
             <button type="submit" wire:loading.attr="disabled" wire:target="save"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">

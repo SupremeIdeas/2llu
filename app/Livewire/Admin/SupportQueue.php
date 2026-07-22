@@ -126,6 +126,8 @@ class SupportQueue extends Component
             'tickets' => $tickets,
             'selected' => $selected,
             'thread' => $thread,
+            // What the AI already did on this ticket (so staff aren't blind to it).
+            'autopilotLog' => $selected?->autopilot_log ?? [],
         ]);
     }
 }

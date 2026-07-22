@@ -105,6 +105,49 @@ class SupportTools
                     'required' => ['reason'],
                 ],
             ],
+
+            // ---- AUTOPILOT: actions you may take yourself to RESOLVE a ticket ----
+            // These are the ONLY changes you can make. Anything not listed here
+            // (refunds, account edits, deletions, pricing) you must escalate.
+            [
+                'name' => 'refresh_number_code',
+                'description' => "Re-fetch the verification code (OTP) for one of THIS user's PENDING number orders from the provider — use when their code hasn't arrived yet. Safe to run; it never buys a new number or costs the user anything.",
+                'input_schema' => [
+                    'type' => 'object',
+                    'properties' => ['order_id' => ['type' => 'integer', 'description' => 'The number order id from get_my_orders.']],
+                    'required' => ['order_id'],
+                ],
+            ],
+            [
+                'name' => 'resend_esim_setup',
+                'description' => "Re-send the eSIM setup email (with the link to their QR & activation details) for one of THIS user's eSIM orders — use when they lost or never received their setup. Safe to run.",
+                'input_schema' => [
+                    'type' => 'object',
+                    'properties' => ['order_id' => ['type' => 'integer', 'description' => 'The eSIM order id from get_my_orders.']],
+                    'required' => ['order_id'],
+                ],
+            ],
+            [
+                'name' => 'grant_goodwill_credit',
+                'description' => "Grant a small goodwill amount of NaaraCredits to THIS user for a genuine, minor inconvenience you have confirmed. There is an admin-set ceiling; if your amount is above it, or goodwill is switched off, this will NOT apply and you should escalate instead. Never promise an amount before calling this — call it, then tell the user only what actually applied.",
+                'input_schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'amount_usd' => ['type' => 'number', 'description' => 'The goodwill value in USD (small).'],
+                        'reason' => ['type' => 'string', 'description' => 'Why this goodwill is warranted.'],
+                    ],
+                    'required' => ['amount_usd', 'reason'],
+                ],
+            ],
+            [
+                'name' => 'resolve_ticket',
+                'description' => "Mark this conversation as RESOLVED — use only once the user's issue is actually fixed and they have nothing else outstanding. The user can always reply again to reopen it.",
+                'input_schema' => [
+                    'type' => 'object',
+                    'properties' => ['summary' => ['type' => 'string', 'description' => 'One line on how it was resolved.']],
+                    'required' => ['summary'],
+                ],
+            ],
         ];
     }
 
@@ -126,6 +169,10 @@ class SupportTools
             'estimate_data' => $this->estimate((string) ($input['profile'] ?? 'medium'), (int) ($input['days'] ?? 7)),
             'suggest_navigation' => $this->navigation((string) ($input['page'] ?? '')),
             'escalate_to_human' => $this->escalate((string) ($input['reason'] ?? '')),
+            'refresh_number_code' => $this->refreshNumberCode((int) ($input['order_id'] ?? 0)),
+            'resend_esim_setup' => $this->resendEsimSetup((int) ($input['order_id'] ?? 0)),
+            'grant_goodwill_credit' => $this->grantGoodwill((float) ($input['amount_usd'] ?? 0), (string) ($input['reason'] ?? '')),
+            'resolve_ticket' => $this->resolveTicket((string) ($input['summary'] ?? '')),
             default => ['error' => 'unknown_tool'],
         };
 
@@ -239,5 +286,123 @@ class SupportTools
         }
 
         return ['escalated' => true, 'note' => 'A human support agent has been notified and will follow up.'];
+    }
+
+    // -- AUTOPILOT actions (allowlisted, bounded, audited) ------------------
+    //
+    // Each first checks the master switch, then acts ONLY on the bound user's
+    // own record, records what it did on the ticket, and returns a plain result.
+    // None of these can touch money beyond the admin-capped goodwill lane, another
+    // user, or any account/pricing/secret — those simply have no tool.
+
+    /** Re-poll a pending number order for its OTP. Non-financial; rate-limited. */
+    private function refreshNumberCode(int $orderId): array
+    {
+        if (! \App\Support\SupportAutopilot::enabled()) {
+            return ['done' => false, 'note' => 'Automatic actions are turned off — escalate instead.'];
+        }
+
+        $order = $this->user->smsOrders()->whereKey($orderId)->first();
+        if (! $order) {
+            return ['error' => 'not_found', 'note' => 'No number order with that id belongs to this user.'];
+        }
+        if (in_array($order->status, ['completed', 'cancelled', 'timeout'], true)) {
+            return ['done' => false, 'status' => $order->status, 'note' => 'This order is already finished — a re-check would not help.'];
+        }
+
+        // Guard against hammering the provider: one re-poll per order per minute.
+        $key = "autopilot:repoll:{$order->id}";
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 1)) {
+            return ['done' => false, 'note' => 'A re-check for this order is already in progress — ask the user to wait a moment.'];
+        }
+        \Illuminate\Support\Facades\RateLimiter::hit($key, 60);
+
+        \App\Jobs\PollSmsOtpJob::dispatch($order->id, 'USD');
+        $this->recordAutopilot('refresh_number_code', ['order_id' => $order->id]);
+
+        return ['done' => true, 'note' => 'I have asked the provider to re-check for the code now; it should arrive shortly.'];
+    }
+
+    /** Re-send the eSIM setup email for the user's own order. Non-financial. */
+    private function resendEsimSetup(int $orderId): array
+    {
+        if (! \App\Support\SupportAutopilot::enabled()) {
+            return ['done' => false, 'note' => 'Automatic actions are turned off — escalate instead.'];
+        }
+
+        $order = $this->user->esimOrders()->whereKey($orderId)->first();
+        if (! $order) {
+            return ['error' => 'not_found', 'note' => 'No eSIM order with that id belongs to this user.'];
+        }
+
+        \App\Support\Mailer::notify($this->user, new \App\Notifications\OrderPlacedNotification(
+            'esim', optional($order->plan)->name ?? 'your eSIM', (float) $order->price_charged, 'USD',
+        ));
+        $this->recordAutopilot('resend_esim_setup', ['order_id' => $order->id]);
+
+        return ['done' => true, 'note' => 'I have re-sent the eSIM setup email; the QR and activation details are also on their dashboard.'];
+    }
+
+    /**
+     * Grant bounded goodwill NaaraCredits. This is the ONLY money lever the agent
+     * has, and it is safe by construction: capped by the admin (0 = off), granted
+     * ONCE per ticket, and credits can never push a future sale below cost
+     * (redemption is margin-floored). Over the cap or disabled => the agent is
+     * told to escalate instead.
+     */
+    private function grantGoodwill(float $amountUsd, string $reason): array
+    {
+        $cap = \App\Support\SupportAutopilot::goodwillCapUsd();
+        if (! \App\Support\SupportAutopilot::enabled() || $cap <= 0) {
+            return ['done' => false, 'note' => 'Goodwill credit is not available on autopilot — escalate to a human for anything like this.'];
+        }
+        $amountUsd = round($amountUsd, 2);
+        if ($amountUsd <= 0) {
+            return ['done' => false, 'note' => 'No goodwill amount specified.'];
+        }
+        if ($amountUsd > $cap) {
+            return ['done' => false, 'note' => 'That amount is above what I can apply automatically — escalate to a human for approval.'];
+        }
+        if (! $this->conversation) {
+            return ['done' => false, 'note' => 'No active ticket to attach goodwill to.'];
+        }
+
+        // One goodwill grant per ticket (idempotent on the reference).
+        $reference = "goodwill:conv:{$this->conversation->id}";
+        if (\App\Models\CreditLedger::where('user_id', $this->user->id)->where('reference', $reference)->exists()) {
+            return ['done' => false, 'note' => 'A goodwill credit has already been applied to this ticket.'];
+        }
+
+        $credits = \App\Support\CreditSettings::usdToCredits($amountUsd);
+        app(\App\Services\Credits\CreditService::class)->earn(
+            $this->user, $credits, 'goodwill', $reference, 'NaaraCare goodwill: '.mb_substr($reason, 0, 120),
+        );
+        $this->recordAutopilot('grant_goodwill_credit', ['usd' => $amountUsd, 'credits' => $credits, 'reason' => mb_substr($reason, 0, 200)]);
+
+        return [
+            'done' => true,
+            'credits_granted' => $credits,
+            'note' => number_format($credits).' NaaraCredits have been added to their account as goodwill.',
+        ];
+    }
+
+    /** Mark the ticket resolved. Reversible — the user replying reopens it. */
+    private function resolveTicket(string $summary): array
+    {
+        if (! \App\Support\SupportAutopilot::enabled() || ! $this->conversation) {
+            return ['done' => false];
+        }
+
+        $this->conversation->forceFill(['status' => 'resolved'])->save();
+        $this->recordAutopilot('resolve_ticket', ['summary' => mb_substr($summary, 0, 200)]);
+
+        return ['done' => true, 'note' => 'Marked resolved. The user can reply any time to reopen it.'];
+    }
+
+    private function recordAutopilot(string $action, array $context): void
+    {
+        if ($this->conversation) {
+            \App\Support\SupportAutopilot::record($this->conversation, $action, $context);
+        }
     }
 }

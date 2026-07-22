@@ -51,6 +51,22 @@
                     </div>
                 </div>
 
+                @if (! empty($autopilotLog))
+                    <div class="mb-3 rounded-lg border border-accent/30 bg-accent/5 p-3">
+                        <p class="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-accent">
+                            <x-icon name="shield-check" class="h-3.5 w-3.5" /> What the AI already did
+                        </p>
+                        <ul class="space-y-0.5 text-xs text-slate-600 dark:text-slate-300">
+                            @foreach ($autopilotLog as $entry)
+                                <li class="flex items-start gap-1">
+                                    <x-icon name="check" class="mt-0.5 h-3 w-3 shrink-0 text-accent" />
+                                    <span>{{ str_replace('_', ' ', $entry['action'] ?? 'action') }}@if(isset($entry['usd'])) — ${{ number_format((float) $entry['usd'], 2) }} goodwill @endif@if(isset($entry['summary'])): {{ $entry['summary'] }}@endif</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
                     @foreach ($thread as $m)
                         <div class="flex {{ $m['role'] === 'user' ? 'justify-start' : 'justify-end' }}">

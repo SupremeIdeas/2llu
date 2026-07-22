@@ -177,6 +177,9 @@ class AppServiceProvider extends ServiceProvider
             if (\App\Support\SupportSettings::isSupportKey($setting->key)) {
                 \App\Support\SupportSettings::flush();
             }
+            if (\App\Support\SupportAutopilot::isAutopilotKey($setting->key)) {
+                \App\Support\SupportAutopilot::flush();
+            }
             if (\App\Support\BrandSettings::isBrandKey($setting->key)) {
                 \App\Support\BrandSettings::flush();
             }

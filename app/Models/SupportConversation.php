@@ -10,7 +10,7 @@ class SupportConversation extends Model
 {
     protected $fillable = [
         'user_id', 'title', 'escalated', 'escalation_reason', 'escalated_at',
-        'status', 'assigned_to', 'priority', 'last_human_reply_at',
+        'status', 'assigned_to', 'priority', 'last_human_reply_at', 'autopilot_log',
     ];
 
     protected function casts(): array
@@ -19,6 +19,7 @@ class SupportConversation extends Model
             'escalated' => 'boolean',
             'escalated_at' => 'datetime',
             'last_human_reply_at' => 'datetime',
+            'autopilot_log' => 'array',
         ];
     }
 
