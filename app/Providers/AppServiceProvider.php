@@ -214,6 +214,9 @@ class AppServiceProvider extends ServiceProvider
             if (\App\Support\EsimHeroContent::isHeroKey($setting->key)) {
                 \App\Support\EsimHeroContent::flush();
             }
+            if (\App\Support\NumbersHeroContent::isHeroKey($setting->key)) {
+                \App\Support\NumbersHeroContent::flush();
+            }
             if (\App\Support\SiteContent::isSiteKey($setting->key)) {
                 \App\Support\SiteContent::flush();
             }

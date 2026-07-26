@@ -1,4 +1,7 @@
 <div class="mx-auto max-w-lg">
+    {{-- Premium 4-image interchanging-reveal hero (Numbers V6 §0). --}}
+    @include('partials.numbers-hero')
+
     <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Get a Number</h1>
     <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">Receive verification codes for any country. We pick the best network for you.</p>
 
