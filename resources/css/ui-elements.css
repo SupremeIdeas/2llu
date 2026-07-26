@@ -362,13 +362,19 @@
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.45), transparent);
-    animation: nx-shimmer 1.6s infinite;
+    /* Softer, slower sweep for a premium feel. */
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
+    animation: nx-shimmer 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
+.dark .nx-skeleton { background: #1f2e48; }
 .dark .nx-skeleton::after {
-    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.08), transparent);
+    background: linear-gradient(90deg, transparent, rgb(148 163 184 / 0.14), transparent);
 }
 @keyframes nx-shimmer { to { transform: translateX(100%); } }
+/* Reduced motion: hold a calm static tint instead of sweeping. */
+@media (prefers-reduced-motion: reduce) {
+    .nx-skeleton::after { animation: none; opacity: 0.5; }
+}
 
 /* ------------------------------------------------------------- alert card --
    Admin alert cards with a colored rail + soft tint. Adapted from the

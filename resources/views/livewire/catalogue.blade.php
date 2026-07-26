@@ -18,7 +18,12 @@
         </span>
     </div>
 
-    <div wire:loading.class="opacity-50" class="grid grid-cols-1 gap-4 transition-opacity sm:grid-cols-2 lg:grid-cols-3">
+    {{-- Skeleton while searching/paginating (no layout shift). --}}
+    <div wire:loading.flex wire:target="search,gotoPage,nextPage,previousPage" class="hidden">
+        <x-ui.skeleton-cards :count="6" class="w-full" columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" />
+    </div>
+
+    <div wire:loading.remove wire:target="search,gotoPage,nextPage,previousPage" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         @forelse ($plans as $plan)
             <div wire:key="plan-{{ $plan->id }}"
                  class="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-[#2D4060] dark:bg-[#1A2840]">
