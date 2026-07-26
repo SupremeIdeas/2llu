@@ -95,6 +95,63 @@ class Staff extends Component
         $this->saved = 'Staff access revoked.';
     }
 
+    // -- Edit an existing staff member (owner request — fix_admin Part 5) ----
+
+    public ?int $editingStaffId = null;
+
+    public string $edit_name = '';
+
+    public string $edit_email = '';
+
+    public string $edit_password = '';
+
+    public function editStaff(int $staffId): void
+    {
+        $staff = User::findOrFail($staffId);
+        $this->editingStaffId = $staff->id;
+        $this->edit_name = (string) $staff->name;
+        $this->edit_email = (string) $staff->email;
+        $this->edit_password = '';
+    }
+
+    public function cancelEditStaff(): void
+    {
+        $this->reset('editingStaffId', 'edit_name', 'edit_email', 'edit_password');
+    }
+
+    public function saveStaff(StaffService $service): void
+    {
+        $staff = User::findOrFail($this->editingStaffId);
+        $this->validate([
+            'edit_name' => ['required', 'string', 'max:120'],
+            'edit_email' => ['required', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($staff->id)],
+            'edit_password' => ['nullable', 'string', 'min:8'],
+        ]);
+
+        $service->updateStaff(Auth::user(), $staff, [
+            'name' => $this->edit_name,
+            'email' => $this->edit_email,
+            'password' => $this->edit_password ?: null,
+        ]);
+
+        $this->cancelEditStaff();
+        $this->saved = 'Staff member updated.';
+    }
+
+    public function toggleStaffActive(int $staffId, StaffService $service): void
+    {
+        $staff = User::findOrFail($staffId);
+        $service->setActive(Auth::user(), $staff, $staff->isDeactivated());
+        $this->saved = $staff->fresh()->isDeactivated() ? 'Staff deactivated.' : 'Staff reactivated.';
+    }
+
+    public function deleteStaff(int $staffId, StaffService $service): void
+    {
+        $service->deleteStaff(Auth::user(), User::findOrFail($staffId));
+        $this->cancelEditStaff();
+        $this->saved = 'Staff member deleted.';
+    }
+
     public function render()
     {
         return view('livewire.admin.staff', [

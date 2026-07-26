@@ -121,6 +121,60 @@ class StaffService
         Auditor::log('staff.revoked', 'User', $staff->id);
     }
 
+    /**
+     * Edit a staff member's name / email / (optional) password. A changed email
+     * re-verifies. Blank password leaves it unchanged.
+     *
+     * @param  array{name?: string, email?: string, password?: ?string}  $data
+     */
+    public function updateStaff(User $actor, User $staff, array $data): void
+    {
+        $this->assertCanManageStaff($actor);
+        $this->assertManageableTarget($staff);
+
+        $emailChanged = isset($data['email']) && $data['email'] !== $staff->email;
+        $fill = [
+            'name' => trim((string) ($data['name'] ?? $staff->name)),
+            'email' => (string) ($data['email'] ?? $staff->email),
+        ];
+        if ($emailChanged) {
+            $fill['email_verified_at'] = null;
+        }
+        if (! empty($data['password'])) {
+            $fill['password'] = \Illuminate\Support\Facades\Hash::make($data['password']);
+        }
+        $staff->forceFill($fill)->save();
+
+        if ($emailChanged) {
+            $staff->sendEmailVerificationNotification();
+        }
+
+        Auditor::log('staff.updated', 'User', $staff->id, ['email_changed' => $emailChanged]);
+    }
+
+    /** Deactivate / reactivate a staff member without deleting them. */
+    public function setActive(User $actor, User $staff, bool $active): void
+    {
+        $this->assertCanManageStaff($actor);
+        $this->assertManageableTarget($staff);
+
+        $accounts = app(\App\Services\Account\AccountService::class);
+        $active ? $accounts->reactivate($staff) : $accounts->deactivate($staff);
+
+        Auditor::log('staff.active_toggled', 'User', $staff->id, ['active' => $active]);
+    }
+
+    /** Permanently delete a staff account — super_admin only, guarded. */
+    public function deleteStaff(User $actor, User $staff): void
+    {
+        $this->assertCanManageStaff($actor);
+        $this->assertManageableTarget($staff);
+        abort_if($staff->id === $actor->id, 403, 'You cannot delete your own account here.');
+
+        Auditor::log('staff.deleted', 'User', $staff->id, ['email' => $staff->email]);
+        $staff->delete();
+    }
+
     // -- Guards ------------------------------------------------------------
 
     public function assertCanManageStaff(User $actor): void
