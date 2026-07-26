@@ -143,6 +143,11 @@ Route::middleware(['auth', 'active'])->group(function () {
 Route::get(config('admin.path').'/login', \App\Http\Controllers\Admin\LoginController::class)
     ->middleware('throttle:admin')->name('admin.login');
 
+// Admin password recovery via security questions (guest, hard-throttled). A
+// self-service path when email reset isn't available on a self-hosted install.
+Route::get(config('admin.path').'/recover', \App\Livewire\Admin\RecoverPassword::class)
+    ->middleware('throttle:admin')->name('admin.recover');
+
 // Admin panel (blueprint Sections 13, 15, 17, 25). Mounted on the env-driven
 // admin path; the `admin` middleware enforces the IP allow-list, a redirect to
 // the dedicated admin login for guests, a plain 404 for signed-in non-admins,

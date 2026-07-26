@@ -28,5 +28,11 @@
         <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-semibold text-white hover:bg-primary-dark">
             <x-icon name="shield-check" class="h-5 w-5" /> Sign in to admin
         </button>
+
+        <div class="mt-4 flex items-center justify-center gap-3 text-xs">
+            <a href="{{ route('password.request') }}" class="font-medium text-slate-500 hover:text-primary dark:text-slate-400">Reset via email</a>
+            <span class="text-slate-300 dark:text-slate-600">·</span>
+            <a href="{{ route('admin.recover') }}" class="font-medium text-slate-500 hover:text-primary dark:text-slate-400">Recovery questions</a>
+        </div>
     </form>
 </x-layouts.auth>
