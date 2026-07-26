@@ -30,5 +30,20 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <!-- Provider keys are blank in tests so ProviderStatus is deterministic
+             regardless of the real credentials in a dev/live .env. Tests opt a
+             provider "active" explicitly via config() when they need it. -->
+
+        <env name="ESIMGO_API_KEY" value=""/>
+        <env name="QUIBITY_API_KEY" value=""/>
+        <env name="AIRALO_CLIENT_ID" value=""/>
+        <env name="AIRALO_CLIENT_SECRET" value=""/>
+        <env name="GETATEXT_API_KEY" value=""/>
+        <env name="FIVESIM_API_KEY" value=""/>
+        <env name="SMSACTIVATE_API_KEY" value=""/>
+        <env name="TWILIO_ACCOUNT_SID" value=""/>
+        <env name="TWILIO_AUTH_TOKEN" value=""/>
+        <env name="TELNYX_API_KEY" value=""/>
+        <env name="ZENDIT_API_KEY" value=""/>
     </php>
 </phpunit>

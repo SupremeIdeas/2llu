@@ -64,7 +64,25 @@ class ProviderKeys extends Component
 
         $this->saved = $changed === []
             ? 'Nothing to save — enter a key to update it.'
-            : 'API keys saved. They take effect immediately.';
+            : 'Saved. Web requests use the new keys immediately; background workers will pick them up within a few seconds (they were signalled to restart).';
+    }
+
+    /** Force an immediate, synchronous catalogue sync for one eSIM provider. */
+    public function syncNow(string $provider): void
+    {
+        abort_unless(Auth::user()->hasRole('super_admin'), 403);
+        if (! in_array($provider, ['esimgo', 'airalo', 'quibity'], true)) {
+            return;
+        }
+
+        try {
+            $count = app(\App\Services\eSIM\CatalogueSyncService::class)->sync($provider);
+            Auditor::log('esim.sync_now', null, null, ['provider' => $provider, 'count' => $count]);
+            $this->dispatch('nx-toast', type: 'success', message: ucfirst($provider).": synced {$count} plans.");
+        } catch (\Throwable $e) {
+            // SyncStatus already recorded the failure; surface it to the admin.
+            $this->dispatch('nx-toast', type: 'error', message: ucfirst($provider).' sync failed: '.\Illuminate\Support\Str::limit($e->getMessage(), 100));
+        }
     }
 
     public function render()
@@ -81,6 +99,12 @@ class ProviderKeys extends Component
             'schema' => $schema,
             'previews' => $previews,
             'statuses' => ProviderStatus::all(),
+            // Per-eSIM-provider last-sync outcome (esim_upgrade Part 1).
+            'syncStatus' => [
+                'esimgo' => \App\Support\SyncStatus::for('esimgo'),
+                'airalo' => \App\Support\SyncStatus::for('airalo'),
+                'quibity' => \App\Support\SyncStatus::for('quibity'),
+            ],
         ]);
     }
 }

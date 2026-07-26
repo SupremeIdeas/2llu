@@ -30,6 +30,34 @@
         </div>
     </div>
 
+    {{-- eSIM catalogue sync — last result per provider + force a fetch now. --}}
+    <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <h2 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">eSIM catalogue sync</h2>
+        <div class="space-y-2">
+            @foreach (['esimgo' => 'eSIM Go', 'airalo' => 'Airalo', 'quibity' => 'Quibity'] as $prov => $label)
+                @php $st = $syncStatus[$prov] ?? null; @endphp
+                <div class="flex flex-wrap items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 dark:border-[#243352]">
+                    <span class="w-24 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-200">{{ $label }}</span>
+                    @if ($st === null)
+                        <span class="text-xs text-slate-400">Never synced</span>
+                    @elseif ($st['ok'])
+                        <span class="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400"><x-icon name="badge-check" class="h-3.5 w-3.5" /> {{ $st['count'] }} plans</span>
+                        <span class="text-[11px] text-slate-400">{{ \Illuminate\Support\Carbon::parse($st['at'])->diffForHumans() }}</span>
+                    @else
+                        <span class="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400"><x-icon name="x" class="h-3.5 w-3.5" /> failed</span>
+                        <span class="max-w-md truncate text-[11px] text-slate-400" title="{{ $st['error'] }}">{{ $st['error'] }}</span>
+                        <span class="text-[11px] text-slate-400">{{ \Illuminate\Support\Carbon::parse($st['at'])->diffForHumans() }}</span>
+                    @endif
+                    <button type="button" wire:click="syncNow('{{ $prov }}')" wire:loading.attr="disabled" wire:target="syncNow"
+                            class="ml-auto shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                        <span wire:loading.remove wire:target="syncNow">Sync now</span>
+                        <span wire:loading wire:target="syncNow" class="inline-flex items-center gap-1"><x-ui.spinner class="h-3.5 w-3.5" /> Syncing…</span>
+                    </button>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
     <form wire:submit="save" class="space-y-6">
         @foreach ($schema as $groupKey => $group)
             <div class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">

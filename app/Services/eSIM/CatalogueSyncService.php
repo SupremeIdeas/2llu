@@ -23,8 +23,23 @@ class CatalogueSyncService
     {
     }
 
-    /** Sync one provider; returns the number of plans upserted. */
+    /** Sync one provider; returns the number of plans upserted. Records the
+     *  outcome (success/fail + count/error) for admin observability either way. */
     public function sync(string $provider): int
+    {
+        try {
+            $count = $this->doSync($provider);
+            \App\Support\SyncStatus::record($provider, ok: true, count: $count);
+
+            return $count;
+        } catch (\Throwable $e) {
+            \App\Support\SyncStatus::record($provider, ok: false, error: $e->getMessage());
+            \Illuminate\Support\Facades\Log::warning("[esim] Catalogue sync failed for {$provider}: ".$e->getMessage());
+            throw $e;
+        }
+    }
+
+    private function doSync(string $provider): int
     {
         $rows = match ($provider) {
             'esimgo' => $this->mapEsimGo(app('esim.esimgo')->getCatalogue()),

@@ -221,6 +221,18 @@ class ProviderKeys
         Setting::setValue(self::SETTING_KEY, $map, 'providers', 'Admin-managed API credentials (encrypted).');
         self::flush();
         self::applyToConfig(); // take effect within this same request
+
+        // CRITICAL (esim_upgrade Part 1): a web request re-boots the app per
+        // request and picks up new keys immediately — but a long-running queue
+        // worker (Horizon) booted ONCE keeps using the OLD config for hours,
+        // so every queued catalogue sync silently keeps failing on stale keys.
+        // Signal all workers to gracefully restart so they re-boot with the new
+        // credentials. Applied centrally here, once, for EVERY credential group.
+        try {
+            \Illuminate\Support\Facades\Artisan::call('queue:restart');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[providers] queue:restart after key save failed: '.$e->getMessage());
+        }
     }
 
     /** True if this field currently has an admin-saved value (any source). */

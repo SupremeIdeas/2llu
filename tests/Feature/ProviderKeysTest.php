@@ -88,7 +88,7 @@ class ProviderKeysTest extends TestCase
             ->set('inputs.esimgo_api_key', 'esimgo-live-key')
             ->call('save')
             ->assertSet('inputs.esimgo_api_key', '') // cleared, not echoed
-            ->assertSee('take effect immediately');
+            ->assertSee('background workers will pick them up'); // queue-restart signalled
 
         ProviderKeys::applyToConfig();
         $this->assertSame('esimgo-live-key', config('services.esimgo.api_key'));
