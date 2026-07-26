@@ -54,7 +54,9 @@ class CatalogueSyncService
             $plan = EsimPlan::updateOrCreate(
                 ['provider' => $provider, 'provider_plan_id' => $row['provider_plan_id']],
                 [
-                    'name' => $row['name'],
+                    // Scrub any supplier brand out of the name before storing it,
+                    // so provider identity can never leak to users (rule 1.2).
+                    'name' => \App\Support\SupplierScrub::name((string) $row['name']),
                     'type' => $row['type'] ?? null,
                     'has_voice' => $row['has_voice'] ?? false, // Naara Connect (Zendit) only
                     'data_mb' => $row['data_mb'] ?? null,

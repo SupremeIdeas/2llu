@@ -95,6 +95,36 @@ class ProviderKeysTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['action' => 'providers.keys_updated']);
     }
 
+    public function test_a_changed_provider_key_takes_effect_for_catalogue_sync_without_a_restart(): void
+    {
+        // A worker/process that already booted with an OLD key.
+        config([
+            'services.esimgo.api_key' => 'OLD-KEY',
+            'services.esimgo.base_url' => 'https://api.esim-go.com/v2.5',
+        ]);
+        \Illuminate\Support\Facades\Cache::forget('illuminate:queue:restart');
+        \Illuminate\Support\Facades\Http::fake([
+            'api.esim-go.com/*' => \Illuminate\Support\Facades\Http::response(['bundles' => []]),
+        ]);
+
+        // Admin pastes a new key. save() overlays config in-process AND signals
+        // queue:restart so any long-running worker re-boots with the new key
+        // (the esim_upgrade Part 1 stale-config bug).
+        ProviderKeys::save(['esimgo_api_key' => 'NEW-LIVE-KEY']);
+
+        // In-process config already reflects it — no restart needed here.
+        $this->assertSame('NEW-LIVE-KEY', config('services.esimgo.api_key'));
+
+        // A catalogue fetch now authenticates with the NEW key, not the stale one.
+        app('esim.esimgo')->getCatalogue();
+        \Illuminate\Support\Facades\Http::assertSent(
+            fn ($r) => $r->hasHeader('X-API-Key', 'NEW-LIVE-KEY'),
+        );
+
+        // And long-running workers were signalled to restart.
+        $this->assertNotNull(\Illuminate\Support\Facades\Cache::get('illuminate:queue:restart'));
+    }
+
     public function test_a_non_super_admin_cannot_reach_the_api_keys_page(): void
     {
         $admin = User::factory()->create();

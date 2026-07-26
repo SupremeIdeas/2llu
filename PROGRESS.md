@@ -37,6 +37,17 @@ voice inventory exists. Two failover lanes (blueprint §6):
 - Discovery: Naara Connect dashboard card (→ `?tab=full`). Developer API catalogue
   exposes `has_voice` + `?has_voice=true|false` filter (docs updated). Research
   notes in `docs/eSIM-PROVIDERS.md`.
+- **Checkout plan facts:** the summary card surfaces the real synced attributes —
+  data (or Unlimited), validity, a "Calls + Data" badge for Naara Connect, and
+  coverage flags (up to 6 + "N more", single-country name).
+- **Supplier-identity scrub (rule 1.2):** `SupplierScrub` strips any supplier
+  brand (eSIM Go / Airalo / Quibity / Zendit / 1GLOBAL / Monty / Gigs) from plan
+  names centrally on sync — the generic word "eSIM" is kept — so provider identity
+  can never leak through a catalogue title. `SupplierScrubTest` + a sync case.
+- **Key-change regression test:** `ProviderKeysTest` proves a changed provider key
+  is used by the very next catalogue fetch in-process (no restart) AND that
+  `queue:restart` is signalled so long-running workers re-boot — locking the
+  Part 1 stale-config bug shut.
 - **Shared CountryPicker (S31):** ONE country-picking UI app-wide (`CountryPicker`
   Livewire + `x-ui.modal`), opened via `open-country-picker` {source, args, for}
   and emitting `country-picked` back to the opener. `CountryPickerSources` is the

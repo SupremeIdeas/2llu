@@ -194,6 +194,23 @@ class CatalogueSyncTest extends TestCase
         $this->assertArrayNotHasKey('cost_price_usd', $voice->toArray());
     }
 
+    public function test_a_supplier_brand_in_a_catalogue_name_is_scrubbed_on_sync(): void
+    {
+        // A provider whose catalogue title embeds its own brand.
+        $this->bindProvider('esimgo', [
+            'bundles' => [[
+                'name' => 'esim_1GB_US', 'description' => 'eSIM Go USA 1GB', 'dataAmount' => 1000,
+                'duration' => 30, 'countries' => [['iso' => 'US']], 'price' => 2.00,
+            ]],
+        ]);
+
+        app(CatalogueSyncService::class)->sync('esimgo');
+
+        $plan = EsimPlan::where('provider', 'esimgo')->firstOrFail();
+        $this->assertSame('USA 1GB', $plan->name);           // brand removed
+        $this->assertStringNotContainsStringIgnoringCase('esim go', $plan->name);
+    }
+
     public function test_full_esim_providers_ingest_voice_plans_with_private_cost(): void
     {
         // 1GLOBAL / Monty / Gigs are voice+data MVNO providers — every plan is a
