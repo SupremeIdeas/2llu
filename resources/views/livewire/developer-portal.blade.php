@@ -65,7 +65,7 @@
             <button type="button" wire:click="create" wire:loading.attr="disabled" wire:target="create"
                     class="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
                 <x-icon name="key" wire:loading.remove wire:target="create" class="h-4 w-4" />
-                <x-icon name="refresh" wire:loading wire:target="create" class="h-4 w-4 animate-spin" />
+                <x-ui.spinner wire:loading wire:target="create" class="h-4 w-4" />
                 Create key
             </button>
         </div>

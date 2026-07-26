@@ -47,7 +47,7 @@
                 <button type="button" wire:click="checkIn" wire:loading.attr="disabled" wire:target="checkIn" @disabled(! $canCheckIn)
                         class="nx-btn nx-btn--primary mt-4 justify-center disabled:opacity-50">
                     <span wire:loading.remove wire:target="checkIn">{{ $canCheckIn ? 'Check in — +'.$checkinDaily : 'Come back later' }}</span>
-                    <span wire:loading wire:target="checkIn" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Checking in…</span>
+                    <span wire:loading wire:target="checkIn" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Checking in…</span>
                 </button>
             </div>
 

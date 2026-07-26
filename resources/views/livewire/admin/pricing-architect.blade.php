@@ -121,7 +121,7 @@
                         <x-icon name="zap" class="h-4 w-4" /> Analyse &amp; propose prices
                     </span>
                     <span wire:loading wire:target="analyze" class="inline-flex items-center gap-2">
-                        <x-icon name="refresh" class="h-4 w-4 animate-spin" /> Asking Claude…
+                        <x-ui.spinner class="h-4 w-4" /> Asking Claude…
                     </span>
                 </button>
                 @if ($analyzing)
@@ -216,7 +216,7 @@
                 <button type="button" wire:click="approve" wire:loading.attr="disabled" wire:target="approve"
                         class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                     <span wire:loading.remove wire:target="approve" class="inline-flex items-center gap-2"><x-icon name="badge-check" class="h-4 w-4" /> Approve &amp; update prices</span>
-                    <span wire:loading wire:target="approve" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Applying…</span>
+                    <span wire:loading wire:target="approve" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Applying…</span>
                 </button>
                 <button type="button" wire:click="reject"
                         class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">

@@ -92,7 +92,7 @@
                 <button type="submit" wire:loading.attr="disabled" wire:target="save,image,image_mobile,video"
                         class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                     <span wire:loading.remove wire:target="save" class="inline-flex items-center gap-2"><x-icon name="check" class="h-4 w-4" /> Publish banner</span>
-                    <span wire:loading wire:target="save" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Publishing…</span>
+                    <span wire:loading wire:target="save" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Publishing…</span>
                 </button>
             </div>
         </form>

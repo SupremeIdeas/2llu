@@ -57,7 +57,7 @@
                     @disabled(! $upload)
                     class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-50">
                 <span wire:loading.remove wire:target="import" class="inline-flex items-center gap-2"><x-icon name="upload" class="h-4 w-4" /> Import</span>
-                <span wire:loading wire:target="import" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Importing…</span>
+                <span wire:loading wire:target="import" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Importing…</span>
             </button>
         </div>
         @error('upload') <p class="mt-2 text-xs text-red-600">{{ $message }}</p> @enderror

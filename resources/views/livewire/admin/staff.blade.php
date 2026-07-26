@@ -41,7 +41,7 @@
             <button type="submit" wire:loading.attr="disabled" wire:target="promote"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                 <span wire:loading.remove wire:target="promote">Make staff</span>
-                <span wire:loading wire:target="promote" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Promoting…</span>
+                <span wire:loading wire:target="promote" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Promoting…</span>
             </button>
         </div>
     </form>
@@ -85,7 +85,7 @@
             <button type="submit" wire:loading.attr="disabled" wire:target="createStaff"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                 <span wire:loading.remove wire:target="createStaff">Create staff member</span>
-                <span wire:loading wire:target="createStaff" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Creating…</span>
+                <span wire:loading wire:target="createStaff" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Creating…</span>
             </button>
         </div>
     </form>

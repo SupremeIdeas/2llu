@@ -232,7 +232,7 @@
                         <button type="submit" @disabled(empty($gateways)) wire:loading.attr="disabled" wire:target="topUp"
                                 class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60">
                             <span wire:loading.remove wire:target="topUp" class="inline-flex items-center gap-2"><x-icon name="credit-card" class="h-4 w-4" /> Continue to payment</span>
-                            <span wire:loading wire:target="topUp" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Starting…</span>
+                            <span wire:loading wire:target="topUp" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Starting…</span>
                         </button>
 
                         {{-- Accepted methods (real brand logos) — trust strip. --}}

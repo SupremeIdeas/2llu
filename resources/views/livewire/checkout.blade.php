@@ -62,7 +62,7 @@
                         <button type="button" wire:click="applyCoupon" wire:loading.attr="disabled" wire:target="applyCoupon"
                                 class="shrink-0 rounded-lg border border-primary/40 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/10 disabled:opacity-60 dark:text-teal-300">
                             <span wire:loading.remove wire:target="applyCoupon">Apply</span>
-                            <span wire:loading wire:target="applyCoupon" class="inline-flex items-center gap-1"><x-icon name="refresh" class="h-3.5 w-3.5 animate-spin" /> Checking…</span>
+                            <span wire:loading wire:target="applyCoupon" class="inline-flex items-center gap-1"><x-ui.spinner class="h-3.5 w-3.5" /> Checking…</span>
                         </button>
                     </div>
                     @if ($couponError)
@@ -147,7 +147,7 @@
                     <x-icon name="shield-check" class="h-5 w-5" /> Pay with wallet
                 </span>
                 <span wire:loading wire:target="purchase" class="inline-flex items-center gap-2">
-                    <x-icon name="refresh" class="h-5 w-5 animate-spin" /> Processing…
+                    <x-ui.spinner class="h-5 w-5" /> Processing…
                 </span>
             </button>
             <p class="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">Charged securely from your NaaraSim wallet. <a href="{{ route('refund-policy') }}" class="text-primary hover:underline">Refund policy</a>.</p>

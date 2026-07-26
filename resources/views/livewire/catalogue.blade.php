@@ -14,7 +14,7 @@
                placeholder="Search plans by name…"
                class="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-9 text-sm text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-100">
         <span wire:loading wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2 text-primary">
-            <x-icon name="refresh" class="h-4 w-4 animate-spin" />
+            <x-ui.spinner class="h-4 w-4" />
         </span>
     </div>
 

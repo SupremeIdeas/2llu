@@ -65,7 +65,7 @@
             <button type="submit" wire:loading.attr="disabled" wire:target="submit"
                     class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
                 <x-icon name="shield" wire:loading.remove wire:target="submit" class="h-4 w-4" />
-                <x-icon name="refresh" wire:loading wire:target="submit" class="h-4 w-4 animate-spin" />
+                <x-ui.spinner wire:loading wire:target="submit" class="h-4 w-4" />
                 Submit for verification
             </button>
         </form>

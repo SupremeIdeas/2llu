@@ -62,7 +62,7 @@
             <button type="submit" wire:loading.attr="disabled" wire:target="savePublicPricing"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                 <span wire:loading.remove wire:target="savePublicPricing" class="inline-flex items-center gap-2"><x-icon name="check" class="h-4 w-4" /> Save public pricing</span>
-                <span wire:loading wire:target="savePublicPricing" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Saving…</span>
+                <span wire:loading wire:target="savePublicPricing" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Saving…</span>
             </button>
         </form>
     </div>
@@ -90,7 +90,7 @@
                     <button type="submit" wire:loading.attr="disabled" wire:target="saveGlobal"
                             class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                         <span wire:loading.remove wire:target="saveGlobal">Save &amp; reprice all</span>
-                        <span wire:loading wire:target="saveGlobal" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Saving…</span>
+                        <span wire:loading wire:target="saveGlobal" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Saving…</span>
                     </button>
                 </form>
 

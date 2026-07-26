@@ -24,7 +24,7 @@
             <button type="button" wire:click="backupNow" wire:loading.attr="disabled" wire:target="backupNow"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                 <span wire:loading.remove wire:target="backupNow" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4" /> Back up now</span>
-                <span wire:loading wire:target="backupNow" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Starting…</span>
+                <span wire:loading wire:target="backupNow" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Starting…</span>
             </button>
         </div>
 

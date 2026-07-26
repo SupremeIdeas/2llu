@@ -48,7 +48,7 @@
                     </div>
                 @else
                     <div class="flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                        <x-icon name="refresh" class="h-5 w-5 animate-spin text-primary" /> Waiting for your code…
+                        <x-ui.spinner class="h-5 w-5 text-primary" /> Waiting for your code…
                     </div>
                 @endif
             </div>
@@ -147,7 +147,7 @@
             <button type="button" wire:click="order" wire:loading.attr="disabled" wire:target="order"
                     class="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-60">
                 <span wire:loading.remove wire:target="order" class="inline-flex items-center gap-2"><x-icon name="phone" class="h-5 w-5" /> Get number</span>
-                <span wire:loading wire:target="order" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-5 w-5 animate-spin" /> Reserving…</span>
+                <span wire:loading wire:target="order" class="inline-flex items-center gap-2"><x-ui.spinner class="h-5 w-5" /> Reserving…</span>
             </button>
             <p class="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">Price is charged from your wallet. Auto-refund if no code arrives.</p>
         </div>

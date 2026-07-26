@@ -190,7 +190,7 @@
             <button type="submit" wire:loading.attr="disabled" wire:target="saveTheme"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                 <span wire:loading.remove wire:target="saveTheme" class="inline-flex items-center gap-2"><x-icon name="badge-check" class="h-4 w-4" /> Save theme</span>
-                <span wire:loading wire:target="saveTheme" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Saving…</span>
+                <span wire:loading wire:target="saveTheme" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Saving…</span>
             </button>
         </div>
     </form>

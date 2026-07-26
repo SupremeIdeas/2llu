@@ -65,7 +65,7 @@
             <button type="button" wire:click="reactivate" wire:loading.attr="disabled" wire:target="reactivate"
                     class="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                 <span wire:loading.remove wire:target="reactivate" class="inline-flex items-center gap-2"><x-icon name="badge-check" class="h-4 w-4" /> Reactivate my account</span>
-                <span wire:loading wire:target="reactivate" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Reactivating…</span>
+                <span wire:loading wire:target="reactivate" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Reactivating…</span>
             </button>
         @else
             <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Your account is <span class="font-semibold text-green-600 dark:text-green-400">active</span>. Pausing hides your account and stops new purchases — nothing is deleted, and you can resume any time.</p>
@@ -73,7 +73,7 @@
                     wire:confirm="Pause your account? You can reactivate any time by logging back in."
                     class="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
                 <span wire:loading.remove wire:target="deactivate" class="inline-flex items-center gap-2"><x-icon name="pause" class="h-4 w-4" /> Pause my account</span>
-                <span wire:loading wire:target="deactivate" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Pausing…</span>
+                <span wire:loading wire:target="deactivate" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Pausing…</span>
             </button>
         @endif
     </section>
@@ -89,7 +89,7 @@
             <button type="button" wire:click="requestExport" wire:loading.attr="disabled" wire:target="requestExport"
                     class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
                 <span wire:loading.remove wire:target="requestExport" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4" /> Prepare my export</span>
-                <span wire:loading wire:target="requestExport" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Requesting…</span>
+                <span wire:loading wire:target="requestExport" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Requesting…</span>
             </button>
 
             @if ($user->data_export_ready_at)

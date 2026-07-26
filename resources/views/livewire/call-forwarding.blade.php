@@ -59,7 +59,7 @@
                             <button type="button" wire:click="save" wire:loading.attr="disabled" wire:target="save"
                                     class="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
                                 <x-icon name="check" wire:loading.remove wire:target="save" class="h-4 w-4" />
-                                <x-icon name="refresh" wire:loading wire:target="save" class="h-4 w-4 animate-spin" />
+                                <x-ui.spinner wire:loading wire:target="save" class="h-4 w-4" />
                                 Turn on forwarding
                             </button>
                         </div>

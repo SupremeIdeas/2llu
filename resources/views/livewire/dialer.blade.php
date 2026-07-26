@@ -63,13 +63,13 @@
             <button type="button" wire:click="prepare" wire:loading.attr="disabled" wire:target="prepare"
                     class="flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
                 <span wire:loading.remove wire:target="prepare" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4" /> Check rate</span>
-                <span wire:loading wire:target="prepare" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Checking…</span>
+                <span wire:loading wire:target="prepare" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Checking…</span>
             </button>
             <button type="button" wire:click="dial" wire:loading.attr="disabled" wire:target="dial"
                     @disabled(! $quoted || ($fundedMinutes ?? 0) < 1)
                     class="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50">
                 <span wire:loading.remove wire:target="dial" class="inline-flex items-center gap-2"><x-icon name="phone" class="h-5 w-5" /> Call</span>
-                <span wire:loading wire:target="dial" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-5 w-5 animate-spin" /> Connecting…</span>
+                <span wire:loading wire:target="dial" class="inline-flex items-center gap-2"><x-ui.spinner class="h-5 w-5" /> Connecting…</span>
             </button>
         </div>
         <p class="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">

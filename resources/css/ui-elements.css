@@ -306,6 +306,28 @@
 }
 @keyframes nx-spin { to { transform: rotate(360deg); } }
 
+/* The one app-wide spinner (owner request — replaces the spinning refresh icon).
+   A soft dual-tone ring: a faint full track + a solid moving arc in currentColor,
+   so it inherits the button/text colour and drops into any inline context. The
+   easing is a gentle cubic-bezier (not linear) so it reads smooth, not
+   mechanical. Sized by the element's width/height (e.g. Tailwind h-4 w-4). */
+.nx-spinner {
+    display: inline-block;
+    border-radius: 9999px;
+    border: 2px solid color-mix(in srgb, currentColor 22%, transparent);
+    border-top-color: currentColor;
+    animation: nx-spin 0.7s cubic-bezier(0.5, 0.15, 0.5, 0.85) infinite;
+    vertical-align: -0.125em;
+}
+/* Fallback for engines without color-mix: a plain faded track. */
+@supports not (color: color-mix(in srgb, red, blue)) {
+    .nx-spinner { border-color: rgb(148 163 184 / 0.35); border-top-color: currentColor; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .nx-spinner { animation: nx-pulse 1.4s ease-in-out infinite; }
+}
+@keyframes nx-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
 /* -------------------------------------------------- pulse-logo loaders (§7) --
    The impulse ("heartbeat") logo motif, shared by the full-screen page
    preloader and the scoped in-card action loader (<x-brand-loader>). Both use

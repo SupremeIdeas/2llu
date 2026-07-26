@@ -47,7 +47,7 @@
                     <button type="button" wire:click="propose({{ $e->id }})" @disabled(! $proposerReady) wire:loading.attr="disabled" wire:target="propose({{ $e->id }})"
                             class="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark disabled:opacity-50">
                         <span wire:loading.remove wire:target="propose({{ $e->id }})">Propose fix</span>
-                        <span wire:loading wire:target="propose({{ $e->id }})" class="inline-flex items-center gap-1"><x-icon name="refresh" class="h-3.5 w-3.5 animate-spin" /> Thinking…</span>
+                        <span wire:loading wire:target="propose({{ $e->id }})" class="inline-flex items-center gap-1"><x-ui.spinner class="h-3.5 w-3.5" /> Thinking…</span>
                     </button>
                 </div>
             @empty

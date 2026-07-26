@@ -106,7 +106,7 @@
                                         aria-label="Ask"
                                         class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white transition hover:bg-primary-dark disabled:opacity-60">
                                     <x-icon name="send" wire:loading.remove wire:target="interpret" class="h-4 w-4" />
-                                    <x-icon name="refresh" wire:loading wire:target="interpret" class="h-4 w-4 animate-spin" />
+                                    <x-ui.spinner wire:loading wire:target="interpret" class="h-4 w-4" />
                                 </button>
                             </div>
                             <div class="relative py-0.5 text-center">
@@ -172,7 +172,7 @@
                             </div>
                         </div>
                         <div wire:loading wire:target="chooseService" class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                            <x-icon name="refresh" class="h-4 w-4 animate-spin text-primary" /> Checking availability…
+                            <x-ui.spinner class="h-4 w-4 text-primary" /> Checking availability…
                         </div>
 
                     {{-- 3b) Device check (eSIM) --}}
@@ -224,7 +224,7 @@
                         <button type="button" wire:click="findNumbers" wire:loading.attr="disabled" wire:target="findNumbers"
                                 class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
                             <x-icon name="search" wire:loading.remove wire:target="findNumbers" class="h-4 w-4" />
-                            <x-icon name="refresh" wire:loading wire:target="findNumbers" class="h-4 w-4 animate-spin" />
+                            <x-ui.spinner wire:loading wire:target="findNumbers" class="h-4 w-4" />
                             Find matching numbers
                         </button>
                         <button type="button" wire:click="showAnyNumber" wire:loading.attr="disabled" wire:target="showAnyNumber"
@@ -263,7 +263,7 @@
                             </div>
                         @endif
                         <div wire:loading wire:target="provisionPermanent" class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                            <x-icon name="refresh" class="h-4 w-4 animate-spin text-primary" /> Activating your number…
+                            <x-ui.spinner class="h-4 w-4 text-primary" /> Activating your number…
                         </div>
 
                     {{-- 4) Review (OTP / rental) --}}
@@ -310,7 +310,7 @@
                         @endif
                         <button type="button" wire:click="purchase" wire:loading.attr="disabled" wire:target="purchase"
                                 class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
-                            <x-icon name="refresh" wire:loading wire:target="purchase" class="h-4 w-4 animate-spin" />
+                            <x-ui.spinner wire:loading wire:target="purchase" class="h-4 w-4" />
                             <span wire:loading.remove wire:target="purchase">Get this number</span>
                             <span wire:loading wire:target="purchase">Reserving…</span>
                         </button>
@@ -347,7 +347,7 @@
                                         <div class="text-xs text-amber-600 dark:text-amber-400">No code arrived — your wallet was refunded.</div>
                                     @else
                                         <div class="flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                            <x-icon name="refresh" class="h-4 w-4 animate-spin text-primary" /> Waiting for your code…
+                                            <x-ui.spinner class="h-4 w-4 text-primary" /> Waiting for your code…
                                         </div>
                                     @endif
                                 </div>
@@ -408,7 +408,7 @@
                                         <div class="text-xs text-amber-600 dark:text-amber-400">No code arrived in time — your wallet was refunded.</div>
                                     @else
                                         <div class="flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                                            <x-icon name="refresh" class="h-4 w-4 animate-spin text-primary" /> Waiting for your code…
+                                            <x-ui.spinner class="h-4 w-4 text-primary" /> Waiting for your code…
                                         </div>
                                     @endif
                                 </div>

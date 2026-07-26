@@ -77,7 +77,7 @@
                     <button type="submit" wire:loading.attr="disabled" wire:target="confirm"
                             class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                         <span wire:loading.remove wire:target="confirm">Confirm &amp; activate</span>
-                        <span wire:loading wire:target="confirm" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Verifying…</span>
+                        <span wire:loading wire:target="confirm" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Verifying…</span>
                     </button>
                 </div>
                 @error('code') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
@@ -94,7 +94,7 @@
                     <button type="button" wire:click="enable" wire:loading.attr="disabled" wire:target="enable"
                             class="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                         <span wire:loading.remove wire:target="enable" class="inline-flex items-center gap-2"><x-icon name="shield" class="h-4 w-4" /> Enable two-factor</span>
-                        <span wire:loading wire:target="enable" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Setting up…</span>
+                        <span wire:loading wire:target="enable" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Setting up…</span>
                     </button>
                 </div>
             </div>
@@ -160,7 +160,7 @@
                     <button type="submit" wire:loading.attr="disabled" wire:target="saveSiteProtection"
                             class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                         <span wire:loading.remove wire:target="saveSiteProtection">Save site protection</span>
-                        <span wire:loading wire:target="saveSiteProtection" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4 animate-spin" /> Saving…</span>
+                        <span wire:loading wire:target="saveSiteProtection" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Saving…</span>
                     </button>
                 </div>
             </form>
