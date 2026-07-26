@@ -18,16 +18,33 @@ class ServicePickerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_service_source_lists_services_sorted_by_name(): void
+    public function test_services_with_icons_sort_before_icon_less_ones(): void
     {
         $options = ServicePickerSources::options();
 
         $this->assertNotEmpty($options);
-        $names = array_column($options, 'name');
+        $this->assertArrayHasKey('has_icon', $options[0]);
+
+        // Every service WITH an icon appears before every service WITHOUT one.
+        $firstMissing = null;
+        foreach ($options as $i => $o) {
+            if (! $o['has_icon']) {
+                $firstMissing = $i;
+                break;
+            }
+        }
+        if ($firstMissing !== null) {
+            foreach (array_slice($options, $firstMissing) as $o) {
+                $this->assertFalse($o['has_icon'], 'an icon service must not appear after an icon-less one');
+            }
+        }
+
+        // Within the icon group, order is alphabetical by name.
+        $withIcon = array_values(array_filter($options, fn ($o) => $o['has_icon']));
+        $names = array_column($withIcon, 'name');
         $sorted = $names;
         sort($sorted, SORT_STRING);
         $this->assertSame($sorted, $names);
-        $this->assertArrayHasKey('slug', $options[0]);
     }
 
     public function test_the_service_picker_emits_the_pick_with_its_opener_token(): void

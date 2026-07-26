@@ -71,6 +71,16 @@ class ServiceIcons
         return self::ALIASES[$slug] ?? $slug;
     }
 
+    /**
+     * Whether a service resolves to a real logo (admin override or bundled brand
+     * mark) rather than the letter-avatar fallback. Used to sort services WITH
+     * icons ahead of icon-less ones in the picker (owner request).
+     */
+    public static function hasIcon(string $service, ?string $apiUrl = null): bool
+    {
+        return self::resolve($service, $apiUrl)['type'] !== 'letter';
+    }
+
     /** @return array<string, string> slug => image url */
     public static function overrides(): array
     {

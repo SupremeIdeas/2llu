@@ -36,8 +36,11 @@ class ServiceIconsPage extends Component
 
         $slug = ServiceIcons::slug($this->uploadSlug !== '' ? $this->uploadSlug : $this->newSlug);
 
+        // Explicitly accept WebP, SVG and PNG (plus JPG). SVG is safe here
+        // because service icons always render via <img src> (an <img>-loaded
+        // SVG never executes scripts).
         $this->validate([
-            'upload' => 'required|image|max:1024',
+            'upload' => 'required|file|mimes:webp,svg,png,jpg,jpeg|max:1024',
         ]);
         if ($slug === '') {
             $this->addError('newSlug', 'Enter the service name (e.g. okcupid).');
@@ -61,17 +64,37 @@ class ServiceIconsPage extends Component
         $this->saved = 'Override removed — back to the built-in mark.';
     }
 
+    /** Only show services still on the letter-avatar fallback (needs an icon). */
+    public bool $onlyMissing = false;
+
     public function render()
     {
         $overrides = ServiceIcons::overrides();
-        // Show every bundled slug + any custom-added ones.
-        $slugs = collect(ServiceIcons::BUNDLED)
+
+        // Every service the catalogue offers, plus bundled + custom slugs, each
+        // tagged with its current icon state so the admin can see — and fix —
+        // exactly which services still lack a real logo.
+        $slugs = collect(\App\Support\NumberCatalogue::services())->keys()
+            ->merge(ServiceIcons::BUNDLED)
             ->merge(array_keys($overrides))
+            ->map(fn ($s) => ServiceIcons::slug($s))
             ->unique()->sort()->values();
 
+        $rows = $slugs->map(fn ($slug) => [
+            'slug' => $slug,
+            'state' => isset($overrides[$slug]) ? 'custom'
+                : (in_array($slug, ServiceIcons::BUNDLED, true) ? 'bundled' : 'missing'),
+        ]);
+
+        $missingCount = $rows->where('state', 'missing')->count();
+        if ($this->onlyMissing) {
+            $rows = $rows->where('state', 'missing')->values();
+        }
+
         return view('livewire.admin.service-icons', [
-            'slugs' => $slugs,
+            'rows' => $rows->values(),
             'overrides' => $overrides,
+            'missingCount' => $missingCount,
         ]);
     }
 }
