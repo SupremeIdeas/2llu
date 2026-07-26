@@ -165,5 +165,76 @@
                 </div>
             </form>
         </div>
+
+        {{-- Admin access control (owner request): panel-managed IP + country
+             allow-lists. Both OFF by default — sign in from anywhere until you
+             deliberately restrict it. --}}
+        <div class="mt-8" x-data="{
+            countryOn: @js($country_allowlist_enabled), ipOn: @js($ip_allowlist_enabled),
+            currentCountry: @js($currentCountry), currentIp: @js($currentIp),
+            get risky() {
+                let el = this.$refs;
+                let countries = (el.countries?.value || '').toUpperCase();
+                let ips = (el.ips?.value || '');
+                let cBlock = this.countryOn && this.currentCountry && countries.trim() && !countries.includes(this.currentCountry);
+                let iBlock = this.ipOn && ips.trim() && !ips.includes(this.currentIp);
+                return cBlock || iBlock;
+            }
+        }">
+            <h2 class="mb-1 text-lg font-bold text-slate-900 dark:text-slate-100">Admin access control</h2>
+            <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">Restrict which IPs or countries can reach the panel. Both are off by default. Your current location: <span class="font-medium">{{ $currentCountry ?? 'unknown' }}</span> · IP <span class="font-mono">{{ $currentIp }}</span>.</p>
+
+            @if ($accessSaved)
+                <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
+                    <x-icon name="badge-check" class="h-4 w-4" /> {{ $accessSaved }}
+                </div>
+            @endif
+
+            <form wire:submit="saveAccessControl" class="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                {{-- Country --}}
+                <div>
+                    <label class="flex items-center gap-3">
+                        <input type="checkbox" wire:model="country_allowlist_enabled" x-model="countryOn" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary dark:border-[#2D4060] dark:bg-[#243352]">
+                        <span class="text-sm font-medium text-slate-800 dark:text-slate-100">Restrict admin access by country</span>
+                    </label>
+                    <div class="mt-2 pl-7" x-show="countryOn" x-collapse>
+                        <input type="text" wire:model="allowed_countries" x-ref="countries" placeholder="NG, GB, US"
+                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm uppercase dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <p class="mt-1 text-[11px] text-slate-400">Comma-separated ISO country codes. Requires Cloudflare (or a geo backend); if a country can’t be resolved, access is allowed (never a lockout).</p>
+                        @error('allowed_countries') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                {{-- IP --}}
+                <div>
+                    <label class="flex items-center gap-3">
+                        <input type="checkbox" wire:model="ip_allowlist_enabled" x-model="ipOn" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary dark:border-[#2D4060] dark:bg-[#243352]">
+                        <span class="text-sm font-medium text-slate-800 dark:text-slate-100">Restrict admin access by IP address</span>
+                    </label>
+                    <div class="mt-2 pl-7" x-show="ipOn" x-collapse>
+                        <textarea wire:model="ip_allowlist" x-ref="ips" rows="3" placeholder="One IP per line"
+                                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100"></textarea>
+                        <p class="mt-1 text-[11px] text-slate-400">In addition to any ADMIN_IP_ALLOWLIST set in .env.</p>
+                    </div>
+                </div>
+
+                {{-- Self-lockout guard --}}
+                <div x-show="risky" x-cloak class="rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-800/60 dark:bg-amber-950/30">
+                    <label class="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-200">
+                        <input type="checkbox" wire:model="lockout_ack" class="mt-0.5 h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500">
+                        <span>These rules would block your current location. I understand this may lock me out — I have another way in (e.g. the break-glass CLI).</span>
+                    </label>
+                    @error('lockout_ack') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <button type="submit" wire:loading.attr="disabled" wire:target="saveAccessControl"
+                            class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                        <span wire:loading.remove wire:target="saveAccessControl">Save access rules</span>
+                        <span wire:loading wire:target="saveAccessControl" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Saving…</span>
+                    </button>
+                </div>
+            </form>
+        </div>
     @endif
 </div>

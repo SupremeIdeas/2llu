@@ -39,6 +39,12 @@ class EnsureAdmin
             throw new NotFoundHttpException;
         }
 
+        // Panel-managed IP + country allow-lists (owner request). Off by default;
+        // both fail-open on unknowns and log every block (see AdminAccess).
+        if (\App\Support\AdminAccess::blockReason($request) !== null) {
+            throw new NotFoundHttpException;
+        }
+
         $user = $request->user();
 
         // A GUEST at the admin path is sent to the DEDICATED admin login and

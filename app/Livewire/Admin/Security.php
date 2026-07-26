@@ -40,7 +40,22 @@ class Security extends Component
     /** Cloudflare Turnstile bot challenge on login/register (opt-in). */
     public bool $turnstile_enabled = false;
 
+    /** Panel-managed admin access control (owner request). */
+    public bool $ip_allowlist_enabled = false;
+
+    public string $ip_allowlist = '';
+
+    public bool $country_allowlist_enabled = false;
+
+    /** Comma/space-separated ISO-3166 alpha-2 codes, e.g. "NG, GB, US". */
+    public string $allowed_countries = '';
+
+    /** Explicit acknowledgement when the new rules would exclude the current request. */
+    public bool $lockout_ack = false;
+
     public ?string $siteSaved = null;
+
+    public ?string $accessSaved = null;
 
     public ?string $saved = null;
 
@@ -51,6 +66,59 @@ class Security extends Component
         $this->hsts_enabled = $s['hsts_enabled'];
         $this->admin_2fa_required = $s['admin_2fa_required'];
         $this->turnstile_enabled = $s['turnstile_enabled'] ?? false;
+        $this->ip_allowlist_enabled = $s['admin_ip_allowlist_enabled'] ?? false;
+        $this->ip_allowlist = implode("\n", $s['admin_ip_allowlist'] ?? []);
+        $this->country_allowlist_enabled = $s['admin_country_allowlist_enabled'] ?? false;
+        $this->allowed_countries = implode(', ', $s['admin_allowed_countries'] ?? []);
+    }
+
+    /**
+     * Save the panel-managed IP + country allow-lists (super-admin only). Guards
+     * against a blind self-lockout: if the new rules would exclude THIS request,
+     * an explicit acknowledgement is required before saving.
+     */
+    public function saveAccessControl(): void
+    {
+        abort_unless(Auth::user()->hasRole('super_admin'), 403);
+
+        $ips = collect(preg_split('/[\s,]+/', $this->ip_allowlist))
+            ->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
+
+        $countries = collect(preg_split('/[\s,]+/', strtoupper($this->allowed_countries)))
+            ->map(fn ($v) => trim($v))->filter(fn ($v) => preg_match('/^[A-Z]{2}$/', $v))
+            ->unique()->values()->all();
+
+        // Self-lockout guard: would these rules block the request making the change?
+        $request = request();
+        $wouldBlockIp = $this->ip_allowlist_enabled && ! empty($ips) && ! in_array($request->ip(), $ips, true);
+        $currentCountry = \App\Support\AdminAccess::currentCountry($request);
+        $wouldBlockCountry = $this->country_allowlist_enabled && ! empty($countries)
+            && $currentCountry !== null && ! in_array($currentCountry, $countries, true);
+
+        if (($wouldBlockIp || $wouldBlockCountry) && ! $this->lockout_ack) {
+            $this->addError('lockout_ack', 'These rules would block your current '
+                .($wouldBlockIp ? 'IP' : 'country').'. Tick the box to confirm you have another way in.');
+
+            return;
+        }
+
+        Setting::setValue('security.admin_ip_allowlist_enabled', $this->ip_allowlist_enabled, 'security');
+        Setting::setValue('security.admin_ip_allowlist', $ips, 'security');
+        Setting::setValue('security.admin_country_allowlist_enabled', $this->country_allowlist_enabled, 'security');
+        Setting::setValue('security.admin_allowed_countries', $countries, 'security');
+        SecuritySettings::flush();
+
+        $this->allowed_countries = implode(', ', $countries);
+        $this->ip_allowlist = implode("\n", $ips);
+        $this->lockout_ack = false;
+
+        Auditor::log('security.access_control_updated', null, null, [
+            'ip_enabled' => $this->ip_allowlist_enabled, 'ip_count' => count($ips),
+            'country_enabled' => $this->country_allowlist_enabled, 'countries' => $countries,
+        ]);
+
+        $this->accessSaved = 'Admin access rules saved.';
+        $this->dispatch('nx-toast', type: 'success', message: 'Admin access rules saved.');
     }
 
     /**
@@ -147,6 +215,8 @@ class Security extends Component
             'canDisable' => $user->hasRole('super_admin'),
             'canManageSite' => $user->hasRole('super_admin'),
             'turnstileConfigured' => \App\Support\Turnstile::configured(),
+            'currentCountry' => \App\Support\AdminAccess::currentCountry(request()),
+            'currentIp' => request()->ip(),
         ]);
     }
 }

@@ -47,6 +47,10 @@ class AppServiceProvider extends ServiceProvider
         // Web-push sender (self-hosted VAPID) — swapped for a fake in tests.
         $this->app->bind(\App\Services\Push\WebPushSender::class, \App\Services\Push\MinishlinkPushSender::class);
 
+        // Geo resolver for the admin country allow-list — Cloudflare header by
+        // default (zero dependency); a deployer can bind a GeoLite2/API resolver.
+        $this->app->bind(\App\Support\Geo\GeoResolver::class, \App\Support\Geo\CloudflareGeoResolver::class);
+
         // Payment gateways, resolved by name via app("pay.$gateway").
         $this->app->singleton('pay.flutterwave', \App\Services\Payments\FlutterwaveGateway::class);
         $this->app->singleton('pay.paystack', \App\Services\Payments\PaystackGateway::class);

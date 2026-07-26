@@ -20,7 +20,7 @@ class SecuritySettings
 {
     // Versioned so adding keys to the cached shape invalidates any stale cache
     // left over from a previous deploy (a missing key must never crash a read).
-    private const CACHE_KEY = 'security.settings.v3';
+    private const CACHE_KEY = 'security.settings.v4';
 
     public static function current(): array
     {
@@ -35,6 +35,13 @@ class SecuritySettings
                     // Cloudflare Turnstile bot challenge — OFF by default; the
                     // admin turns it on once the site/secret keys are set.
                     'turnstile_enabled' => self::boolSetting('security.turnstile_enabled', false),
+                    // Panel-managed admin access controls (owner request) — both
+                    // OFF by default so the admin can sign in from any device or
+                    // country until they deliberately restrict it.
+                    'admin_country_allowlist_enabled' => self::boolSetting('security.admin_country_allowlist_enabled', false),
+                    'admin_allowed_countries' => self::arraySetting('security.admin_allowed_countries'),
+                    'admin_ip_allowlist_enabled' => self::boolSetting('security.admin_ip_allowlist_enabled', false),
+                    'admin_ip_allowlist' => self::arraySetting('security.admin_ip_allowlist'),
                 ];
             } catch (\Throwable) {
                 return [
@@ -42,9 +49,43 @@ class SecuritySettings
                     'hsts_enabled' => (bool) config('security.hsts.enabled', true),
                     'admin_2fa_required' => (bool) config('admin.require_2fa', false),
                     'turnstile_enabled' => false,
+                    'admin_country_allowlist_enabled' => false,
+                    'admin_allowed_countries' => [],
+                    'admin_ip_allowlist_enabled' => false,
+                    'admin_ip_allowlist' => [],
                 ];
             }
         });
+    }
+
+    public static function adminCountryAllowlistEnabled(): bool
+    {
+        return (bool) (self::current()['admin_country_allowlist_enabled'] ?? false);
+    }
+
+    /** @return list<string> ISO-3166 alpha-2 codes (uppercase). */
+    public static function adminAllowedCountries(): array
+    {
+        return self::current()['admin_allowed_countries'] ?? [];
+    }
+
+    public static function adminIpAllowlistEnabled(): bool
+    {
+        return (bool) (self::current()['admin_ip_allowlist_enabled'] ?? false);
+    }
+
+    /** @return list<string> */
+    public static function adminIpAllowlist(): array
+    {
+        return self::current()['admin_ip_allowlist'] ?? [];
+    }
+
+    /** @return list<string> */
+    private static function arraySetting(string $key): array
+    {
+        $value = Setting::getValue($key);
+
+        return is_array($value) ? array_values($value) : [];
     }
 
     public static function cspEnabled(): bool
