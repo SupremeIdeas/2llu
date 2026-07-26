@@ -74,7 +74,14 @@ class AdminSecurityTest extends TestCase
         // email + password.
         $this->actingAs($admin)->get('/adminmaster')->assertOk();
 
-        // Once a super-admin turns the requirement on, enrolment is forced.
+        // Once a super-admin turns the requirement on, enrolment is forced —
+        // BUT only when a super_admin has actually enrolled (anti-lockout rail),
+        // otherwise turning the toggle on would trap everyone. Seed an enrolled
+        // super_admin so enforcement is genuinely active.
+        $enrolledSuper = User::factory()->create();
+        $enrolledSuper->assignRole('super_admin');
+        $enrolledSuper->forceFill(['two_factor_secret' => encrypt('S'), 'two_factor_confirmed_at' => now()])->save();
+
         \App\Models\Setting::setValue('security.admin_2fa_required', true, 'security');
         \App\Support\SecuritySettings::flush();
 

@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -26,6 +27,15 @@ class EnsureAdmin
     {
         $allow = config('admin.ip_allowlist', []);
         if (! empty($allow) && ! in_array($request->ip(), $allow, true)) {
+            // The response is a plain 404 (the panel stays invisible), but the
+            // reason is LOGGED so a locked-out operator with server access can
+            // actually diagnose it instead of chasing a phantom routing bug.
+            Log::warning('[admin] Blocked by IP allow-list.', [
+                'ip' => $request->ip(),
+                'allowed' => $allow,
+                'path' => $request->path(),
+            ]);
+
             throw new NotFoundHttpException;
         }
 
@@ -53,10 +63,31 @@ class EnsureAdmin
         if (\App\Support\SecuritySettings::admin2faRequired()
             && ! $this->hasConfirmedTwoFactor($user)
             && ! $request->routeIs('admin.security')) {
-            return redirect()->route('admin.security');
+            // Anti-lockout rail: if NOBODY (no super_admin) has actually enrolled
+            // 2FA yet, enforcing it would trap every admin on the security page
+            // with no way out (e.g. no authenticator handy). Never do that —
+            // allow access and log it, so turning the toggle on is reversible
+            // without shell access. Once a super_admin confirms 2FA, enforcement
+            // kicks in for everyone as intended.
+            if (! $this->anySuperAdminHasTwoFactor()) {
+                Log::warning('[admin] 2FA is required but no super_admin has enrolled — allowing access to avoid a lockout. Enrol 2FA or turn the requirement off.', [
+                    'user_id' => $user->id,
+                ]);
+            } else {
+                return redirect()->route('admin.security');
+            }
         }
 
         return $next($request);
+    }
+
+    /** Whether at least one super_admin has a confirmed TOTP enrolment. */
+    private function anySuperAdminHasTwoFactor(): bool
+    {
+        return User::role('super_admin')
+            ->whereNotNull('two_factor_secret')
+            ->whereNotNull('two_factor_confirmed_at')
+            ->exists();
     }
 
     /**
