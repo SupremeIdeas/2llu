@@ -4,7 +4,15 @@
             <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">eSIM Data Plans</h1>
             <p class="text-sm text-slate-500 dark:text-slate-400">190+ countries. Stay connected. No borders. No swaps.</p>
         </div>
+        {{-- Check compatibility BEFORE buying (esim_upgrade Part 2). --}}
+        <button type="button" @click="$dispatch('open-compatibility')"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 dark:border-primary/40 dark:text-teal-300">
+            <x-icon name="signal" class="h-4 w-4" /> Check compatibility
+        </button>
     </div>
+
+    {{-- One compatibility modal, opened via the event above. --}}
+    <livewire:esim-compatibility />
 
     <div class="relative mb-6 max-w-md">
         <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">

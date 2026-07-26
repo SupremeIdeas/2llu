@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             DefaultAdminSeeder::class,  // seeds the default super_admin
             DefaultBannerSeeder::class, // ships the five brand promo banners
             MarketingCouponsSeeder::class, // welcome + comeback marketing coupons
+            EsimCompatibleDeviceSeeder::class, // eSIM device compatibility catalogue
         ]);
     }
 }
