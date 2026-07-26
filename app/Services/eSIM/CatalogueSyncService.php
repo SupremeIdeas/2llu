@@ -46,6 +46,7 @@ class CatalogueSyncService
             'airalo' => $this->mapAiralo(app('esim.airalo')->getCatalogue()),
             'quibity' => $this->mapQuibity(app('esim.quibity')->getCatalogue()),
             'zendit' => $this->mapZendit(app('esim.zendit')->getCatalogue()),
+            'oneglobal', 'montymobile', 'gigs' => $this->mapFullEsim($provider, app("esim.{$provider}")->getCatalogue()),
             default => throw new \InvalidArgumentException("Unknown eSIM provider [$provider]."),
         };
 
@@ -140,12 +141,12 @@ class CatalogueSyncService
     }
 
     /**
-     * Zendit → the Naara Connect line (Full eSIMs: calls + data). We ingest ONLY
-     * voice-capable offers: Zendit's data-only bundles duplicate the data trio
-     * (eSIM Go / Airalo / Quibity) and would flood the Data tab, so they're
-     * skipped — Zendit is deliberately the voice lane. Every ingested plan is
-     * has_voice = true. Cost is `cost.fixed / currencyDivisor` — the WHOLESALE
-     * price (PRIVATE); Zendit's suggested `price` block is ignored.
+     * Zendit serves BOTH lines. Every offer is ingested; `has_voice` (set from
+     * voiceMinutes / voiceUnlimited) routes it: a voice-capable offer is a Naara
+     * Connect Full eSIM (calls + data), a data-only offer expands Naara Data. So
+     * Zendit is a data-lane backup AND a Full-eSIM provider. Cost is
+     * `cost.fixed / currencyDivisor` — the WHOLESALE price (PRIVATE); Zendit's
+     * suggested `price` block is ignored (retail stays ours via PricingEngine).
      *
      * @return array<int, array<string, mixed>>
      */
@@ -154,20 +155,20 @@ class CatalogueSyncService
         $offers = $raw['list'] ?? $raw['data'] ?? $raw;
 
         return collect($offers)
-            ->filter(fn ($o) => ($o['enabled'] ?? true) && isset($o['offerId'])
-                && ((bool) ($o['voiceUnlimited'] ?? false) || (int) ($o['voiceMinutes'] ?? 0) > 0))
+            ->filter(fn ($o) => ($o['enabled'] ?? true) && isset($o['offerId']))
             ->map(function ($o) {
                 $cost = $o['cost'] ?? [];
                 $divisor = (int) ($cost['currencyDivisor'] ?? 1) ?: 1;
 
                 $unlimitedData = (bool) ($o['dataUnlimited'] ?? false);
                 $dataGb = (float) ($o['dataGB'] ?? 0);
+                $hasVoice = (bool) ($o['voiceUnlimited'] ?? false) || (int) ($o['voiceMinutes'] ?? 0) > 0;
 
                 return [
                     'provider_plan_id' => (string) $o['offerId'],
                     'name' => $this->zenditName($o),
-                    'type' => 'Voice + Data',
-                    'has_voice' => true,
+                    'type' => $hasVoice ? 'Voice + Data' : 'Data',
+                    'has_voice' => $hasVoice,
                     // dataGB is in GB; store MB. Unlimited => null (matches the model).
                     'data_mb' => $unlimitedData ? null : ($dataGb > 0 ? (int) round($dataGb * 1024) : null),
                     'validity_days' => $this->intOrNull($o['durationDays'] ?? null),
@@ -179,6 +180,62 @@ class CatalogueSyncService
                 ];
             })
             ->filter(fn ($r) => $r['provider_plan_id'] !== '')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * 1GLOBAL / Monty Mobile / Gigs → the Naara Connect (Full eSIM) line. These
+     * three are voice+data MVNO providers, so every ingested plan is
+     * has_voice = true. Their exact catalogue schemas are confirmed on partner
+     * access; this reads the common REST field names defensively (list/data/
+     * plans wrapper, id/planId, cost/wholesale/net price, data in GB or MB,
+     * duration in days, ISO countries). Cost is WHOLESALE and PRIVATE.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapFullEsim(string $provider, array $raw): array
+    {
+        $plans = $raw['list'] ?? $raw['data'] ?? $raw['plans'] ?? $raw['items'] ?? $raw;
+
+        return collect($plans)
+            ->filter(fn ($p) => is_array($p) && ($p['enabled'] ?? true))
+            ->map(function ($p) use ($provider) {
+                $id = $p['id'] ?? $p['planId'] ?? $p['plan_id'] ?? $p['code'] ?? null;
+                if ($id === null) {
+                    return null;
+                }
+
+                // Cost (WHOLESALE, PRIVATE): accept a scalar or a {amount,divisor}
+                // shape. Prefer explicit wholesale/net/cost keys over any retail.
+                $cost = $p['cost'] ?? $p['wholesale'] ?? $p['wholesale_price'] ?? $p['net_price'] ?? $p['price'] ?? 0;
+                if (is_array($cost)) {
+                    $divisor = (int) ($cost['currencyDivisor'] ?? $cost['divisor'] ?? 1) ?: 1;
+                    $cost = (float) ($cost['fixed'] ?? $cost['amount'] ?? 0) / $divisor;
+                }
+
+                // Data: GB (float) or MB (int); unlimited => null.
+                $dataMb = null;
+                if (! ($p['dataUnlimited'] ?? $p['data_unlimited'] ?? false)) {
+                    if (isset($p['dataGB']) || isset($p['data_gb'])) {
+                        $dataMb = (int) round(((float) ($p['dataGB'] ?? $p['data_gb'])) * 1024);
+                    } elseif (isset($p['dataMB']) || isset($p['data_mb'])) {
+                        $dataMb = $this->intOrNull($p['dataMB'] ?? $p['data_mb']);
+                    }
+                }
+
+                return [
+                    'provider_plan_id' => (string) $id,
+                    'name' => $p['name'] ?? $p['title'] ?? $p['description'] ?? ucfirst($provider).' Full eSIM',
+                    'type' => 'Voice + Data',
+                    'has_voice' => true, // MVNO providers — always a Full eSIM
+                    'data_mb' => $dataMb,
+                    'validity_days' => $this->intOrNull($p['durationDays'] ?? $p['validity_days'] ?? $p['days'] ?? null),
+                    'countries' => $this->isoList($p['countries'] ?? $p['regions'] ?? array_filter([$p['country'] ?? null])),
+                    'cost_price_usd' => (float) $cost,
+                ];
+            })
+            ->filter(fn ($r) => $r !== null && $r['provider_plan_id'] !== '')
             ->values()
             ->all();
     }

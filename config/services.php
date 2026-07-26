@@ -61,16 +61,42 @@ return [
         'base_url' => env('QUIBITY_BASE_URL', 'https://esim.sm/api/reseller/v1'),
     ],
 
-    // Zendit — Naara Connect line (Full eSIMs: calls + data). Bearer auth.
-    // Sandbox and production are DIFFERENT hosts; the base_url follows the
-    // sandbox flag so a test key never hits the live wallet. The catalogue
-    // `cost.fixed / currencyDivisor` is the WHOLESALE cost (PRIVATE).
+    // -- Full-eSIM providers (Naara Connect: calls + data) ----------------
+    // Four interchangeable voice+data providers behind the Naara Connect lane.
+    // Costs are WHOLESALE and PRIVATE; retail is always ours via PricingEngine.
+
+    // Zendit — also serves plain data eSIMs (data-lane backup). Bearer auth;
+    // sandbox and production are DIFFERENT hosts (base_url follows the flag so a
+    // test key never hits the live wallet).
     'zendit' => [
         'api_key' => env('ZENDIT_API_KEY'),
         'sandbox' => env('ZENDIT_SANDBOX', false),
         'base_url' => env('ZENDIT_BASE_URL', env('ZENDIT_SANDBOX', false)
             ? 'https://test-api.zendit.io/v1'
             : 'https://api.zendit.io/v1'),
+    ],
+
+    // 1GLOBAL (Connect API) — OAuth2 client-credentials. Partner-access onboarding.
+    'oneglobal' => [
+        'client_id' => env('ONEGLOBAL_CLIENT_ID'),
+        'client_secret' => env('ONEGLOBAL_CLIENT_SECRET'),
+        'sandbox' => env('ONEGLOBAL_SANDBOX', false),
+        'base_url' => env('ONEGLOBAL_BASE_URL', 'https://api.connect.1global.com/v1'),
+    ],
+
+    // Monty Mobile (RSP API) — Bearer API key. Sales-led onboarding.
+    'montymobile' => [
+        'api_key' => env('MONTYMOBILE_API_KEY'),
+        'sandbox' => env('MONTYMOBILE_SANDBOX', false),
+        'base_url' => env('MONTYMOBILE_BASE_URL', 'https://rsp.montymobile.com'),
+    ],
+
+    // Gigs (Connectivity API) — Bearer API key, project-scoped. Full MVNO stack.
+    'gigs' => [
+        'api_key' => env('GIGS_API_KEY'),
+        'project' => env('GIGS_PROJECT'),
+        'sandbox' => env('GIGS_SANDBOX', false),
+        'base_url' => env('GIGS_BASE_URL', 'https://api.gigs.com/v1'),
     ],
 
     // -- Number / SMS providers (blueprint Sections 8-11) -----------------

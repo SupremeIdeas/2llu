@@ -29,8 +29,22 @@ use Throwable;
  */
 class ProviderRouter
 {
-    /** @var list<string> */
-    protected array $chain = ['esimgo', 'airalo', 'quibity'];
+    /**
+     * The data-only failover lane (Naara Data). Zendit is a backup here too — it
+     * also sells plain data eSIMs alongside its Full-eSIM offers.
+     *
+     * @var list<string>
+     */
+    protected array $chain = ['esimgo', 'airalo', 'quibity', 'zendit'];
+
+    /**
+     * The Full-eSIM failover lane (Naara Connect: calls + data). Four
+     * interchangeable voice+data providers; a voice purchase fails over WITHIN
+     * this lane only — never down to a data-only provider (blueprint lane rule).
+     *
+     * @var list<string>
+     */
+    protected array $voiceChain = ['zendit', 'oneglobal', 'montymobile', 'gigs'];
 
     public function __construct(private readonly WalletService $wallet)
     {
@@ -120,14 +134,14 @@ class ProviderRouter
      * The failover lane for a plan. Voice eSIMs (Naara Connect) are NOT
      * interchangeable with data-only providers — a data-only fallback would
      * deliver the wrong product for a voice purchase (blueprint lane rule). So a
-     * voice plan is fulfilled only from its own (voice-capable) provider, while
-     * a data plan uses the profit-aware data failover chain.
+     * voice plan fails over within the Full-eSIM lane (Zendit / 1GLOBAL / Monty
+     * Mobile / Gigs), while a data plan uses the data failover chain.
      *
      * @return list<string>
      */
     protected function chainFor(EsimPlan $plan): array
     {
-        return $plan->has_voice ? [$plan->provider] : $this->chain;
+        return $plan->has_voice ? $this->voiceChain : $this->chain;
     }
 
     /**

@@ -71,7 +71,7 @@ class ProviderKeys extends Component
     public function syncNow(string $provider): void
     {
         abort_unless(Auth::user()->hasRole('super_admin'), 403);
-        if (! in_array($provider, ['esimgo', 'airalo', 'quibity', 'zendit'], true)) {
+        if (! in_array($provider, ['esimgo', 'airalo', 'quibity', 'zendit', 'oneglobal', 'montymobile', 'gigs'], true)) {
             return;
         }
 
@@ -105,6 +105,9 @@ class ProviderKeys extends Component
                 'airalo' => \App\Support\SyncStatus::for('airalo'),
                 'quibity' => \App\Support\SyncStatus::for('quibity'),
                 'zendit' => \App\Support\SyncStatus::for('zendit'),
+                'oneglobal' => \App\Support\SyncStatus::for('oneglobal'),
+                'montymobile' => \App\Support\SyncStatus::for('montymobile'),
+                'gigs' => \App\Support\SyncStatus::for('gigs'),
             ],
         ]);
     }

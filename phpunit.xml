@@ -46,5 +46,10 @@
         <env name="TELNYX_API_KEY" value=""/>
         <env name="ZENDIT_API_KEY" value=""/>
         <env name="ZENDIT_SANDBOX" value="false"/>
+        <env name="ONEGLOBAL_CLIENT_ID" value=""/>
+        <env name="ONEGLOBAL_CLIENT_SECRET" value=""/>
+        <env name="MONTYMOBILE_API_KEY" value=""/>
+        <env name="GIGS_API_KEY" value=""/>
+        <env name="GIGS_PROJECT" value=""/>
     </php>
 </phpunit>

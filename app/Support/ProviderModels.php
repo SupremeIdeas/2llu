@@ -39,7 +39,7 @@ class ProviderModels
             'tagline' => 'Full eSIM — calls + data on one eSIM',
             'icon' => 'signal',
             'caps' => ['esim_voice'],
-            'lane' => ['zendit'],
+            'lane' => ['zendit', 'oneglobal', 'montymobile', 'gigs'],
             'coming_soon' => false,
         ],
         'naara_verify' => [
@@ -77,6 +77,9 @@ class ProviderModels
         'airalo' => 'airalo_client_id',
         'quibity' => 'quibity_api_key',
         'zendit' => 'zendit_api_key',
+        'oneglobal' => 'oneglobal_client_id',
+        'montymobile' => 'montymobile_api_key',
+        'gigs' => 'gigs_api_key',
         'getatext' => 'getatext_api_key',
         'fivesim' => 'fivesim_api_key',
         'smsactivate' => 'smsactivate_api_key',

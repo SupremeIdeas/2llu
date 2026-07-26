@@ -34,7 +34,7 @@
     <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
         <h2 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">eSIM catalogue sync</h2>
         <div class="space-y-2">
-            @foreach (['esimgo' => 'eSIM Go', 'airalo' => 'Airalo', 'quibity' => 'Quibity', 'zendit' => 'Zendit (Naara Connect)'] as $prov => $label)
+            @foreach (['esimgo' => 'eSIM Go', 'airalo' => 'Airalo', 'quibity' => 'Quibity', 'zendit' => 'Zendit (Naara Connect + data)', 'oneglobal' => '1GLOBAL (Naara Connect)', 'montymobile' => 'Monty Mobile (Naara Connect)', 'gigs' => 'Gigs (Naara Connect)'] as $prov => $label)
                 @php $st = $syncStatus[$prov] ?? null; @endphp
                 <div class="flex flex-wrap items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 dark:border-[#243352]">
                     <span class="w-24 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-200">{{ $label }}</span>

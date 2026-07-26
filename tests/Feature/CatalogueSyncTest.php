@@ -173,10 +173,10 @@ class CatalogueSyncTest extends TestCase
             ],
         ]]);
 
-        // Only the voice offer is ingested — Zendit is the Naara Connect (voice)
-        // lane; its data-only bundle is skipped so it can't flood the Data tab.
+        // Both offers are ingested; has_voice routes them (voice → Naara Connect,
+        // data → Naara Data). Zendit serves both lines.
         $count = app(CatalogueSyncService::class)->sync('zendit');
-        $this->assertSame(1, $count);
+        $this->assertSame(2, $count);
 
         $voice = EsimPlan::where('provider_plan_id', 'ng-voice-5gb')->firstOrFail();
         $this->assertTrue($voice->has_voice);
@@ -186,10 +186,34 @@ class CatalogueSyncTest extends TestCase
         // Retail is OURS (cost * markup), never Zendit's suggested 9.99.
         $this->assertNotSame(9.99, (float) $voice->fresh()->final_retail_usd);
 
-        // The data-only Zendit offer was NOT stored.
-        $this->assertNull(EsimPlan::where('provider_plan_id', 'ng-data-3gb')->first());
+        // The data-only Zendit offer is stored on the data line.
+        $data = EsimPlan::where('provider_plan_id', 'ng-data-3gb')->firstOrFail();
+        $this->assertFalse($data->has_voice);
 
         // Cost never leaks in a serialized plan.
         $this->assertArrayNotHasKey('cost_price_usd', $voice->toArray());
+    }
+
+    public function test_full_esim_providers_ingest_voice_plans_with_private_cost(): void
+    {
+        // 1GLOBAL / Monty / Gigs are voice+data MVNO providers — every plan is a
+        // Full eSIM (has_voice = true). The defensive mapper reads common field
+        // names; the wholesale cost stays private.
+        $this->bindProvider('oneglobal', ['data' => [
+            ['id' => 'og-eu-10gb', 'name' => 'Europe 10GB + calls', 'dataGB' => 10,
+                'durationDays' => 30, 'countries' => ['FR', 'DE'], 'wholesale' => 6.0],
+        ]]);
+
+        $count = app(CatalogueSyncService::class)->sync('oneglobal');
+        $this->assertSame(1, $count);
+
+        $plan = EsimPlan::where('provider', 'oneglobal')->firstOrFail();
+        $this->assertTrue($plan->has_voice);
+        $this->assertSame('Voice + Data', $plan->type);
+        $this->assertSame(10240, $plan->data_mb);
+        $this->assertSame(30, $plan->validity_days);
+        $this->assertSame(['FR', 'DE'], $plan->countries);
+        $this->assertSame('6.0000', (string) $plan->cost_price_usd);
+        $this->assertArrayNotHasKey('cost_price_usd', $plan->toArray());
     }
 }

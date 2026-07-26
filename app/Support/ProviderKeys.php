@@ -47,7 +47,12 @@ class ProviderKeys
                     'airalo_client_id' => ['label' => 'Airalo — Client ID', 'config' => 'services.airalo.client_id', 'env' => 'AIRALO_CLIENT_ID', 'secret' => false, 'hint' => 'app.partners.airalo.com → Developer (SECONDARY).'],
                     'airalo_client_secret' => ['label' => 'Airalo — Client Secret', 'config' => 'services.airalo.client_secret', 'env' => 'AIRALO_CLIENT_SECRET', 'secret' => true, 'hint' => 'Same page — shown once.'],
                     'quibity_api_key' => ['label' => 'Quibity / eSIM.sm — API Key', 'config' => 'services.quibity.api_key', 'env' => 'QUIBITY_API_KEY', 'secret' => true, 'hint' => 'esim.sm reseller dashboard (TERTIARY).'],
-                    'zendit_api_key' => ['label' => 'Zendit — API Key (Naara Connect)', 'config' => 'services.zendit.api_key', 'env' => 'ZENDIT_API_KEY', 'secret' => true, 'hint' => 'developers.zendit.io → API keys. Backs Full eSIMs (calls + data). Use a sand_… test key with ZENDIT_SANDBOX=true first.'],
+                    'zendit_api_key' => ['label' => 'Zendit — API Key (Naara Connect + data)', 'config' => 'services.zendit.api_key', 'env' => 'ZENDIT_API_KEY', 'secret' => true, 'hint' => 'developers.zendit.io → API keys. Full eSIMs (calls + data) AND plain data eSIMs. Use a sand_… test key with ZENDIT_SANDBOX=true first.'],
+                    'oneglobal_client_id' => ['label' => '1GLOBAL — Client ID (Naara Connect)', 'config' => 'services.oneglobal.client_id', 'env' => 'ONEGLOBAL_CLIENT_ID', 'secret' => false, 'hint' => 'docs.connect.1global.com — partner access. Full eSIM (voice + data).'],
+                    'oneglobal_client_secret' => ['label' => '1GLOBAL — Client Secret', 'config' => 'services.oneglobal.client_secret', 'env' => 'ONEGLOBAL_CLIENT_SECRET', 'secret' => true, 'hint' => 'Same Connect app — OAuth2 client-credentials secret.'],
+                    'montymobile_api_key' => ['label' => 'Monty Mobile — RSP API Key (Naara Connect)', 'config' => 'services.montymobile.api_key', 'env' => 'MONTYMOBILE_API_KEY', 'secret' => true, 'hint' => 'montymobile.com → partner/sales for RSP API access. Full eSIM (voice + data).'],
+                    'gigs_api_key' => ['label' => 'Gigs — API Key (Naara Connect)', 'config' => 'services.gigs.api_key', 'env' => 'GIGS_API_KEY', 'secret' => true, 'hint' => 'developers.gigs.com → API keys. Full MVNO eSIM (voice + SMS + data + number).'],
+                    'gigs_project' => ['label' => 'Gigs — Project ID', 'config' => 'services.gigs.project', 'env' => 'GIGS_PROJECT', 'secret' => false, 'hint' => 'Gigs dashboard → the project every resource is scoped to.'],
                 ],
             ],
             'numbers' => [

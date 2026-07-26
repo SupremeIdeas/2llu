@@ -153,6 +153,43 @@ class ProviderRouterTest extends TestCase
         $this->assertSame('VOICE-1', $result->payload['iccid']);
     }
 
+    public function test_a_voice_plan_fails_over_within_the_full_esim_lane(): void
+    {
+        // Naara Connect lane: zendit → 1GLOBAL → Monty → Gigs. Zendit is down;
+        // 1GLOBAL has an equivalent Full eSIM and fulfils it (still voice-only).
+        $chosen = $this->plan('zendit', 5.0, ['has_voice' => true, 'computed_retail_usd' => 20.0])->fresh();
+        $this->plan('oneglobal', 6.0, ['has_voice' => true]);
+
+        $zendit = new FakeEsimProvider(shouldThrow: true);
+        $oneglobal = new FakeEsimProvider(orderResponse: ['iccid' => 'OG-1']);
+        app()->instance('esim.zendit', $zendit);
+        app()->instance('esim.oneglobal', $oneglobal);
+
+        $user = User::factory()->create();
+        $result = app(ProviderRouter::class)->orderPlan((string) $chosen->id, $user);
+
+        $this->assertSame('oneglobal', $result->provider);
+        $this->assertSame(1, $zendit->orderCalls);
+        $this->assertSame(1, $oneglobal->orderCalls);
+    }
+
+    public function test_zendit_is_a_data_lane_backup(): void
+    {
+        // A data-only plan can fail over to Zendit (it also sells data eSIMs).
+        $chosen = $this->plan('esimgo', 5.0, ['has_voice' => false, 'computed_retail_usd' => 20.0])->fresh();
+        $this->plan('zendit', 6.0, ['has_voice' => false]);
+
+        $esimgo = new FakeEsimProvider(shouldThrow: true);
+        $zendit = new FakeEsimProvider(orderResponse: ['iccid' => 'ZD-DATA']);
+        app()->instance('esim.esimgo', $esimgo);
+        app()->instance('esim.zendit', $zendit);
+
+        $user = User::factory()->create();
+        $result = app(ProviderRouter::class)->orderPlan((string) $chosen->id, $user);
+
+        $this->assertSame('zendit', $result->provider);
+    }
+
     public function test_equivalent_plan_matches_voice_capability_exactly(): void
     {
         $router = app(ProviderRouter::class);
