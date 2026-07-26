@@ -1,8 +1,15 @@
-<div class="mx-auto max-w-lg">
+<div class="mx-auto max-w-3xl" x-data
+     @open-numbers-modal.window="document.getElementById('numbers-flow')?.scrollIntoView({ behavior: 'smooth' })">
     {{-- Premium 4-image interchanging-reveal hero (Numbers V6 §0). --}}
     @include('partials.numbers-hero')
 
-    <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Get a Number</h1>
+    {{-- Six-card bento grid, locked 2/1/2/1 layout (Numbers V6 §1). --}}
+    @include('partials.numbers-bento')
+
+    {{-- The working purchase flow. Bento "modal" cards scroll here for now;
+         Stage 5 replaces this with the dedicated Verify/Rent/Line modals. --}}
+    <div id="numbers-flow" class="mx-auto max-w-lg scroll-mt-6">
+        <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Get a Number</h1>
     <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">Receive verification codes for any country. We pick the best network for you.</p>
 
     {{-- Live Voice (Twilio) — only when voice is Active (rides the same keys). --}}
@@ -155,4 +162,5 @@
             <p class="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">Price is charged from your wallet. Auto-refund if no code arrives.</p>
         </div>
     @endif
+    </div>
 </div>

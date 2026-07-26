@@ -173,6 +173,7 @@ Route::middleware(['admin', 'throttle:admin'])
             // eSIM storefront hero (esim_upgrade Part 2) — title, description, images.
             Route::get('/esim-hero', \App\Livewire\Admin\EsimHero::class)->name('esim-hero');
             Route::get('/numbers-hero', \App\Livewire\Admin\NumbersHero::class)->name('numbers-hero');
+            Route::get('/numbers-cards', \App\Livewire\Admin\NumbersBento::class)->name('numbers-cards');
             Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
             Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');
             Route::get('/site', \App\Livewire\Admin\SiteEditor::class)->name('site');

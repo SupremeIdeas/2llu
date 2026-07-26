@@ -29,6 +29,7 @@
         $more[] = ['route' => 'admin.banners', 'label' => 'Banners', 'icon' => 'image'];
         $more[] = ['route' => 'admin.esim-hero', 'label' => 'eSIM hero', 'icon' => 'signal'];
         $more[] = ['route' => 'admin.numbers-hero', 'label' => 'Numbers hero', 'icon' => 'phone'];
+        $more[] = ['route' => 'admin.numbers-cards', 'label' => 'Numbers cards', 'icon' => 'grid'];
         $more[] = ['route' => 'admin.credits', 'label' => 'NaaraCredits', 'icon' => 'gift'];
 
         // Money & partners.
