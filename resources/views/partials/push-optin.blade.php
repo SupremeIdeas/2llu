@@ -1,4 +1,4 @@
-@if (\App\Support\WebPushConfig::configured())
+@if (\App\Support\FeatureFlags::enabled('naara_push'))
     {{-- Self-hosted web-push opt-in (owner request). Registers the service
          worker, and offers a subtle prompt to enable closed-tab notifications.
          Nothing renders/prompts unless VAPID keys are configured. --}}

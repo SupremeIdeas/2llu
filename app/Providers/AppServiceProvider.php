@@ -196,6 +196,9 @@ class AppServiceProvider extends ServiceProvider
             if (\App\Support\HeroBackground::isHeroKey($setting->key)) {
                 \App\Support\HeroBackground::flush();
             }
+            if (\App\Support\FeatureFlags::isFeatureKey($setting->key)) {
+                \App\Support\FeatureFlags::flush();
+            }
             if (\App\Support\SiteContent::isSiteKey($setting->key)) {
                 \App\Support\SiteContent::flush();
             }

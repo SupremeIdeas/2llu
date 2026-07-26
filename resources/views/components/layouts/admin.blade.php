@@ -47,6 +47,7 @@
         $more[] = ['route' => 'admin.appearance', 'label' => 'Splash', 'icon' => 'zap'];
         $more[] = ['route' => 'admin.service-icons', 'label' => 'Service icons', 'icon' => 'grid'];
         $more[] = ['route' => 'admin.integrations', 'label' => 'Integrations', 'icon' => 'link'];
+        $more[] = ['route' => 'admin.features', 'label' => 'Features', 'icon' => 'zap'];
     }
 
     // People & support — ticket-workers (staff scope) and admins.

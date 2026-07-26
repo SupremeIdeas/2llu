@@ -19,7 +19,7 @@ class WebPushChannel
 {
     public function send(object $notifiable, Notification $notification): void
     {
-        if (! WebPushConfig::configured() || ! isset($notifiable->id)) {
+        if (! \App\Support\FeatureFlags::enabled('naara_push') || ! isset($notifiable->id)) {
             return;
         }
 
