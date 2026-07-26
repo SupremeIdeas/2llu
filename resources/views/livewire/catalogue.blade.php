@@ -7,15 +7,23 @@
             <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">eSIM Data Plans</h1>
             <p class="text-sm text-slate-500 dark:text-slate-400">190+ countries. Stay connected. No borders. No swaps.</p>
         </div>
-        {{-- Check compatibility BEFORE buying (esim_upgrade Part 2). --}}
-        <button type="button" @click="$dispatch('open-compatibility')"
-                class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 dark:border-primary/40 dark:text-teal-300">
-            <x-icon name="signal" class="h-4 w-4" /> Check compatibility
-        </button>
+        <div class="flex shrink-0 items-center gap-2">
+            {{-- Browse by country via the ONE shared country picker (S31). --}}
+            <button type="button" wire:click="browseCountries"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-200 dark:hover:bg-[#243352]">
+                <x-icon name="globe" class="h-4 w-4" gradient /> Browse by country
+            </button>
+            {{-- Check compatibility BEFORE buying (esim_upgrade Part 2). --}}
+            <button type="button" @click="$dispatch('open-compatibility')"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 dark:border-primary/40 dark:text-teal-300">
+                <x-icon name="signal" class="h-4 w-4" /> Check compatibility
+            </button>
+        </div>
     </div>
 
-    {{-- One compatibility modal, opened via the event above. --}}
+    {{-- One compatibility modal + the ONE shared country picker (S31). --}}
     <livewire:esim-compatibility />
+    <livewire:country-picker />
 
     {{-- eSIM Data / Full eSIMs tabs (esim_upgrade Part 2, ?tab= deep-linkable). --}}
     <div class="mb-6 inline-flex rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-[#2D4060] dark:bg-[#1A2840]">
@@ -26,6 +34,20 @@
             Naara Connect <span class="text-xs font-normal">(Calls + Data)</span>
         </button>
     </div>
+
+    {{-- Active country filter chip (from the shared picker) — removable. --}}
+    @if ($country !== '')
+        <div class="mb-6 flex items-center gap-2">
+            <span class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 py-1.5 pl-2 pr-1.5 text-sm font-semibold text-primary-dark dark:border-primary/40 dark:bg-primary/10 dark:text-teal-300">
+                <x-country-flag :country="$country" class="h-4 w-6" />
+                {{ $countryName }}
+                <button type="button" wire:click="clearCountry" aria-label="Clear country filter"
+                        class="flex h-5 w-5 items-center justify-center rounded-full hover:bg-primary/15 dark:hover:bg-white/10">
+                    <x-icon name="x" class="h-3.5 w-3.5" />
+                </button>
+            </span>
+        </div>
+    @endif
 
     @if ($tab === 'full' && $fullCount === 0)
         <div class="mb-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 py-14 text-center dark:border-[#2D4060]">

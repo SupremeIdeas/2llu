@@ -71,6 +71,9 @@ class CatalogueSyncService
             $this->pricing->recompute($plan);
         }
 
+        // The country picker's per-country tallies just changed.
+        \App\Support\CountryPickerSources::flush();
+
         return count($rows);
     }
 
@@ -278,11 +281,18 @@ class CatalogueSyncService
     private function isoList(mixed $countries): array
     {
         return collect($countries)->map(function ($c) {
-            if (is_string($c)) {
-                return $c;
+            $value = is_string($c)
+                ? $c
+                : ($c['iso'] ?? $c['code'] ?? $c['country_code'] ?? $c['name'] ?? null);
+
+            if (! is_string($value) || $value === '') {
+                return null;
             }
 
-            return $c['iso'] ?? $c['code'] ?? $c['country_code'] ?? $c['name'] ?? null;
+            // Normalise 2-letter ISO codes to uppercase so storage is consistent
+            // (the country picker + whereJsonContains filter match on 'NG', never
+            // a mixed-case 'ng'). Non-ISO region names are left as-is.
+            return (strlen($value) === 2 && ctype_alpha($value)) ? strtoupper($value) : $value;
         })->filter()->values()->all();
     }
 }

@@ -37,6 +37,13 @@ voice inventory exists. Two failover lanes (blueprint §6):
 - Discovery: Naara Connect dashboard card (→ `?tab=full`). Developer API catalogue
   exposes `has_voice` + `?has_voice=true|false` filter (docs updated). Research
   notes in `docs/eSIM-PROVIDERS.md`.
+- **Shared CountryPicker (S31):** ONE country-picking UI app-wide (`CountryPicker`
+  Livewire + `x-ui.modal`), opened via `open-country-picker` {source, args, for}
+  and emitting `country-picked` back to the opener. `CountryPickerSources` is the
+  single data source (eSIM implemented — 192 live countries with per-country plan
+  counts via intl names, cached + flushed on sync; Numbers reuses it via a new
+  case). Catalogue "Browse by country" button + `?country=` deep-link + removable
+  chip; country codes normalised to uppercase ISO2 on sync so the filter matches.
 - Tests: `ZenditServiceTest` (3), `EsimCatalogueTabsTest` (3), Full-eSIM cases in
   `CatalogueSyncTest`/`ProviderRouterTest`/`ProviderModelsTest`/`DeveloperApi
   EndpointsTest`. Suite 716 green.
