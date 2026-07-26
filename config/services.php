@@ -61,6 +61,18 @@ return [
         'base_url' => env('QUIBITY_BASE_URL', 'https://esim.sm/api/reseller/v1'),
     ],
 
+    // Zendit — Naara Connect line (Full eSIMs: calls + data). Bearer auth.
+    // Sandbox and production are DIFFERENT hosts; the base_url follows the
+    // sandbox flag so a test key never hits the live wallet. The catalogue
+    // `cost.fixed / currencyDivisor` is the WHOLESALE cost (PRIVATE).
+    'zendit' => [
+        'api_key' => env('ZENDIT_API_KEY'),
+        'sandbox' => env('ZENDIT_SANDBOX', false),
+        'base_url' => env('ZENDIT_BASE_URL', env('ZENDIT_SANDBOX', false)
+            ? 'https://test-api.zendit.io/v1'
+            : 'https://api.zendit.io/v1'),
+    ],
+
     // -- Number / SMS providers (blueprint Sections 8-11) -----------------
     // Costs from these APIs are PRIVATE. Never cross lanes (country+type).
 

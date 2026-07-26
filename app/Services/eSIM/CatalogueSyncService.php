@@ -45,6 +45,7 @@ class CatalogueSyncService
             'esimgo' => $this->mapEsimGo(app('esim.esimgo')->getCatalogue()),
             'airalo' => $this->mapAiralo(app('esim.airalo')->getCatalogue()),
             'quibity' => $this->mapQuibity(app('esim.quibity')->getCatalogue()),
+            'zendit' => $this->mapZendit(app('esim.zendit')->getCatalogue()),
             default => throw new \InvalidArgumentException("Unknown eSIM provider [$provider]."),
         };
 
@@ -54,6 +55,7 @@ class CatalogueSyncService
                 [
                     'name' => $row['name'],
                     'type' => $row['type'] ?? null,
+                    'has_voice' => $row['has_voice'] ?? false, // Naara Connect (Zendit) only
                     'data_mb' => $row['data_mb'] ?? null,
                     'validity_days' => $row['validity_days'] ?? null,
                     'countries' => $row['countries'] ?? [],
@@ -135,6 +137,74 @@ class CatalogueSyncService
             'countries' => $this->isoList($p['countries'] ?? []),
             'cost_price_usd' => (float) ($p['price'] ?? 0),
         ])->filter(fn ($r) => $r['provider_plan_id'] !== null)->values()->all();
+    }
+
+    /**
+     * Zendit → the Naara Connect line (Full eSIMs: calls + data). We ingest ONLY
+     * voice-capable offers: Zendit's data-only bundles duplicate the data trio
+     * (eSIM Go / Airalo / Quibity) and would flood the Data tab, so they're
+     * skipped — Zendit is deliberately the voice lane. Every ingested plan is
+     * has_voice = true. Cost is `cost.fixed / currencyDivisor` — the WHOLESALE
+     * price (PRIVATE); Zendit's suggested `price` block is ignored.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapZendit(array $raw): array
+    {
+        $offers = $raw['list'] ?? $raw['data'] ?? $raw;
+
+        return collect($offers)
+            ->filter(fn ($o) => ($o['enabled'] ?? true) && isset($o['offerId'])
+                && ((bool) ($o['voiceUnlimited'] ?? false) || (int) ($o['voiceMinutes'] ?? 0) > 0))
+            ->map(function ($o) {
+                $cost = $o['cost'] ?? [];
+                $divisor = (int) ($cost['currencyDivisor'] ?? 1) ?: 1;
+
+                $unlimitedData = (bool) ($o['dataUnlimited'] ?? false);
+                $dataGb = (float) ($o['dataGB'] ?? 0);
+
+                return [
+                    'provider_plan_id' => (string) $o['offerId'],
+                    'name' => $this->zenditName($o),
+                    'type' => 'Voice + Data',
+                    'has_voice' => true,
+                    // dataGB is in GB; store MB. Unlimited => null (matches the model).
+                    'data_mb' => $unlimitedData ? null : ($dataGb > 0 ? (int) round($dataGb * 1024) : null),
+                    'validity_days' => $this->intOrNull($o['durationDays'] ?? null),
+                    'countries' => $this->isoList(array_merge(
+                        array_filter([$o['country'] ?? null]),
+                        $o['regions'] ?? [],
+                    )),
+                    'cost_price_usd' => (float) ($cost['fixed'] ?? 0) / $divisor,
+                ];
+            })
+            ->filter(fn ($r) => $r['provider_plan_id'] !== '')
+            ->values()
+            ->all();
+    }
+
+    /** A human name for a Zendit offer: "<brand> — <data> + <voice>". */
+    private function zenditName(array $o): string
+    {
+        $brand = $o['brandName'] ?? $o['brand'] ?? 'eSIM';
+
+        $data = ($o['dataUnlimited'] ?? false)
+            ? 'Unlimited data'
+            : (($gb = (float) ($o['dataGB'] ?? 0)) > 0 ? rtrim(rtrim(number_format($gb, 1), '0'), '.').'GB' : 'Data');
+
+        $parts = [$data];
+        if ($o['voiceUnlimited'] ?? false) {
+            $parts[] = 'unlimited mins';
+        } elseif (($min = (int) ($o['voiceMinutes'] ?? 0)) > 0) {
+            $parts[] = $min.' mins';
+        }
+        if (($o['smsUnlimited'] ?? false)) {
+            $parts[] = 'unlimited SMS';
+        } elseif (($sms = (int) ($o['smsNumber'] ?? 0)) > 0) {
+            $parts[] = $sms.' SMS';
+        }
+
+        return trim($brand).' — '.implode(' + ', $parts);
     }
 
     private function intOrNull(mixed $value): ?int

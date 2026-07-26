@@ -19,17 +19,19 @@ class ProviderModelsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_four_models_exist_and_map_to_the_real_product_types(): void
+    public function test_the_models_exist_and_map_to_the_real_product_types(): void
     {
         $keys = array_column(ProviderModels::all(), 'key');
         $this->assertEqualsCanonicalizing(
-            ['naara_data', 'naara_verify', 'naara_rent', 'naara_line'],
+            ['naara_data', 'naara_connect', 'naara_verify', 'naara_rent', 'naara_line'],
             $keys,
         );
         $this->assertSame('naara_verify', ProviderModels::forNumberType('otp')['key']);
         $this->assertSame('naara_rent', ProviderModels::forNumberType('rental')['key']);
         $this->assertSame('naara_line', ProviderModels::forNumberType('permanent')['key']);
         $this->assertSame('naara_data', ProviderModels::esim()['key']);
+        // Naara Connect (Full eSIM) rides the Zendit voice lane.
+        $this->assertSame('naara_connect', ProviderModels::forProvider('zendit')['key']);
     }
 
     public function test_a_model_needs_a_configured_provider_in_its_lane(): void

@@ -111,6 +111,63 @@ class ProviderRouterTest extends TestCase
         $this->assertSame(1, $quibity->orderCalls);
     }
 
+    public function test_a_voice_plan_never_falls_back_to_a_data_only_provider(): void
+    {
+        Queue::fake();
+
+        // A Naara Connect (voice) plan. Data-only providers (esimgo) offer a
+        // cheaper, country/data/validity-matching bundle — but crossing lanes
+        // would deliver a data-only eSIM for a voice purchase. It must be refused.
+        $chosen = $this->plan('zendit', 5.0, ['has_voice' => true, 'computed_retail_usd' => 20.0])->fresh();
+        $this->plan('esimgo', 2.0, ['has_voice' => false]); // cheaper data-only lure
+
+        $esimgo = new FakeEsimProvider(orderResponse: ['iccid' => 'DATA-ONLY']);
+        $zendit = new FakeEsimProvider(shouldThrow: true); // voice provider down
+        app()->instance('esim.esimgo', $esimgo);
+        app()->instance('esim.zendit', $zendit);
+
+        $user = User::factory()->create();
+
+        try {
+            app(ProviderRouter::class)->orderPlan((string) $chosen->id, $user);
+            $this->fail('Expected EsimProviderException — no cross-lane fallback allowed');
+        } catch (EsimProviderException $e) {
+            $this->assertStringContainsString('refunded', strtolower($e->getMessage()));
+        }
+
+        // The data-only provider was NEVER asked to fulfil the voice order.
+        $this->assertSame(0, $esimgo->orderCalls);
+        $this->assertSame(1, $zendit->orderCalls); // only its own lane was tried
+    }
+
+    public function test_a_voice_plan_is_fulfilled_by_its_own_voice_provider(): void
+    {
+        $chosen = $this->plan('zendit', 5.0, ['has_voice' => true, 'computed_retail_usd' => 20.0])->fresh();
+        $zendit = new FakeEsimProvider(orderResponse: ['iccid' => 'VOICE-1']);
+        app()->instance('esim.zendit', $zendit);
+
+        $user = User::factory()->create();
+        $result = app(ProviderRouter::class)->orderPlan((string) $chosen->id, $user);
+
+        $this->assertSame('zendit', $result->provider);
+        $this->assertSame('VOICE-1', $result->payload['iccid']);
+    }
+
+    public function test_equivalent_plan_matches_voice_capability_exactly(): void
+    {
+        $router = app(ProviderRouter::class);
+        // A voice plan must not match a data-only bundle that otherwise covers
+        // the same country/data/validity — voice capability has to match.
+        $need = $this->plan('zendit', 5.0, ['has_voice' => true]);
+        $this->plan('esimgo', 3.0, ['has_voice' => false]); // data-only — not equivalent
+        $this->assertNull($router->findEquivalentPlan($need, 'esimgo'));
+
+        // A matching voice bundle from a voice provider IS equivalent.
+        $ok = $this->plan('zendit', 6.0, ['has_voice' => true, 'countries' => ['US', 'CA'], 'data_mb' => 2000, 'validity_days' => 60]);
+        $this->assertTrue($router->findEquivalentPlan($need, 'zendit')->is($need)); // itself is cheapest
+        $this->assertNotNull($ok);
+    }
+
     public function test_equivalent_plan_must_cover_country_data_and_validity(): void
     {
         $router = app(ProviderRouter::class);

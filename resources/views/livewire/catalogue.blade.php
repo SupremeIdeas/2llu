@@ -23,14 +23,14 @@
             eSIM Data
         </button>
         <button wire:click="setTab('full')" class="rounded-full px-4 py-1.5 text-sm font-semibold transition {{ $tab === 'full' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-500 dark:text-slate-400' }}">
-            Full eSIMs <span class="text-xs font-normal">(Calls + Data)</span>
+            Naara Connect <span class="text-xs font-normal">(Calls + Data)</span>
         </button>
     </div>
 
     @if ($tab === 'full' && $fullCount === 0)
         <div class="mb-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 py-14 text-center dark:border-[#2D4060]">
             <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20"><x-icon name="signal" class="h-6 w-6" gradient /></span>
-            <p class="font-semibold text-slate-800 dark:text-slate-100">Full eSIMs are coming soon</p>
+            <p class="font-semibold text-slate-800 dark:text-slate-100">Naara Connect is coming soon</p>
             <p class="max-w-sm text-sm text-slate-500 dark:text-slate-400">Calls + data on one eSIM — with a number, minutes and SMS. We’re finishing the last checks with our voice provider.</p>
         </div>
     @endif

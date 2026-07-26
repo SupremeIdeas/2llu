@@ -78,7 +78,7 @@ class ProviderRouter
         $minProfit = (float) Setting::getValue('pricing.minimum_profit_usd', 0.50);
         $errors = [];
 
-        foreach ($this->chain as $provider) {
+        foreach ($this->chainFor($plan) as $provider) {
             $pp = $this->findEquivalentPlan($plan, $provider);
             if ($pp === null) {
                 continue; // provider has no equivalent plan
@@ -117,15 +117,32 @@ class ProviderRouter
     }
 
     /**
+     * The failover lane for a plan. Voice eSIMs (Naara Connect) are NOT
+     * interchangeable with data-only providers — a data-only fallback would
+     * deliver the wrong product for a voice purchase (blueprint lane rule). So a
+     * voice plan is fulfilled only from its own (voice-capable) provider, while
+     * a data plan uses the profit-aware data failover chain.
+     *
+     * @return list<string>
+     */
+    protected function chainFor(EsimPlan $plan): array
+    {
+        return $plan->has_voice ? [$plan->provider] : $this->chain;
+    }
+
+    /**
      * Find the cheapest active plan from $provider that covers at least the
      * same countries, data, and validity as $plan — so a fallback never
-     * downgrades what the user paid for. Cheapest cost first.
+     * downgrades what the user paid for. Cheapest cost first. Voice capability
+     * must match exactly: a data plan never matches a voice bundle (which would
+     * overpay) and a voice plan never matches a data-only bundle (wrong product).
      */
     public function findEquivalentPlan(EsimPlan $plan, string $provider): ?EsimPlan
     {
         $candidates = EsimPlan::query()
             ->where('provider', $provider)
             ->where('is_active', true)
+            ->where('has_voice', (bool) $plan->has_voice)
             ->orderBy('cost_price_usd')
             ->get();
 

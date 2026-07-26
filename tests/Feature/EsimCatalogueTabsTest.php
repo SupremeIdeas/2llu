@@ -56,6 +56,6 @@ class EsimCatalogueTabsTest extends TestCase
 
         Livewire::actingAs(User::factory()->create())->test(Catalogue::class)
             ->call('setTab', 'full')
-            ->assertSee('Full eSIMs are coming soon');
+            ->assertSee('Naara Connect is coming soon');
     }
 }

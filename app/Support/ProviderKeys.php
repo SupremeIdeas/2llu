@@ -47,6 +47,7 @@ class ProviderKeys
                     'airalo_client_id' => ['label' => 'Airalo — Client ID', 'config' => 'services.airalo.client_id', 'env' => 'AIRALO_CLIENT_ID', 'secret' => false, 'hint' => 'app.partners.airalo.com → Developer (SECONDARY).'],
                     'airalo_client_secret' => ['label' => 'Airalo — Client Secret', 'config' => 'services.airalo.client_secret', 'env' => 'AIRALO_CLIENT_SECRET', 'secret' => true, 'hint' => 'Same page — shown once.'],
                     'quibity_api_key' => ['label' => 'Quibity / eSIM.sm — API Key', 'config' => 'services.quibity.api_key', 'env' => 'QUIBITY_API_KEY', 'secret' => true, 'hint' => 'esim.sm reseller dashboard (TERTIARY).'],
+                    'zendit_api_key' => ['label' => 'Zendit — API Key (Naara Connect)', 'config' => 'services.zendit.api_key', 'env' => 'ZENDIT_API_KEY', 'secret' => true, 'hint' => 'developers.zendit.io → API keys. Backs Full eSIMs (calls + data). Use a sand_… test key with ZENDIT_SANDBOX=true first.'],
                 ],
             ],
             'numbers' => [

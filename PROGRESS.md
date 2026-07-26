@@ -9,6 +9,29 @@
 
 ## DONE
 
+### ✅ eSIM upgrade — Naara Connect (Full eSIMs) + Zendit provider — built 2026-07-26
+The storefront now sells two eSIM lines. A `has_voice` flag on esim_plans splits
+the catalogue into **eSIM Data** (data-only) and **Naara Connect** (Full eSIMs —
+calls + data), deep-linkable via `?tab=full`, with a "coming soon" state until
+voice inventory exists. Zendit is wired as the Naara Connect provider (sandbox
+key LIVE — balance 1000, 5393 offers reachable):
+- `ZenditService` (Bearer auth, sandbox/prod host split via config): paged
+  `/esim/offers`, idempotent `POST /esim/purchases` + read-back of the activation
+  confirmation (ICCID/LPA/QR flattened for checkout), divisor-scaled balance/cost.
+  Bound `esim.zendit`; `ProviderStatus`/`ProviderModels` (`naara_connect`) +
+  Admin → API Keys field + eSIM sync panel + `esim:sync zendit`.
+- **Voice-only ingestion:** `mapZendit` keeps ONLY voice-capable offers (Zendit's
+  data-only bundles duplicate the data trio and would flood the Data tab). Cost is
+  `cost.fixed / currencyDivisor` — WHOLESALE, PRIVATE; Zendit's suggested `price`
+  is ignored (retail stays ours via PricingEngine). Sandbox has 0 voice offers →
+  Naara Connect correctly shows "coming soon".
+- **Money-safety lane rule (blueprint §6):** `ProviderRouter` now fulfils a voice
+  plan ONLY from its own voice lane (`chainFor`) and `findEquivalentPlan` matches
+  `has_voice` exactly — a voice purchase can never fall back to a data-only eSIM,
+  and a data purchase never crosses to an overpriced voice bundle.
+- Tests: `ZenditServiceTest` (3), `EsimCatalogueTabsTest` (3), + Zendit cases in
+  `CatalogueSyncTest`/`ProviderRouterTest`/`ProviderModelsTest`. Suite 712 green.
+
 ### 🔨 Live Voice (Twilio) — Part A: Call Forwarding — built 2026-07-21
 Inbound calls to a permanent NaaraSim (Twilio) number forward to the user's real
 phone via signature-verified TwiML. Feature-gated on the existing Twilio provider

@@ -33,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('esim.esimgo', \App\Services\eSIM\EsimGoService::class);
         $this->app->singleton('esim.airalo', \App\Services\eSIM\AiraloService::class);
         $this->app->singleton('esim.quibity', \App\Services\eSIM\QuibityService::class);
+        // Zendit — Naara Connect (Full eSIMs: calls + data). Own voice lane.
+        $this->app->singleton('esim.zendit', \App\Services\eSIM\ZenditService::class);
 
         // Number providers, resolved by name via app("number.$provider").
         // OTP/rental lane (SmsProviderInterface): Getatext (US), 5sim (global),

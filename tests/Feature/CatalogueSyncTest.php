@@ -140,4 +140,56 @@ class CatalogueSyncTest extends TestCase
         $this->assertArrayNotHasKey('cost_price_usd', $payload);
         $this->assertArrayHasKey('final_retail_usd', $payload);
     }
+
+    public function test_zendit_sync_flags_voice_offers_and_stores_fixed_cost_as_private(): void
+    {
+        $this->bindProvider('zendit', ['list' => [
+            [
+                'offerId' => 'ng-voice-5gb',
+                'brandName' => 'MTN Nigeria',
+                'country' => 'NG',
+                'regions' => [],
+                'dataGB' => 5,
+                'dataUnlimited' => false,
+                'durationDays' => 30,
+                'voiceMinutes' => 100,          // → has_voice = true (Naara Connect)
+                'voiceUnlimited' => false,
+                'smsNumber' => 50,
+                'enabled' => true,
+                // Cost is minor units / divisor: 400 / 100 = $4.00 wholesale (PRIVATE).
+                'cost' => ['fixed' => 400, 'currency' => 'USD', 'currencyDivisor' => 100],
+                // Zendit's suggested retail — must never become our retail.
+                'price' => ['suggestedFixed' => 999, 'currencyDivisor' => 100],
+            ],
+            [
+                'offerId' => 'ng-data-3gb',
+                'brandName' => 'MTN Nigeria',
+                'country' => 'NG',
+                'dataGB' => 3,
+                'durationDays' => 30,
+                'voiceMinutes' => 0,            // → has_voice = false (data tab)
+                'enabled' => true,
+                'cost' => ['fixed' => 250, 'currency' => 'USD', 'currencyDivisor' => 100],
+            ],
+        ]]);
+
+        // Only the voice offer is ingested — Zendit is the Naara Connect (voice)
+        // lane; its data-only bundle is skipped so it can't flood the Data tab.
+        $count = app(CatalogueSyncService::class)->sync('zendit');
+        $this->assertSame(1, $count);
+
+        $voice = EsimPlan::where('provider_plan_id', 'ng-voice-5gb')->firstOrFail();
+        $this->assertTrue($voice->has_voice);
+        $this->assertSame(5120, $voice->data_mb);
+        $this->assertSame(['NG'], $voice->countries);
+        $this->assertSame('4.0000', (string) $voice->cost_price_usd);
+        // Retail is OURS (cost * markup), never Zendit's suggested 9.99.
+        $this->assertNotSame(9.99, (float) $voice->fresh()->final_retail_usd);
+
+        // The data-only Zendit offer was NOT stored.
+        $this->assertNull(EsimPlan::where('provider_plan_id', 'ng-data-3gb')->first());
+
+        // Cost never leaks in a serialized plan.
+        $this->assertArrayNotHasKey('cost_price_usd', $voice->toArray());
+    }
 }

@@ -13,7 +13,7 @@ use Illuminate\Console\Command;
  */
 class SyncEsimCatalogueCommand extends Command
 {
-    protected $signature = 'esim:sync {provider? : esimgo|airalo|quibity (all if omitted)} {--now : run synchronously instead of queueing}';
+    protected $signature = 'esim:sync {provider? : esimgo|airalo|quibity|zendit (all if omitted)} {--now : run synchronously instead of queueing}';
 
     protected $description = 'Sync eSIM provider catalogues and recompute retail pricing';
 
@@ -21,7 +21,7 @@ class SyncEsimCatalogueCommand extends Command
     {
         $providers = $this->argument('provider')
             ? [$this->argument('provider')]
-            : ['esimgo', 'airalo', 'quibity'];
+            : ['esimgo', 'airalo', 'quibity', 'zendit'];
 
         foreach ($providers as $provider) {
             if ($this->option('now')) {

@@ -34,6 +34,14 @@ class ProviderModels
             'lane' => ['esimgo', 'airalo', 'quibity'],
             'coming_soon' => false,
         ],
+        'naara_connect' => [
+            'name' => 'Naara Connect',
+            'tagline' => 'Full eSIM — calls + data on one eSIM',
+            'icon' => 'signal',
+            'caps' => ['esim_voice'],
+            'lane' => ['zendit'],
+            'coming_soon' => false,
+        ],
         'naara_verify' => [
             'name' => 'Naara Verify',
             'tagline' => 'OTP & verification codes',
@@ -68,6 +76,7 @@ class ProviderModels
         'esimgo' => 'esimgo_api_key',
         'airalo' => 'airalo_client_id',
         'quibity' => 'quibity_api_key',
+        'zendit' => 'zendit_api_key',
         'getatext' => 'getatext_api_key',
         'fivesim' => 'fivesim_api_key',
         'smsactivate' => 'smsactivate_api_key',

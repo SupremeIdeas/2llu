@@ -15,6 +15,7 @@ class ProviderStatus
         'esimgo' => ['services.esimgo.api_key'],
         'airalo' => ['services.airalo.client_id', 'services.airalo.client_secret'],
         'quibity' => ['services.quibity.api_key'],
+        'zendit' => ['services.zendit.api_key'],
         'getatext' => ['services.getatext.api_key'],
         'fivesim' => ['services.fivesim.api_key'],
         'smsactivate' => ['services.smsactivate.api_key'],
