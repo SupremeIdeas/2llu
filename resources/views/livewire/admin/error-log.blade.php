@@ -35,7 +35,10 @@
                     <th class="px-4 py-2 font-medium">When</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100 bg-white dark:divide-[#243352] dark:bg-[#1A2840]">
+            <tbody wire:loading wire:target="date,severity,gotoPage,nextPage,previousPage" class="divide-y divide-slate-100 bg-white dark:divide-[#243352] dark:bg-[#1A2840]">
+                <x-ui.skeleton-table-rows :cols="4" />
+            </tbody>
+            <tbody wire:loading.remove wire:target="date,severity,gotoPage,nextPage,previousPage" class="divide-y divide-slate-100 bg-white dark:divide-[#243352] dark:bg-[#1A2840]">
                 @forelse ($logs as $log)
                     <tr wire:key="log-{{ $log->id }}" class="text-slate-700 dark:text-slate-200">
                         <td class="px-4 py-2">
