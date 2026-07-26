@@ -3,6 +3,15 @@
      fill:none + stroke:currentColor so icons inherit text colour and adapt to
      dark/light for free. No emoji, no icon font, no external CDN — ever. --}}
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    {{-- Brand two-tone gradient (owner request — premium icons). Built from the
+         admin's brand colours (CSS vars), so it re-themes with them. Icons opt in
+         via <x-icon gradient /> or the .nx-grad-icon class; active items stay solid. --}}
+    <defs>
+        <linearGradient id="nx-icon-gradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="rgb(var(--brand-primary, 10 110 110))"/>
+            <stop offset="100%" stop-color="rgb(var(--brand-accent, 212 160 23))"/>
+        </linearGradient>
+    </defs>
     <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/>
     </symbol>

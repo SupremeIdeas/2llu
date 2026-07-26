@@ -306,6 +306,12 @@
 }
 @keyframes nx-spin { to { transform: rotate(360deg); } }
 
+/* Two-tone brand gradient on a stroked icon (owner request — premium menu icons).
+   CSS beats the symbol's presentation attribute, so the inherited gradient wins
+   over its stroke="currentColor". Active items keep a solid colour and simply
+   don't get this class. */
+.nx-grad-icon { stroke: url(#nx-icon-gradient); }
+
 /* The one app-wide spinner (owner request — replaces the spinning refresh icon).
    A soft dual-tone ring: a faint full track + a solid moving arc in currentColor,
    so it inherits the button/text colour and drops into any inline context. The

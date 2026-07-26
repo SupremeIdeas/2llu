@@ -43,6 +43,33 @@
         </div>
     </section>
 
+    {{-- Bottom navigation style (owner request) — Floating (rounded pill lifted
+         off the edge) or Docked (flush). Client-side preference, applied live. --}}
+    <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1B2A44] lg:hidden"
+             x-data="{ floating: localStorage.getItem('nx_nav_floating') !== '0' }">
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    <x-icon name="grid" class="h-4 w-4" gradient /> Bottom menu style
+                </h2>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <span x-show="floating">Floating — a rounded bar lifted off the edge.</span>
+                    <span x-show="!floating" x-cloak>Docked — flush to the bottom of the screen.</span>
+                </p>
+            </div>
+            <button type="button" role="switch" :aria-checked="floating.toString()" aria-label="Toggle bottom menu style"
+                    @click="floating = !floating;
+                            localStorage.setItem('nx_nav_floating', floating ? '1' : '0');
+                            $dispatch('nx-nav-style', { floating })"
+                    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition"
+                    :class="floating ? 'bg-primary' : 'bg-slate-300 dark:bg-[#2D4060]'">
+                <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition"
+                      :class="floating ? 'translate-x-5' : 'translate-x-0.5'"></span>
+            </button>
+        </div>
+        <p class="mt-2 text-[11px] text-slate-400">Tip: you can also tap the little handle at the top of the bottom bar to switch anytime.</p>
+    </section>
+
     @if ($status)
         <div class="mb-6 flex items-center gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary-dark dark:bg-primary/20 dark:text-primary">
             <x-icon name="badge-check" class="h-4 w-4" /> {{ $status }}

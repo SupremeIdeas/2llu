@@ -14,8 +14,13 @@
     $slots = array_pad(array_slice($primary, 0, 4), 4, null);
 @endphp
 
-<div x-data="{ moreOpen: false, navCollapsed: localStorage.getItem('nx_nav_collapsed') === '1' }"
-     x-effect="localStorage.setItem('nx_nav_collapsed', navCollapsed ? '1' : '0')"
+<div x-data="{
+        moreOpen: false,
+        navCollapsed: localStorage.getItem('nx_nav_collapsed') === '1',
+        navFloating: localStorage.getItem('nx_nav_floating') !== '0',
+     }"
+     x-effect="localStorage.setItem('nx_nav_collapsed', navCollapsed ? '1' : '0'); localStorage.setItem('nx_nav_floating', navFloating ? '1' : '0')"
+     @nx-nav-style.window="navFloating = $event.detail.floating"
      class="min-h-screen">
     {{-- ============ DESKTOP: Apple-inspired floating side menu ============
          Collapsible: the toggle shrinks it to an icon-only rail and back to
@@ -99,10 +104,24 @@
         </main>
     </div>
 
-    {{-- ============ MOBILE: bottom navigation ============ --}}
-    <nav class="fixed inset-x-0 bottom-0 z-40 rounded-t-3xl border border-b-0 border-slate-200/70 bg-white/90 shadow-[0_-10px_30px_rgba(13,27,42,0.10)] backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/90 dark:shadow-[0_-10px_30px_rgba(0,0,0,0.4)]"
+    {{-- ============ MOBILE: bottom navigation (owner request — premium) ============
+         Two styles the user chooses between: FLOATING (default) — a rounded-3xl
+         pill lifted off the bottom edge with a shadow on all sides; or DOCKED —
+         flush to the bottom with only the top corners rounded. The little grab
+         handle toggles between them (also settable from account settings). --}}
+    <nav class="fixed z-40 border border-slate-200/70 bg-white/90 backdrop-blur-xl transition-all duration-300 lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/90"
+         :class="navFloating
+            ? 'inset-x-3 bottom-3 rounded-[1.75rem] shadow-[0_10px_40px_rgba(13,27,42,0.16)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)]'
+            : 'inset-x-0 bottom-0 rounded-t-3xl border-b-0 shadow-[0_-10px_30px_rgba(13,27,42,0.10)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.4)]'"
          style="padding-bottom: env(safe-area-inset-bottom);">
-        <div class="mx-auto grid max-w-md grid-cols-5 items-center px-1">
+        {{-- Grab handle — tap to switch floating ⇄ docked. --}}
+        <button type="button" @click="navFloating = !navFloating"
+                :aria-label="navFloating ? 'Dock the navigation bar' : 'Float the navigation bar'"
+                class="absolute left-1/2 top-1 flex h-4 w-12 -translate-x-1/2 items-center justify-center">
+            <span class="h-1 w-9 rounded-full bg-slate-300 transition dark:bg-white/20"></span>
+        </button>
+
+        <div class="mx-auto grid max-w-md grid-cols-5 items-center px-1 pt-1.5">
             @foreach ([$slots[0], $slots[1]] as $item)
                 @include('partials.bottom-nav-item', ['item' => $item, 'isActive' => $isActive])
             @endforeach
@@ -110,7 +129,7 @@
             {{-- Centre "More" button --}}
             <div class="flex justify-center">
                 <button type="button" @click="moreOpen = true" aria-label="More"
-                        class="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 ring-4 ring-[#F8F9FA] transition active:scale-95 dark:ring-navy">
+                        class="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/30 ring-4 ring-[#F8F9FA] transition active:scale-95 dark:ring-navy">
                     <x-icon name="grid" class="h-6 w-6" />
                 </button>
             </div>
