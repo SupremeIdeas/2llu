@@ -23,29 +23,44 @@ function initGsapCraft() {
     }
 
     // 2. Dynamic content switch on scroll: the products section pins while its
-    //    panels crossfade in sequence.
+    //    panels crossfade in sequence. Pinning + scrub is expensive and janky on
+    //    mobile, so it is DESKTOP-ONLY (>=1024px); phones/tablets get a cheap
+    //    IntersectionObserver reveal per panel instead — no scroll-jacking.
     const pin = document.querySelector('[data-products-pin]');
     if (pin) {
         const panels = pin.querySelectorAll('[data-product-panel]');
         if (panels.length > 1) {
-            pin.classList.add('gsap-pin'); // overlap panels only once GSAP owns them
-            gsap.set(panels, { autoAlpha: 0, y: 24 });
-            gsap.set(panels[0], { autoAlpha: 1, y: 0 });
+            if (window.matchMedia('(min-width: 1024px)').matches) {
+                pin.classList.add('gsap-pin'); // overlap panels only once GSAP owns them
+                gsap.set(panels, { autoAlpha: 0, y: 24 });
+                gsap.set(panels[0], { autoAlpha: 1, y: 0 });
 
-            const tl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: pin,
-                    start: 'top top',
-                    end: () => '+=' + panels.length * 90 + '%',
-                    pin: true,
-                    scrub: 0.4,
-                },
-            });
-            panels.forEach((panel, i) => {
-                if (i === 0) return;
-                tl.to(panels[i - 1], { autoAlpha: 0, y: -24, duration: 1 }, i)
-                  .fromTo(panel, { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: 1 }, i + 0.15);
-            });
+                const tl = gsap.timeline({
+                    scrollTrigger: {
+                        trigger: pin,
+                        start: 'top top',
+                        end: () => '+=' + panels.length * 90 + '%',
+                        pin: true,
+                        scrub: 0.4,
+                    },
+                });
+                panels.forEach((panel, i) => {
+                    if (i === 0) return;
+                    tl.to(panels[i - 1], { autoAlpha: 0, y: -24, duration: 1 }, i)
+                      .fromTo(panel, { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: 1 }, i + 0.15);
+                });
+            } else {
+                // Mobile: light reveal, no pin/scrub.
+                const io = new IntersectionObserver((entries) => {
+                    entries.forEach((e) => {
+                        if (e.isIntersecting) {
+                            gsap.fromTo(e.target, { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power2.out' });
+                            io.unobserve(e.target);
+                        }
+                    });
+                }, { threshold: 0.2 });
+                panels.forEach((p) => io.observe(p));
+            }
         }
     }
 

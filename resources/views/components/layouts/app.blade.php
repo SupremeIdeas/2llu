@@ -21,8 +21,9 @@
         <link rel="icon" href="/favicon.ico" sizes="any">
     @endif
 
-    {{-- Preload brand fonts so headings/body paint without a flash. --}}
-    <link rel="preload" href="/fonts/supreme-display.ttf" as="font" type="font/ttf" crossorigin>
+    {{-- Preload the body font (compressed WOFF2) only. The display font loads via
+         @font-face with font-display:swap — never preload the uncompressed TTF
+         (it's a heavy download that blocks the critical path for no benefit). --}}
     <link rel="preload" href="/fonts/didact-gothic.woff2" as="font" type="font/woff2" crossorigin>
 
     {{-- Pre-paint theme script: sets the `dark` class BEFORE first paint so

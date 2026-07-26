@@ -21,20 +21,20 @@
         ])
         <header x-data="{ open: false }" class="pointer-events-none sticky top-0 z-50 px-3 pt-4 sm:px-4">
             <nav class="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-3 rounded-2xl border border-white/50 bg-white/70 px-2.5 py-2 shadow-xl shadow-slate-900/5 ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-[#0D1B2A]/70 dark:ring-white/10">
-                <a href="{{ route('home') }}" class="shrink-0 pl-1.5"><x-brand-logo variant="product" class="h-8 max-w-[140px]" /></a>
+                <a href="{{ route('home') }}" wire:navigate class="shrink-0 pl-1.5"><x-brand-logo variant="product" class="h-8 max-w-[140px]" /></a>
 
                 <div class="hidden items-center gap-7 text-sm font-medium text-slate-600 lg:flex dark:text-slate-300">
-                    <a href="{{ route('how-it-works') }}" class="transition hover:text-primary">How It Works</a>
-                    <a href="{{ route('pricing') }}" class="transition hover:text-primary">Pricing</a>
-                    <a href="{{ route('developers') }}" class="transition hover:text-primary">Developers</a>
+                    <a href="{{ route('how-it-works') }}" wire:navigate class="transition hover:text-primary">How It Works</a>
+                    <a href="{{ route('pricing') }}" wire:navigate class="transition hover:text-primary">Pricing</a>
+                    <a href="{{ route('developers') }}" wire:navigate class="transition hover:text-primary">Developers</a>
                 </div>
 
                 <div class="flex items-center gap-2">
                     <x-theme-toggle />
                     @auth
-                        <a href="{{ route('dashboard') }}" class="hidden nx-btn nx-btn--primary !py-2 !px-4 sm:inline-flex">Dashboard</a>
+                        <a href="{{ route('dashboard') }}" wire:navigate class="hidden nx-btn nx-btn--primary !py-2 !px-4 sm:inline-flex">Dashboard</a>
                     @else
-                        <a href="{{ route('register') }}" class="hidden nx-btn nx-btn--primary !py-2 !px-4 sm:inline-flex">Get Started</a>
+                        <a href="{{ route('register') }}" wire:navigate class="hidden nx-btn nx-btn--primary !py-2 !px-4 sm:inline-flex">Get Started</a>
                     @endauth
 
                     {{-- Menu button (animated bars → X) --}}
@@ -58,7 +58,7 @@
                     <div>
                         <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Explore</p>
                         @foreach ($navExplore as $item)
-                            <a href="{{ route($item['route']) }}" class="group flex items-start gap-3 rounded-xl px-2 py-2.5 transition hover:bg-primary/5 dark:hover:bg-white/5">
+                            <a href="{{ route($item['route']) }}" wire:navigate class="group flex items-start gap-3 rounded-xl px-2 py-2.5 transition hover:bg-primary/5 dark:hover:bg-white/5">
                                 <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary/20"><x-icon name="chevron-right" class="h-4 w-4" /></span>
                                 <span><span class="block text-sm font-semibold text-slate-900 group-hover:text-primary dark:text-slate-100">{{ $item['label'] }}</span><span class="block text-xs text-slate-500 dark:text-slate-400">{{ $item['desc'] }}</span></span>
                             </a>
@@ -67,7 +67,7 @@
                     <div>
                         <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Company</p>
                         @foreach ($navCompany as $item)
-                            <a href="{{ route($item['route']) }}" class="group flex items-start gap-3 rounded-xl px-2 py-2.5 transition hover:bg-primary/5 dark:hover:bg-white/5">
+                            <a href="{{ route($item['route']) }}" wire:navigate class="group flex items-start gap-3 rounded-xl px-2 py-2.5 transition hover:bg-primary/5 dark:hover:bg-white/5">
                                 <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent-dark dark:text-accent"><x-icon name="chevron-right" class="h-4 w-4" /></span>
                                 <span><span class="block text-sm font-semibold text-slate-900 group-hover:text-primary dark:text-slate-100">{{ $item['label'] }}</span><span class="block text-xs text-slate-500 dark:text-slate-400">{{ $item['desc'] }}</span></span>
                             </a>
@@ -84,10 +84,10 @@
                     <span class="text-xs font-medium uppercase tracking-widest text-slate-400">Stay Connected · No Borders</span>
                     <div class="flex items-center gap-2">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="nx-btn nx-btn--primary !py-2 !px-5">My Dashboard</a>
+                            <a href="{{ route('dashboard') }}" wire:navigate class="nx-btn nx-btn--primary !py-2 !px-5">My Dashboard</a>
                         @else
-                            <a href="{{ route('login') }}" class="px-3 py-2 text-sm font-semibold text-slate-600 transition hover:text-primary dark:text-slate-300">Sign in</a>
-                            <a href="{{ route('register') }}" class="nx-btn nx-btn--primary !py-2 !px-5">Get Started</a>
+                            <a href="{{ route('login') }}" wire:navigate class="px-3 py-2 text-sm font-semibold text-slate-600 transition hover:text-primary dark:text-slate-300">Sign in</a>
+                            <a href="{{ route('register') }}" wire:navigate class="nx-btn nx-btn--primary !py-2 !px-5">Get Started</a>
                         @endauth
                     </div>
                 </div>
