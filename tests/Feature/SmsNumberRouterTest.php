@@ -43,10 +43,10 @@ class SmsNumberRouterTest extends TestCase
     {
         $router = app(SmsNumberRouter::class);
 
-        $this->assertSame(['getatext', 'fivesim', 'smsactivate'], $router->laneFor('US', 'otp'));
-        $this->assertSame(['fivesim', 'smsactivate'], $router->laneFor('nigeria', 'otp'));
-        $this->assertSame(['getatext', 'fivesim'], $router->laneFor('usa', 'rental'));
-        $this->assertSame(['fivesim', 'smsactivate'], $router->laneFor('ghana', 'rental'));
+        $this->assertSame(['getatext', 'fivesim', 'herosms', 'virtsms'], $router->laneFor('US', 'otp'));
+        $this->assertSame(['fivesim', 'herosms', 'virtsms'], $router->laneFor('nigeria', 'otp'));
+        $this->assertSame(['getatext', 'fivesim', 'herosms', 'virtsms'], $router->laneFor('usa', 'rental'));
+        $this->assertSame(['fivesim', 'herosms', 'virtsms'], $router->laneFor('ghana', 'rental'));
         $this->assertSame(['twilio', 'telnyx'], $router->laneFor('US', 'permanent'));
     }
 
@@ -70,14 +70,14 @@ class SmsNumberRouterTest extends TestCase
 
     public function test_full_rent_any_service_only_routes_to_a_full_rent_provider(): void
     {
-        // 5sim hosting is per-service (no full rent); SMS-Activate supports it.
+        // 5sim hosting is per-service (no full rent); HeroSMS supports it.
         $fivesim = new FakeSmsProvider(price: 0.20); // must be skipped for "any"
-        $smsactivate = new FakeSmsProvider(price: 0.50, buyResponse: [
-            'provider_ref' => 'SA-1', 'number' => '2348020000000', 'cost' => 0.50, 'status' => OtpStatus::PENDING,
+        $herosms = new FakeSmsProvider(price: 0.50, buyResponse: [
+            'provider_ref' => 'HS-1', 'number' => '2348020000000', 'cost' => 0.50, 'status' => OtpStatus::PENDING,
         ]);
-        $smsactivate->fullRent = true;
+        $herosms->fullRent = true;
         app()->instance('number.fivesim', $fivesim);
-        app()->instance('number.smsactivate', $smsactivate);
+        app()->instance('number.herosms', $herosms);
 
         $request = new NumberRequest(
             country: 'nigeria', type: NumberRequest::TYPE_RENTAL, service: NumberRequest::SERVICE_ANY,
@@ -86,9 +86,9 @@ class SmsNumberRouterTest extends TestCase
 
         $result = app(SmsNumberRouter::class)->attempt($request);
 
-        $this->assertSame('smsactivate', $result->provider);
+        $this->assertSame('herosms', $result->provider);
         $this->assertSame(0, $fivesim->buyCalls, '5sim must be skipped for full rent (per-service only)');
-        $this->assertSame(1, $smsactivate->buyCalls);
+        $this->assertSame(1, $herosms->buyCalls);
     }
 
     public function test_out_of_stock_falls_back_within_the_same_lane(): void
@@ -114,7 +114,8 @@ class SmsNumberRouterTest extends TestCase
         // would leave < min profit, so it is skipped without buying.
         $fivesim = new FakeSmsProvider(price: 100.0); // absurd cost
         app()->instance('number.fivesim', $fivesim);
-        app()->instance('number.smsactivate', new FakeSmsProvider(price: new OutOfStockException('n/a')));
+        app()->instance('number.herosms', new FakeSmsProvider(price: new OutOfStockException('n/a')));
+        app()->instance('number.virtsms', new FakeSmsProvider(price: new OutOfStockException('n/a')));
 
         Queue::fake();
         $user = User::factory()->create();
@@ -136,7 +137,8 @@ class SmsNumberRouterTest extends TestCase
     {
         Queue::fake();
         app()->instance('number.fivesim', new FakeSmsProvider(price: new OutOfStockException('out')));
-        app()->instance('number.smsactivate', new FakeSmsProvider(price: new OutOfStockException('out')));
+        app()->instance('number.herosms', new FakeSmsProvider(price: new OutOfStockException('out')));
+        app()->instance('number.virtsms', new FakeSmsProvider(price: new OutOfStockException('out')));
 
         $user = User::factory()->create();
 

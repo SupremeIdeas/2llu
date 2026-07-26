@@ -40,7 +40,8 @@
         <env name="AIRALO_CLIENT_SECRET" value=""/>
         <env name="GETATEXT_API_KEY" value=""/>
         <env name="FIVESIM_API_KEY" value=""/>
-        <env name="SMSACTIVATE_API_KEY" value=""/>
+        <env name="HEROSMS_API_KEY" value=""/>
+        <env name="VIRTSMS_API_KEY" value=""/>
         <env name="TWILIO_ACCOUNT_SID" value=""/>
         <env name="TWILIO_AUTH_TOKEN" value=""/>
         <env name="TELNYX_API_KEY" value=""/>

@@ -39,7 +39,7 @@ class ProviderModelsTest extends TestCase
         // No keys → every Model needs a key (permanent provisioning is now wired,
         // so Naara Line is key-driven too, not hard "coming soon").
         config(['services.fivesim.api_key' => null, 'services.esimgo.api_key' => null,
-                'services.getatext.api_key' => null, 'services.smsactivate.api_key' => null,
+                'services.getatext.api_key' => null, 'services.herosms.api_key' => null, 'services.virtsms.api_key' => null,
                 'services.twilio.account_sid' => null, 'services.telnyx.api_key' => null]);
         \App\Support\ProviderKeys::flush();
         $this->assertSame('needs_key', ProviderModels::status('naara_verify'));

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Cache;
  * Two layers, merged and cached:
  *   1. A broad STATIC base (below) — ~120 countries and ~110 popular services —
  *      so it works out of the box with no provider keys.
- *   2. A SYNCED overlay pulled from the live provider APIs (5sim + SMS-Activate)
+ *   2. A SYNCED overlay pulled from the live provider APIs (5sim + HeroSMS)
  *      by `numbers:catalogue-sync`, so in production it becomes exhaustive —
  *      every country and every service the providers actually support — and
  *      stays fresh. Stored in Settings (numbers.catalogue.*), unioned over the

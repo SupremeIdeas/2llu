@@ -60,7 +60,8 @@ class ProviderKeys
                 'fields' => [
                     'getatext_api_key' => ['label' => 'Getatext — API Key', 'config' => 'services.getatext.api_key', 'env' => 'GETATEXT_API_KEY', 'secret' => true, 'hint' => 'getatext.com → Profile → API key. WALLET key — guard it.'],
                     'fivesim_api_key' => ['label' => '5sim — API Key', 'config' => 'services.fivesim.api_key', 'env' => 'FIVESIM_API_KEY', 'secret' => true, 'hint' => '5sim.net → Profile → Settings. JWT. WALLET key.'],
-                    'smsactivate_api_key' => ['label' => 'SMS-Activate — API Key', 'config' => 'services.smsactivate.api_key', 'env' => 'SMSACTIVATE_API_KEY', 'secret' => true, 'hint' => 'sms-activate.org → Profile → API (backup).'],
+                    'herosms_api_key' => ['label' => 'HeroSMS — API Key', 'config' => 'services.herosms.api_key', 'env' => 'HEROSMS_API_KEY', 'secret' => true, 'hint' => 'hero-sms.com → API (SMS-Activate successor). Powers "Any Service" rentals. WALLET key — crypto-only funding.'],
+                    'virtsms_api_key' => ['label' => 'VirtSMS — API Key', 'config' => 'services.virtsms.api_key', 'env' => 'VIRTSMS_API_KEY', 'secret' => true, 'hint' => 'virtsms.io → API. Fallback behind HeroSMS in the same lane.'],
                     'twilio_account_sid' => ['label' => 'Twilio — Account SID', 'config' => 'services.twilio.account_sid', 'env' => 'TWILIO_ACCOUNT_SID', 'secret' => false, 'hint' => 'twilio.com/console (permanent numbers + voice).'],
                     'twilio_auth_token' => ['label' => 'Twilio — Auth Token', 'config' => 'services.twilio.auth_token', 'env' => 'TWILIO_AUTH_TOKEN', 'secret' => true, 'hint' => 'Same page — reveal Auth Token.'],
                     'telnyx_api_key' => ['label' => 'Telnyx — API Key', 'config' => 'services.telnyx.api_key', 'env' => 'TELNYX_API_KEY', 'secret' => true, 'hint' => 'portal.telnyx.com → API Keys (permanent/voice backup).'],

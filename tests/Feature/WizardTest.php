@@ -52,7 +52,7 @@ class WizardTest extends TestCase
     {
         // No provider keys at all → no purposes offered (nothing to sell).
         config(['services.fivesim.api_key' => null, 'services.esimgo.api_key' => null,
-                'services.getatext.api_key' => null, 'services.smsactivate.api_key' => null,
+                'services.getatext.api_key' => null, 'services.herosms.api_key' => null, 'services.virtsms.api_key' => null,
                 'services.twilio.account_sid' => null, 'services.telnyx.api_key' => null,
                 'services.airalo.client_id' => null, 'services.quibity.api_key' => null]);
         \App\Support\ProviderKeys::flush();

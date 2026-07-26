@@ -199,7 +199,8 @@ class GetNumber extends Component
             'services' => \App\Support\NumberCatalogue::services(),
             // "Any service" (full rent) is only offered when a full-rent-capable
             // provider is configured, so there's never a dead option.
-            'fullRentAvailable' => \App\Support\ProviderStatus::isActive('smsactivate'),
+            'fullRentAvailable' => \App\Support\ProviderStatus::isActive('herosms')
+                || \App\Support\ProviderStatus::isActive('virtsms'),
         ]);
     }
 }

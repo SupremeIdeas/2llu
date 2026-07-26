@@ -114,9 +114,24 @@ return [
         'base_url' => env('FIVESIM_BASE_URL', 'https://5sim.net/v1'),
     ],
 
-    'smsactivate' => [
-        'api_key' => env('SMSACTIVATE_API_KEY'),
-        'base_url' => env('SMSACTIVATE_BASE_URL', 'https://sms-activate.org/stubs/handler_api.php'),
+    // HeroSMS — official SMS-Activate successor (SMS-Activate shut down
+    // 2025-12-29). PRIMARY "full rent" provider. Protocol-compatible
+    // handler_api.php; api_key passed as a query param. country_map/service_map
+    // are operator-fillable at go-live (SMS-Activate uses numeric country IDs).
+    // OPS: HeroSMS funds via CRYPTO ONLY — surface before go-live.
+    'herosms' => [
+        'api_key' => env('HEROSMS_API_KEY'),
+        'base_url' => env('HEROSMS_BASE_URL', 'https://hero-sms.com/stubs/handler_api.php'),
+        'country_map' => [],
+        'service_map' => [],
+    ],
+
+    // VirtSMS — SMS-Activate-protocol fallback behind HeroSMS in the same lane.
+    'virtsms' => [
+        'api_key' => env('VIRTSMS_API_KEY'),
+        'base_url' => env('VIRTSMS_BASE_URL', 'https://virtsms.io/stubs/handler_api.php'),
+        'country_map' => [],
+        'service_map' => [],
     ],
 
     'telnyx' => [

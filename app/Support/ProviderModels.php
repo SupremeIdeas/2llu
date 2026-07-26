@@ -47,7 +47,7 @@ class ProviderModels
             'tagline' => 'OTP & verification codes',
             'icon' => 'shield-check',
             'caps' => ['otp'],
-            'lane' => ['getatext', 'fivesim', 'smsactivate'],
+            'lane' => ['getatext', 'fivesim', 'herosms', 'virtsms'],
             'coming_soon' => false,
         ],
         'naara_rent' => [
@@ -55,7 +55,7 @@ class ProviderModels
             'tagline' => 'Short-term rental numbers',
             'icon' => 'hash',
             'caps' => ['rental'],
-            'lane' => ['getatext', 'fivesim', 'smsactivate'],
+            'lane' => ['getatext', 'fivesim', 'herosms', 'virtsms'],
             'coming_soon' => false,
         ],
         'naara_line' => [
@@ -82,7 +82,8 @@ class ProviderModels
         'gigs' => 'gigs_api_key',
         'getatext' => 'getatext_api_key',
         'fivesim' => 'fivesim_api_key',
-        'smsactivate' => 'smsactivate_api_key',
+        'herosms' => 'herosms_api_key',
+        'virtsms' => 'virtsms_api_key',
         'twilio' => 'twilio_account_sid',
         'telnyx' => 'telnyx_api_key',
     ];

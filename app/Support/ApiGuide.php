@@ -32,8 +32,11 @@ class ApiGuide
             'fivesim' => [
                 'api_key' => ['label' => 'API Key', 'config_key' => 'FIVESIM_API_KEY', 'where' => '5sim.net → Profile → Settings → API key. A long JWT sent as Authorization: Bearer. WALLET key — guard it.', 'format' => 'JWT (eyJ…)', 'required' => true],
             ],
-            'smsactivate' => [
-                'api_key' => ['label' => 'API Key', 'config_key' => 'SMSACTIVATE_API_KEY', 'where' => 'sms-activate.org → Profile → API. Passed as a query param. Leave blank to keep this backup off.', 'format' => 'alphanumeric', 'required' => false],
+            'herosms' => [
+                'api_key' => ['label' => 'API Key', 'config_key' => 'HEROSMS_API_KEY', 'where' => 'hero-sms.com → API (SMS-Activate successor). Passed as a query param. Powers "Any Service" rentals. Crypto-only funding. Leave blank to keep off.', 'format' => 'alphanumeric', 'required' => false],
+            ],
+            'virtsms' => [
+                'api_key' => ['label' => 'API Key', 'config_key' => 'VIRTSMS_API_KEY', 'where' => 'virtsms.io → API. Passed as a query param. Fallback behind HeroSMS. Leave blank to keep off.', 'format' => 'alphanumeric', 'required' => false],
             ],
             'telnyx' => [
                 'api_key' => ['label' => 'API Key', 'config_key' => 'TELNYX_API_KEY', 'where' => 'portal.telnyx.com → API Keys → Create. Bearer auth. Leave blank to keep this backup off.', 'format' => 'KEY… string', 'required' => false],

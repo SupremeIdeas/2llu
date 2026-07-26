@@ -198,11 +198,11 @@ class SmsNumberRouter
 
         return match ($type) {
             NumberRequest::TYPE_OTP => $isUs
-                ? ['getatext', 'fivesim', 'smsactivate']
-                : ['fivesim', 'smsactivate'],
+                ? ['getatext', 'fivesim', 'herosms', 'virtsms']
+                : ['fivesim', 'herosms', 'virtsms'],
             NumberRequest::TYPE_RENTAL => $isUs
-                ? ['getatext', 'fivesim']
-                : ['fivesim', 'smsactivate'],
+                ? ['getatext', 'fivesim', 'herosms', 'virtsms']
+                : ['fivesim', 'herosms', 'virtsms'],
             NumberRequest::TYPE_PERMANENT => ['twilio', 'telnyx'],
             default => throw new SmsException("Unknown number type [{$type}]."),
         };

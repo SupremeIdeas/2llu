@@ -42,11 +42,13 @@ class AppServiceProvider extends ServiceProvider
 
         // Number providers, resolved by name via app("number.$provider").
         // OTP/rental lane (SmsProviderInterface): Getatext (US), 5sim (global),
-        // SMS-Activate (global backup). Permanent lane (NumberProviderInterface):
-        // Twilio (primary), Telnyx (backup). Router never crosses lanes (S11).
+        // HeroSMS (SMS-Activate successor — full rent), VirtSMS (fallback).
+        // Permanent lane (NumberProviderInterface): Twilio (primary), Telnyx
+        // (backup). Router never crosses lanes (S11).
         $this->app->singleton('number.getatext', \App\Services\SMS\GetatextService::class);
         $this->app->singleton('number.fivesim', \App\Services\SMS\FiveSimService::class);
-        $this->app->singleton('number.smsactivate', \App\Services\SMS\SmsActivateService::class);
+        $this->app->singleton('number.herosms', \App\Services\SMS\HeroSmsService::class);
+        $this->app->singleton('number.virtsms', \App\Services\SMS\VirtSmsService::class);
         $this->app->singleton('number.twilio', \App\Services\SMS\Numbers\TwilioService::class);
         $this->app->singleton('number.telnyx', \App\Services\SMS\Numbers\TelnyxService::class);
 

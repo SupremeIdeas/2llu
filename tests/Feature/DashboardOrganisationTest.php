@@ -33,7 +33,7 @@ class DashboardOrganisationTest extends TestCase
         $u = User::factory()->create();
         $this->number($u, 'fivesim', 'otp', 'completed', 'whatsapp');   // Naara Verify (active)
         $this->number($u, 'fivesim', 'rental', 'waiting', 'telegram');  // Naara Rent (active)
-        $this->number($u, 'smsactivate', 'otp', 'cancelled', 'google'); // archived (cancelled)
+        $this->number($u, 'herosms', 'otp', 'cancelled', 'google'); // archived (cancelled)
 
         Livewire::actingAs($u)->test(Dashboard::class)
             ->assertSee('Naara Verify')
@@ -41,7 +41,7 @@ class DashboardOrganisationTest extends TestCase
             ->assertSee('Archive (1)')          // the cancelled number
             // Suppliers are never rendered.
             ->assertDontSee('fivesim')
-            ->assertDontSee('smsactivate')
+            ->assertDontSee('herosms')
             ->assertDontSee('5sim');
     }
 
