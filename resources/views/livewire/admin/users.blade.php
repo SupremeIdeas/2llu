@@ -88,6 +88,55 @@
                                     <div><p class="text-xs text-slate-400">Verified</p><p class="font-semibold text-slate-800 dark:text-slate-100">{{ $viewing->email_verified_at ? 'Yes' : 'No' }}</p></div>
                                     <div><p class="text-xs text-slate-400">Roles</p><p class="font-semibold capitalize text-slate-800 dark:text-slate-100">{{ str_replace('_', ' ', $viewing->getRoleNames()->implode(', ')) ?: 'user' }}</p></div>
                                 </div>
+
+                                {{-- Management (owner request — fix_admin Part 4) --}}
+                                @if ($tempPassword)
+                                    <div class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800/60 dark:bg-amber-950/30">
+                                        <p class="font-semibold text-amber-800 dark:text-amber-200">Temporary password (shown once)</p>
+                                        <p class="mt-1 font-mono text-amber-900 dark:text-amber-100">{{ $tempPassword }}</p>
+                                        <p class="mt-1 text-[11px] text-amber-700 dark:text-amber-300">Relay it securely; the user is signed out everywhere and should change it after signing in.</p>
+                                    </div>
+                                @endif
+
+                                @if ($editing)
+                                    <div class="mt-4 grid gap-3 rounded-lg border border-slate-200 p-3 dark:border-[#2D4060] sm:grid-cols-3">
+                                        <div><label class="mb-1 block text-[11px] text-slate-400">Name</label><input type="text" wire:model="edit_name" class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">@error('edit_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                                        <div><label class="mb-1 block text-[11px] text-slate-400">Email</label><input type="email" wire:model="edit_email" class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">@error('edit_email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                                        <div><label class="mb-1 block text-[11px] text-slate-400">Phone</label><input type="text" wire:model="edit_phone" class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100"></div>
+                                        <div class="flex items-end gap-2 sm:col-span-3">
+                                            <button wire:click="saveUser" class="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark">Save changes</button>
+                                            <button wire:click="cancelEdit" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-600 dark:border-[#2D4060] dark:text-slate-300">Cancel</button>
+                                            <span class="text-[11px] text-slate-400">Changing email re-sends a verification link.</span>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <button wire:click="editUser({{ $viewing->id }})" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">Edit profile</button>
+                                        <button wire:click="sendPasswordReset({{ $viewing->id }})" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">Email reset link</button>
+                                        <button wire:click="generateTempPassword({{ $viewing->id }})" wire:confirm="Set a temporary password and sign this user out everywhere?" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">Temp password</button>
+                                        <button wire:click="forceLogout({{ $viewing->id }})" wire:confirm="Sign {{ $viewing->name }} out of all devices?" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">Force logout</button>
+                                        @role('super_admin')
+                                            @if ($viewing->id !== auth()->id())
+                                                <button wire:click="toggleAdmin({{ $viewing->id }})" wire:confirm="Change admin role for {{ $viewing->name }}?" class="rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10">{{ $viewing->hasRole('admin') ? 'Revoke admin' : 'Make admin' }}</button>
+                                            @endif
+                                        @endrole
+                                    </div>
+                                @endif
+
+                                @if ($sessions->isNotEmpty())
+                                    <div class="mt-4">
+                                        <p class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Recent sessions</p>
+                                        <div class="space-y-1">
+                                            @foreach ($sessions as $s)
+                                                <div class="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+                                                    <span class="font-mono">{{ $s['ip'] ?: '—' }}</span>
+                                                    <span class="truncate">{{ $s['agent'] ?: 'unknown device' }}</span>
+                                                    <span class="ml-auto shrink-0">{{ $s['when'] }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
                             </td>
                         </tr>
                     @endif

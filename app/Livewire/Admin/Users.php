@@ -6,6 +6,10 @@ use App\Models\User;
 use App\Services\Account\AccountService;
 use App\Support\Auditor;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -28,9 +32,41 @@ class Users extends Component
 
     public ?int $viewingId = null;
 
+    // Inline edit buffer
+    public bool $editing = false;
+
+    public string $edit_name = '';
+
+    public string $edit_email = '';
+
+    public string $edit_phone = '';
+
+    /** A generated temporary password, shown to the admin once. */
+    public ?string $tempPassword = null;
+
     public function mount(): void
     {
         abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 404);
+    }
+
+    /**
+     * Shared safety gate for every mutating action: never touch your own account
+     * destructively here, and never touch a super_admin unless you are one.
+     */
+    private function guardManage(User $user): bool
+    {
+        if ($user->id === Auth::id()) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Manage your own account from “My account”.');
+
+            return false;
+        }
+        if ($user->hasRole('super_admin') && ! Auth::user()->hasRole('super_admin')) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Only a super admin can manage a super admin.');
+
+            return false;
+        }
+
+        return true;
     }
 
     public function updatingSearch(): void
@@ -78,6 +114,141 @@ class Users extends Component
         $this->dispatch('nx-toast', type: 'success', message: $msg);
     }
 
+    public function editUser(int $id): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $user = User::findOrFail($id);
+        if (! $this->guardManage($user)) {
+            return;
+        }
+        $this->viewingId = $id;
+        $this->edit_name = (string) $user->name;
+        $this->edit_email = (string) $user->email;
+        $this->edit_phone = (string) $user->phone;
+        $this->editing = true;
+        $this->tempPassword = null;
+    }
+
+    public function cancelEdit(): void
+    {
+        $this->reset('editing', 'edit_name', 'edit_email', 'edit_phone');
+    }
+
+    public function saveUser(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $user = User::findOrFail($this->viewingId);
+        if (! $this->guardManage($user)) {
+            return;
+        }
+
+        $this->validate([
+            'edit_name' => ['required', 'string', 'max:120'],
+            'edit_email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'edit_phone' => ['nullable', 'string', 'max:32'],
+        ]);
+
+        $emailChanged = $this->edit_email !== $user->email;
+        $user->forceFill([
+            'name' => trim($this->edit_name),
+            'email' => $this->edit_email,
+            'phone' => $this->edit_phone ?: null,
+            // A changed email must be re-verified (same rule as self-service).
+            'email_verified_at' => $emailChanged ? null : $user->email_verified_at,
+        ])->save();
+
+        if ($emailChanged) {
+            $user->sendEmailVerificationNotification();
+        }
+
+        Auditor::log('admin.user_profile_updated', 'User', $user->id, ['email_changed' => $emailChanged]);
+        $this->editing = false;
+        $this->dispatch('nx-toast', type: 'success', message: 'User updated.');
+    }
+
+    /** Email the user a standard password-reset link. */
+    public function sendPasswordReset(int $id): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $user = User::findOrFail($id);
+        if (! $this->guardManage($user)) {
+            return;
+        }
+
+        Password::sendResetLink(['email' => $user->email]);
+        Auditor::log('admin.user_password_reset_emailed', 'User', $user->id);
+        $this->dispatch('nx-toast', type: 'success', message: 'Password-reset link sent to '.$user->email.'.');
+    }
+
+    /** Generate a temporary password and show it to the admin once to relay. */
+    public function generateTempPassword(int $id): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $user = User::findOrFail($id);
+        if (! $this->guardManage($user)) {
+            return;
+        }
+
+        $password = Str::password(14);
+        $user->forceFill(['password' => \Illuminate\Support\Facades\Hash::make($password)])->save();
+        $this->forceLogoutUser($user); // old sessions can't keep the old password alive
+
+        $this->viewingId = $id;
+        $this->tempPassword = $password; // shown once in the panel, never stored
+        Auditor::log('admin.user_temp_password_set', 'User', $user->id);
+    }
+
+    /** Revoke all of a user's sessions (force-logout everywhere). */
+    public function forceLogout(int $id): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $user = User::findOrFail($id);
+        if (! $this->guardManage($user)) {
+            return;
+        }
+
+        $count = $this->forceLogoutUser($user);
+        Auditor::log('admin.user_force_logout', 'User', $user->id, ['sessions' => $count]);
+        $this->dispatch('nx-toast', type: 'success', message: 'Signed '.$user->name.' out of all devices.');
+    }
+
+    private function forceLogoutUser(User $user): int
+    {
+        // Cycle the remember token so "remember me" cookies stop working…
+        $user->forceFill(['remember_token' => Str::random(60)])->save();
+
+        // …and drop the database session rows for this user (database driver).
+        try {
+            return DB::table('sessions')->where('user_id', $user->id)->delete();
+        } catch (\Throwable) {
+            return 0; // non-database session driver — remember-token cycle still applied
+        }
+    }
+
+    /** Grant/revoke the admin role — super_admin only, never on yourself. */
+    public function toggleAdmin(int $id): void
+    {
+        abort_unless(Auth::user()->hasRole('super_admin'), 403);
+        $user = User::findOrFail($id);
+        if ($user->id === Auth::id()) {
+            $this->dispatch('nx-toast', type: 'error', message: 'You can’t change your own admin role here.');
+
+            return;
+        }
+
+        if ($user->hasRole('admin')) {
+            $user->removeRole('admin');
+            $user->forceFill(['role' => 'user'])->save();
+            $msg = $user->name.' is no longer an admin.';
+        } else {
+            $user->assignRole('admin');
+            $user->forceFill(['role' => 'admin'])->save();
+            $msg = $user->name.' is now an admin.';
+        }
+        Auditor::log('admin.user_role_changed', 'User', $user->id, ['admin' => $user->hasRole('admin')]);
+        $this->dispatch('nx-toast', type: 'success', message: $msg);
+    }
+
     public function render()
     {
         $users = User::query()
@@ -95,9 +266,26 @@ class Users extends Component
 
         $viewing = $this->viewingId ? User::with('wallet')->find($this->viewingId) : null;
 
+        // Recent sessions (login history) for the viewed user — database driver.
+        $sessions = collect();
+        if ($viewing) {
+            try {
+                $sessions = DB::table('sessions')->where('user_id', $viewing->id)
+                    ->orderByDesc('last_activity')->limit(10)->get()
+                    ->map(fn ($s) => [
+                        'ip' => $s->ip_address,
+                        'agent' => Str::limit((string) $s->user_agent, 80),
+                        'when' => \Carbon\Carbon::createFromTimestamp($s->last_activity)->diffForHumans(),
+                    ]);
+            } catch (\Throwable) {
+                $sessions = collect();
+            }
+        }
+
         return view('livewire.admin.users', [
             'users' => $users,
             'viewing' => $viewing,
+            'sessions' => $sessions,
             'totals' => [
                 'all' => User::count(),
                 'active' => User::where('is_active', true)->count(),
