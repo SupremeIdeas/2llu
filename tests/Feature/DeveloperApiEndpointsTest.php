@@ -75,6 +75,29 @@ class DeveloperApiEndpointsTest extends TestCase
         $this->assertStringNotContainsString('markup', strtolower($body));
     }
 
+    public function test_catalogue_exposes_has_voice_and_filters_naara_connect_plans(): void
+    {
+        $this->enable();
+        $this->plan(['name' => 'NG Data 1GB', 'has_voice' => false]);
+        $this->plan(['name' => 'NG Connect 5GB', 'provider' => 'zendit', 'has_voice' => true]);
+        [$token] = $this->client(['catalogue']);
+
+        // Every plan carries has_voice.
+        $all = $this->withToken($token)->getJson('/api/v1/catalogue')->assertOk();
+        $this->assertCount(2, $all->json('data'));
+
+        // ?has_voice=true → only the Naara Connect (Full eSIM) plan.
+        $voice = $this->withToken($token)->getJson('/api/v1/catalogue?has_voice=true')->assertOk();
+        $this->assertCount(1, $voice->json('data'));
+        $this->assertSame('NG Connect 5GB', $voice->json('data.0.name'));
+        $this->assertTrue($voice->json('data.0.has_voice'));
+
+        // ?has_voice=false → only the data-only plan.
+        $data = $this->withToken($token)->getJson('/api/v1/catalogue?has_voice=false')->assertOk();
+        $this->assertCount(1, $data->json('data'));
+        $this->assertFalse($data->json('data.0.has_voice'));
+    }
+
     public function test_a_key_without_the_scope_is_forbidden(): void
     {
         $this->enable();

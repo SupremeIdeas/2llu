@@ -103,6 +103,9 @@ curl https://YOUR-DOMAIN/api/v1/catalogue \
   -H "Authorization: Bearer $NAARA_KEY"
 ```
 
+Optional filter — `?has_voice=true` returns only **Naara Connect** plans (Full
+eSIMs: calls + data), `?has_voice=false` returns only data-only plans.
+
 **200**
 ```json
 {
@@ -111,6 +114,7 @@ curl https://YOUR-DOMAIN/api/v1/catalogue \
       "id": 12,
       "name": "Nigeria 5GB / 30 days",
       "type": "local",
+      "has_voice": false,
       "data_mb": 5120,
       "validity_days": 30,
       "countries": ["NG"],
@@ -120,6 +124,9 @@ curl https://YOUR-DOMAIN/api/v1/catalogue \
   ]
 }
 ```
+
+`has_voice` distinguishes the two eSIM lines: `false` is a data-only plan,
+`true` is a Naara Connect Full eSIM (voice minutes + SMS + data on one eSIM).
 
 ### POST `/quote` — price without ordering
 Scope: `quote`
