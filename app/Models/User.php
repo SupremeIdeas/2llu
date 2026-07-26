@@ -55,6 +55,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
         'two_factor_recovery_codes',
         'two_factor_secret',
+        'security_questions',
     ];
 
     /**
@@ -67,6 +68,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'security_questions' => 'array',
             'date_of_birth' => 'date',
             'is_active' => 'boolean',
             'deactivated_at' => 'datetime',

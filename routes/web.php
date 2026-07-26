@@ -155,6 +155,8 @@ Route::middleware(['admin', 'throttle:admin'])
         // Panel entry + 2FA self-enrolment — any panel user (incl. staff).
         Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('dashboard');
         Route::get('/security', \App\Livewire\Admin\Security::class)->name('security');
+        // Personal account (any panel user manages their own name/email/password).
+        Route::get('/account', \App\Livewire\Admin\Account::class)->name('account');
 
         // Admin configuration — super_admin & admin only (staff excluded).
         Route::middleware('role:super_admin|admin')->group(function () {

@@ -76,6 +76,7 @@
         $more[] = ['route' => 'admin.ui-kit', 'label' => 'UI Kit', 'icon' => 'grid'];
     }
 
+    $primary[] = ['route' => 'admin.account', 'label' => 'My account', 'icon' => 'id-card'];
     $primary[] = ['route' => 'admin.security', 'label' => 'Security', 'icon' => 'shield'];
     // Everyone in the panel can hop back to the end-user app.
     $more[] = ['heading' => 'Shortcuts'];
