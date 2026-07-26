@@ -14,6 +14,7 @@ class EsimPlan extends Model
         'provider_plan_id',
         'name',
         'type',
+        'has_voice',
         'data_mb',
         'countries',
         'validity_days',
@@ -56,6 +57,7 @@ class EsimPlan extends Model
             'final_retail_usd' => 'decimal:4',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
+            'has_voice' => 'boolean',
             'synced_at' => 'datetime',
         ];
     }
