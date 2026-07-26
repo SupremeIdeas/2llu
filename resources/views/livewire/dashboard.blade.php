@@ -103,9 +103,10 @@
          cards, rebuilt on brand): the three product lines as floating glass
          cards with our SVG feature icons. --}}
     @unless ($hasAny)
-        <div class="mb-8 grid gap-5 sm:grid-cols-3">
+        <div class="mb-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             @foreach ([
                 ['globe', 'eSIM Data Plans', 'Local data in 190+ countries — installed before you fly, connected when you land.', route('catalogue'), 'Browse plans'],
+                ['signal', 'Naara Connect', 'Full eSIM — calls, SMS and data on one eSIM, with its own number.', route('catalogue', ['tab' => 'full']), 'See Full eSIMs'],
                 ['hash', 'Verification Numbers', 'Receive one-time codes for WhatsApp, Google, Facebook and more — in seconds.', route('numbers'), 'Get a number'],
                 ['phone', 'Virtual Numbers', 'A permanent second line for calls and SMS, without a second phone.', route('numbers'), 'Explore numbers'],
             ] as [$icon, $title, $text, $url, $cta])
