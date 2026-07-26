@@ -170,6 +170,8 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
             // Feature toggles (owner request) — switch features on/off + setup guides.
             Route::get('/features', \App\Livewire\Admin\Features::class)->name('features');
+            // eSIM storefront hero (esim_upgrade Part 2) — title, description, images.
+            Route::get('/esim-hero', \App\Livewire\Admin\EsimHero::class)->name('esim-hero');
             Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
             Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');
             Route::get('/site', \App\Livewire\Admin\SiteEditor::class)->name('site');
