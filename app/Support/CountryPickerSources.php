@@ -25,8 +25,28 @@ class CountryPickerSources
     {
         return match ($source) {
             'esim' => self::esim((bool) ($args['has_voice'] ?? false)),
+            'numbers' => self::numbers(),
             default => [],
         };
+    }
+
+    /**
+     * Every country a phone number can be bought in (Numbers V6). Slug-keyed
+     * (the buy flow uses 5sim-style slugs), each with its dial code — the picker
+     * shows flag + name + dial code in this mode.
+     *
+     * @return array<int, array{code: string, name: string, dial: ?string}>
+     */
+    private static function numbers(): array
+    {
+        $rows = [];
+        foreach (\App\Support\NumberCatalogue::countries() as $slug => $label) {
+            $rows[] = ['code' => $slug, 'name' => $label, 'dial' => \App\Support\DialCodes::for($slug)];
+        }
+
+        usort($rows, fn ($a, $b) => strcmp($a['name'], $b['name']));
+
+        return $rows;
     }
 
     /**

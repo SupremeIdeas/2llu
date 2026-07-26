@@ -46,9 +46,13 @@
                                 class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-50 dark:hover:bg-white/5">
                             <x-country-flag :country="$opt['code']" class="h-6 w-8 shrink-0" />
                             <span class="flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{{ $opt['name'] }}</span>
-                            <span class="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary-dark dark:bg-primary/20 dark:text-teal-300">
-                                {{ $opt['count'] }} {{ Str::plural('plan', $opt['count']) }}
-                            </span>
+                            @isset($opt['count'])
+                                <span class="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary-dark dark:bg-primary/20 dark:text-teal-300">
+                                    {{ $opt['count'] }} {{ Str::plural('plan', $opt['count']) }}
+                                </span>
+                            @elseif (! empty($opt['dial']))
+                                <span class="shrink-0 font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">{{ $opt['dial'] }}</span>
+                            @endisset
                         </button>
                     @empty
                         <p class="px-3 py-8 text-center text-sm text-slate-500 dark:text-slate-400">No countries available yet.</p>
