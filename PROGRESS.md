@@ -9,6 +9,26 @@
 
 ## DONE
 
+### ✅ Aurora Welcome Animation (first-login entrance) — built 2026-07-27
+A premium fullscreen aurora + logo-zoom + tagline sequence shown ONCE, right
+after signup, before the dashboard. 100% CSS + Alpine (no external JS).
+- **Trigger:** `RegisterResponse` (bound in FortifyServiceProvider) flashes
+  `just_registered` and redirects new signups to `/welcome`; when the animation
+  is disabled it skips straight to the normal home. `WelcomeAurora` Livewire
+  consumes the flag (or an admin `?preview=1`), else redirects to the dashboard —
+  so it can never nag a returning user. Route reachable while unverified so it
+  plays immediately post-signup, then hands off to `route('dashboard')`.
+- **Visuals:** 3 screen-blended aurora blobs (white core → brand colours) drift
+  + pulse; logo zooms in from scale(3)→1 opacity 0→1; welcome text + tagline
+  fade up; blur-out hand-off. Uses the real `<x-brand-logo>` (not the favicon),
+  brand colours, existing font. `prefers-reduced-motion` freezes motion.
+- **Admin → Welcome animation** (`/adminmaster/welcome-settings`, admin only):
+  enable toggle, welcome/tagline copy, logo-reveal / tagline-delay / total-
+  duration (ms) + aurora-loop (s) timings, two blob colour pickers, Save + Reset
+  to default, and a Live preview link. `WelcomeSettings` support class (Setting-
+  backed, resilient, defaults = brand palette). Tests: `WelcomeAuroraTest` (8).
+  Suite 822.
+
 ### 🔨 Installable App Export (Android + iOS via Capacitor) — built 2026-07-27
 The wrap-the-web-app-as-a-native-app infrastructure (appexportbuildprompt.md),
 built additively. **Honest-state throughout: a compiled build is never shown as

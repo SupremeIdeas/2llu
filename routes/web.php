@@ -122,6 +122,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/merchant/clients', \App\Livewire\MerchantClients::class)->name('merchant.clients');
     });
 
+    // Aurora Welcome entrance (first-login animation) — reachable while
+    // unverified so it plays immediately after signup, then hands off to the
+    // dashboard. Guards itself: no `just_registered` flag → straight to home.
+    Route::get('/welcome', \App\Livewire\WelcomeAurora::class)->name('welcome');
+
     // Account & data rights (blueprint Section 26) — reachable while unverified
     // so a user can still manage or delete their account and resend the email.
     Route::get('/account', \App\Livewire\Account::class)->name('account');
@@ -194,6 +199,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/pages', \App\Livewire\Admin\CustomPages::class)->name('pages');
             Route::get('/builder', \App\Livewire\Admin\PageBuilder::class)->name('builder');
             Route::get('/app-builder', \App\Livewire\Admin\AppBuilder::class)->name('app-builder');
+            Route::get('/welcome-settings', \App\Livewire\Admin\WelcomeSettings::class)->name('welcome-settings');
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
             Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');

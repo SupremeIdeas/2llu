@@ -51,6 +51,7 @@
         $more[] = ['route' => 'admin.branding', 'label' => 'Branding', 'icon' => 'image'];
         $more[] = ['route' => 'admin.chrome', 'label' => 'Auth & footer', 'icon' => 'image'];
         $more[] = ['route' => 'admin.appearance', 'label' => 'Splash', 'icon' => 'zap'];
+        $more[] = ['route' => 'admin.welcome-settings', 'label' => 'Welcome animation', 'icon' => 'zap'];
         $more[] = ['route' => 'admin.dashboard-theme', 'label' => 'Dashboard theme', 'icon' => 'image'];
         $more[] = ['route' => 'admin.service-icons', 'label' => 'Service icons', 'icon' => 'grid'];
         $more[] = ['route' => 'admin.integrations', 'label' => 'Integrations', 'icon' => 'link'];
