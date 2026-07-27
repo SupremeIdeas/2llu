@@ -9,6 +9,56 @@
 
 ## DONE
 
+### 🔨 Universal Section Builder — foundation — built 2026-07-27
+The infrastructure layer the Homepage / Blog / hero work all run on top of
+(sectionbuilderbuildprompt.md §2–3), built additively so **nothing existing
+breaks** — the current hardcoded marketing pages keep rendering untouched until
+an admin explicitly builds a page.
+
+- **Data model:** `page_sections` = the editable DRAFT rows (one per section,
+  ordered, per-type JSON `config`); `page_section_versions` = immutable PUBLISHED
+  snapshots + version history. The public renderer ONLY reads the `is_live`
+  snapshot, so draft edits are invisible until published. Models `PageSection`,
+  `PageSectionVersion`.
+- **Type registry** (`App\Support\SectionLibrary`): each type declares label /
+  icon / blade / config defaults. Ships **Hero** (the flagship), **Two-column**
+  (image + text, admin-picked side, graceful text-only fallback when no image),
+  and **Custom HTML**. The remaining library types (bento, carousel,
+  testimonial, FAQ, logo strip, stacking, video, code) plug into the same
+  registry in later increments.
+- **Hero:** 5 pre-made 2026-trending presets (Aurora / Spotlight / Split /
+  Minimal / Showcase) × 4 background modes (animated brand gradient · single bg
+  image · image slideshow · static). All copy admin-owned; brand-var driven so
+  the Branding page recolours heroes for free; CSS-only motion frozen under
+  `prefers-reduced-motion`. One partial (`partials/sections/hero.blade.php`) +
+  `resources/css/sections.css`.
+- **Custom HTML XSS:** `App\Support\HtmlSanitizer` — real DOM allowlist (not a
+  naive raw-render). Drops script/style/iframe/object/form subtrees, strips every
+  non-allowlisted attribute + all `on*` handlers, rejects `javascript:`/unsafe
+  URIs (data: only for raster images, never SVG), hardens `target=_blank` links.
+  Sanitized on save AND on render (belt-and-braces).
+- **Admin → Page builder** (`/adminmaster/builder`, super-admin/admin only):
+  page switcher + create-new-page, add sections from the library, drag-reorder
+  (native HTML5 drag + up/down buttons + show/hide/remove), a per-type config
+  editor, and a **responsive live preview** (Mobile / Tablet / Desktop frame)
+  that renders through the exact same partial the public site uses (true WYSIWYG).
+  **Publish** snapshots a version; **version history** lists every publish with
+  one-click **Restore** (rollback = restore snapshot into draft + re-publish,
+  history preserved). `PageBuilderService` owns the lifecycle; audited throughout.
+- **Read seam** (`App\Support\PageSections`): `live()` (cached, busted on
+  publish), `draft()`, `hasLive()`, and `target()` CTA resolver (URL / #anchor /
+  route name / path). Empty-live = "fall back to the existing view", so opt-in.
+- **Decisions locked (documented for the PR):** built the builder NOW (user
+  directed) as the foundation the homepage/blog sit on; bento reconciliation is
+  additive (the bento-grid section type will absorb `NumbersBentoCard` in a later
+  increment — existing bento keeps working meanwhile); custom-HTML sanitized via
+  DOM allowlist. Tests: `PageBuilderTest` (9 — sanitizer, draft/live boundary,
+  rollback, reorder, admin-gate, custom-HTML-through-UI, preset). Suite 803.
+- **Next increments (not yet built):** remaining section types incl. the
+  generalized Bento grid (+ NumbersBentoCard migration); footer builder; login
+  Three.js/image toggle; public status page; then the Homepage floating-nav +
+  Blog work that consume this foundation.
+
 ### ✅ Partner Program + Merchant V2 — built 2026-07-27
 Two structurally-separate programs on the shared payout/wallet/pricing rails.
 

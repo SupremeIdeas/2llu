@@ -187,6 +187,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/legal', \App\Livewire\Admin\LegalEditor::class)->name('legal');
             Route::get('/blog', \App\Livewire\Admin\Posts::class)->name('blog');
             Route::get('/pages', \App\Livewire\Admin\CustomPages::class)->name('pages');
+            Route::get('/builder', \App\Livewire\Admin\PageBuilder::class)->name('builder');
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
             Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');

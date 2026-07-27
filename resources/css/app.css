@@ -2,6 +2,9 @@
    Vite resolves and inlines this at build time — one bundle, CSP-safe. */
 @import './ui-elements.css';
 
+/* Section Builder — hero + preview styling (universal page builder). */
+@import './sections.css';
+
 /* Country flags — self-hosted SVG set (flag-icons, MIT), bundled at build so
    no CDN is touched. Used via `fi fi-ng` classes (Module 27.5). */
 @import 'flag-icons/css/flag-icons.min.css';
