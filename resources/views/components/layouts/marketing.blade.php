@@ -99,4 +99,14 @@
         {{-- Footer (Module 28: admin-assignable columns + legal via SiteChrome). --}}
         <x-site-footer variant="full" />
     </div>
+
+    {{-- Floating navigation pill (Homepage floating-nav): admin-assignable slots +
+         a glowing Wizard centrepiece, on desktop + mobile. On marketing there is
+         no other bottom bar, so this is the sole floating element (no duplicate).
+         The in-page Wizard is included only for signed-in visitors, so the
+         centrepiece can open it; guests get a "Get started" CTA instead. --}}
+    @auth
+        @livewire('wizard')
+    @endauth
+    <x-floating-nav />
 </x-layouts.app>

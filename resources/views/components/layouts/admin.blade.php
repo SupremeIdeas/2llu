@@ -44,6 +44,7 @@
         // Website (public front end + branding).
         $more[] = ['heading' => 'Website'];
         $more[] = ['route' => 'admin.builder', 'label' => 'Page builder', 'icon' => 'grid'];
+        $more[] = ['route' => 'admin.nav', 'label' => 'Floating nav', 'icon' => 'grid'];
         $more[] = ['route' => 'admin.app-builder', 'label' => 'App Builder', 'icon' => 'package'];
         $more[] = ['route' => 'admin.site', 'label' => 'Marketing site', 'icon' => 'globe'];
         $more[] = ['route' => 'admin.pages', 'label' => 'Custom pages', 'icon' => 'file-text'];

@@ -9,6 +9,30 @@
 
 ## DONE
 
+### ✅ Homepage floating-nav merge (NavSlot + Wizard centrepiece) — built 2026-07-27
+The floating navigation pill on the public site, admin-assignable, with the
+Wizard merged in as the glowing centrepiece — on desktop AND mobile.
+- **`NavSlot`** model + `nav_slots` table: position, label, icon, target (route /
+  path / URL / `wizard`), visibility (all|auth|guest), is_center, is_active.
+  `NavSlots` support seeds a sensible default set on first read (Home, Plans,
+  Numbers, About, Account[auth]/Get started[guest], + Ask NaaraSim centrepiece),
+  cached + flushed on edit, resilient to a missing table.
+- **`<x-floating-nav>`** — a centred floating pill (real desktop treatment, not a
+  stretched mobile bar), icon-only segments that "swell" the label in when active/
+  hovered, and a glowing centrepiece reusing the Wizard's `naaraGlow`. The
+  centrepiece opens the in-page Wizard for signed-in visitors
+  (`Livewire.dispatch('open-wizard')` → new `#[On('open-wizard')]` on Wizard) and
+  is a "Get started" CTA for guests. Added to the **marketing layout** (the actual
+  gap — customer/admin already have a bottom bar + wizard, so putting it there too
+  would be the "third element" the prompt warns against); the in-page Wizard now
+  also loads on marketing for signed-in visitors so the centrepiece can open it.
+- **Admin → Floating nav**: repoint/relabel/reorder any slot, set visibility, mark
+  the single centrepiece (enforced), add/remove, reset to defaults.
+- **Decisions (documented):** logged-out set via `visibility`; centrepiece =
+  Wizard(auth)/Get started(guest); floating-nav lives on marketing to avoid a
+  duplicate bar on the authed shell (the component is reusable if that shell
+  later adopts it). `FloatingNavTest` (6). Suite 867.
+
 ### ✅ Merchant V2 — premium client eSIM control — built 2026-07-27
 Full client-eSIM lifecycle on the merchant wallet, money-safe throughout.
 - **Money core:** `user_wallets.reserved_usd` + `WalletService::reserve()/release()`;

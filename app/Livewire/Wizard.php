@@ -181,6 +181,16 @@ class Wizard extends Component
         }
     }
 
+    /** Open the wizard from elsewhere (the floating-nav centerpiece merges it in). */
+    #[\Livewire\Attributes\On('open-wizard')]
+    public function openFromNav(): void
+    {
+        $this->open = true;
+        if ($this->liveOtp && in_array($this->step, ['purpose', 'result'], true)) {
+            $this->step = 'otp';
+        }
+    }
+
     /** Open the widget straight to the surfaced OTP (launcher "code ready" tap). */
     public function openOtp(): void
     {
