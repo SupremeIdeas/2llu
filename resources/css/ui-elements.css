@@ -758,6 +758,127 @@
     .nx-anim-card__bar { animation: none; }
 }
 
+/* ==========================================================================
+   Dashboard background / theme system (Platform Theme).
+   A brand-gradient wallpaper that sits BEHIND the authenticated app shell
+   (customer + admin), so glass cards let it show through. Applied by adding
+   `dashboard-bg` to <body> from the customer/admin layouts only — the
+   marketing site and auth pages are explicitly out of scope.
+
+   Everything is driven by the live --brand-* channel triples (so a Module-26
+   admin recolour cascades in) and by --dbg-* tuning variables (so the admin
+   Platform Theme panel can override per-bloom intensity / feather / spread /
+   extra stop by emitting a <style> block — no rebuild, same pattern as
+   BrandSettings::themeCss()). The colour set is scoped STRICTLY by the `.dark`
+   class — light and dark never cross-fade — and the base colour paints on the
+   body while the blooms live in a viewport-fixed ::before, so the treatment
+   is stable while content scrolls and never flashes the wrong theme (the
+   pre-paint .dark toggle already runs in the <head>).
+
+   NOTE: this NEVER touches .nx-aurora or .nx-anim-card — cards that already
+   carry their own gradient are hands-off (see the glass-audit rule).
+   ========================================================================== */
+
+/* Typed custom properties for the drifting bloom anchors — @property lets them
+   interpolate smoothly (a plain custom property would jump between keyframes).
+   Only the two primary anchors drift; everything else stays put. */
+@property --dbg-up-x { syntax: "<percentage>"; inherits: true; initial-value: 72%; }
+@property --dbg-up-y { syntax: "<percentage>"; inherits: true; initial-value: 6%; }
+@property --dbg-lo-x { syntax: "<percentage>"; inherits: true; initial-value: 25%; }
+@property --dbg-lo-y { syntax: "<percentage>"; inherits: true; initial-value: 96%; }
+
+.dashboard-bg {
+    position: relative;
+    /* Base colour — the blooms feather to transparent over this. */
+    background-color: #F8F9FA;
+
+    /* --- Tuning variables (admin-overridable; clamped server-side) --------- */
+    --dbg-up-x: 72%;   --dbg-up-y: 6%;    /* upper bloom anchor  */
+    --dbg-lo-x: 25%;   --dbg-lo-y: 96%;   /* lower bloom anchor  */
+    --dbg-up-intensity: 1;                /* 0.5–1.5 opacity scale, upper bloom */
+    --dbg-lo-intensity: 1;                /* 0.5–1.5 opacity scale, lower bloom */
+    --dbg-up-feather: 82%;                /* where the upper bloom hits transparent */
+    --dbg-lo-feather: 88%;                /* where the lower bloom hits transparent */
+    --dbg-up-size: 65% 55%;               /* upper bloom ellipse size  */
+    --dbg-lo-size: 70% 60%;               /* lower bloom ellipse size  */
+    --dbg-extra-color: var(--brand-primary);
+    --dbg-extra-alpha: 0;                 /* optional single extra stop, off by default */
+}
+.dark .dashboard-bg { background-color: rgb(var(--brand-navy)); }
+
+/* The wallpaper itself: a viewport-fixed layer painted over the body's base
+   colour but beneath all in-flow content (negative z-index positioned pseudo).
+   Two anchor regions only, each a layered bloom that travels teal → gold →
+   coral internally (Section 3a), feathering to transparent. */
+.dashboard-bg::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        /* Upper bloom — primary, teal-led */
+        radial-gradient(var(--dbg-up-size) at var(--dbg-up-x) var(--dbg-up-y),
+            rgb(var(--brand-primary) / calc(0.40 * var(--dbg-up-intensity))) 0%,
+            rgb(var(--brand-accent) / calc(0.14 * var(--dbg-up-intensity))) 38%,
+            rgb(var(--brand-action) / calc(0.08 * var(--dbg-up-intensity))) 62%,
+            transparent var(--dbg-up-feather)),
+        /* Upper bloom overlap layer — the depth/colour-travel comes from this */
+        radial-gradient(45% 40% at 55% 18%,
+            rgb(var(--brand-accent) / calc(0.10 * var(--dbg-up-intensity))) 0%,
+            rgb(var(--brand-action) / calc(0.05 * var(--dbg-up-intensity))) 50%,
+            transparent 75%),
+        /* Optional admin extra stop (invisible until --dbg-extra-alpha > 0) */
+        radial-gradient(40% 35% at 50% 40%,
+            rgb(var(--dbg-extra-color) / var(--dbg-extra-alpha)) 0%,
+            transparent 70%),
+        /* Lower bloom — soft, low-key, still teal-led */
+        radial-gradient(var(--dbg-lo-size) at var(--dbg-lo-x) var(--dbg-lo-y),
+            rgb(var(--brand-primary) / calc(0.22 * var(--dbg-lo-intensity))) 0%,
+            rgb(var(--brand-action) / calc(0.11 * var(--dbg-lo-intensity))) 40%,
+            rgb(var(--brand-accent) / calc(0.07 * var(--dbg-lo-intensity))) 65%,
+            transparent var(--dbg-lo-feather));
+}
+
+/* Dark mode — teal leads and dominates, gold is the only accent, NO coral
+   (red reads as "off" over navy — intentional asymmetry, documented). */
+.dark .dashboard-bg::before {
+    background:
+        radial-gradient(var(--dbg-up-size) at var(--dbg-up-x) var(--dbg-up-y),
+            rgb(var(--brand-primary) / calc(0.58 * var(--dbg-up-intensity))) 0%,
+            rgb(var(--brand-accent) / calc(0.20 * var(--dbg-up-intensity))) 45%,
+            transparent var(--dbg-up-feather)),
+        radial-gradient(45% 40% at 55% 18%,
+            rgb(var(--brand-accent) / calc(0.14 * var(--dbg-up-intensity))) 0%,
+            transparent 70%),
+        radial-gradient(40% 35% at 50% 40%,
+            rgb(var(--dbg-extra-color) / var(--dbg-extra-alpha)) 0%,
+            transparent 70%),
+        radial-gradient(var(--dbg-lo-size) at var(--dbg-lo-x) var(--dbg-lo-y),
+            rgb(var(--brand-primary) / calc(0.32 * var(--dbg-lo-intensity))) 0%,
+            rgb(var(--brand-accent) / calc(0.10 * var(--dbg-lo-intensity))) 55%,
+            transparent var(--dbg-lo-feather));
+}
+
+/* Animated mode (opt-in): only the two anchor positions drift — the colour
+   layer never moves, so it reads as "the static treatment, gently breathing".
+   The palette swap on a theme toggle is instant (scoped by .dark); this drift
+   keeps running uninterrupted across the toggle because it animates position
+   variables that are identical in both themes. */
+@keyframes naara-bg-drift {
+    50% {
+        --dbg-up-x: 60%;  --dbg-up-y: 16%;
+        --dbg-lo-x: 36%;  --dbg-lo-y: 84%;
+    }
+}
+.dashboard-bg--animated::before {
+    animation: naara-bg-drift 22s ease-in-out infinite;
+}
+/* Reduced motion → the static treatment (no drift). */
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-bg--animated::before { animation: none; }
+}
+
 /* --- Donut stat card (after code-town3) ------------------------------------ */
 .nx-donut {
     width: 7rem;

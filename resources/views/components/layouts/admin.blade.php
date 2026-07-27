@@ -86,7 +86,7 @@
     $more[] = ['route' => 'dashboard', 'label' => 'Storefront', 'icon' => 'globe'];
 @endphp
 
-<x-layouts.app :title="($title ?? 'Admin').' — NaaraSim'">
+<x-layouts.app :title="($title ?? 'Admin').' — NaaraSim'" :body-class="\App\Support\PlatformTheme::bodyClass()">
     <x-app-shell :primary="$primary" :more="$more" brand-label="NaaraSim Admin" brand-icon="settings" :brand-route="route('admin.dashboard')">
         {{ $slot }}
     </x-app-shell>

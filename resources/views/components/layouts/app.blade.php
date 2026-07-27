@@ -49,10 +49,16 @@
          rebuild. Emitted only when the admin has customised a colour/radius. --}}
     @php($brandCss = \App\Support\BrandSettings::themeCss())
     @if ($brandCss)<style id="brand-vars">{!! $brandCss !!}</style>@endif
+    {{-- Dashboard background / Platform Theme override (empty on the default
+         treatment and outside the dashboard, where $bodyClass isn't set). --}}
+    @isset($bodyClass)
+        @php($platformCss = \App\Support\PlatformTheme::styleCss())
+        @if ($platformCss)<style id="platform-theme-vars">{!! $platformCss !!}</style>@endif
+    @endisset
     @stack('head')
     @include('partials.tracking')
 </head>
-<body class="min-h-screen bg-[#F8F9FA] text-[#0F172A] antialiased dark:bg-navy dark:text-slate-100">
+<body class="min-h-screen text-[#0F172A] antialiased dark:text-slate-100 {{ $bodyClass ?? 'bg-[#F8F9FA] dark:bg-navy' }}">
     @include('partials.icon-sprite')
     @include('partials.service-icon-sprite')
     <x-brand-preloader />
