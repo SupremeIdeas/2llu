@@ -14,7 +14,7 @@ interface SmsProviderInterface
      * Live wholesale cost (USD) for a country+service. Never hard-coded.
      * Throws OutOfStockException when there is no stock.
      */
-    public function priceFor(string $country, string $service): float;
+    public function priceFor(string $country, string $service, ?string $operator = null): float;
 
     /**
      * Buy a one-time OTP (activation) number.

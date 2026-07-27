@@ -83,7 +83,7 @@ class SmsNumberRouter
                     continue;
                 }
 
-                $cost = $svc->priceFor($request->country, $request->service); // live; throws OutOfStock
+                $cost = $svc->priceFor($request->country, $request->service, $request->operator); // live; throws OutOfStock
 
                 // The user was quoted+charged `charged` at checkout. Protect that
                 // margin: if the live cost now exceeds (charged - min profit) —
@@ -100,9 +100,10 @@ class SmsNumberRouter
                     continue;
                 }
 
+                $buyOpts = array_filter(['max_price' => $maxCost, 'operator' => $request->operator]);
                 $buy = $request->type === NumberRequest::TYPE_RENTAL
-                    ? $svc->buyRental($request->country, $request->service, ['max_price' => $maxCost])
-                    : $svc->buyOtp($request->country, $request->service, ['max_price' => $maxCost]);
+                    ? $svc->buyRental($request->country, $request->service, $buyOpts)
+                    : $svc->buyOtp($request->country, $request->service, $buyOpts);
 
                 $order = SmsOrder::create([
                     'user_id' => $request->user->id,
@@ -163,7 +164,7 @@ class SmsNumberRouter
                 if ($this->isFullRent($request) && ! $svc->supportsFullRent()) {
                     continue;
                 }
-                $cost = $svc->priceFor($request->country, $request->service);
+                $cost = $svc->priceFor($request->country, $request->service, $request->operator);
 
                 return [
                     'provider' => $provider,
@@ -176,6 +177,82 @@ class SmsNumberRouter
         }
 
         throw new SmsException('No number available for that country right now.');
+    }
+
+    /**
+     * Operator comparison for the Step-3 picker (Numbers V6 §3). Merges every
+     * in-lane provider's networks into one RETAIL-priced list — carrier names are
+     * shown, the underlying provider is masked (rule 1.2), and provider COST is
+     * never returned. Sorted cheapest-first with the best in-stock row flagged.
+     *
+     * @return list<array{operator:string, label:string, retail:float, available:int, success:?float, in_stock:bool, best:bool}>
+     */
+    public function compareOperators(string $country, string $service, string $type): array
+    {
+        $rows = [];
+        foreach ($this->laneFor($country, $type) as $provider) {
+            $svc = app("number.{$provider}");
+            try {
+                if (method_exists($svc, 'operators')) {
+                    // Provider exposes per-network breakdown (5sim).
+                    foreach ($svc->operators($country, $service) as $op) {
+                        if ($op['cost'] <= 0) {
+                            continue;
+                        }
+                        $rows[] = [
+                            'operator' => (string) $op['operator'],           // raw slug — used to buy
+                            'label' => $this->prettyOperator($op['operator']), // shown to the user
+                            'retail' => round($this->pricing->calculateSmsRetail($op['cost'], $provider), 2),
+                            'available' => (int) $op['count'],
+                            'success' => $op['rate'] > 0 ? round($op['rate'], 1) : null,
+                            'in_stock' => $op['count'] > 0,
+                        ];
+                    }
+                } else {
+                    // Single-route provider — one masked "Standard" row (auto).
+                    $cost = $svc->priceFor($country, $service);
+                    if ($cost > 0) {
+                        $rows[] = [
+                            'operator' => '',    // no specific network — buys "auto/best"
+                            'label' => 'Standard',
+                            'retail' => round($this->pricing->calculateSmsRetail($cost, $provider), 2),
+                            'available' => 1,
+                            'success' => null,
+                            'in_stock' => true,
+                        ];
+                    }
+                }
+            } catch (Throwable) {
+                // provider has nothing for this pairing — skip it
+            }
+        }
+
+        // In-stock ahead of out-of-stock, then cheapest first; flag the best.
+        usort($rows, fn ($a, $b) => [$b['in_stock'], $a['retail']] <=> [$a['in_stock'], $b['retail']]);
+        $flagged = false;
+        foreach ($rows as $i => $row) {
+            $rows[$i]['best'] = ! $flagged && $row['in_stock'];
+            $flagged = $flagged || $row['in_stock'];
+        }
+
+        return $rows;
+    }
+
+    /** Cheapest in-stock country for a service (Smart Buy — auto-best-country). */
+    public function cheapestCountryFor(string $service): ?string
+    {
+        $svc = app('number.fivesim');
+
+        return method_exists($svc, 'cheapestCountryFor') ? $svc->cheapestCountryFor($service) : null;
+    }
+
+    /** Title-case a 5sim operator slug for display (virtual21 → Virtual 21). */
+    private function prettyOperator(string $op): string
+    {
+        $op = str_replace('_', ' ', $op);
+        $op = preg_replace('/([a-z])(\d)/', '$1 $2', $op) ?? $op;
+
+        return \Illuminate\Support\Str::title($op);
     }
 
     /** A rental for "any service" — needs a full-rent-capable provider. */

@@ -93,7 +93,7 @@ class HeroSmsService implements SmsProviderInterface
         return (string) ($map[strtolower($service)] ?? $service);
     }
 
-    public function priceFor(string $country, string $service): float
+    public function priceFor(string $country, string $service, ?string $operator = null): float
     {
         $this->guardConfigured();
 

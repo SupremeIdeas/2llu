@@ -120,6 +120,11 @@ class GetNumber extends Component
         $this->dispatch('open-country-picker', source: 'numbers', args: [], for: 'numbers', title: 'Choose a country');
     }
 
+    /** Step-3 operator comparison: chosen network ('' = auto/best) + panel tab. */
+    public string $operator = '';
+
+    public string $opTab = 'prices';
+
     #[On('service-picked')]
     public function onServicePicked(string $slug, string $name, string $for): void
     {
@@ -128,6 +133,7 @@ class GetNumber extends Component
         }
         $this->service = $slug;
         $this->serviceName = $name;
+        $this->operator = ''; // a new service invalidates the operator comparison
     }
 
     #[On('country-picked')]
@@ -139,6 +145,29 @@ class GetNumber extends Component
         $this->country = $code; // numbers source returns provider slugs (usa, nigeria…)
         $this->countryName = $name;
         $this->lineNumbers = []; // a new country invalidates any Naara Line results
+        $this->operator = '';    // and the operator comparison
+    }
+
+    /** Choose a specific network from the Step-3 comparison ('' = auto/best). */
+    public function pickOperator(string $operator): void
+    {
+        $this->operator = $operator;
+    }
+
+    /** Download the operator comparison (retail only — cost never included). */
+    public function exportOperatorsCsv(SmsNumberRouter $router)
+    {
+        $rows = $router->compareOperators($this->country, $this->service, $this->type);
+        $filename = "operators-{$this->service}-{$this->country}.csv";
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Network', 'Price (USD)', 'Availability', 'Success rate (%)']);
+            foreach ($rows as $r) {
+                fputcsv($out, [$r['label'], number_format($r['retail'], 2), $r['available'], $r['success'] ?? '—']);
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     // ---- Naara Line (permanent number) ---------------------------------------
@@ -242,8 +271,20 @@ class GetNumber extends Component
         }
         RateLimiter::hit($key, 60);
 
+        // Smart Buy (§3): auto-pick the cheapest in-stock country for the service,
+        // ignoring any manual operator choice (that belongs to a manual country).
+        $operator = $this->operator ?: null;
+        if ($this->buyMode === 'smart' && $this->type === NumberRequest::TYPE_OTP) {
+            $best = $router->cheapestCountryFor($this->service);
+            if ($best !== null) {
+                $this->country = $best;
+                $this->countryName = \App\Support\CountryNames::name($best) ?: ucfirst($best);
+            }
+            $operator = null; // best country implies best operator
+        }
+
         try {
-            $quote = $router->quote(new NumberRequest($this->country, $this->type, $this->service, $user));
+            $quote = $router->quote(new NumberRequest($this->country, $this->type, $this->service, $user, operator: $operator));
         } catch (SmsException $e) {
             $this->error = 'No number available for that country and service right now. Try another.';
 
@@ -304,7 +345,7 @@ class GetNumber extends Component
 
         try {
             $result = $router->order(new NumberRequest(
-                $this->country, $this->type, $this->service, $user, 'USD', $retail
+                $this->country, $this->type, $this->service, $user, 'USD', $retail, $operator
             ));
         } catch (SmsException $e) {
             // The router already refunded (charged was set).
@@ -369,14 +410,25 @@ class GetNumber extends Component
         // be Coming Soon). Only computed while a buy modal is open, so the whole
         // catalogue render stays cheap. Never exposes cost — retail only.
         $modalPrice = null;
+        $operators = [];
         if (in_array($this->modal, ['verify', 'rent'], true) && $order === null) {
+            $router = app(SmsNumberRouter::class);
             try {
-                $q = app(SmsNumberRouter::class)->quote(
-                    new NumberRequest($this->country, $this->type, $this->service, auth()->user())
+                $q = $router->quote(
+                    new NumberRequest($this->country, $this->type, $this->service, auth()->user(), operator: $this->operator ?: null)
                 );
                 $modalPrice = (float) $q['retail'];
             } catch (\Throwable) {
                 $modalPrice = null; // out of stock / not configured — shown as "checked at reservation"
+            }
+
+            // Step-3 operator comparison for Verify (manual mode) — retail only.
+            if ($this->modal === 'verify' && $this->buyMode === 'manual') {
+                try {
+                    $operators = $router->compareOperators($this->country, $this->service, $this->type);
+                } catch (\Throwable) {
+                    $operators = [];
+                }
             }
         }
 
@@ -389,6 +441,7 @@ class GetNumber extends Component
             'fullRentAvailable' => \App\Support\ProviderStatus::isActive('herosms')
                 || \App\Support\ProviderStatus::isActive('virtsms'),
             'modalPrice' => $modalPrice,
+            'operators' => $operators,
             'permanentAvailable' => \App\Support\ProviderStatus::isActive('twilio')
                 || \App\Support\ProviderStatus::isActive('telnyx'),
         ]);

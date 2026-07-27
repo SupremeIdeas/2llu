@@ -70,6 +70,54 @@
         @endif
     </div>
 
+    {{-- Step 3 — operator comparison (manual only). Networks merged across the
+         lane, RETAIL-priced (provider + cost hidden), best flagged. Prices /
+         Statistics tabs + CSV export. --}}
+    @if ($buyMode === 'manual' && count($operators))
+        <div class="mt-4" x-data="{ tab: @entangle('opTab').live }">
+            <div class="mb-2 flex items-center justify-between">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Networks</p>
+                <div class="flex items-center gap-2">
+                    <div class="flex rounded-full border border-slate-200 bg-slate-100 p-0.5 text-[11px] font-semibold dark:border-white/10 dark:bg-white/5">
+                        <button type="button" @click="tab = 'prices'" :class="tab === 'prices' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-400'" class="rounded-full px-2.5 py-1 transition">Prices</button>
+                        <button type="button" @click="tab = 'stats'" :class="tab === 'stats' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-400'" class="rounded-full px-2.5 py-1 transition">Statistics</button>
+                    </div>
+                    <button type="button" wire:click="exportOperatorsCsv" title="Export CSV"
+                            class="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-primary dark:hover:bg-white/10"><x-icon name="download" class="h-4 w-4" /></button>
+                </div>
+            </div>
+
+            <div class="space-y-1.5">
+                {{-- Auto / best --}}
+                <button type="button" wire:click="pickOperator('')"
+                        class="flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition {{ $operator === '' ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-200 dark:border-white/10' }}">
+                    <span class="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100"><x-icon name="zap" class="h-4 w-4 text-accent" /> Auto — best network</span>
+                    <span class="text-xs text-slate-400">Recommended</span>
+                </button>
+
+                @foreach ($operators as $op)
+                    <button type="button" @disabled(! $op['in_stock']) wire:click="pickOperator('{{ $op['operator'] }}')"
+                            class="flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition disabled:opacity-45
+                                   {{ $operator === $op['operator'] && $operator !== '' ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-200 dark:border-white/10' }}">
+                        <span class="flex min-w-0 items-center gap-2">
+                            <span class="truncate font-medium text-slate-800 dark:text-slate-100">{{ $op['label'] }}</span>
+                            @if ($op['best'])
+                                <span class="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase text-green-700 dark:bg-green-950/50 dark:text-green-300">Best</span>
+                            @endif
+                            @unless ($op['in_stock'])<span class="shrink-0 text-[10px] font-semibold uppercase text-slate-400">Out of stock</span>@endunless
+                        </span>
+                        {{-- Prices tab --}}
+                        <span x-show="tab === 'prices'" class="shrink-0 font-semibold text-slate-900 dark:text-white">${{ number_format($op['retail'], 2) }}</span>
+                        {{-- Statistics tab --}}
+                        <span x-show="tab === 'stats'" x-cloak class="shrink-0 text-right text-[11px] text-slate-500 dark:text-slate-400">
+                            {{ $op['available'] }} avail.@if ($op['success'] !== null) · {{ $op['success'] }}%@endif
+                        </span>
+                    </button>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     @if ($error)
         <p class="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">{{ $error }}</p>
     @endif

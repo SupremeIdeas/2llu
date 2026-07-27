@@ -25,6 +25,9 @@ class NumberRequest
         public readonly User $user,
         public readonly string $currency = 'USD',
         public readonly ?float $charged = null,
+        // Optional specific network chosen from the Step-3 operator comparison;
+        // null/'any' lets the provider pick the best (cheapest in-stock).
+        public readonly ?string $operator = null,
     ) {
     }
 
@@ -41,6 +44,7 @@ class NumberRequest
             'service' => $this->service,
             'user_id' => $this->user->id,
             'currency' => $this->currency,
+            'operator' => $this->operator,
         ];
     }
 }

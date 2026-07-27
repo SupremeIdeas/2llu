@@ -26,7 +26,7 @@ class GetatextService implements SmsProviderInterface
             ->asJson();
     }
 
-    public function priceFor(string $country, string $service): float
+    public function priceFor(string $country, string $service, ?string $operator = null): float
     {
         $items = $this->client()->get('/prices-info')->throw()->json() ?? [];
 

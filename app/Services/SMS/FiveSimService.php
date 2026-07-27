@@ -26,13 +26,21 @@ class FiveSimService implements SmsProviderInterface
             ->acceptJson();
     }
 
-    public function priceFor(string $country, string $service): float
+    public function priceFor(string $country, string $service, ?string $operator = null): float
     {
-        $data = Cache::remember("5sim_price_{$country}_{$service}", 300, fn () => $this->client()
-            ->get('/guest/prices', ['country' => $country, 'product' => $service])
-            ->throw()->json() ?? []);
+        $operators = $this->rawOperators($country, $service);
 
-        $operators = data_get($data, "{$country}.{$service}", []);
+        // A specific operator was chosen (Step-3 comparison) — price THAT one so
+        // the charge matches what the user picked; must be in stock.
+        if ($operator !== null && $operator !== '' && $operator !== 'any') {
+            $op = $operators[$operator] ?? null;
+            if ($op === null || (int) ($op['count'] ?? 0) <= 0) {
+                throw new OutOfStockException("5sim operator {$operator} out of stock for {$service} in {$country}.");
+            }
+
+            return (float) ($op['cost'] ?? 0);
+        }
+
         $best = null;
         foreach ($operators as $op) {
             if ((int) ($op['count'] ?? 0) > 0) {
@@ -46,6 +54,66 @@ class FiveSimService implements SmsProviderInterface
         }
 
         return $best;
+    }
+
+    /** Raw operator map for a country+service: [operator => [cost,count,rate]]. */
+    private function rawOperators(string $country, string $service): array
+    {
+        $data = Cache::remember("5sim_price_{$country}_{$service}", 300, fn () => $this->client()
+            ->get('/guest/prices', ['country' => $country, 'product' => $service])
+            ->throw()->json() ?? []);
+
+        return (array) data_get($data, "{$country}.{$service}", []);
+    }
+
+    /**
+     * Operator comparison rows for a country+service (Numbers V6 §3 — Step 3).
+     * COST-only here (internal); the router layers retail on top and never
+     * exposes cost. Each row: operator, cost, count (availability), rate
+     * (5sim success %). Sorted cheapest-first, in-stock ahead of out-of-stock.
+     *
+     * @return list<array{operator:string, cost:float, count:int, rate:float}>
+     */
+    public function operators(string $country, string $service): array
+    {
+        $rows = [];
+        foreach ($this->rawOperators($country, $service) as $name => $op) {
+            $rows[] = [
+                'operator' => (string) $name,
+                'cost' => (float) ($op['cost'] ?? 0),
+                'count' => (int) ($op['count'] ?? 0),
+                'rate' => (float) ($op['rate'] ?? 0),
+            ];
+        }
+        usort($rows, fn ($a, $b) => [$b['count'] > 0, -$a['cost']] <=> [$a['count'] > 0, -$b['cost']]);
+
+        return $rows;
+    }
+
+    /**
+     * Cheapest in-stock country for a service across ALL 5sim countries in one
+     * call (Smart Buy — auto-best-country). Returns the country slug or null.
+     */
+    public function cheapestCountryFor(string $service): ?string
+    {
+        $data = Cache::remember("5sim_prod_{$service}", 300, fn () => $this->client()
+            ->get('/guest/prices', ['product' => $service])->throw()->json() ?? []);
+
+        $bestCountry = null;
+        $bestCost = null;
+        foreach ((array) $data as $country => $products) {
+            foreach ((array) data_get($products, $service, []) as $op) {
+                if ((int) ($op['count'] ?? 0) > 0) {
+                    $cost = (float) ($op['cost'] ?? 0);
+                    if ($bestCost === null || $cost < $bestCost) {
+                        $bestCost = $cost;
+                        $bestCountry = (string) $country;
+                    }
+                }
+            }
+        }
+
+        return $bestCountry;
     }
 
     public function buyOtp(string $country, string $service, array $options = []): array
