@@ -5,17 +5,22 @@ namespace App\Livewire;
 use App\Models\EsimPlan;
 use App\Models\Merchant;
 use App\Models\MerchantClient;
+use App\Models\MerchantClientSubscription;
 use App\Services\Merchants\MerchantClientService;
 use App\Services\Merchants\MerchantException;
+use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
- * Merchant V2 — client management. A V2 merchant manages clients who never log
- * in and subscribes eSIMs to them from the merchant's own wallet. Searchable,
- * paginated list (matching Admin\Users' pattern). 404s for a non-V2 merchant.
+ * Merchant V2 — premium client eSIM control. A V2 merchant manages clients who
+ * never log in: register their device, check eSIM compatibility, subscribe an
+ * eSIM (Naara Data or Naara Connect) from the merchant wallet, watch each
+ * client's validity countdown, lock funds for auto-renewal, disable/re-provision
+ * on (non-)payment, message clients on WhatsApp, and invoice them. 404s for a
+ * non-V2 merchant.
  */
 #[Layout('components.layouts.customer')]
 class MerchantClients extends Component
@@ -26,19 +31,26 @@ class MerchantClients extends Component
 
     // Add/edit form.
     public ?int $editingId = null;
-
     public string $name = '';
-
     public string $contact = '';
-
+    public string $whatsapp = '';
+    public string $email = '';
     public string $device = '';
-
+    public string $device_os = '';
     public string $notes = '';
 
     // Assign-eSIM buffer.
     public ?int $assignClientId = null;
-
+    public string $assignType = 'data';   // data | connect
     public ?int $assignPlanId = null;
+    public bool $assignForce = false;
+
+    // Invoice buffer.
+    public ?int $invoiceClientId = null;
+    public string $invoiceDesc = '';
+    public $invoiceAmount = null;
+    public ?string $invoiceLink = null;
+    public ?string $invoiceText = null;
 
     public ?string $error = null;
 
@@ -60,24 +72,35 @@ class MerchantClients extends Component
         $this->resetPage();
     }
 
+    private function formData(): array
+    {
+        return [
+            'name' => $this->name, 'contact' => $this->contact, 'whatsapp' => $this->whatsapp,
+            'email' => $this->email, 'device' => $this->device, 'device_os' => $this->device_os,
+            'notes' => $this->notes,
+        ];
+    }
+
     public function save(MerchantClientService $service): void
     {
         $this->error = null;
         $this->validate([
             'name' => 'required|string|max:120',
             'contact' => 'nullable|string|max:120',
+            'whatsapp' => 'nullable|string|max:32',
+            'email' => 'nullable|email|max:190',
             'device' => 'nullable|string|max:120',
+            'device_os' => 'nullable|in:ios,android,other',
             'notes' => 'nullable|string|max:1000',
         ]);
         $merchant = $this->merchant();
-        $data = ['name' => $this->name, 'contact' => $this->contact, 'device' => $this->device, 'notes' => $this->notes];
 
         try {
             if ($this->editingId) {
                 $client = MerchantClient::where('merchant_id', $merchant->id)->findOrFail($this->editingId);
-                $service->updateClient($merchant, $client, $data);
+                $service->updateClient($merchant, $client, $this->formData());
             } else {
-                $service->addClient($merchant, $data);
+                $service->addClient($merchant, $this->formData());
             }
         } catch (MerchantException $e) {
             $this->error = $e->getMessage();
@@ -85,7 +108,7 @@ class MerchantClients extends Component
             return;
         }
 
-        $this->reset('editingId', 'name', 'contact', 'device', 'notes');
+        $this->reset('editingId', 'name', 'contact', 'whatsapp', 'email', 'device', 'device_os', 'notes');
         $this->dispatch('nx-toast', type: 'success', message: 'Client saved.');
         $this->dispatch('close-client-sheet');
     }
@@ -96,13 +119,16 @@ class MerchantClients extends Component
         $this->editingId = $client->id;
         $this->name = $client->name;
         $this->contact = (string) $client->contact;
+        $this->whatsapp = (string) $client->whatsapp;
+        $this->email = (string) $client->email;
         $this->device = (string) $client->device;
+        $this->device_os = (string) $client->device_os;
         $this->notes = (string) $client->notes;
     }
 
     public function newClient(): void
     {
-        $this->reset('editingId', 'name', 'contact', 'device', 'notes', 'error');
+        $this->reset('editingId', 'name', 'contact', 'whatsapp', 'email', 'device', 'device_os', 'notes', 'error');
     }
 
     public function toggleActive(int $id, MerchantClientService $service): void
@@ -110,6 +136,13 @@ class MerchantClients extends Component
         $merchant = $this->merchant();
         $client = MerchantClient::where('merchant_id', $merchant->id)->findOrFail($id);
         $service->setActive($merchant, $client, ! $client->is_active);
+    }
+
+    public function openAssign(int $clientId): void
+    {
+        $this->reset('assignPlanId', 'assignForce', 'error');
+        $this->assignClientId = $clientId;
+        $this->assignType = 'data';
     }
 
     public function assign(MerchantClientService $service): void
@@ -120,7 +153,7 @@ class MerchantClients extends Component
         $plan = EsimPlan::findOrFail($this->assignPlanId);
 
         try {
-            $service->assignEsim($merchant, $client, $plan);
+            $service->assignEsim($merchant, $client, $plan, force: $this->assignForce);
         } catch (MerchantException $e) {
             $this->error = $e->getMessage();
             $this->dispatch('nx-toast', type: 'error', message: $e->getMessage());
@@ -128,27 +161,88 @@ class MerchantClients extends Component
             return;
         }
 
-        $this->reset('assignClientId', 'assignPlanId');
+        $this->reset('assignClientId', 'assignPlanId', 'assignForce');
         $this->dispatch('nx-toast', variant: 'hero', type: 'success',
             title: 'eSIM assigned', message: "It's provisioning now and will show under the client.");
+    }
+
+    public function enableAutoRenew(int $subscriptionId, MerchantClientService $service): void
+    {
+        $merchant = $this->merchant();
+        $sub = MerchantClientSubscription::where('merchant_id', $merchant->id)->findOrFail($subscriptionId);
+        try {
+            $service->enableAutoRenew($merchant, $sub);
+            $this->dispatch('nx-toast', type: 'success', message: 'Auto-renewal locked. The next renewal amount is reserved.');
+        } catch (MerchantException $e) {
+            $this->dispatch('nx-toast', type: 'error', message: $e->getMessage());
+        }
+    }
+
+    public function disableEsim(int $subscriptionId, MerchantClientService $service): void
+    {
+        $merchant = $this->merchant();
+        $sub = MerchantClientSubscription::where('merchant_id', $merchant->id)->findOrFail($subscriptionId);
+        try {
+            $service->disableEsim($merchant, $sub);
+            $this->dispatch('nx-toast', type: 'success', message: 'Client eSIM disabled.');
+        } catch (MerchantException $e) {
+            $this->dispatch('nx-toast', type: 'error', message: $e->getMessage());
+        }
+    }
+
+    /** Open the invoice builder for a client. */
+    public function openInvoice(int $clientId): void
+    {
+        $this->reset('invoiceDesc', 'invoiceAmount', 'invoiceLink', 'invoiceText');
+        $this->invoiceClientId = $clientId;
+    }
+
+    /** Build a branded invoice message + WhatsApp forward link. */
+    public function generateInvoice(): void
+    {
+        $merchant = $this->merchant();
+        $client = MerchantClient::where('merchant_id', $merchant->id)->findOrFail($this->invoiceClientId);
+        $this->validate([
+            'invoiceAmount' => 'required|numeric|min:0.01|max:1000000',
+            'invoiceDesc' => 'required|string|max:200',
+        ]);
+
+        $brand = $merchant->business_name ?: 'Your provider';
+        $amount = number_format((float) $this->invoiceAmount, 2);
+        $this->invoiceText = "*{$brand} — Invoice*\n\n".
+            "Client: {$client->name}\n".
+            "Service: {$this->invoiceDesc}\n".
+            "Amount due: \${$amount}\n".
+            'Date: '.now()->format('M j, Y')."\n\n".
+            'Thank you for your business.';
+
+        $this->invoiceLink = $client->whatsappLink($this->invoiceText);
     }
 
     public function render()
     {
         $merchant = $this->merchant();
+        $wallet = app(WalletService::class);
+
         $clients = MerchantClient::where('merchant_id', $merchant->id)
             ->withCount('esimOrders')
+            ->with(['subscriptions' => fn ($q) => $q->where('status', '!=', MerchantClientSubscription::STATUS_DISABLED)->latest('id')->limit(1)])
             ->when($this->search !== '', function ($q) {
                 $term = '%'.$this->search.'%';
-                $q->where(fn ($w) => $w->where('name', 'like', $term)->orWhere('device', 'like', $term)->orWhere('contact', 'like', $term));
+                $q->where(fn ($w) => $w->where('name', 'like', $term)
+                    ->orWhere('device', 'like', $term)->orWhere('contact', 'like', $term)
+                    ->orWhere('whatsapp', 'like', $term)->orWhere('email', 'like', $term));
             })
             ->orderByDesc('is_active')->orderBy('name')
             ->paginate(12);
 
         return view('livewire.merchant-clients', [
             'clients' => $clients,
-            'plans' => EsimPlan::where('is_active', true)->orderBy('name')->limit(200)->get(['id', 'name']),
+            'dataPlans' => EsimPlan::where('is_active', true)->where('has_voice', false)->orderBy('name')->limit(200)->get(['id', 'name']),
+            'connectPlans' => EsimPlan::where('is_active', true)->where('has_voice', true)->orderBy('name')->limit(200)->get(['id', 'name']),
             'walletUsd' => round((float) ($merchant->owner->wallet?->usd_balance ?? 0), 2),
+            'reservedUsd' => $wallet->reservedUsd($merchant->owner),
+            'spendableUsd' => $wallet->spendableUsd($merchant->owner),
         ]);
     }
 }

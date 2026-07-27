@@ -9,6 +9,34 @@
 
 ## DONE
 
+### ✅ Merchant V2 — premium client eSIM control — built 2026-07-27
+Full client-eSIM lifecycle on the merchant wallet, money-safe throughout.
+- **Money core:** `user_wallets.reserved_usd` + `WalletService::reserve()/release()`;
+  every USD debit now floors at `reserved` so a queued auto-renewal amount is
+  locked out of spendable ("cannot be reused") until the due-date run resolves
+  it. `WalletReservationTest` (6). Fixed a **latent bug**: `MerchantClientService`
+  imported a non-existent `EsimProviderException`, so the original assign's
+  provider-failure refund path would have leaked an uncaught exception — now
+  `App\Exceptions\EsimProviderException`, verified by a failure test.
+- **Lifecycle:** `merchant_client_subscriptions` (type data|connect, status,
+  expiry countdown, auto-renew earmark). `assignEsim` now creates the
+  subscription, sets expiry from plan validity, tags the order, and runs a
+  **device-compatibility gate** (blocks a known-incompatible device unless the
+  merchant overrides). `enableAutoRenew` reserves the next renewal (one-way per
+  the platform rule); `renewDueSubscription` (due-date) releases the earmark then
+  re-provisions through the SAME tested checkout path — refunds fully on provider
+  failure (the only way the reserved funds return). `disableEsim` frees the
+  earmark + disables.
+- **Scheduled** `merchant:client-subscriptions` (daily 05:30): settles due
+  auto-renewals, expires lapsed subs, and emails merchants due-soon/expired/
+  renewed/failed alerts (`MerchantSubscriptionDueNotification`).
+- **Client UI:** device + WhatsApp + email + OS fields, search across all;
+  per-client subscription card with live countdown + status; Data/Connect assign
+  sheet with compatibility override; Mark auto-billed (locks funds), Disable,
+  New/renew; one-tap **WhatsApp** reminder (prebuilt message); **invoice** builder
+  (custom price + merchant brand → WhatsApp). Wallet strip shows spendable vs
+  reserved. `MerchantClientEsimTest` (9). Suite 861.
+
 ### ✅ Claude-assisted blog authoring — built 2026-07-27
 `BlogArticleAssistant` (reuses `AnthropicClient`, key-gated). Suggests the NEXT
 best article from existing posts, drafts SEO body + excerpt + meta, proposes a

@@ -57,3 +57,7 @@ Schedule::command('media:migrate-to-wasabi')->hourly()->withoutOverlapping();
 // Partner profit-share payouts — daily, but each partner is only paid when a
 // full weekly/monthly period has elapsed (idempotent per period).
 Schedule::command('partners:payout-run')->dailyAt('04:30')->withoutOverlapping();
+
+// Merchant V2 client eSIM control: settle due auto-renewals, expire lapsed
+// subscriptions, and alert merchants about upcoming renewals (money-safe).
+Schedule::command('merchant:client-subscriptions')->dailyAt('05:30')->withoutOverlapping();
