@@ -12,6 +12,8 @@ use App\Services\SMS\SmsNumberRouter;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
@@ -27,6 +29,21 @@ class GetNumber extends Component
     public string $service = 'whatsapp';
 
     public string $type = 'otp';
+
+    /** Which product modal is open ('', 'verify', 'rent', 'line') — deep-linkable. */
+    #[Url(as: 'modal')]
+    public string $modal = '';
+
+    /** Verify modal: 'manual' (pick each step) or 'smart' (auto-best). */
+    public string $buyMode = 'manual';
+
+    /** Friendly names for the current picks (from the shared pickers). */
+    public string $serviceName = 'WhatsApp';
+
+    public string $countryName = 'United States';
+
+    /** Rent modal: rental period in hours (pills). */
+    public int $rentHours = 168;
 
     public ?int $orderId = null;
 
@@ -53,6 +70,147 @@ class GetNumber extends Component
         if ($this->type !== NumberRequest::TYPE_RENTAL && $this->service === NumberRequest::SERVICE_ANY) {
             $this->service = 'whatsapp';
         }
+    }
+
+    /** Open a product modal from the bento (verify | rent | line). */
+    #[On('open-numbers-modal')]
+    public function openModal(string $name): void
+    {
+        if (! in_array($name, ['verify', 'rent', 'line'], true)) {
+            return;
+        }
+        $this->reset('orderId', 'error', 'couponNote');
+        $this->modal = $name;
+        // Default the request type + a sensible service per line.
+        $this->type = match ($name) {
+            'rent' => NumberRequest::TYPE_RENTAL,
+            'line' => NumberRequest::TYPE_PERMANENT,
+            default => NumberRequest::TYPE_OTP,
+        };
+    }
+
+    public function closeModal(): void
+    {
+        $this->modal = '';
+    }
+
+    /** Open the shared service picker for the number flow. */
+    public function pickService(): void
+    {
+        $this->dispatch('open-service-picker', for: 'numbers', title: 'Choose a service');
+    }
+
+    /** Open the shared country picker (numbers source → dial codes). */
+    public function pickCountry(): void
+    {
+        $this->dispatch('open-country-picker', source: 'numbers', args: [], for: 'numbers', title: 'Choose a country');
+    }
+
+    #[On('service-picked')]
+    public function onServicePicked(string $slug, string $name, string $for): void
+    {
+        if ($for !== 'numbers') {
+            return;
+        }
+        $this->service = $slug;
+        $this->serviceName = $name;
+    }
+
+    #[On('country-picked')]
+    public function onCountryPicked(string $code, string $name, string $for): void
+    {
+        if ($for !== 'numbers' || $code === '') {
+            return;
+        }
+        $this->country = $code; // numbers source returns provider slugs (usa, nigeria…)
+        $this->countryName = $name;
+        $this->lineNumbers = []; // a new country invalidates any Naara Line results
+    }
+
+    // ---- Naara Line (permanent number) ---------------------------------------
+
+    /** Optional vanity spec typed into the Line modal (digits + position). */
+    public string $vanity = '';
+
+    /** Naara Line search results — [['number','locality','monthly_retail'], …]. */
+    public array $lineNumbers = [];
+
+    /** The owning provider for the current results — internal, NEVER shown. */
+    public ?string $lineProvider = null;
+
+    public ?string $lineDone = null;
+
+    public function searchLine(\App\Services\SMS\PermanentNumberRouter $router): void
+    {
+        $this->error = null;
+        $this->lineDone = null;
+
+        // Interpret the vanity box: bare digits → "ends with"; "*777" / "contains
+        // 777" → "contains". Keep it forgiving.
+        $raw = strtolower(trim($this->vanity));
+        $position = str_contains($raw, 'contain') || str_starts_with($raw, '*') ? 'contains' : 'ends';
+        $digits = preg_replace('/\D/', '', $raw);
+
+        try {
+            $result = $router->search($this->country, ['digits' => $digits, 'position' => $position, 'limit' => 12]);
+        } catch (\Throwable $e) {
+            $this->error = 'Number search is unavailable for that country right now. Try another.';
+            $this->lineNumbers = [];
+
+            return;
+        }
+
+        $this->lineProvider = $result['provider'];       // internal only
+        $this->lineNumbers = $result['numbers'] ?? [];
+        if ($this->lineNumbers === []) {
+            $this->error = 'No matching numbers found. Try a different country or filter.';
+        }
+    }
+
+    public function getLine(string $number, \App\Services\SMS\PermanentNumberRouter $router): void
+    {
+        $this->error = null;
+        $user = auth()->user();
+
+        $key = 'orders:'.$user->id;
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            $this->error = 'Too many requests in a short time. Please wait a minute and try again.';
+
+            return;
+        }
+        RateLimiter::hit($key, 60);
+
+        // Only allow provisioning a number that was actually offered (the provider
+        // is validated again inside provision()).
+        if ($this->lineProvider === null || ! collect($this->lineNumbers)->contains('number', $number)) {
+            $this->error = 'Please search again — that number is no longer listed.';
+
+            return;
+        }
+
+        try {
+            // provision() owns the whole money path: charge first month, buy at the
+            // provider, persist the subscription, refund on any failure.
+            $vnum = $router->provision($user, $this->country, $number, $this->lineProvider);
+        } catch (InsufficientBalanceException $e) {
+            $this->error = 'Your wallet balance is too low for the first month. Please top up and try again.';
+            $this->dispatch('nx-toast', variant: 'hero', type: 'error', title: 'Payment failed',
+                message: 'Your wallet balance is too low — you were not charged. Top up and try again.',
+                cta: ['label' => 'Top up wallet', 'href' => route('wallet')]);
+
+            return;
+        } catch (SmsException $e) {
+            $this->error = $e->getMessage();
+
+            return;
+        }
+
+        $this->lineDone = $vnum->phone_number ?? $number;
+        $this->lineNumbers = [];
+        \App\Support\Mailer::notify($user, new \App\Notifications\OrderPlacedNotification('number', 'Naara Line', (float) $vnum->monthly_retail, 'USD'));
+        $this->dispatch('nx-toast', variant: 'hero', type: 'success', title: 'Naara Line active',
+            message: 'Your permanent number is ready — set up call forwarding or the dialer from your dashboard.',
+            cta: ['label' => 'View my numbers', 'href' => route('dashboard')]);
     }
 
     public function order(WalletService $wallet, SmsNumberRouter $router, CouponEngine $coupons, \App\Services\Pricing\PricingEngine $pricing, \App\Services\Merchants\MerchantEarningsService $earnings): void
@@ -193,6 +351,21 @@ class GetNumber extends Component
         // The FULL catalogue (static base + synced provider lists) — never a
         // curated handful. Provided at render time so the Livewire snapshot
         // isn't bloated with the whole list.
+        // Best-effort live retail for the OPEN modal (never blocks; providers may
+        // be Coming Soon). Only computed while a buy modal is open, so the whole
+        // catalogue render stays cheap. Never exposes cost — retail only.
+        $modalPrice = null;
+        if (in_array($this->modal, ['verify', 'rent'], true) && $order === null) {
+            try {
+                $q = app(SmsNumberRouter::class)->quote(
+                    new NumberRequest($this->country, $this->type, $this->service, auth()->user())
+                );
+                $modalPrice = (float) $q['retail'];
+            } catch (\Throwable) {
+                $modalPrice = null; // out of stock / not configured — shown as "checked at reservation"
+            }
+        }
+
         return view('livewire.get-number', [
             'order' => $order,
             'countries' => \App\Support\NumberCatalogue::countries(),
@@ -201,6 +374,9 @@ class GetNumber extends Component
             // provider is configured, so there's never a dead option.
             'fullRentAvailable' => \App\Support\ProviderStatus::isActive('herosms')
                 || \App\Support\ProviderStatus::isActive('virtsms'),
+            'modalPrice' => $modalPrice,
+            'permanentAvailable' => \App\Support\ProviderStatus::isActive('twilio')
+                || \App\Support\ProviderStatus::isActive('telnyx'),
         ]);
     }
 }

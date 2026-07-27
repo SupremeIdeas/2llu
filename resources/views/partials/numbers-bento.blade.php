@@ -20,7 +20,7 @@
 
         <{{ $tag }}
             @if ($isRoute) href="{{ route($card['link']['route']) }}" wire:navigate
-            @else type="button" x-on:click="$dispatch('open-numbers-modal', { name: '{{ $card['link']['modal'] }}' })" @endif
+            @else type="button" wire:click="openModal('{{ $card['link']['modal'] }}')" @endif
             wire:key="bento-{{ $card['key'] }}"
             class="nx-bento group relative flex overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-gradient-to-br dark:from-[#0C2434] dark:to-[#081521] dark:shadow-[0_12px_40px_-18px_rgba(0,0,0,0.7)] {{ $spanClass }} {{ $minH }}">
 

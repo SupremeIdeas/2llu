@@ -1,14 +1,18 @@
-<div class="mx-auto max-w-3xl" x-data
-     @open-numbers-modal.window="document.getElementById('numbers-flow')?.scrollIntoView({ behavior: 'smooth' })">
+<div class="mx-auto max-w-3xl">
     {{-- Premium 4-image interchanging-reveal hero (Numbers V6 §0). --}}
     @include('partials.numbers-hero')
 
-    {{-- Six-card bento grid, locked 2/1/2/1 layout (Numbers V6 §1). --}}
+    {{-- Six-card bento grid (Numbers V6 §1). Verify/Rent/Line cards open the
+         dedicated product modals below; the rest route to their pages. --}}
     @include('partials.numbers-bento')
 
-    {{-- The working purchase flow. Bento "modal" cards scroll here for now;
-         Stage 5 replaces this with the dedicated Verify/Rent/Line modals. --}}
-    <div id="numbers-flow" class="mx-auto max-w-lg scroll-mt-6">
+    {{-- Product modals (pop like the mobile sheet) + the shared pickers. --}}
+    @include('partials.numbers-modals')
+    <livewire:country-picker />
+    <livewire:service-picker />
+
+    {{-- The classic inline flow stays as an accessible fallback below the bento. --}}
+    <div id="numbers-flow" class="mx-auto mt-8 max-w-lg scroll-mt-6">
         <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Get a Number</h1>
     <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">Receive verification codes for any country. We pick the best network for you.</p>
 
