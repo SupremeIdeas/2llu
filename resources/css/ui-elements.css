@@ -879,6 +879,18 @@
     .dashboard-bg--animated::before { animation: none; }
 }
 
+/* Call screen (Dialer in-call) — a premium, soft two-tone gradient instead of a
+   flat colour: a teal glow blooming from the top (a brand LIGHT colour, iOS-like)
+   into a navy base, with a faint warm-gold catch at the very bottom for depth.
+   Brand-var driven so it tracks a recolour. It reads the same in light or dark —
+   an in-call screen is always dark-styled, like iOS. */
+.nx-callbg {
+    background:
+        radial-gradient(95% 60% at 50% -12%, rgb(var(--brand-primary) / 0.55) 0%, rgb(var(--brand-primary) / 0.12) 34%, transparent 62%),
+        radial-gradient(80% 45% at 50% 112%, rgb(var(--brand-accent) / 0.14) 0%, transparent 55%),
+        linear-gradient(162deg, #0d2b33 0%, rgb(var(--brand-navy)) 55%, #081019 100%);
+}
+
 /* --- Donut stat card (after code-town3) ------------------------------------ */
 .nx-donut {
     width: 7rem;

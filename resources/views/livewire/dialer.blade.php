@@ -135,8 +135,8 @@
          dialer.js (shows/hides via the `hidden` class). Alpine owns only
          the in-call DTMF keypad's visibility; JS owns the audio + controls.
          ============================================================ --}}
-    <div data-dialer-panel class="hidden fixed inset-0 z-[70] flex flex-col items-center justify-between
-                bg-gradient-to-b from-[#0D1B2A] via-[#122338] to-[#0A1524] px-6 py-12 text-white"
+    <div data-dialer-panel class="nx-callbg hidden fixed inset-0 z-[70] flex flex-col items-center justify-between
+                px-6 py-12 text-white"
          x-data="{ pad: false }">
 
         {{-- Callee identity --}}
