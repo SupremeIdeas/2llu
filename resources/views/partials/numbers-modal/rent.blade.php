@@ -59,6 +59,28 @@
         @endunless
     </div>
 
+    {{-- Duration — only US numbers (Getatext) offer real longer rentals; every
+         other country is a fixed short-term rental, stated honestly. --}}
+    @if ($isUsRental)
+        <div class="mt-4">
+            <p class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Rental length</p>
+            <div class="grid grid-cols-3 gap-2">
+                @foreach ($rentalDurations as $code => $label)
+                    <button type="button" wire:click="$set('rentalDuration', '{{ $code }}')"
+                            class="rounded-xl border px-2 py-2.5 text-sm font-semibold transition {{ $rentalDuration === $code ? 'border-primary bg-primary/5 text-primary dark:bg-primary/10 dark:text-teal-300' : 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300' }}">{{ $label }}</button>
+                @endforeach
+            </div>
+            <label class="mt-3 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                <input type="checkbox" wire:model.live="autoRenew" class="rounded border-slate-300 text-primary focus:ring-primary/40">
+                Auto-renew when it expires
+            </label>
+        </div>
+    @else
+        <p class="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-white/5 dark:text-slate-400">
+            <x-icon name="info" class="mr-1 inline h-3.5 w-3.5" /> A short-term rental — receives SMS for a fixed period. For a longer rental, choose a US number.
+        </p>
+    @endif
+
     @if ($error)
         <p class="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">{{ $error }}</p>
     @endif

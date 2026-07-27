@@ -83,7 +83,8 @@ class SmsNumberRouter
                     continue;
                 }
 
-                $cost = $svc->priceFor($request->country, $request->service, $request->operator); // live; throws OutOfStock
+                $cost = $svc->priceFor($request->country, $request->service, $request->operator)
+                    * $this->rentalMultiplier($request); // live; throws OutOfStock
 
                 // The user was quoted+charged `charged` at checkout. Protect that
                 // margin: if the live cost now exceeds (charged - min profit) —
@@ -100,7 +101,12 @@ class SmsNumberRouter
                     continue;
                 }
 
-                $buyOpts = array_filter(['max_price' => $maxCost, 'operator' => $request->operator]);
+                $buyOpts = array_filter([
+                    'max_price' => $maxCost,
+                    'operator' => $request->operator,
+                    'rental_time' => $request->rentalTime,
+                    'auto_renew' => $request->autoRenew ?: null,
+                ], fn ($v) => $v !== null);
                 $buy = $request->type === NumberRequest::TYPE_RENTAL
                     ? $svc->buyRental($request->country, $request->service, $buyOpts)
                     : $svc->buyOtp($request->country, $request->service, $buyOpts);
@@ -164,7 +170,8 @@ class SmsNumberRouter
                 if ($this->isFullRent($request) && ! $svc->supportsFullRent()) {
                     continue;
                 }
-                $cost = $svc->priceFor($request->country, $request->service, $request->operator);
+                $cost = $svc->priceFor($request->country, $request->service, $request->operator)
+                    * $this->rentalMultiplier($request);
 
                 return [
                     'provider' => $provider,
@@ -253,6 +260,25 @@ class SmsNumberRouter
         $op = preg_replace('/([a-z])(\d)/', '$1 $2', $op) ?? $op;
 
         return \Illuminate\Support\Str::title($op);
+    }
+
+    /**
+     * Price multiplier for a chosen long-rental duration (US/Getatext). Admin-set
+     * per tier so we price our own rental plans; 1 for a short-term rental or any
+     * non-duration request. The buy's margin guard reconciles the live cost, so a
+     * generous multiplier fails safe (skips + refunds) rather than losing money.
+     */
+    private function rentalMultiplier(NumberRequest $request): float
+    {
+        if ($request->type !== NumberRequest::TYPE_RENTAL || $request->rentalTime === null) {
+            return 1.0;
+        }
+        $defaults = ['1w' => 1.0, '1mo' => 3.5, '3mo' => 9.0];
+
+        return (float) \App\Models\Setting::getValue(
+            "numbers.rental_multiplier.{$request->rentalTime}",
+            $defaults[$request->rentalTime] ?? 1.0,
+        );
     }
 
     /** A rental for "any service" — needs a full-rent-capable provider. */

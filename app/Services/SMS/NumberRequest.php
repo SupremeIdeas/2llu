@@ -28,8 +28,15 @@ class NumberRequest
         // Optional specific network chosen from the Step-3 operator comparison;
         // null/'any' lets the provider pick the best (cheapest in-stock).
         public readonly ?string $operator = null,
+        // Long-rental duration (Getatext, US only): '1w' | '1mo' | '3mo'. Null =
+        // the provider's default short-term rental (5sim hosting elsewhere).
+        public readonly ?string $rentalTime = null,
+        public readonly bool $autoRenew = false,
     ) {
     }
+
+    /** Duration options offered for US long rentals, mapped to Getatext codes. */
+    public const RENTAL_DURATIONS = ['1w' => '1 week', '1mo' => '1 month', '3mo' => '3 months'];
 
     public function isUs(): bool
     {

@@ -125,6 +125,25 @@ class GetNumber extends Component
 
     public string $opTab = 'prices';
 
+    /** Long-rental duration (US/Getatext only) + auto-renew. */
+    public string $rentalDuration = '1w';
+
+    public bool $autoRenew = false;
+
+    /** A US number rental — the only lane where longer durations are real. */
+    public function isUsRental(): bool
+    {
+        return $this->type === NumberRequest::TYPE_RENTAL
+            && in_array(strtolower($this->country), ['usa', 'us'], true);
+    }
+
+    /** The rentalTime to thread into a request: only for a US long rental. */
+    private function activeRentalTime(): ?string
+    {
+        return $this->isUsRental() && array_key_exists($this->rentalDuration, NumberRequest::RENTAL_DURATIONS)
+            ? $this->rentalDuration : null;
+    }
+
     #[On('service-picked')]
     public function onServicePicked(string $slug, string $name, string $for): void
     {
@@ -283,8 +302,9 @@ class GetNumber extends Component
             $operator = null; // best country implies best operator
         }
 
+        $rentalTime = $this->activeRentalTime();
         try {
-            $quote = $router->quote(new NumberRequest($this->country, $this->type, $this->service, $user, operator: $operator));
+            $quote = $router->quote(new NumberRequest($this->country, $this->type, $this->service, $user, operator: $operator, rentalTime: $rentalTime, autoRenew: $this->autoRenew));
         } catch (SmsException $e) {
             $this->error = 'No number available for that country and service right now. Try another.';
 
@@ -345,7 +365,7 @@ class GetNumber extends Component
 
         try {
             $result = $router->order(new NumberRequest(
-                $this->country, $this->type, $this->service, $user, 'USD', $retail, $operator
+                $this->country, $this->type, $this->service, $user, 'USD', $retail, $operator, $rentalTime, $this->autoRenew
             ));
         } catch (SmsException $e) {
             // The router already refunded (charged was set).
@@ -415,7 +435,7 @@ class GetNumber extends Component
             $router = app(SmsNumberRouter::class);
             try {
                 $q = $router->quote(
-                    new NumberRequest($this->country, $this->type, $this->service, auth()->user(), operator: $this->operator ?: null)
+                    new NumberRequest($this->country, $this->type, $this->service, auth()->user(), operator: $this->operator ?: null, rentalTime: $this->activeRentalTime(), autoRenew: $this->autoRenew)
                 );
                 $modalPrice = (float) $q['retail'];
             } catch (\Throwable) {
@@ -442,6 +462,10 @@ class GetNumber extends Component
                 || \App\Support\ProviderStatus::isActive('virtsms'),
             'modalPrice' => $modalPrice,
             'operators' => $operators,
+            // US rentals (Getatext) can pick a longer duration; elsewhere it's a
+            // short-term rental at the provider's fixed period.
+            'isUsRental' => $this->isUsRental(),
+            'rentalDurations' => NumberRequest::RENTAL_DURATIONS,
             'permanentAvailable' => \App\Support\ProviderStatus::isActive('twilio')
                 || \App\Support\ProviderStatus::isActive('telnyx'),
         ]);
