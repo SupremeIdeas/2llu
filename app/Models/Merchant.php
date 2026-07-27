@@ -21,9 +21,13 @@ class Merchant extends Model
 
     public const REJECTED = 'rejected';
 
+    public const TIER_STANDARD = 'standard';
+
+    public const TIER_V2 = 'v2';
+
     protected $fillable = [
         'owner_user_id', 'business_name', 'slug', 'logo_url', 'brand_color',
-        'status', 'reseller_margin_pct', 'reason', 'reviewed_by', 'reviewed_at',
+        'status', 'tier', 'upgraded_at', 'reseller_margin_pct', 'reason', 'reviewed_by', 'reviewed_at',
     ];
 
     protected function casts(): array
@@ -31,7 +35,19 @@ class Merchant extends Model
         return [
             'reseller_margin_pct' => 'decimal:3',
             'reviewed_at' => 'datetime',
+            'upgraded_at' => 'datetime',
         ];
+    }
+
+    /** Merchant V2 — the client-management tier. */
+    public function isV2(): bool
+    {
+        return $this->tier === self::TIER_V2;
+    }
+
+    public function clients(): HasMany
+    {
+        return $this->hasMany(MerchantClient::class);
     }
 
     public function owner(): BelongsTo

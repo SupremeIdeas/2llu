@@ -22,6 +22,9 @@ class MerchantSettings
 
     public const MIN_REFERRALS = 'merchants.min_referrals';    // referred users
 
+    /** One-time price to self-upgrade to Merchant V2 (client management). */
+    public const UPGRADE_PRICE = 'merchants.upgrade_price_usd';
+
     public static function enabled(): bool
     {
         return (bool) Setting::getValue(self::FLAG, false);
@@ -46,5 +49,11 @@ class MerchantSettings
     public static function minReferrals(): int
     {
         return (int) Setting::getValue(self::MIN_REFERRALS, 1000);
+    }
+
+    /** Admin-editable V2 upgrade price (default $125) — never hardcoded. */
+    public static function upgradePriceUsd(): float
+    {
+        return (float) Setting::getValue(self::UPGRADE_PRICE, 125.0);
     }
 }

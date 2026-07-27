@@ -113,6 +113,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         // Merchant storefront dashboard (ROADMAP §Layer 3.5) — active merchants
         // only (404 otherwise): storefront, invite link, customers, earnings, payouts.
         Route::get('/merchant', \App\Livewire\MerchantDashboard::class)->name('merchant.dashboard');
+        // Merchant V2 — client management (404s for a non-V2 merchant).
+        Route::get('/merchant/clients', \App\Livewire\MerchantClients::class)->name('merchant.clients');
     });
 
     // Account & data rights (blueprint Section 26) — reachable while unverified

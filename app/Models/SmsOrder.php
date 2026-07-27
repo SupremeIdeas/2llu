@@ -9,6 +9,7 @@ class SmsOrder extends Model
 {
     protected $fillable = [
         'user_id',
+        'merchant_client_id',
         'provider',
         'service_id',
         'service_name',

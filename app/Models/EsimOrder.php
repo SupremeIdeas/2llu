@@ -9,6 +9,7 @@ class EsimOrder extends Model
 {
     protected $fillable = [
         'user_id',
+        'merchant_client_id',
         'plan_id',
         'provider',
         'provider_order_ref',
