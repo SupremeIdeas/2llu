@@ -32,9 +32,9 @@ class NumbersHeroContent
         '/img/numbers/hero-4.webp',
     ];
 
-    private const DEFAULT_TITLE = 'A number for everything. Anywhere in the world.';
+    private const DEFAULT_TITLE = 'A number for everything.';
 
-    private const DEFAULT_DESC = 'Virtual numbers for verification, rentals and a permanent line — voice and SMS, without a second phone.';
+    private const DEFAULT_DESC = 'Verification, rentals and a permanent line — voice & SMS.';
 
     public static function current(): array
     {
