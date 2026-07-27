@@ -9,6 +9,35 @@
 
 ## DONE
 
+### ✅ Dashboard background / Platform Theme + assistant polish — built 2026-07-27
+A brand-gradient wallpaper behind the whole authenticated app shell, plus the
+assistant/greeting refresh the owner asked for.
+- **Platform Theme** (`.dashboard-bg`): a two-anchor layered bloom (teal→gold→
+  coral; dark = teal+gold, no coral) driven by the live `--brand-*` triples and
+  `--dbg-*` tuning vars. Four modes (`PlatformTheme`): default / static / animated
+  (`@property` drift, reduced-motion → static) / image. Scoped strictly by `.dark`
+  (no cross-fade / no flash); base colour on `<body>`, blooms in a viewport-fixed
+  `::before`. Applied to customer + admin shells only (marketing/auth excluded).
+- **Admin → Dashboard theme**: mode picker, curated presets, the Section-3b
+  sliders (per-bloom intensity / feather / spread / one extra stop), independent
+  per light/dark with a light→dark auto-derivation + override, an **instant live
+  preview** (reuses the same `--dbg-bloom-*` formula), dual `.webp` wallpaper
+  upload, reset. Every value clamped server-side; wallpaper URL whitelisted.
+  (Animated is a single dashboard-wide mode, not per-page — a deliberate
+  simplification the spec allowed.)
+- **Glass audit**: `.nx-glass-tile` lets the bloom show through solid cards
+  (Wallet balance tiles + top-up, Contacts cards). `.nx-aurora` / `.nx-anim-card`
+  and functional solid surfaces left untouched.
+- **Call screen**: premium teal-glow-into-navy gradient (`.nx-callbg`).
+- **Assistant avatar** (`support.avatar`, admin PNG/WebP) shared by the helper
+  launcher (fixes the cramped favicon) and the greeting; **greeting** redesigned
+  as a dismissable chat bubble with an admin inline/popup choice + on/off.
+- **More sheet**: Contacts (always) + Internet calls (dialer, Twilio-gated).
+- **Storage**: `media:migrate-to-wasabi` promotes always-on platform media to
+  Wasabi once cloud keys go live (hourly, idempotent, no-op without keys).
+- Tests: `PlatformThemeTest` (5), `PlatformThemePageTest` (4), `MediaMigrationTest`
+  (3). Suite 770.
+
 ### ✅ Numbers V6 — Stage 6: iOS-level Contacts, Dialer & Send Message — built 2026-07-27
 Brought the Numbers "phone" surfaces up to a native-app standard.
 - **Contacts** rebuilt as an iOS address book: favourites strip, A–Z sectioned
