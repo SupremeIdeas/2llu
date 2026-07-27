@@ -810,12 +810,12 @@
 @property --dbg-lo-x { syntax: "<percentage>"; inherits: true; initial-value: 25%; }
 @property --dbg-lo-y { syntax: "<percentage>"; inherits: true; initial-value: 96%; }
 
-.dashboard-bg {
-    position: relative;
-    /* Base colour — the blooms feather to transparent over this. */
-    background-color: #F8F9FA;
-
-    /* --- Tuning variables (admin-overridable; clamped server-side) --------- */
+/* Tuning variables + the two composed bloom gradients live on :root, so the
+   admin live-preview (.dbg-preview) can reuse the EXACT same gradient formula
+   just by overriding the --dbg-* values locally — no second copy to drift out
+   of sync. The admin override <style> raises specificity with `.dashboard-bg
+   {…}`, and the preview raises it with inline styles; both beat these defaults. */
+:root {
     --dbg-up-x: 72%;   --dbg-up-y: 6%;    /* upper bloom anchor  */
     --dbg-lo-x: 25%;   --dbg-lo-y: 96%;   /* lower bloom anchor  */
     --dbg-up-intensity: 1;                /* 0.5–1.5 opacity scale, upper bloom */
@@ -826,47 +826,31 @@
     --dbg-lo-size: 70% 60%;               /* lower bloom ellipse size  */
     --dbg-extra-color: var(--brand-primary);
     --dbg-extra-alpha: 0;                 /* optional single extra stop, off by default */
-}
-.dark .dashboard-bg { background-color: rgb(var(--brand-navy)); }
 
-/* The wallpaper itself: a viewport-fixed layer painted over the body's base
-   colour but beneath all in-flow content (negative z-index positioned pseudo).
-   Two anchor regions only, each a layered bloom that travels teal → gold →
-   coral internally (Section 3a), feathering to transparent. */
-.dashboard-bg::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-        /* Upper bloom — primary, teal-led */
+    /* LIGHT bloom — two anchor regions, each travelling teal → gold → coral
+       internally (Section 3a), feathering to transparent. */
+    --dbg-bloom-light:
         radial-gradient(var(--dbg-up-size) at var(--dbg-up-x) var(--dbg-up-y),
             rgb(var(--brand-primary) / calc(0.40 * var(--dbg-up-intensity))) 0%,
             rgb(var(--brand-accent) / calc(0.14 * var(--dbg-up-intensity))) 38%,
             rgb(var(--brand-action) / calc(0.08 * var(--dbg-up-intensity))) 62%,
             transparent var(--dbg-up-feather)),
-        /* Upper bloom overlap layer — the depth/colour-travel comes from this */
         radial-gradient(45% 40% at 55% 18%,
             rgb(var(--brand-accent) / calc(0.10 * var(--dbg-up-intensity))) 0%,
             rgb(var(--brand-action) / calc(0.05 * var(--dbg-up-intensity))) 50%,
             transparent 75%),
-        /* Optional admin extra stop (invisible until --dbg-extra-alpha > 0) */
         radial-gradient(40% 35% at 50% 40%,
             rgb(var(--dbg-extra-color) / var(--dbg-extra-alpha)) 0%,
             transparent 70%),
-        /* Lower bloom — soft, low-key, still teal-led */
         radial-gradient(var(--dbg-lo-size) at var(--dbg-lo-x) var(--dbg-lo-y),
             rgb(var(--brand-primary) / calc(0.22 * var(--dbg-lo-intensity))) 0%,
             rgb(var(--brand-action) / calc(0.11 * var(--dbg-lo-intensity))) 40%,
             rgb(var(--brand-accent) / calc(0.07 * var(--dbg-lo-intensity))) 65%,
             transparent var(--dbg-lo-feather));
-}
 
-/* Dark mode — teal leads and dominates, gold is the only accent, NO coral
-   (red reads as "off" over navy — intentional asymmetry, documented). */
-.dark .dashboard-bg::before {
-    background:
+    /* DARK bloom — teal leads and dominates, gold is the only accent, NO coral
+       (red reads as "off" over navy — intentional asymmetry, documented). */
+    --dbg-bloom-dark:
         radial-gradient(var(--dbg-up-size) at var(--dbg-up-x) var(--dbg-up-y),
             rgb(var(--brand-primary) / calc(0.58 * var(--dbg-up-intensity))) 0%,
             rgb(var(--brand-accent) / calc(0.20 * var(--dbg-up-intensity))) 45%,
@@ -882,6 +866,40 @@
             rgb(var(--brand-accent) / calc(0.10 * var(--dbg-lo-intensity))) 55%,
             transparent var(--dbg-lo-feather));
 }
+
+.dashboard-bg {
+    position: relative;
+    background-color: #F8F9FA; /* the blooms feather to transparent over this */
+}
+.dark .dashboard-bg { background-color: rgb(var(--brand-navy)); }
+
+/* The wallpaper: a viewport-fixed layer painted over the body's base colour but
+   beneath all in-flow content (negative-z positioned pseudo). */
+.dashboard-bg::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--dbg-bloom-light);
+}
+.dark .dashboard-bg::before { background: var(--dbg-bloom-dark); }
+
+/* Admin live-preview: the SAME bloom, contained (absolute, not fixed) so it can
+   render a light and a dark swatch side-by-side regardless of the admin's own
+   theme. The wrapper sets local --dbg-* values (inline, from the sliders) which
+   the reused --dbg-bloom-* formula resolves against — instant, no round-trip. */
+.dbg-preview { position: relative; overflow: hidden; background-color: #F8F9FA; }
+.dbg-preview--dark { background-color: rgb(var(--brand-navy)); }
+.dbg-preview::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: var(--dbg-bloom-light);
+}
+.dbg-preview--dark::before { background: var(--dbg-bloom-dark); }
+.dbg-preview--animated::before { animation: naara-bg-drift 22s ease-in-out infinite; }
 
 /* Animated mode (opt-in): only the two anchor positions drift — the colour
    layer never moves, so it reads as "the static treatment, gently breathing".
@@ -899,7 +917,8 @@
 }
 /* Reduced motion → the static treatment (no drift). */
 @media (prefers-reduced-motion: reduce) {
-    .dashboard-bg--animated::before { animation: none; }
+    .dashboard-bg--animated::before,
+    .dbg-preview--animated::before { animation: none; }
 }
 
 /* Call screen (Dialer in-call) — a premium, soft two-tone gradient instead of a
