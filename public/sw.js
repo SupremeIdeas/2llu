@@ -43,3 +43,47 @@ self.addEventListener('notificationclick', function (event) {
         })
     );
 });
+
+/* ---------------------------------------------------------------------------
+   Install-shell support (App Export §1) — added alongside the push logic above,
+   which is left untouched. This gives the installed PWA / native WebView an
+   offline fallback WITHOUT caching dynamic Livewire HTML (which would break
+   CSRF + component state). Strategy: network-first for navigations, falling
+   back to a tiny cached /offline page only when the network is unreachable.
+--------------------------------------------------------------------------- */
+var NX_SHELL_CACHE = 'naara-shell-v1';
+var NX_OFFLINE_URL = '/offline';
+
+self.addEventListener('install', function (event) {
+    event.waitUntil(
+        caches.open(NX_SHELL_CACHE).then(function (cache) {
+            return cache.add(NX_OFFLINE_URL).catch(function () { /* offline page optional */ });
+        })
+    );
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', function (event) {
+    event.waitUntil(
+        caches.keys().then(function (keys) {
+            return Promise.all(keys.map(function (k) {
+                if (k !== NX_SHELL_CACHE) { return caches.delete(k); }
+            }));
+        }).then(function () { return self.clients.claim(); })
+    );
+});
+
+self.addEventListener('fetch', function (event) {
+    var req = event.request;
+    // Only handle top-level navigations; never touch API/asset/POST traffic.
+    if (req.method !== 'GET' || req.mode !== 'navigate') {
+        return;
+    }
+    event.respondWith(
+        fetch(req).catch(function () {
+            return caches.match(NX_OFFLINE_URL).then(function (res) {
+                return res || new Response('You are offline.', { headers: { 'Content-Type': 'text/plain' } });
+            });
+        })
+    );
+});

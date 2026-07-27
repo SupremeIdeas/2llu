@@ -21,6 +21,16 @@
         <link rel="icon" href="/favicon.ico" sizes="any">
     @endif
 
+    {{-- Installable-app (PWA) hooks (App Export §1). The manifest is dynamic
+         (admin-editable name/icon/colours). theme-color paints the mobile
+         browser chrome + native WebView status bar. --}}
+    <link rel="manifest" href="{{ route('manifest') }}">
+    <meta name="theme-color" content="{{ \App\Support\AppExport::get('theme_color', '#0A6E6E') }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="{{ \App\Support\AppExport::get('short_name', 'NaaraSim') }}">
+
     {{-- Preload the body font (compressed WOFF2) only. The display font loads via
          @font-face with font-display:swap — never preload the uncompressed TTF
          (it's a heavy download that blocks the critical path for no benefit). --}}

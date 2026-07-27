@@ -9,6 +9,46 @@
 
 ## DONE
 
+### 🔨 Installable App Export (Android + iOS via Capacitor) — built 2026-07-27
+The wrap-the-web-app-as-a-native-app infrastructure (appexportbuildprompt.md),
+built additively. **Honest-state throughout: a compiled build is never shown as
+a live store listing, and iOS never gets a fake web direct-install path.**
+- **PWA layer:** dynamic `manifest.webmanifest` (admin-editable name/icon/colours
+  via `ManifestController` + `AppExport::manifest()`), `<link rel=manifest>` +
+  theme-color/apple meta in the app-shell head. `public/sw.js` gains
+  install-shell handlers (network-first navigations → cached `/offline`
+  fallback) **without touching the existing web-push logic**.
+- **Capacitor** (`capacitor.config.json`) in remote-URL mode — the native shell
+  is a thin WebView on the production domain; the server-rendered Livewire app
+  runs inside with no static rebuild.
+- **Admin → App Builder** (`/adminmaster/app-builder`, admin only): app
+  name/short/colours/version/build#/changelog, icon + splash upload, preloader;
+  **Android keystore upload stored ENCRYPTED at rest** (Setting `encrypted:array`,
+  metadata-only in listings) with a mandatory one-time backup warning
+  (acknowledge to clear); store-live toggles (+URL-required guard); CI webhook;
+  **Generate Build** (APK / AAB / IPA) + paginated **build history** with status
+  + surfaced build logs + artifact links.
+- **Build lifecycle:** `AppBuild` model + `BuildDispatcher` (creates queued
+  record, fires `TriggerAppBuildJob` — external call is a queued job, HMAC-signed
+  payload to the admin-set CI webhook; blank = self-hosted runner, never fakes
+  "building"). Status returns via `POST /webhooks/appbuild/{provider}`
+  (HMAC-verified with hash_equals before touching payload); a ready APK auto-sets
+  the public download target. `.github/workflows/android-build.yml` builds
+  signed APK + AAB on Linux and calls the status webhook back.
+- **Public `/download`** (404 until admin enables): direct APK button + self-
+  hosted QR (endroid/qr-code SVG, no external service) the moment an APK is
+  ready; Play/App-Store badges appear ONLY when that listing is flipped live.
+  iOS shows a badge only — never a direct-install button.
+- **Admin-assignable CTA placements** (`AppExport::PLACEMENTS`): admin menu,
+  customer menu, account settings, footer, + proposed homepage-card &
+  post-purchase — each independently toggleable with a custom label, gated on
+  `download_enabled`. `<x-app-download-cta>` component + native side-menu items.
+- **Frank's out-of-band steps** documented in `docs/APP-EXPORT.md` (Apple $99 +
+  Google Play $25 + mandatory 12-tester closed test + cloud macOS build service
+  + store listing content + review) — the iOS-reality and keystore-loss warnings
+  spelled out. New dep: `endroid/qr-code`. Config: `services.appexport.ci_secret`
+  (`APPEXPORT_CI_SECRET`). Tests: `AppExportTest` (11). Suite 814.
+
 ### 🔨 Universal Section Builder — foundation — built 2026-07-27
 The infrastructure layer the Homepage / Blog / hero work all run on top of
 (sectionbuilderbuildprompt.md §2–3), built additively so **nothing existing

@@ -46,6 +46,18 @@
                 </div>
             @endforeach
         </div>
+
+        {{-- Admin-assignable "Download the app" footer slot (App Export §1). --}}
+        @if (\App\Support\AppExport::placementActive('footer'))
+            <div class="relative z-10 border-t border-white/10">
+                <div class="mx-auto flex max-w-6xl items-center justify-center px-4 py-5">
+                    <a href="{{ route('download') }}"
+                        class="inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20">
+                        <x-icon name="download" class="h-4 w-4" /> {{ \App\Support\AppExport::placementLabel('footer') }}
+                    </a>
+                </div>
+            </div>
+        @endif
     @endif
 
     {{-- Social links (owner request): shown only for platforms the admin has

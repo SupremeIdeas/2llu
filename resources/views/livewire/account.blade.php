@@ -5,6 +5,9 @@
     {{-- Promo banner zone (Module 31, "account" placement). --}}
     <x-banner-zone placement="account" class="mb-6" />
 
+    {{-- Admin-assignable "Download the app" slot (App Export §1). --}}
+    <x-app-download-cta placement="account_settings" variant="banner" class="mb-6" />
+
     {{-- Appearance (Module 32 pick — witer33 sun/moon scene, rebuilt on brand):
          a day/night scene that drives the REAL theme (localStorage + .dark). --}}
     <section class="nx-theme-scene mb-5" x-data="{ dark: document.documentElement.classList.contains('dark') }"

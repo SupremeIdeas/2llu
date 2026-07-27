@@ -316,4 +316,13 @@ return [
         'postback_secret' => env('OFFERWALL_POSTBACK_SECRET'),
     ],
 
+    // Native app-export CI / cloud-build service (App Export §1). The trigger
+    // signs its outbound payload with this secret and the status callback is
+    // verified against it (hash_equals). Leave blank for a same-host,
+    // self-hosted trusted runner. The build-trigger webhook URL itself is
+    // admin-editable (Setting: appexport.ci_webhook_url).
+    'appexport' => [
+        'ci_secret' => env('APPEXPORT_CI_SECRET'),
+    ],
+
 ];

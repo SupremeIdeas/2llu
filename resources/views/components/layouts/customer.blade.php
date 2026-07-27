@@ -58,6 +58,11 @@
     if ($u && $u->hasAnyRole(['super_admin', 'admin', 'staff'])) {
         $more[] = ['route' => 'admin.dashboard', 'label' => 'Admin', 'icon' => 'id-card'];
     }
+
+    // Admin-assignable "Download the app" side-menu slot (App Export §1).
+    if (\App\Support\AppExport::placementActive('customer_menu')) {
+        $more[] = ['route' => 'download', 'label' => \App\Support\AppExport::placementLabel('customer_menu'), 'icon' => 'download'];
+    }
 @endphp
 
 <x-layouts.app :title="$title ?? config('app.name')" :body-class="\App\Support\PlatformTheme::bodyClass()">

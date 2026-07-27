@@ -43,6 +43,7 @@
         // Website (public front end + branding).
         $more[] = ['heading' => 'Website'];
         $more[] = ['route' => 'admin.builder', 'label' => 'Page builder', 'icon' => 'grid'];
+        $more[] = ['route' => 'admin.app-builder', 'label' => 'App Builder', 'icon' => 'package'];
         $more[] = ['route' => 'admin.site', 'label' => 'Marketing site', 'icon' => 'globe'];
         $more[] = ['route' => 'admin.pages', 'label' => 'Custom pages', 'icon' => 'file-text'];
         $more[] = ['route' => 'admin.blog', 'label' => 'Blog', 'icon' => 'file-text'];
@@ -87,6 +88,10 @@
     // Everyone in the panel can hop back to the end-user app.
     $more[] = ['heading' => 'Shortcuts'];
     $more[] = ['route' => 'dashboard', 'label' => 'Storefront', 'icon' => 'globe'];
+    // Admin-assignable "Download the app" slot (App Export §1).
+    if (\App\Support\AppExport::placementActive('admin_menu')) {
+        $more[] = ['route' => 'download', 'label' => \App\Support\AppExport::placementLabel('admin_menu'), 'icon' => 'download'];
+    }
 @endphp
 
 <x-layouts.app :title="($title ?? 'Admin').' — NaaraSim'" :body-class="\App\Support\PlatformTheme::bodyClass()">

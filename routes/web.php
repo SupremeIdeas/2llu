@@ -52,6 +52,11 @@ Route::get('/legal/{slug}', function (string $slug) {
 Route::get('/refund-policy', fn () => view('legal.show', ['doc' => \App\Support\LegalContent::doc('refund')]))->name('refund-policy');
 Route::view('/faq', 'pages.faq')->name('faq');
 
+// Installable app: dynamic PWA manifest + public "Download the App" page.
+Route::get('/manifest.webmanifest', \App\Http\Controllers\ManifestController::class)->name('manifest');
+Route::get('/download', \App\Http\Controllers\DownloadAppController::class)->name('download');
+Route::view('/offline', 'pages.offline')->name('offline');
+
 // Public blog (Module 30).
 Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog');
 Route::get('/blog/{post:slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
@@ -188,6 +193,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/blog', \App\Livewire\Admin\Posts::class)->name('blog');
             Route::get('/pages', \App\Livewire\Admin\CustomPages::class)->name('pages');
             Route::get('/builder', \App\Livewire\Admin\PageBuilder::class)->name('builder');
+            Route::get('/app-builder', \App\Livewire\Admin\AppBuilder::class)->name('app-builder');
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
             Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');
@@ -260,3 +266,8 @@ Route::post('/webhooks/kyc/{provider}', \App\Http\Controllers\Webhooks\KycWebhoo
 // idempotent credit grant. Both verbs — networks vary.
 Route::match(['get', 'post'], '/webhooks/offerwall', \App\Http\Controllers\Webhooks\OfferwallPostbackController::class)
     ->name('webhooks.offerwall');
+
+// Native app build status callback (App Export §1): HMAC-verified, flips a
+// build queued→building→ready/failed and attaches the artifact + logs.
+Route::post('/webhooks/appbuild/{provider}', \App\Http\Controllers\Webhooks\AppBuildWebhookController::class)
+    ->name('webhooks.appbuild');
