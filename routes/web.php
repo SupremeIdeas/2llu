@@ -91,6 +91,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         // NaaraCredits rewards area (loyalty module) — opt-in earning.
         Route::get('/rewards', \App\Livewire\Rewards::class)->name('rewards');
 
+        // Partner profit-share earnings (dollars only; 404 for non-partners).
+        Route::get('/partner', \App\Livewire\PartnerEarnings::class)->name('partner.earnings');
+
         // Cash out withdrawable (first-referral) credits (ROADMAP §Layer 1).
         // KYC L2 gated — unverified users are sent to /account/verify.
         Route::get('/rewards/withdraw', \App\Livewire\Withdraw::class)
@@ -192,6 +195,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/payouts', \App\Livewire\Admin\Payouts::class)->name('payouts');
             Route::get('/kyc', \App\Livewire\Admin\KycReview::class)->name('kyc');
             Route::get('/merchants', \App\Livewire\Admin\Merchants::class)->name('merchants');
+            Route::get('/partners', \App\Livewire\Admin\Partners::class)->name('partners');
             Route::get('/users', \App\Livewire\Admin\Users::class)->name('users');
             // Growth stack: social links, tracking pixels, social sign-in guides.
             Route::get('/integrations', \App\Livewire\Admin\Integrations::class)->name('integrations');

@@ -40,6 +40,11 @@
         array_unshift($more, ['route' => 'merchant.dashboard', 'label' => 'My Storefront', 'icon' => 'package']);
     }
 
+    // Partners get a link to their profit-share earnings.
+    if ($u && $u->partnerAccount) {
+        array_unshift($more, ['route' => 'partner.earnings', 'label' => 'Partner earnings', 'icon' => 'wallet']);
+    }
+
     // Staff/admins use the same end-user app and can jump to their panel.
     if ($u && $u->hasAnyRole(['super_admin', 'admin', 'staff'])) {
         $more[] = ['route' => 'admin.dashboard', 'label' => 'Admin', 'icon' => 'id-card'];

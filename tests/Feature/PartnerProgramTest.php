@@ -134,4 +134,38 @@ class PartnerProgramTest extends TestCase
     {
         $this->assertArrayNotHasKey('profit_share_pct', $this->partner()->toArray());
     }
+
+    public function test_the_admin_page_is_admin_only_and_promotes_a_user(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('user');
+        $this->actingAs($user)->get('/adminmaster/partners')->assertNotFound();
+
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $target = User::factory()->create(['email' => 'p@ex.com']);
+
+        \Livewire\Livewire::actingAs($admin)->test(\App\Livewire\Admin\Partners::class)
+            ->set('newEmail', 'p@ex.com')->set('newShare', 12)
+            ->call('addPartner')->assertHasNoErrors();
+
+        $this->assertDatabaseHas('partners', ['owner_user_id' => $target->id, 'profit_share_pct' => 12, 'status' => 'active']);
+    }
+
+    public function test_the_partner_view_404s_for_a_non_partner(): void
+    {
+        \Livewire\Livewire::actingAs(User::factory()->create())
+            ->test(\App\Livewire\PartnerEarnings::class)
+            ->assertStatus(404);
+    }
+
+    public function test_the_partner_view_shows_dollars_and_never_the_percentage(): void
+    {
+        $partner = $this->partner(['profit_share_pct' => 37.5]);
+
+        \Livewire\Livewire::actingAs($partner->owner)->test(\App\Livewire\PartnerEarnings::class)
+            ->assertOk()
+            ->assertSee('Partner earnings')
+            ->assertDontSee('37.5'); // the confidential share % is never rendered
+    }
 }
