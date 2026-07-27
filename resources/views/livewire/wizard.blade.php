@@ -19,7 +19,7 @@
         {{-- Launcher: a glowing brand-gradient edge wrapping a clean pill that
              carries the NaaraSim favicon mark (reused for a premium, on-brand
              feel) instead of a generic icon. --}}
-        @php $naaraFavicon = \App\Support\BrandSettings::favicon(); @endphp
+        @php $naaraAvatar = \App\Support\SupportSettings::avatar(); @endphp
         <button type="button" wire:click="toggle"
                 aria-label="Open the NaaraSim helper"
                 class="group relative rounded-full p-px shadow-lg shadow-primary/15 transition hover:shadow-primary/25">
@@ -28,11 +28,11 @@
             <span class="absolute inset-0 rounded-full bg-gradient-to-r from-primary/70 via-accent/70 to-primary/70" aria-hidden="true"></span>
             <span class="nx-wiz-glow pointer-events-none absolute -inset-px -z-10 rounded-full bg-gradient-to-r from-primary via-accent to-primary blur-[6px]" aria-hidden="true"></span>
             <span class="relative flex items-center gap-2 rounded-full bg-white px-3.5 py-2.5 dark:bg-[#101d33]">
-                <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full">
-                    @if ($naaraFavicon)
-                        <img src="{{ $naaraFavicon }}" alt="NaaraSim" class="h-6 w-6 object-contain">
+                <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full {{ $naaraAvatar ? '' : 'bg-primary/10 dark:bg-primary/20' }}">
+                    @if ($naaraAvatar)
+                        <img src="{{ $naaraAvatar }}" alt="NaaraSim" class="h-full w-full object-cover">
                     @else
-                        <x-icon name="zap" class="h-5 w-5 text-primary" />
+                        <x-icon name="message-circle" class="h-4 w-4 text-primary" />
                     @endif
                 </span>
                 <span class="hidden pr-1 text-sm font-semibold text-slate-800 sm:inline dark:text-white">Ask NaaraSim</span>

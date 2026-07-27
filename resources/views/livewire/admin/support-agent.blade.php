@@ -45,6 +45,49 @@
             </div>
         </div>
 
+        {{-- Assistant avatar + dashboard greeting. --}}
+        <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1B2A44]">
+            <h2 class="mb-1 text-sm font-semibold text-slate-800 dark:text-slate-100">Avatar &amp; greeting</h2>
+            <p class="mb-4 text-[11px] text-slate-400">A face for {{ $agent_name ?: 'the assistant' }} — used on the in-app helper and the dashboard welcome. PNG or WebP, square looks best.</p>
+
+            <div class="flex items-center gap-4">
+                <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-50 dark:border-[#2D4060] dark:bg-[#243352]">
+                    @if ($avatar)
+                        <img src="{{ $avatar->temporaryUrl() }}" alt="" class="h-full w-full object-cover">
+                    @elseif ($avatar_url)
+                        <img src="{{ $avatar_url }}" alt="" class="h-full w-full object-cover">
+                    @else
+                        <x-icon name="message-circle" class="h-7 w-7 text-primary" />
+                    @endif
+                </span>
+                <div class="min-w-0">
+                    <input type="file" wire:model="avatar" accept="image/png,image/webp"
+                           class="block w-full max-w-[15rem] text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary dark:text-slate-300 dark:file:bg-primary/20 dark:file:text-teal-300">
+                    <div wire:loading wire:target="avatar" class="mt-1 text-xs text-slate-400">Uploading…</div>
+                    @error('avatar') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    @if ($avatar_url)
+                        <button type="button" wire:click="removeAvatar" class="mt-1 text-xs font-semibold text-red-600 hover:underline">Remove avatar</button>
+                    @endif
+                </div>
+            </div>
+
+            <div class="mt-5 border-t border-slate-100 pt-4 dark:border-white/5">
+                <label class="flex items-center gap-3">
+                    <input type="checkbox" wire:model="greeting_enabled"
+                           class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary dark:border-[#2D4060] dark:bg-[#243352]">
+                    <span class="text-sm text-slate-700 dark:text-slate-200">Show the welcome greeting on the dashboard</span>
+                </label>
+                <div class="mt-3 max-w-xs">
+                    <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Greeting style</label>
+                    <select wire:model="greeting_mode" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <option value="inline">Inline card (stays at the top)</option>
+                        <option value="popup">Dismissable popup (clears for a cleaner home)</option>
+                    </select>
+                    <p class="mt-1 text-[11px] text-slate-400">Either way it reads as a chat bubble from {{ $agent_name ?: 'the assistant' }}, and the user can dismiss it.</p>
+                </div>
+            </div>
+        </div>
+
         {{-- Autopilot: how much the AI may resolve on its own. --}}
         <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1B2A44]">
             <h2 class="mb-1 text-sm font-semibold text-slate-800 dark:text-slate-100">Autopilot resolution</h2>

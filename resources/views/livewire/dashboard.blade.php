@@ -7,34 +7,48 @@
     @php($heroLight = \App\Support\HeroBackground::light())
     @php($heroDark = \App\Support\HeroBackground::dark())
     @php($hasHero = \App\Support\HeroBackground::isSet())
-    <div class="relative mb-6 overflow-hidden rounded-2xl border p-5 {{ $hasHero ? 'border-slate-200/60 dark:border-white/10' : 'border-primary/15 bg-gradient-to-br from-primary/[0.07] via-transparent to-accent/[0.06] dark:border-primary/25 dark:from-primary/15 dark:to-accent/10' }}">
-        @if ($hasHero)
-            {{-- Background art layer (light + dark; one falls back to the other). --}}
-            <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-                <img src="{{ $heroLight ?: $heroDark }}" alt="" loading="lazy" decoding="async"
-                     class="absolute inset-0 h-full w-full object-cover object-center {{ $heroDark ? 'dark:hidden' : '' }}">
-                @if ($heroDark)
-                    <img src="{{ $heroDark }}" alt="" loading="lazy" decoding="async"
-                         class="absolute inset-0 hidden h-full w-full object-cover object-center dark:block">
+    @php($gAvatar = \App\Support\SupportSettings::avatar())
+    @php($gName = \App\Support\SupportSettings::name())
+    @php($greetingOn = \App\Support\SupportSettings::greetingEnabled())
+    @php($greetingMode = \App\Support\SupportSettings::greetingMode())
+
+    @if ($greetingOn)
+        {{-- The greeting reads as a chat message from the assistant. A per-day
+             dismiss key means the user can clear it for a cleaner home and it
+             greets again tomorrow. Two admin-chosen styles: an inline card (can
+             carry hero art behind it) or a floating, dismissable popup. --}}
+        @php($greetKey = 'nx_greet_'.now()->format('Ymd'))
+        @if ($greetingMode === 'popup')
+            <div x-data="{ show: false }"
+                 x-init="$nextTick(() => { show = localStorage.getItem('{{ $greetKey }}') !== '1'; })"
+                 x-show="show" x-cloak x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-4 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
+                 class="fixed bottom-24 left-4 right-4 z-40 mx-auto max-w-sm sm:left-6 sm:right-auto lg:bottom-6">
+                <div class="rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-2xl shadow-primary/10 backdrop-blur-md dark:border-white/10 dark:bg-[#101d33]/90">
+                    @include('partials.greeting-bubble', ['onDismiss' => "@click=\"show = false; localStorage.setItem('{$greetKey}', '1')\""])
+                </div>
+            </div>
+        @else
+            <div x-data="{ show: true }"
+                 x-init="$nextTick(() => { show = localStorage.getItem('{{ $greetKey }}') !== '1'; })"
+                 x-show="show" x-cloak
+                 class="relative mb-6 overflow-hidden rounded-2xl border p-5 {{ $hasHero ? 'border-slate-200/60 dark:border-white/10' : 'border-primary/15 bg-gradient-to-br from-primary/[0.07] via-transparent to-accent/[0.06] dark:border-primary/25 dark:from-primary/15 dark:to-accent/10' }}">
+                @if ($hasHero)
+                    {{-- Background art layer (light + dark; one falls back to the other). --}}
+                    <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+                        <img src="{{ $heroLight ?: $heroDark }}" alt="" loading="lazy" decoding="async"
+                             class="absolute inset-0 h-full w-full object-cover object-center {{ $heroDark ? 'dark:hidden' : '' }}">
+                        @if ($heroDark)
+                            <img src="{{ $heroDark }}" alt="" loading="lazy" decoding="async"
+                                 class="absolute inset-0 hidden h-full w-full object-cover object-center dark:block">
+                        @endif
+                        <div class="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-white/40 dark:from-[#0D1B2A] dark:via-[#0D1B2A]/85 dark:to-[#0D1B2A]/40"></div>
+                    </div>
                 @endif
-                {{-- Gradient overlay: image emerges at the top, solid surface where
-                     the text sits, so the heading always reads cleanly. --}}
-                <div class="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-white/40 dark:from-[#0D1B2A] dark:via-[#0D1B2A]/85 dark:to-[#0D1B2A]/40"></div>
+                @include('partials.greeting-bubble', ['onDismiss' => "@click=\"show = false; localStorage.setItem('{$greetKey}', '1')\""])
             </div>
         @endif
-        <div class="flex items-start gap-3">
-            <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300">
-                <x-icon name="signal" class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-                <p class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ $greeting }} <span class="font-normal text-slate-500 dark:text-slate-400">— {{ $greetingAsk }}</span></p>
-                <p class="mt-1 flex items-start gap-1.5 text-sm text-slate-600 dark:text-slate-300">
-                    <x-icon name="zap" class="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                    <span><span class="font-semibold text-slate-700 dark:text-slate-200">Did you know?</span> {{ $factOfTheDay }}</span>
-                </p>
-            </div>
-        </div>
-    </div>
+    @endif
 
     {{-- Coupon marketing nudge (owner request): a friendly first-purchase /
          comeback discount, shown only to a not-yet-purchased account. --}}
