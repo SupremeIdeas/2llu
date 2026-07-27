@@ -85,6 +85,20 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['action' => 'pricing.global_updated']);
     }
 
+    public function test_saving_global_persists_the_outbound_sms_send_cost(): void
+    {
+        Queue::fake();
+
+        Livewire::actingAs($this->admin())->test(Pricing::class)
+            ->set('sms_send_cost_twilio', 0.012)
+            ->set('sms_send_cost_telnyx', 0.006)
+            ->call('saveGlobal')
+            ->assertHasNoErrors();
+
+        $this->assertSame(0.012, (float) Setting::getValue('pricing.sms_send_cost.twilio'));
+        $this->assertSame(0.006, (float) Setting::getValue('pricing.sms_send_cost.telnyx'));
+    }
+
     public function test_editing_a_plan_shows_live_profit_without_logging(): void
     {
         $plan = $this->plan();

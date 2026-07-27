@@ -1,5 +1,5 @@
 <div class="mx-auto max-w-2xl"
-     x-data="{ view: $persist('list').as('nx_contacts_view'), sheet: false, openAdd() { $wire.cancelEdit(); this.sheet = true; } }"
+     x-data="{ view: $persist('{{ $defaultView }}').as('nx_contacts_view'), sheet: false, openAdd() { $wire.cancelEdit(); this.sheet = true; } }"
      @contact-edit.window="sheet = true"
      @contact-saved.window="sheet = false">
 

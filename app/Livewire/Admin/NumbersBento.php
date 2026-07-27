@@ -28,6 +28,9 @@ class NumbersBento extends Component
     /** New image uploads, keyed by card key. */
     public array $images = [];
 
+    /** Platform-wide default view for the Contacts book (list | grid). */
+    public string $contacts_default_view = 'list';
+
     public ?string $saved = null;
 
     public function booted(): void
@@ -37,6 +40,8 @@ class NumbersBento extends Component
 
     public function mount(): void
     {
+        $this->contacts_default_view = \App\Models\Setting::getValue('contacts.default_view') === 'grid' ? 'grid' : 'list';
+
         // Ensure the six rows exist (seed from defaults on first visit).
         $defaults = NumbersBentoContent::defaults();
         $order = array_flip(NumbersBentoContent::ORDER);
@@ -56,6 +61,17 @@ class NumbersBento extends Component
                 'image_path' => $card->image_path,
             ];
         }
+    }
+
+    /** Save the platform-wide default Contacts view (users can still override). */
+    public function saveContactsView(): void
+    {
+        abort_unless(Auth::user()?->hasAnyRole(['super_admin', 'admin']), 403);
+        $this->validate(['contacts_default_view' => 'required|in:list,grid']);
+        \App\Models\Setting::setValue('contacts.default_view', $this->contacts_default_view, 'ui');
+        Auditor::log('numbers.contacts_view_updated', payload: ['view' => $this->contacts_default_view]);
+        $this->saved = 'Contacts default view saved.';
+        $this->dispatch('nx-toast', type: 'success', message: 'Contacts default view saved.');
     }
 
     public function save(string $key): void

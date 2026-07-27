@@ -180,6 +180,10 @@ class Contacts extends Component
         $ownsLine = \App\Models\VirtualNumber::where('user_id', Auth::id())
             ->where('status', 'active')->exists();
 
+        // Platform-wide default view (admin-set); a user's own toggle still wins
+        // once they pick one (it persists locally).
+        $defaultView = \App\Models\Setting::getValue('contacts.default_view') === 'grid' ? 'grid' : 'list';
+
         return view('livewire.contacts', [
             'total' => $all->count(),
             'favorites' => $all->where('is_favorite', true)->values(),
@@ -187,6 +191,7 @@ class Contacts extends Component
             'letters' => $grouped->keys(),
             'ownsLine' => $ownsLine,
             'twilioActive' => \App\Support\ProviderStatus::isActive('twilio'),
+            'defaultView' => $defaultView,
         ]);
     }
 }

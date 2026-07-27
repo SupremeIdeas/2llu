@@ -27,6 +27,13 @@ class Pricing extends Component
 
     public $minimum_profit_usd;
 
+    // Outbound-SMS wholesale cost per provider (Numbers V6 §6 — a user texting
+    // from their Naara Line). Retail is layered on by PricingEngine; this is the
+    // cost basis, never surfaced to users.
+    public $sms_send_cost_twilio;
+
+    public $sms_send_cost_telnyx;
+
     // Public pricing page (Module 29)
     public string $public_mode = 'auto';
 
@@ -62,6 +69,8 @@ class Pricing extends Component
     {
         $this->default_markup_pct = Setting::getValue('pricing.default_markup_pct', 30);
         $this->minimum_profit_usd = Setting::getValue('pricing.minimum_profit_usd', 0.50);
+        $this->sms_send_cost_twilio = Setting::getValue('pricing.sms_send_cost.twilio', 0.0079);
+        $this->sms_send_cost_telnyx = Setting::getValue('pricing.sms_send_cost.telnyx', 0.004);
         $this->public_mode = (string) Setting::getValue('pricing.public_mode', 'auto');
         $this->estimate_tiers = \App\Support\PricingDisplay::estimateTiers();
     }
@@ -101,10 +110,14 @@ class Pricing extends Component
         $this->validate([
             'default_markup_pct' => 'required|numeric|min:0|max:1000',
             'minimum_profit_usd' => 'required|numeric|min:0',
+            'sms_send_cost_twilio' => 'required|numeric|min:0|max:5',
+            'sms_send_cost_telnyx' => 'required|numeric|min:0|max:5',
         ]);
 
         Setting::setValue('pricing.default_markup_pct', (float) $this->default_markup_pct, 'pricing');
         Setting::setValue('pricing.minimum_profit_usd', (float) $this->minimum_profit_usd, 'pricing');
+        Setting::setValue('pricing.sms_send_cost.twilio', round((float) $this->sms_send_cost_twilio, 4), 'pricing');
+        Setting::setValue('pricing.sms_send_cost.telnyx', round((float) $this->sms_send_cost_telnyx, 4), 'pricing');
 
         // Recompute every plan's retail against the new global markup (rule 1.4).
         RecomputePlanPricingJob::dispatch();

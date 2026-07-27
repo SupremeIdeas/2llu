@@ -87,6 +87,28 @@
                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
                         @error('minimum_profit_usd') <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                     </div>
+
+                    {{-- Outbound-SMS wholesale cost (a user texting from their Naara
+                         Line). Retail is layered on by the pricing engine + margin
+                         floor; this is the cost basis and is never shown to users. --}}
+                    <div class="rounded-lg border border-slate-100 bg-slate-50/60 p-3 dark:border-[#243352] dark:bg-[#243352]/40">
+                        <p class="mb-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Outbound SMS cost (per segment, USD)</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">Twilio</label>
+                                <input type="number" step="0.0001" min="0" wire:model="sms_send_cost_twilio"
+                                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                @error('sms_send_cost_twilio') <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">Telnyx</label>
+                                <input type="number" step="0.0001" min="0" wire:model="sms_send_cost_telnyx"
+                                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                @error('sms_send_cost_telnyx') <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                    </div>
+
                     <button type="submit" wire:loading.attr="disabled" wire:target="saveGlobal"
                             class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                         <span wire:loading.remove wire:target="saveGlobal">Save &amp; reprice all</span>

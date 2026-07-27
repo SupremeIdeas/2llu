@@ -4,6 +4,25 @@
         <p class="text-sm text-slate-500 dark:text-slate-400">The six landing bento cards. Edit copy, badge, image and bullets, or toggle a card off — no deploy. The layout order is fixed.</p>
     </div>
 
+    @if ($saved)
+        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-800 dark:border-green-900/40 dark:bg-green-950/30 dark:text-green-300">{{ $saved }}</div>
+    @endif
+
+    {{-- Platform-wide Contacts default view (users can still toggle their own). --}}
+    <div class="mb-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1B2A44]">
+        <h2 class="mb-1 text-sm font-bold text-slate-900 dark:text-white">Contacts default view</h2>
+        <p class="mb-3 text-xs text-slate-500 dark:text-slate-400">The view new users see first in their contact book. Each user can still switch it themselves — this only sets the starting point.</p>
+        <div class="flex items-center gap-3">
+            <select wire:model="contacts_default_view" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                <option value="list">List</option>
+                <option value="grid">Grid</option>
+            </select>
+            <button type="button" wire:click="saveContactsView" wire:loading.attr="disabled" wire:target="saveContactsView"
+                    class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">Save</button>
+        </div>
+        @error('contacts_default_view') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+    </div>
+
     <div class="space-y-4">
         @foreach ($order as $key)
             @php($f = $form[$key])
