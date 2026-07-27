@@ -9,6 +9,28 @@
 
 ## DONE
 
+### ✅ Numbers V6 — Stage 6/7 finish + dashboard glass — built 2026-07-27
+Closed out the Numbers V6 punch-list on top of the dashboard-theme work.
+- **Glass pass broadened**: `.nx-glass-tile` on the primary cards of eSIM
+  catalogue, Account, Profile, Security, Referrals, Estimator, Developer portal
+  (guarded sweep — inputs/buttons/gradient cards left solid).
+- **Call forwarding**: premium empty-state whose "Get a Naara Line" deep-links
+  `?modal=line` (GetNumber::mount now opens a deep-linked modal with the right
+  request type); forwarding cards glassed.
+- **Verify modal §3**: operator comparison — `SmsNumberRouter::compareOperators`
+  merges the lane's networks at RETAIL (provider masked, cost never returned),
+  best in-stock flagged; UI has a Best badge, Prices/Statistics tabs, out-of-stock
+  disabled, CSV export. Operator threads through NumberRequest → priceFor/quote/
+  buy (5sim). Smart Buy resolves the cheapest in-stock country. Verified on live
+  5sim data.
+- **Admin**: outbound-SMS cost fields (`pricing.sms_send_cost.{provider}`) on the
+  Pricing page; platform-wide Contacts default view (list/grid) on the Numbers
+  cards page.
+- **Retired** the redundant inline Get-a-Number form (bento + modals own the
+  flow); a compact auth-scoped active-order card still surfaces an in-progress
+  number/OTP. Tests: `OperatorComparisonTest` (2) + updated picker/deep-link
+  tests. Suite 774.
+
 ### ✅ Dashboard background / Platform Theme + assistant polish — built 2026-07-27
 A brand-gradient wallpaper behind the whole authenticated app shell, plus the
 assistant/greeting refresh the owner asked for.
