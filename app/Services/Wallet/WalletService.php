@@ -127,6 +127,80 @@ class WalletService
     }
 
     /**
+     * Reserve (earmark) USD for a future auto-charge (Merchant V2 client
+     * auto-renewal). The money stays in the wallet but is subtracted from
+     * spendable — every USD debit checks balance − reserved — so it "cannot be
+     * reused for any other transaction" until settled or released. Atomic +
+     * row-locked; throws if spendable can't cover it.
+     */
+    public function reserve(User $user, float $amount): void
+    {
+        $amount = round($amount, self::SCALE);
+        if ($amount <= 0) {
+            throw new \InvalidArgumentException('Reserve amount must be positive.');
+        }
+
+        Cache::lock("wallet:{$user->id}", 10)->block(5, function () use ($user, $amount) {
+            DB::transaction(function () use ($user, $amount) {
+                $wallet = $this->lockedWallet($user);
+                $spendable = round((float) $wallet->usd_balance - (float) $wallet->reserved_usd, self::SCALE);
+                if ($amount > $spendable) {
+                    throw new InsufficientBalanceException($user->id, 'USD', $amount, $spendable);
+                }
+                $wallet->reserved_usd = round((float) $wallet->reserved_usd + $amount, self::SCALE);
+                $wallet->save();
+            });
+        });
+
+        \App\Support\Auditor::log('wallet.reserved', UserWallet::class, $user->id, ['amount' => $amount, 'currency' => 'USD']);
+    }
+
+    /**
+     * Release a USD reservation back to spendable (never below zero). Used when
+     * an auto-renewal settles into a real debit (release then charge) or when
+     * provisioning fails and the earmark is freed.
+     */
+    public function release(User $user, float $amount): void
+    {
+        $amount = round($amount, self::SCALE);
+        if ($amount <= 0) {
+            return;
+        }
+
+        Cache::lock("wallet:{$user->id}", 10)->block(5, function () use ($user, $amount) {
+            DB::transaction(function () use ($user, $amount) {
+                $wallet = $this->lockedWallet($user);
+                $wallet->reserved_usd = round(max(0, (float) $wallet->reserved_usd - $amount), self::SCALE);
+                $wallet->save();
+            });
+        });
+
+        \App\Support\Auditor::log('wallet.reservation_released', UserWallet::class, $user->id, ['amount' => $amount, 'currency' => 'USD']);
+    }
+
+    public function reservedUsd(User $user): float
+    {
+        return round((float) ($user->wallet?->reserved_usd ?? 0), self::SCALE);
+    }
+
+    /** Spendable USD = balance − reserved. */
+    public function spendableUsd(User $user): float
+    {
+        $wallet = $user->wallet;
+
+        return round((float) ($wallet?->usd_balance ?? 0) - (float) ($wallet?->reserved_usd ?? 0), self::SCALE);
+    }
+
+    /** Fetch the wallet row under a pessimistic lock (creating it if missing). */
+    private function lockedWallet(User $user): UserWallet
+    {
+        $wallet = UserWallet::query()->where('user_id', $user->id)->lockForUpdate()->first()
+            ?? UserWallet::create(['user_id' => $user->id]);
+
+        return UserWallet::query()->whereKey($wallet->getKey())->lockForUpdate()->first();
+    }
+
+    /**
      * The atomic core. Locks the wallet (cache lock + row lock), reads the
      * balance, applies the delta, and writes the paired transaction row.
      */
@@ -174,8 +248,13 @@ class WalletService
                 $delta = $isDebit ? -$amount : $amount;
                 $after = round($before + $delta, self::SCALE);
 
-                if ($isDebit && $after < 0) {
-                    throw new InsufficientBalanceException($user->id, $currency, $amount, $before);
+                // A debit can never dip into reserved (earmarked) funds. For USD
+                // the floor is the reserved amount; other currencies have none.
+                $floor = ($isDebit && $currency === 'USD')
+                    ? round((float) $wallet->reserved_usd, self::SCALE)
+                    : 0.0;
+                if ($isDebit && $after < $floor) {
+                    throw new InsufficientBalanceException($user->id, $currency, $amount, round($before - $floor, self::SCALE));
                 }
 
                 $wallet->{$column} = $after;

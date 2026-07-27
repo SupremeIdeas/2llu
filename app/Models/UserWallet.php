@@ -11,6 +11,7 @@ class UserWallet extends Model
         'user_id',
         'ngn_balance',
         'usd_balance',
+        'reserved_usd',
         'total_deposits',
         'total_spent',
         'naara_credits',
@@ -23,6 +24,7 @@ class UserWallet extends Model
         return [
             'ngn_balance' => 'decimal:2',
             'usd_balance' => 'decimal:4',
+            'reserved_usd' => 'decimal:4',
             'total_deposits' => 'decimal:2',
             'total_spent' => 'decimal:2',
             'naara_credits' => 'decimal:2',
