@@ -206,6 +206,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/app-builder', \App\Livewire\Admin\AppBuilder::class)->name('app-builder');
             Route::get('/welcome-settings', \App\Livewire\Admin\WelcomeSettings::class)->name('welcome-settings');
             Route::get('/incidents', \App\Livewire\Admin\Incidents::class)->name('incidents');
+            Route::get('/notices', \App\Livewire\Admin\Alerts::class)->name('notices');
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
             Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');

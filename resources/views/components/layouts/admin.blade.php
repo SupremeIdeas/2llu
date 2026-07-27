@@ -26,6 +26,7 @@
         $more[] = ['route' => 'admin.pricing-architect', 'label' => 'Price with Claude', 'icon' => 'zap'];
         $more[] = ['route' => 'admin.coupons', 'label' => 'Coupons', 'icon' => 'gift'];
         $more[] = ['route' => 'admin.announcements', 'label' => 'Announcements', 'icon' => 'bell'];
+        $more[] = ['route' => 'admin.notices', 'label' => 'Login notices', 'icon' => 'bell'];
         $more[] = ['route' => 'admin.banners', 'label' => 'Banners', 'icon' => 'image'];
         $more[] = ['route' => 'admin.esim-hero', 'label' => 'eSIM hero', 'icon' => 'signal'];
         $more[] = ['route' => 'admin.numbers-hero', 'label' => 'Numbers hero', 'icon' => 'phone'];
