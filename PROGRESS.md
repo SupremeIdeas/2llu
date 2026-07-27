@@ -9,6 +9,32 @@
 
 ## DONE
 
+### ✅ Messaging (MMS), Rent durations, toasts + provider-sync clarity — built 2026-07-27
+Clarity pass + fixes before the Partner/Merchant build, verified against real
+provider capabilities (no invented features).
+- **MMS attachments**: both Naara Line providers support media (Twilio MediaUrl,
+  Telnyx media_urls). Send Message now offers "Add a photo" on MMS-capable US/CA
+  lines only (`VirtualNumber::supportsMms`), validated (JPG/PNG/GIF ≤1 MB), stored
+  via MediaStorage (server disk / Wasabi) so the carrier can fetch the URL, priced
+  as one MMS (`pricing.mms_send_cost.{provider}`) through the same atomic money
+  path. `attachment_url` on the message.
+- **Naara Line auto-debit**: CONFIRMED already built + provider-accurate — the
+  daily `virtual:renew` charges `monthly_retail`, grace-periods on shortfall, and
+  releases lapsed numbers at the provider (Twilio/Telnyx bill monthly; release
+  stops it). Tested. Nothing to invent.
+- **Naara Rent durations**: 5sim hosting is a fixed short period; only Getatext
+  (US) supports longer rentals. Added a US-only duration picker (1w/1mo/3mo +
+  auto-renew) threaded to Getatext, priced by admin multipliers
+  (`numbers.rental_multiplier.*`); honest short-term copy elsewhere.
+- **Toasts**: rebuilt the hero as a centred fintech-style success (gradient check,
+  bold title, full-width CTA, scrim) so it's never hidden behind the header;
+  corner confirmations upgraded (glass card + gradient glyph, bottom-centre on
+  mobile). Same dispatch API — user + admin both benefit.
+- **Badges**: yellow-on-light FEATURED/POPULAR/PREMIUM replaced with a teal→gold
+  `.nx-badge` (white text). Uploads audited: all user-facing uploads already use
+  MediaStorage's server-disk↔Wasabi fallback.
+- Tests: `RentalDurationTest` (2), MMS send/refuse (2). Suite 778.
+
 ### ✅ Numbers V6 — Stage 6/7 finish + dashboard glass — built 2026-07-27
 Closed out the Numbers V6 punch-list on top of the dashboard-theme work.
 - **Glass pass broadened**: `.nx-glass-tile` on the primary cards of eSIM
