@@ -23,17 +23,12 @@
         {{-- Bottom scrim for legibility --}}
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent"></div>
 
-        {{-- Copy + Explore pill --}}
-        <div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:p-5">
-            <div class="min-w-0">
-                <h1 class="line-clamp-2 text-base font-bold leading-tight text-white sm:text-2xl">{{ $hero['title'] }}</h1>
+        {{-- Copy (bottom-left) --}}
+        <div class="absolute inset-x-0 bottom-0 p-4 sm:p-6">
+            <div class="min-w-0 max-w-lg">
+                <h1 class="line-clamp-2 text-lg font-bold leading-tight text-white sm:text-2xl">{{ $hero['title'] }}</h1>
                 <p class="mt-1 line-clamp-1 text-xs text-white/80 sm:text-sm">{{ $hero['description'] }}</p>
             </div>
-            <a href="#numbers-flow"
-               @click.prevent="document.getElementById('numbers-flow')?.scrollIntoView({ behavior: 'smooth' })"
-               class="pointer-events-auto shrink-0 rounded-full bg-white/95 px-4 py-2 text-xs font-semibold text-slate-900 shadow transition hover:bg-white sm:text-sm">
-                Explore
-            </a>
         </div>
 
         {{-- Pagination dots (top-right, out of the copy's way) --}}

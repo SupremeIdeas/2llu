@@ -17,21 +17,22 @@ class NumbersBento
     private const CACHE = 'numbers.bento.v1';
 
     /**
-     * Fixed order — the asymmetric bento rhythm (on a 6-column grid):
-     *   Row 1: Verify (wide, span 4) + Rent (narrow, span 2)
-     *   Row 2: Line (span 3) + Internet Calls (span 3)
-     *   Row 3: Call Forwarding (span 3) + Contact Management (span 3)
+     * Fixed order — the bento rhythm (on a 6-column grid):
+     *   Row 1: Verify (span 4) + Rent (span 2)
+     *   Row 2: Naara Line — FULL WIDTH (span 6, the featured hero card)
+     *   Row 3: Internet Calls (span 3) + Call Forwarding (span 3)
+     *   Row 4: Contact Management — FULL WIDTH (span 6)
      */
     public const ORDER = ['verify', 'rent', 'line', 'internet_calls', 'call_forwarding', 'contact_management'];
 
-    /** key => [span (of 6), tall (row-1 hero height)]. */
+    /** key => [span (of 6), tall (taller hero height)]. */
     public const LAYOUT = [
         'verify' => ['span' => 4, 'tall' => true],
         'rent' => ['span' => 2, 'tall' => true],
-        'line' => ['span' => 3, 'tall' => false],
+        'line' => ['span' => 6, 'tall' => true],
         'internet_calls' => ['span' => 3, 'tall' => false],
         'call_forwarding' => ['span' => 3, 'tall' => false],
-        'contact_management' => ['span' => 3, 'tall' => false],
+        'contact_management' => ['span' => 6, 'tall' => false],
     ];
 
     /**

@@ -28,14 +28,15 @@ class NumbersBentoTest extends TestCase
             array_column($cards, 'key'),
         );
 
-        // Row 1 is asymmetric: Verify wide (4) + Rent narrow (2); the rest are
-        // half-width (3). Each row sums to the 6-column grid.
+        // Row 1: Verify (4) + Rent (2). Naara Line is full-width (span 6), so
+        // is Contact Management; Internet Calls + Call Forwarding are halves (3).
         $bySpan = collect($cards)->keyBy('key');
         $this->assertSame(4, $bySpan['verify']['span']);
         $this->assertTrue($bySpan['verify']['tall']);
         $this->assertSame(2, $bySpan['rent']['span']);
-        $this->assertSame(3, $bySpan['line']['span']);
-        $this->assertFalse($bySpan['line']['tall']);
+        $this->assertSame(6, $bySpan['line']['span']);
+        $this->assertSame(6, $bySpan['contact_management']['span']);
+        $this->assertSame(3, $bySpan['internet_calls']['span']);
     }
 
     public function test_verify_card_appends_a_live_plus_n_more_bullet(): void

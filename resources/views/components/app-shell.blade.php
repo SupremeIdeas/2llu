@@ -53,8 +53,8 @@
                            :class="navCollapsed && 'justify-center'"
                            :title="navCollapsed ? @js($item['label']) : null"
                            @class([
-                               'group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition',
-                               'bg-primary/10 text-primary-dark shadow-sm dark:bg-primary/20 dark:text-primary' => $isActive($item['route']),
+                               'nx-navlink group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium',
+                               'is-active' => $isActive($item['route']),
                                'text-slate-600 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-white/5' => ! $isActive($item['route']),
                            ])>
                             <x-icon :name="$item['icon']" class="h-5 w-5 shrink-0" />

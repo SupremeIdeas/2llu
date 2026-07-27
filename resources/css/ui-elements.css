@@ -339,6 +339,75 @@
     .nx-imghero__slide.is-active { transform: none; }
 }
 
+/* ---- Premium bento card: brand gradient border + corner glow on hover/focus.
+   The border is a masked gradient ring (primary → accent) that fades in; two
+   soft radial glows bloom from opposite corners. Follows admin brand vars. --- */
+.nx-bento::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: linear-gradient(135deg,
+        rgb(var(--brand-primary)), rgb(var(--brand-accent)) 55%, rgb(var(--brand-primary)));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+    z-index: 5;
+}
+.nx-bento::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+        radial-gradient(120px 120px at 0% 100%, rgb(var(--brand-primary) / 0.22), transparent 70%),
+        radial-gradient(120px 120px at 100% 0%, rgb(var(--brand-accent) / 0.18), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+.nx-bento:hover::before, .nx-bento:focus-visible::before,
+.nx-bento:hover::after, .nx-bento:focus-visible::after { opacity: 1; }
+.nx-bento:hover, .nx-bento:focus-visible {
+    box-shadow: 0 18px 44px -20px rgb(var(--brand-primary) / 0.45);
+}
+.nx-bento:focus-visible { outline: none; }
+@media (prefers-reduced-motion: reduce) {
+    .nx-bento { transition: none; }
+    .nx-bento:hover { transform: none; }
+}
+
+/* ---- Smooth "flowing" active nav item. A soft brand gradient pill with a
+   rounded accent bar on the left — reads as a channel water flows through, not
+   a blocky highlight. Brand-var driven. Used by the sidebar + More-sheet nav. -- */
+.nx-navlink { position: relative; transition: background 0.25s ease, color 0.2s ease, box-shadow 0.25s ease; }
+.nx-navlink.is-active {
+    background: linear-gradient(90deg, rgb(var(--brand-primary) / 0.14), rgb(var(--brand-primary) / 0.03));
+    color: rgb(var(--brand-primary-dark));
+    box-shadow: 0 6px 18px -8px rgb(var(--brand-primary) / 0.4);
+}
+.nx-navlink.is-active::before {
+    content: "";
+    position: absolute;
+    left: 0.15rem;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 52%;
+    width: 3px;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, rgb(var(--brand-primary)), rgb(var(--brand-accent)));
+}
+.dark .nx-navlink.is-active {
+    background: linear-gradient(90deg, rgb(var(--brand-primary) / 0.26), rgb(var(--brand-primary) / 0.06));
+    color: rgb(94 234 212);
+}
+
 /* The one app-wide spinner (owner request — replaces the spinning refresh icon).
    A soft dual-tone ring: a faint full track + a solid moving arc in currentColor,
    so it inherits the button/text colour and drops into any inline context. The
