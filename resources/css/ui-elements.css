@@ -921,6 +921,24 @@
     .dbg-preview--animated::before { animation: none; }
 }
 
+/* Product badge (FEATURED / POPULAR / PREMIUM / BEST …). A teal→gold DUAL
+   gradient with white text — never yellow-on-light, which washed out on the
+   light cards. Brand-var driven, readable in both themes. */
+.nx-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 9999px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+    background-image: linear-gradient(120deg, rgb(var(--brand-primary)), rgb(var(--brand-accent)));
+    box-shadow: 0 2px 8px rgb(var(--brand-primary) / 0.30);
+}
+
 /* Call screen (Dialer in-call) — a premium, soft two-tone gradient instead of a
    flat colour: a teal glow blooming from the top (a brand LIGHT colour, iOS-like)
    into a navy base, with a faint warm-gold catch at the very bottom for depth.

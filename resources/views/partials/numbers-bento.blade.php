@@ -29,7 +29,7 @@
 
             {{-- Badge --}}
             @if ($card['badge_label'])
-                <span class="absolute right-3 top-3 z-20 inline-flex items-center gap-1 rounded-full border border-amber-300/50 bg-amber-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:border-amber-300/40 dark:bg-amber-400/10 dark:text-amber-300">
+                <span class="nx-badge absolute right-3 top-3 z-20">
                     <x-icon name="star" class="h-2.5 w-2.5" /> {{ $card['badge_label'] }}
                 </span>
             @endif
