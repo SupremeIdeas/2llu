@@ -1025,3 +1025,12 @@
 .nx-wiz-glow { animation: nx-wiz-glow 4.5s ease-in-out infinite; }
 @keyframes nx-wiz-glow { 0%, 100% { opacity: 0.22; } 50% { opacity: 0.4; } }
 @media (prefers-reduced-motion: reduce) { .nx-wiz-glow { animation: none; opacity: 0.28; } }
+
+/* In-call control buttons (dialer live screen). The mute button swaps its
+   icon + label and fills when engaged; speaker just fills. Driven by
+   aria-pressed, which dialer.js toggles from the live Twilio call state. */
+.nx-callctl-off { display: none; }
+.nx-callctl[aria-pressed="true"] .nx-callctl-on { display: none; }
+.nx-callctl[aria-pressed="true"] .nx-callctl-off { display: inline; }
+.nx-callctl[aria-pressed="true"] .nx-callctl-btn { background: #ffffff; color: #0D1B2A; }
+.nx-callctl[aria-pressed="true"] { color: #ffffff; }

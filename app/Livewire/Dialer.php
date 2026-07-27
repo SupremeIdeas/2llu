@@ -99,10 +99,16 @@ class Dialer extends Component
 
         $this->reset('quoted', 'ratePerMin', 'fundedMinutes');
 
+        // If the number is in the address book, surface the saved name on the
+        // in-call screen (falls back to the raw number when it isn't).
+        $peerName = \App\Models\Contact::where('user_id', Auth::id())
+            ->where('phone_number', $call->destination)->value('name');
+
         // Alpine picks this up: fetch a token, then Device.connect(...).
         $this->dispatch('voice-dial',
             callId: $call->id,
             destination: $call->destination,
+            peerName: (string) ($peerName ?? ''),
             fundedSeconds: $dialer->fundedSeconds($call),
         );
     }
