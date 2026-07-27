@@ -103,6 +103,19 @@ class TelnyxService implements NumberProviderInterface
         return ['provider_ref' => (string) data_get($res->json(), 'data.id'), 'status' => 'queued'];
     }
 
+    /**
+     * Wholesale cost (USD) to send one outbound SMS segment (admin-tunable
+     * setting, config fallback). Server-side only — retail is layered on by
+     * PricingEngine and the provider cost is never surfaced.
+     */
+    public function outboundSmsCost(string $to): float
+    {
+        return (float) \App\Models\Setting::getValue(
+            'pricing.sms_send_cost.telnyx',
+            (float) config('services.telnyx.default_sms_cost', 0.004),
+        );
+    }
+
     public function releaseNumber(string $providerRef): void
     {
         if (! $this->configured() || $providerRef === '') {

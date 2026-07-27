@@ -93,4 +93,7 @@
 
     {{-- Add / Edit + import (bottom sheet) --}}
     @include('partials.contact-sheet')
+
+    {{-- Send-message modal host — catches `open-send-message` from rows / favourites. --}}
+    @livewire('send-message')
 </div>

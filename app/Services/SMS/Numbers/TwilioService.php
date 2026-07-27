@@ -262,6 +262,20 @@ class TwilioService implements NumberProviderInterface, VoiceProviderInterface
         return ['provider_ref' => (string) $res->json('sid'), 'status' => (string) $res->json('status')];
     }
 
+    /**
+     * Wholesale cost (USD) to send one outbound SMS segment. Twilio's per-message
+     * price isn't returned synchronously on send, so we read the admin-tunable
+     * cost setting (falls back to config). Server-side only — never exposed; the
+     * retail markup + MarginGuard floor are applied on top by PricingEngine.
+     */
+    public function outboundSmsCost(string $to): float
+    {
+        return (float) \App\Models\Setting::getValue(
+            'pricing.sms_send_cost.twilio',
+            (float) config('services.twilio.default_sms_cost', 0.0079),
+        );
+    }
+
     /** Release the number (stops monthly billing). Best-effort — never throws. */
     public function releaseNumber(string $providerRef): void
     {

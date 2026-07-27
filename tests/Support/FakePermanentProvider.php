@@ -18,10 +18,15 @@ class FakePermanentProvider implements NumberProviderInterface
     /**
      * @param  list<array{number:string, locality:string}>  $results
      */
+    /** Bodies handed to sendSms, so message tests can assert what went out. */
+    public array $sent = [];
+
     public function __construct(
         private float $cost = 1.00,
         private array $results = [['number' => '+15550001234', 'locality' => 'New York']],
         private bool $throwOnBuy = false,
+        private float $smsCost = 0.0079,
+        private bool $throwOnSend = false,
     ) {
     }
 
@@ -46,7 +51,17 @@ class FakePermanentProvider implements NumberProviderInterface
 
     public function sendSms(string $from, string $to, string $body): array
     {
+        if ($this->throwOnSend) {
+            throw new OutOfStockException('fake: send failed');
+        }
+        $this->sent[] = ['from' => $from, 'to' => $to, 'body' => $body];
+
         return ['provider_ref' => 'MSG-1', 'status' => 'queued'];
+    }
+
+    public function outboundSmsCost(string $to): float
+    {
+        return $this->smsCost;
     }
 
     public function releaseNumber(string $providerRef): void

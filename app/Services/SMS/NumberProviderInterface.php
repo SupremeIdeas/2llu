@@ -22,6 +22,9 @@ interface NumberProviderInterface
     /** Send an outbound SMS from a provisioned number. */
     public function sendSms(string $from, string $to, string $body): array;
 
+    /** Wholesale cost (USD) to send ONE outbound SMS segment to a destination. */
+    public function outboundSmsCost(string $to): float;
+
     /** Release a number back to the provider (stops monthly billing). */
     public function releaseNumber(string $providerRef): void;
 
