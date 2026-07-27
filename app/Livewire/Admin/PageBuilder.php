@@ -153,6 +153,49 @@ class PageBuilder extends Component
         $this->config['image'] = '';
     }
 
+    /* ---- Repeater helpers (bento cards, faq items, testimonials, logos) ---- */
+
+    public function addRepeaterItem(): void
+    {
+        $section = $this->section($this->editingId);
+        if (! $r = SectionLibrary::repeaterFor($section->type)) {
+            return;
+        }
+        $items = array_values((array) ($this->config[$r['field']] ?? []));
+        $items[] = $r['template'];
+        $this->config[$r['field']] = array_slice($items, 0, 12);
+    }
+
+    public function removeRepeaterItem(int $index): void
+    {
+        $section = $this->section($this->editingId);
+        if (! $r = SectionLibrary::repeaterFor($section->type)) {
+            return;
+        }
+        $items = array_values((array) ($this->config[$r['field']] ?? []));
+        unset($items[$index]);
+        $this->config[$r['field']] = array_values($items);
+    }
+
+    /** Upload an image into a repeater row (card/testimonial photo/logo). */
+    public function uploadRepeaterImage(int $index): void
+    {
+        $section = $this->section($this->editingId);
+        $r = SectionLibrary::repeaterFor($section->type);
+        if (! $r || ! $r['imageKey']) {
+            return;
+        }
+        $this->validate(['upload' => 'required|image|mimes:webp,jpg,jpeg,png|max:1500']);
+        $url = MediaStorage::storePublic($this->upload, 'page-sections');
+        $this->upload = null;
+
+        $items = array_values((array) ($this->config[$r['field']] ?? []));
+        if (isset($items[$index])) {
+            $items[$index][$r['imageKey']] = $url;
+            $this->config[$r['field']] = $items;
+        }
+    }
+
     public function saveSection(): void
     {
         $section = $this->section($this->editingId);

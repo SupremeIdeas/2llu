@@ -45,6 +45,106 @@ class SectionLibrary
                     'bg' => 'transparent',        // transparent | tint | dark
                 ],
             ],
+            'bento' => [
+                'label' => 'Bento grid',
+                'icon' => 'grid',
+                'blade' => 'partials.sections.bento',
+                'description' => 'Varied-weight card grid. Admin picks a rhythm layout; each card = image, title, copy, pill CTA.',
+                'defaults' => [
+                    'heading' => 'What you get',
+                    'subheading' => '',
+                    'layout' => 'rhythm',   // rhythm | uniform | featured
+                    'cards' => [
+                        ['image' => '', 'icon' => 'signal', 'title' => 'eSIM Data Plans', 'body' => 'Local data in 190+ countries.', 'cta_label' => 'Browse plans', 'cta_target' => '', 'badge' => ''],
+                        ['image' => '', 'icon' => 'phone', 'title' => 'Naara Line', 'body' => 'A real second number, voice + SMS.', 'cta_label' => 'Get a number', 'cta_target' => '', 'badge' => ''],
+                        ['image' => '', 'icon' => 'shield', 'title' => 'Naara Verify', 'body' => 'Disposable numbers for OTP.', 'cta_label' => 'Verify', 'cta_target' => '', 'badge' => ''],
+                    ],
+                ],
+            ],
+            'carousel' => [
+                'label' => 'Carousel',
+                'icon' => 'grid',
+                'blade' => 'partials.sections.carousel',
+                'description' => 'Horizontal-scroll card row (recents-style) with a soft ease + swell on the focused card.',
+                'defaults' => [
+                    'heading' => 'Recent',
+                    'see_all_label' => '',
+                    'see_all_target' => '',
+                    'cards' => [
+                        ['image' => '', 'title' => 'Card one', 'subtitle' => 'Category', 'target' => ''],
+                        ['image' => '', 'title' => 'Card two', 'subtitle' => 'Category', 'target' => ''],
+                        ['image' => '', 'title' => 'Card three', 'subtitle' => 'Category', 'target' => ''],
+                    ],
+                ],
+            ],
+            'faq' => [
+                'label' => 'FAQ',
+                'icon' => 'help-circle',
+                'blade' => 'partials.sections.faq',
+                'description' => 'Accordion of question / answer pairs.',
+                'defaults' => [
+                    'heading' => 'Frequently asked',
+                    'style' => 'bordered',   // bordered | plain
+                    'items' => [
+                        ['q' => 'How fast is activation?', 'a' => 'Most eSIMs activate in under a minute.'],
+                        ['q' => 'Do I need to swap my SIM?', 'a' => 'No — an eSIM runs alongside your physical SIM.'],
+                    ],
+                ],
+            ],
+            'testimonial' => [
+                'label' => 'Testimonial',
+                'icon' => 'star',
+                'blade' => 'partials.sections.testimonial',
+                'description' => 'Customer quotes — name, quote, optional photo + star rating.',
+                'defaults' => [
+                    'heading' => 'Loved by travellers',
+                    'items' => [
+                        ['name' => 'Ada N.', 'quote' => 'Landed in Nairobi already online. Magic.', 'photo' => '', 'rating' => 5],
+                    ],
+                ],
+            ],
+            'logo_showcase' => [
+                'label' => 'Logo showcase',
+                'icon' => 'grid',
+                'blade' => 'partials.sections.logo-showcase',
+                'description' => 'Auto-scrolling strip of partner / press logos.',
+                'defaults' => [
+                    'heading' => '',
+                    'logos' => [],   // [{src, alt}]
+                ],
+            ],
+            'quote' => [
+                'label' => 'Premium quote',
+                'icon' => 'star',
+                'blade' => 'partials.sections.quote',
+                'description' => 'A single large pull-quote with a choice of visual treatments.',
+                'defaults' => [
+                    'quote' => 'No borders. No swaps. Just connection.',
+                    'attribution' => '',
+                    'treatment' => 'gradient',   // gradient | minimal | dark
+                ],
+            ],
+            'video' => [
+                'label' => 'Video embed',
+                'icon' => 'signal',
+                'blade' => 'partials.sections.video',
+                'description' => 'Embed a YouTube / Vimeo video by URL, with an optional caption.',
+                'defaults' => [
+                    'url' => '',
+                    'caption' => '',
+                ],
+            ],
+            'code' => [
+                'label' => 'Code snippet',
+                'icon' => 'hash',
+                'blade' => 'partials.sections.code',
+                'description' => 'A syntax-styled code block for docs-style pages.',
+                'defaults' => [
+                    'caption' => '',
+                    'language' => 'bash',
+                    'code' => '',
+                ],
+            ],
             'custom_html' => [
                 'label' => 'Custom HTML',
                 'icon' => 'hash',
@@ -56,6 +156,24 @@ class SectionLibrary
                 ],
             ],
         ];
+    }
+
+    /**
+     * Repeater metadata for types that hold a list of items (cards / q&a / logos),
+     * so the builder can add/remove rows + target image uploads generically.
+     *
+     * @return array{field:string, template:array, imageKey:?string}|null
+     */
+    public static function repeaterFor(string $type): ?array
+    {
+        return match ($type) {
+            'bento' => ['field' => 'cards', 'imageKey' => 'image', 'template' => ['image' => '', 'icon' => 'signal', 'title' => 'New card', 'body' => '', 'cta_label' => '', 'cta_target' => '', 'badge' => '']],
+            'carousel' => ['field' => 'cards', 'imageKey' => 'image', 'template' => ['image' => '', 'title' => 'New card', 'subtitle' => '', 'target' => '']],
+            'faq' => ['field' => 'items', 'imageKey' => null, 'template' => ['q' => '', 'a' => '']],
+            'testimonial' => ['field' => 'items', 'imageKey' => 'photo', 'template' => ['name' => '', 'quote' => '', 'photo' => '', 'rating' => 5]],
+            'logo_showcase' => ['field' => 'logos', 'imageKey' => 'src', 'template' => ['src' => '', 'alt' => '']],
+            default => null,
+        };
     }
 
     /** The 5 pre-made, reusable 2026-trending hero looks (prompt: "build like 5 premade hero sections"). */

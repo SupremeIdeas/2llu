@@ -155,6 +155,58 @@ class PageBuilderTest extends TestCase
         $this->assertSame('dark', $config['scheme']);
     }
 
+    public function test_every_registered_section_type_renders(): void
+    {
+        $svc = app(PageBuilderService::class);
+        foreach (array_keys(SectionLibrary::types()) as $type) {
+            $svc->addSection('lib', $type);
+        }
+        $html = view('partials.sections.render', ['sections' => PageSections::draft('lib')])->render();
+
+        $this->assertNotEmpty($html);
+        // Bento + FAQ default content proves the repeater types render their items.
+        $this->assertStringContainsString('nx-sec-bento', $html);
+        $this->assertStringContainsString('nx-sec-faq', $html);
+    }
+
+    public function test_bento_repeater_add_and_remove(): void
+    {
+        $admin = $this->admin();
+        $section = app(PageBuilderService::class)->addSection('home', 'bento');
+
+        $component = Livewire::actingAs($admin)->test(PageBuilder::class, ['page' => 'home'])
+            ->call('edit', $section->id);
+
+        $start = count($section->fresh()->config['cards']);
+        $component->call('addRepeaterItem')->call('saveSection');
+        $this->assertCount($start + 1, $section->fresh()->config['cards']);
+
+        $component->call('removeRepeaterItem', 0)->call('saveSection');
+        $this->assertCount($start, $section->fresh()->config['cards']);
+    }
+
+    public function test_import_numbers_bento_folds_legacy_cards_into_a_section(): void
+    {
+        \App\Models\NumbersBentoCard::create([
+            'key' => 'verify', 'title' => 'Naara Verify', 'subtitle' => 'OTP numbers',
+            'badge_label' => 'POPULAR', 'sort_order' => 1, 'is_active' => true,
+        ]);
+        \App\Models\NumbersBentoCard::create([
+            'key' => 'rent', 'title' => 'Naara Rent', 'subtitle' => 'Rent a number',
+            'sort_order' => 2, 'is_active' => true,
+        ]);
+
+        $this->artisan('builder:import-numbers-bento')->assertExitCode(0);
+
+        $section = PageSection::where('page_key', 'numbers')->where('type', 'bento')->firstOrFail();
+        $this->assertCount(2, $section->config['cards']);
+        $this->assertSame('Naara Verify', $section->config['cards'][0]['title']);
+
+        // Idempotent — re-running replaces, never duplicates.
+        $this->artisan('builder:import-numbers-bento')->assertExitCode(0);
+        $this->assertSame(1, PageSection::where('page_key', 'numbers')->where('type', 'bento')->count());
+    }
+
     public function test_publishing_records_version_history(): void
     {
         $svc = app(PageBuilderService::class);
