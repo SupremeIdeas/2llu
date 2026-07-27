@@ -9,13 +9,13 @@
         and an Explore pill — sized like the app's promo banners, not a giant
         block. 4-image reveal with auto-advance, dots and mobile swipe.
     --}}
-    <div class="nx-hero mb-6 aspect-[16/10] overflow-hidden rounded-3xl border border-slate-200/70 shadow-sm sm:aspect-[16/6] dark:border-white/10"
+    <div class="nx-imghero mb-6 aspect-[2/1] w-full overflow-hidden rounded-3xl border border-slate-200/70 shadow-sm dark:border-white/10"
          x-data="numbersHero({{ count($images) }})"
          @mouseenter="pause()" @mouseleave="resume()"
          @touchstart.passive="touchStart($event)" @touchend.passive="touchEnd($event)"
          role="region" aria-label="Numbers highlights">
         @foreach ($images as $i => $src)
-            <div class="nx-hero__slide" :class="active === {{ $i }} && 'is-active'">
+            <div class="nx-imghero__slide" :class="active === {{ $i }} && 'is-active'">
                 <img src="{{ $src }}" alt="" loading="{{ $i === 0 ? 'eager' : 'lazy' }}" decoding="async" width="1280" height="480">
             </div>
         @endforeach

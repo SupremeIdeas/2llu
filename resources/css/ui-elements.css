@@ -315,8 +315,10 @@
 /* eSIM/Numbers hero — interchanging IMAGE REVEAL (owner request), not a slide.
    Slides are stacked; the active one wipes in via clip-path + crossfades + a slow
    Ken-Burns scale, so it reads as a genuine reveal. */
-.nx-hero { position: relative; overflow: hidden; }
-.nx-hero__slide {
+/* Full-bleed image-reveal banner (eSIM + Numbers heroes). A UNIQUE class so it
+   never inherits the toast-notification .nx-hero (which is a fixed 26rem card). */
+.nx-imghero { position: relative; width: 100%; overflow: hidden; }
+.nx-imghero__slide {
     position: absolute;
     inset: 0;
     opacity: 0;
@@ -325,16 +327,16 @@
     transition: opacity 0.9s ease, clip-path 0.9s cubic-bezier(0.65, 0, 0.35, 1);
     will-change: opacity, clip-path, transform;
 }
-.nx-hero__slide.is-active {
+.nx-imghero__slide.is-active {
     opacity: 1;
     transform: scale(1);
     clip-path: inset(0 0 0 0);
     transition: opacity 0.9s ease, clip-path 0.9s cubic-bezier(0.65, 0, 0.35, 1), transform 6s ease-out;
 }
-.nx-hero__slide img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.nx-imghero__slide img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 @media (prefers-reduced-motion: reduce) {
-    .nx-hero__slide { transition: opacity 0.4s ease; transform: none; clip-path: none; }
-    .nx-hero__slide.is-active { transform: none; }
+    .nx-imghero__slide { transition: opacity 0.4s ease; transform: none; clip-path: none; }
+    .nx-imghero__slide.is-active { transform: none; }
 }
 
 /* The one app-wide spinner (owner request — replaces the spinning refresh icon).

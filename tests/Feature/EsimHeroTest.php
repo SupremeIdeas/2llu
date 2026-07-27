@@ -72,6 +72,6 @@ class EsimHeroTest extends TestCase
 
         Livewire::actingAs(User::factory()->create())->test(\App\Livewire\Catalogue::class)
             ->assertSee('Hero Headline Here')
-            ->assertSee('nx-hero', false);
+            ->assertSee('nx-imghero', false);
     }
 }
