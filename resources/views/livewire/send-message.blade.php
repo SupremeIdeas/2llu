@@ -72,6 +72,28 @@
                         @error('to') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
+                    {{-- Attachment (MMS) — only offered on an MMS-capable US/CA line. --}}
+                    @if ($canAttach)
+                        <div class="mt-3">
+                            @if ($attachment)
+                                <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-white/5">
+                                    <span class="flex min-w-0 items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                                        <x-icon name="image" class="h-4 w-4 shrink-0 text-primary dark:text-teal-300" />
+                                        <span class="truncate">{{ method_exists($attachment, 'getClientOriginalName') ? $attachment->getClientOriginalName() : 'Image' }}</span>
+                                    </span>
+                                    <button type="button" wire:click="$set('attachment', null)" aria-label="Remove attachment" class="shrink-0 text-slate-400 hover:text-red-600"><x-icon name="x" class="h-4 w-4" /></button>
+                                </div>
+                                <div wire:loading wire:target="attachment" class="mt-1 text-[11px] text-slate-400">Uploading…</div>
+                            @else
+                                <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-500 transition hover:border-primary/40 hover:text-primary dark:border-white/10 dark:text-slate-400">
+                                    <x-icon name="image" class="h-4 w-4" /> Add a photo
+                                    <input type="file" wire:model="attachment" accept="image/jpeg,image/png,image/gif" class="hidden">
+                                </label>
+                            @endif
+                            @error('attachment') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    @endif
+
                     @if ($error)
                         <div class="mt-3 flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
                             <x-icon name="x" class="mt-0.5 h-4 w-4 shrink-0" /> <span>{{ $error }}</span>
@@ -86,13 +108,13 @@
                         </div>
                     @endif
 
-                    <button type="button" wire:click="send" wire:loading.attr="disabled" wire:target="send"
-                            @disabled(trim($body) === '')
+                    <button type="button" wire:click="send" wire:loading.attr="disabled" wire:target="send,attachment"
+                            @disabled(trim($body) === '' && ! $attachment)
                             class="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-50">
-                        <span wire:loading.remove wire:target="send" class="inline-flex items-center gap-2"><x-icon name="send" class="h-4 w-4" /> Send message</span>
+                        <span wire:loading.remove wire:target="send" class="inline-flex items-center gap-2"><x-icon name="send" class="h-4 w-4" /> {{ $attachment ? 'Send with photo' : 'Send message' }}</span>
                         <span wire:loading wire:target="send" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Sending…</span>
                     </button>
-                    <p class="mt-2 text-center text-[11px] text-slate-400 dark:text-slate-500">Charged from your wallet. Longer messages send as multiple parts.</p>
+                    <p class="mt-2 text-center text-[11px] text-slate-400 dark:text-slate-500">Charged from your wallet. @if ($quote && ($quote['is_mms'] ?? false))Photos send as MMS.@else Longer messages send as multiple parts.@endif</p>
                 @endif
             </div>
         </div>

@@ -63,18 +63,33 @@ class MessageSenderService
      *
      * @return array{retail_per_segment: float, segments: int, retail_total: float}
      */
-    public function quote(VirtualNumber $line, string $body): array
+    public function quote(VirtualNumber $line, string $body, bool $hasMedia = false): array
     {
         $provider = $line->provider;
-        $cost = app("number.{$provider}")->outboundSmsCost($line->phone_number);
+        $cost = $this->costFor($provider, $line->phone_number, $hasMedia);
         $retail = $this->pricing->calculateSmsRetail($cost, $provider); // MarginGuard-floored
-        $segments = min($this->segmentsFor($body), $this->maxSegments());
+        // An MMS is billed as one media message, not per 160-char segment.
+        $segments = $hasMedia ? 1 : min($this->segmentsFor($body), $this->maxSegments());
 
         return [
             'retail_per_segment' => round($retail, 4),
             'segments' => $segments,
             'retail_total' => round($retail * $segments, 4),
+            'is_mms' => $hasMedia,
         ];
+    }
+
+    /** Wholesale cost basis: MMS (with media) or SMS, per provider (admin-set). */
+    private function costFor(string $provider, string $to, bool $hasMedia): float
+    {
+        if ($hasMedia) {
+            return (float) Setting::getValue(
+                "pricing.mms_send_cost.{$provider}",
+                $provider === 'telnyx' ? 0.01 : 0.02,
+            );
+        }
+
+        return (float) app("number.{$provider}")->outboundSmsCost($to);
     }
 
     /**
@@ -82,7 +97,7 @@ class MessageSenderService
      * charges retail atomically, then hands the body to the provider. On any
      * delivery failure the wallet is refunded — never charged without delivering.
      */
-    public function send(User $user, VirtualNumber $line, string $to, string $body): OutboundMessage
+    public function send(User $user, VirtualNumber $line, string $to, string $body, ?string $mediaUrl = null): OutboundMessage
     {
         // Ownership + state (a user can only send from their own active Line).
         if ((int) $line->user_id !== (int) $user->id || $line->status !== 'active') {
@@ -93,19 +108,27 @@ class MessageSenderService
             throw new SmsException('This number can’t send text messages.');
         }
 
+        $mediaUrl = $mediaUrl !== null && trim($mediaUrl) !== '' ? trim($mediaUrl) : null;
+        $hasMedia = $mediaUrl !== null;
+        // MMS only where the carrier actually delivers it (US/CA numbers).
+        if ($hasMedia && ! $line->supportsMms()) {
+            throw new SmsException('This number can’t send attachments — MMS works on US/Canada lines.');
+        }
+
         $to = trim($to);
         if (! preg_match('/^\+[1-9]\d{6,14}$/', $to)) {
             throw new SmsException('Enter a valid destination in international format, e.g. +2348012345678.');
         }
         $body = trim($body);
-        if ($body === '') {
+        // An attachment can stand alone; a plain SMS needs text.
+        if ($body === '' && ! $hasMedia) {
             throw new SmsException('Type a message to send.');
         }
 
         $provider = $line->provider;
         $svc = app("number.{$provider}");
 
-        $cost = (float) $svc->outboundSmsCost($to);
+        $cost = $this->costFor($provider, $to, $hasMedia);
         $minProfit = (float) Setting::getValue('pricing.sms_min_profit', 0.01);
         $retail = round($this->pricing->calculateSmsRetail($cost, $provider), 4);
 
@@ -114,7 +137,7 @@ class MessageSenderService
             throw new SmsException('Messaging isn’t available on this number right now.');
         }
 
-        $segments = min($this->segmentsFor($body), $this->maxSegments());
+        $segments = $hasMedia ? 1 : min($this->segmentsFor($body), $this->maxSegments());
         $charge = round($retail * $segments, 4);
         $ref = 'sms-send:'.$user->id.':'.Str::uuid();
 
@@ -132,6 +155,7 @@ class MessageSenderService
                 'virtual_number_id' => $line->id,
                 'to_number' => $to,
                 'body' => $body,
+                'attachment_url' => $mediaUrl,
                 'provider' => $provider,
                 'status' => 'queued',
                 'segments' => $segments,
@@ -146,7 +170,7 @@ class MessageSenderService
 
         // 3) Hand it to the provider. On failure: refund + mark failed (rule 6).
         try {
-            $result = $svc->sendSms($line->phone_number, $to, $body);
+            $result = $svc->sendSms($line->phone_number, $to, $body, $mediaUrl);
         } catch (Throwable $e) {
             $this->wallet->refund($user, $charge, 'USD', ['reference' => "refund:{$ref}", 'description' => 'Message delivery failed']);
             $message->update(['status' => 'failed']);

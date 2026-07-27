@@ -49,12 +49,12 @@ class FakePermanentProvider implements NumberProviderInterface
         ];
     }
 
-    public function sendSms(string $from, string $to, string $body): array
+    public function sendSms(string $from, string $to, string $body, ?string $mediaUrl = null): array
     {
         if ($this->throwOnSend) {
             throw new OutOfStockException('fake: send failed');
         }
-        $this->sent[] = ['from' => $from, 'to' => $to, 'body' => $body];
+        $this->sent[] = ['from' => $from, 'to' => $to, 'body' => $body, 'media' => $mediaUrl];
 
         return ['provider_ref' => 'MSG-1', 'status' => 'queued'];
     }

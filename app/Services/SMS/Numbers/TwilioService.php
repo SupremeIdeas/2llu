@@ -247,14 +247,17 @@ class TwilioService implements NumberProviderInterface, VoiceProviderInterface
         ];
     }
 
-    public function sendSms(string $from, string $to, string $body): array
+    public function sendSms(string $from, string $to, string $body, ?string $mediaUrl = null): array
     {
         if (! $this->configured()) {
             throw new OutOfStockException('Twilio is not configured.');
         }
-        $res = $this->client()->asForm()->post('/Messages.json', [
+        // A media URL upgrades the message to MMS (Twilio fetches the file).
+        $payload = array_filter([
             'From' => $from, 'To' => $to, 'Body' => $body,
-        ]);
+            'MediaUrl' => $mediaUrl,
+        ], fn ($v) => $v !== null && $v !== '');
+        $res = $this->client()->asForm()->post('/Messages.json', $payload);
         if ($res->failed()) {
             throw new OutOfStockException('Twilio message send failed.');
         }

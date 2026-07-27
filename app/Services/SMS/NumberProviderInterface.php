@@ -19,8 +19,11 @@ interface NumberProviderInterface
      */
     public function buyNumber(string $country, array $options = []): array;
 
-    /** Send an outbound SMS from a provisioned number. */
-    public function sendSms(string $from, string $to, string $body): array;
+    /**
+     * Send an outbound SMS/MMS from a provisioned number. A non-null $mediaUrl
+     * (a public URL the carrier can fetch) sends it as an MMS attachment.
+     */
+    public function sendSms(string $from, string $to, string $body, ?string $mediaUrl = null): array;
 
     /** Wholesale cost (USD) to send ONE outbound SMS segment to a destination. */
     public function outboundSmsCost(string $to): float;

@@ -90,12 +90,17 @@ class TelnyxService implements NumberProviderInterface
         ];
     }
 
-    public function sendSms(string $from, string $to, string $body): array
+    public function sendSms(string $from, string $to, string $body, ?string $mediaUrl = null): array
     {
         if (! $this->configured()) {
             throw new OutOfStockException('Telnyx is not configured.');
         }
-        $res = $this->client()->post('/messages', ['from' => $from, 'to' => $to, 'text' => $body]);
+        // A media URL sends it as MMS (Telnyx accepts a media_urls array).
+        $payload = array_filter([
+            'from' => $from, 'to' => $to, 'text' => $body,
+            'media_urls' => $mediaUrl !== null && $mediaUrl !== '' ? [$mediaUrl] : null,
+        ], fn ($v) => $v !== null && $v !== '');
+        $res = $this->client()->post('/messages', $payload);
         if ($res->failed()) {
             throw new OutOfStockException('Telnyx message send failed.');
         }

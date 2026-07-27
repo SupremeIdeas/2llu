@@ -46,4 +46,19 @@ class VirtualNumber extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Whether this line can send MMS (media attachments). Carriers only deliver
+     * MMS reliably on US/Canada (+1) numbers, so we gate attachments to those —
+     * an honest capability check rather than letting a media send silently drop.
+     */
+    public function supportsMms(): bool
+    {
+        $caps = (array) $this->capabilities;
+        if (array_key_exists('mms', $caps)) {
+            return (bool) $caps['mms'];
+        }
+
+        return str_starts_with(ltrim($this->phone_number, ' '), '+1');
+    }
 }

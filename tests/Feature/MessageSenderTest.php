@@ -120,6 +120,41 @@ class MessageSenderTest extends TestCase
         $this->assertSame('failed', OutboundMessage::first()->status);
     }
 
+    public function test_an_attachment_sends_as_mms_and_is_stored(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $user = $this->fundedUser(usd: 5.0);
+        $line = $this->line($user); // +1 US number → MMS-capable
+        $fake = app('number.twilio');
+
+        $msg = app(MessageSenderService::class)->send(
+            $user, $line, '+15551234567', 'See attached', 'https://cdn.test/pic.jpg'
+        );
+
+        $this->assertSame('sent', $msg->status);
+        $this->assertSame('https://cdn.test/pic.jpg', $msg->attachment_url);
+        $this->assertSame(1, $msg->segments); // MMS billed as one media message
+        // The provider received the media URL (real MMS send).
+        $this->assertSame('https://cdn.test/pic.jpg', $fake->sent[0]['media']);
+    }
+
+    public function test_a_non_us_line_refuses_an_attachment(): void
+    {
+        $user = $this->fundedUser(usd: 5.0);
+        $line = $this->line($user);
+        $line->update(['phone_number' => '+442012345678']); // UK — no MMS
+
+        try {
+            app(MessageSenderService::class)->send($user, $line, '+15551234567', 'Hi', 'https://cdn.test/pic.jpg');
+            $this->fail('Expected an SmsException.');
+        } catch (SmsException $e) {
+            // expected
+        }
+
+        // Never charged — the media send was refused before any debit.
+        $this->assertSame('5.0000', (string) $user->wallet->fresh()->usd_balance);
+    }
+
     public function test_it_refuses_to_send_from_another_users_line(): void
     {
         $owner = $this->fundedUser();

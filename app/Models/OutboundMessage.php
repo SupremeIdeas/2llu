@@ -17,6 +17,7 @@ class OutboundMessage extends Model
         'virtual_number_id',
         'to_number',
         'body',
+        'attachment_url',
         'provider',
         'provider_ref',
         'status',
