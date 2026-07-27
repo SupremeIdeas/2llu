@@ -4,7 +4,7 @@
 
     {{-- Completeness meter --}}
     @php($pct = $user->profileCompleteness())
-    <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <div class="mb-6 rounded-2xl border border-slate-200 nx-glass-tile p-5 dark:border-[#2D4060]">
         <div class="mb-2 flex items-center justify-between text-sm">
             <span class="font-semibold text-slate-700 dark:text-slate-200">Profile strength</span>
             <span class="font-bold {{ $pct >= 80 ? 'text-green-600 dark:text-green-400' : 'text-primary dark:text-teal-300' }}">{{ $pct }}%</span>
@@ -17,7 +17,7 @@
 
     <div class="space-y-6">
         {{-- Avatar + identity --}}
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
             <div class="flex items-center gap-4">
                 @if ($user->avatar)
                     <img src="{{ $user->avatar }}" alt="{{ $user->name }}" class="h-16 w-16 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10">
@@ -53,7 +53,7 @@
         </div>
 
         {{-- Location + preferences --}}
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
             <h2 class="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Location & preferences</h2>
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>

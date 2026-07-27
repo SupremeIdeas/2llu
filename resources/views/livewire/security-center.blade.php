@@ -14,7 +14,7 @@
     @endif
 
     {{-- Password ------------------------------------------------------- --}}
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
         <h2 class="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Change password</h2>
         <form wire:submit="updatePassword" class="space-y-3">
             <input type="password" wire:model="current_password" placeholder="Current password" autocomplete="current-password"
@@ -35,7 +35,7 @@
     </section>
 
     {{-- Two-factor ------------------------------------------------------ --}}
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
         <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Two-factor authentication</h2>
         <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">Add a one-time code from an authenticator app on top of your password.</p>
 
@@ -83,7 +83,7 @@
     </section>
 
     {{-- Email ---------------------------------------------------------- --}}
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
         <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Email address</h2>
         <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">
             @if ($user->email_verified_at)
@@ -108,7 +108,7 @@
     </section>
 
     {{-- Connected accounts --------------------------------------------- --}}
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
         <h2 class="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Connected accounts</h2>
         <div class="flex items-center justify-between gap-3">
             <span class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
@@ -129,7 +129,7 @@
 
     {{-- Sessions ------------------------------------------------------- --}}
     @if ($sessions->isNotEmpty())
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Active sessions</h2>
                 <button wire:click="signOutOtherSessions" wire:loading.attr="disabled" wire:target="signOutOtherSessions"

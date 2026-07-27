@@ -77,7 +77,7 @@
     <div wire:loading.remove wire:target="search,gotoPage,nextPage,previousPage" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         @forelse ($plans as $plan)
             <div wire:key="plan-{{ $plan->id }}"
-                 class="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-[#2D4060] dark:bg-[#1A2840]">
+                 class="flex flex-col rounded-xl border border-slate-200 nx-glass-tile p-5 shadow-sm transition-shadow hover:shadow-md dark:border-[#2D4060]">
                 <div class="mb-3 flex items-start justify-between">
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary-dark dark:bg-primary/20 dark:text-primary">
                         <x-icon name="globe" class="h-3.5 w-3.5" />

@@ -83,7 +83,7 @@
     @endif
 
     {{-- Account status: pause / resume --}}
-    <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <section class="mb-5 rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
         <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
             <x-icon name="pause" class="h-4 w-4 text-primary" /> Account status
         </h2>
@@ -106,7 +106,7 @@
     </section>
 
     {{-- Data export --}}
-    <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <section class="mb-5 rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
         <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
             <x-icon name="download" class="h-4 w-4 text-primary" /> Download your data
         </h2>
@@ -129,7 +129,7 @@
     </section>
 
     {{-- Deletion --}}
-    <section class="rounded-2xl border border-red-200 bg-white p-6 dark:border-red-900/50 dark:bg-[#1A2840]">
+    <section class="rounded-2xl border border-red-200 nx-glass-tile p-6 dark:border-red-900/50">
         <h2 class="flex items-center gap-2 text-sm font-semibold text-red-700 dark:text-red-400">
             <x-icon name="trash" class="h-4 w-4" /> Delete my account
         </h2>

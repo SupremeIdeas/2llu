@@ -40,7 +40,7 @@
     @endif
 
     {{-- Wallet + create --}}
-    <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <div class="mb-6 rounded-2xl border border-slate-200 nx-glass-tile p-5 shadow-sm dark:border-[#2D4060]">
         <div class="mb-4 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-[#243352]">
             <span class="text-slate-500 dark:text-slate-400">Your wallet balance (funds top-ups)</span>
             <span class="font-bold text-slate-900 dark:text-slate-100">${{ number_format($walletUsd, 2) }}</span>
@@ -75,7 +75,7 @@
     <h2 class="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Your API keys</h2>
     <div class="space-y-3">
         @forelse ($clients as $client)
-            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]" wire:key="client-{{ $client->id }}">
+            <div class="rounded-2xl border border-slate-200 nx-glass-tile p-4 shadow-sm dark:border-[#2D4060]" wire:key="client-{{ $client->id }}">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
                         <span class="font-semibold text-slate-900 dark:text-slate-100">{{ $client->name }}</span>

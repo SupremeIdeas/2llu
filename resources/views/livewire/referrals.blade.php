@@ -2,7 +2,7 @@
     <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Refer &amp; earn</h1>
     <p class="mb-6 text-sm text-slate-500 dark:text-slate-400">Share NaaraSim. When a friend makes their first purchase, you earn store credit — a share of the profit.</p>
 
-    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <div class="rounded-2xl border border-slate-200 nx-glass-tile p-6 shadow-sm dark:border-[#2D4060]">
         <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Your referral link</label>
         <div class="flex items-center gap-2">
             <input type="text" readonly value="{{ $link }}" x-ref="link"
