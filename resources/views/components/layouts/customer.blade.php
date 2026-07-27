@@ -13,6 +13,8 @@
     ];
 
     $more = [
+        // The most-reached number tools live up top of More (owner request).
+        ['route' => 'numbers.contacts', 'label' => 'Contacts', 'icon' => 'users'],
         ['route' => 'support', 'label' => 'Help & Support', 'icon' => 'message-circle'],
         ['route' => 'rewards', 'label' => 'Rewards', 'icon' => 'gift'],
         ['route' => 'referrals', 'label' => 'Referrals', 'icon' => 'gift'],
@@ -21,6 +23,12 @@
         ['route' => 'account', 'label' => 'Account', 'icon' => 'settings'],
         ['route' => 'security', 'label' => 'Security', 'icon' => 'shield'],
     ];
+
+    // The in-browser dialer (Internet calls) only when voice is live — its page
+    // 404s until Twilio is active, so we don't surface a dead link.
+    if (\App\Support\ProviderStatus::isActive('twilio')) {
+        array_splice($more, 1, 0, [['route' => 'numbers.dialer', 'label' => 'Internet calls', 'icon' => 'phone']]);
+    }
 
     // Developer portal — only surfaced when the operator has enabled the API.
     if (\App\Models\Setting::getValue('developer_api.enabled', false)) {

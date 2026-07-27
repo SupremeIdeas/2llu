@@ -49,3 +49,7 @@ Schedule::command('backup:clean')->dailyAt('02:30')->withoutOverlapping();
 // Refresh live currency-display FX rates (localized pricing) — display only.
 Schedule::command('fx:sync')->dailyAt('05:00')->withoutOverlapping();
 Schedule::command('backup:run --only-db')->dailyAt('02:45')->withoutOverlapping();
+
+// Promote local platform media to Wasabi once cloud keys go live (no-ops
+// without keys, so it's safe to run hourly — the migration is automatic).
+Schedule::command('media:migrate-to-wasabi')->hourly()->withoutOverlapping();

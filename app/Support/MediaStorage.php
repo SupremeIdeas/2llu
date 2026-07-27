@@ -100,6 +100,50 @@ class MediaStorage
     }
 
     /**
+     * The storage-relative path of a LOCAL public URL (…/storage/<path>), or
+     * null if the URL isn't a local public asset (already on Wasabi/a CDN, or
+     * an external URL we don't own).
+     */
+    public static function localPublicPath(string $url): ?string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return null;
+        }
+        // Only our own /storage/ paths are local public assets.
+        $path = parse_url($url, PHP_URL_PATH) ?: $url;
+        if (! str_contains($path, '/storage/')) {
+            return null;
+        }
+        $rel = ltrim(substr($path, strpos($path, '/storage/') + strlen('/storage/')), '/');
+
+        return $rel !== '' && Storage::disk('public')->exists($rel) ? $rel : null;
+    }
+
+    /**
+     * Move a LOCAL public asset to Wasabi and return its new cloud URL. No-op
+     * (returns null) unless Wasabi is configured AND the URL is a local file we
+     * own. The local copy is left in place — a later cleanup can prune it — so a
+     * failed migration never loses the asset. Idempotent: an already-cloud URL
+     * returns null and is skipped.
+     */
+    public static function migrateLocalUrlToCloud(string $url): ?string
+    {
+        if (! self::wasabiConfigured()) {
+            return null;
+        }
+        $rel = self::localPublicPath($url);
+        if ($rel === null) {
+            return null;
+        }
+
+        $contents = Storage::disk('public')->get($rel);
+        Storage::disk('wasabi')->put($rel, $contents, 'public');
+
+        return Storage::disk('wasabi')->url($rel);
+    }
+
+    /**
      * Neutralise an SVG before it is served to users: remove scripts, inline
      * event handlers, foreignObject, and javascript: URLs.
      */
