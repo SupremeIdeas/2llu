@@ -672,6 +672,29 @@
     .dark .nx-glass { background: #16233d; }
 }
 
+/* Lightweight glass for plain SOLID-surface cards so the dashboard background
+   shows through (Platform Theme glass-audit rule). Unlike .nx-glass it only
+   swaps the fill + adds blur — the card keeps its own radius / border / padding
+   / shadow — so it drops onto an existing `bg-white dark:bg-[#1A2840]` card by
+   replacing just those two colour classes. Readability-safe alpha; solid
+   fallback where blur is unavailable.
+
+   NEVER apply to a card that already owns a gradient (.nx-aurora / .nx-anim-card
+   and anything like them) — those stay exactly as they are, no blur, no
+   opacity change. This is a binary per-component flag, not a spectrum. */
+.nx-glass-tile {
+    background: rgb(255 255 255 / 0.62);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+}
+.dark .nx-glass-tile {
+    background: rgb(26 40 64 / 0.55);
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .nx-glass-tile { background: #ffffff; }
+    .dark .nx-glass-tile { background: #1A2840; }
+}
+
 /* Pinned products crossfade (Module 27.5): panels only overlap when GSAP has
    actually initialised (.gsap-pin added by app.js) — reduced-motion and no-JS
    visitors get the normal stacked flow. */

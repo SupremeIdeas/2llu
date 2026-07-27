@@ -79,13 +79,13 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-            <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <div class="rounded-xl border border-slate-200 nx-glass-tile p-5 dark:border-[#2D4060]">
                 <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                     <x-icon name="wallet" class="h-4 w-4" /> NGN balance
                 </div>
                 <div class="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">NGN {{ number_format((float) $wallet->ngn_balance, 2) }}</div>
             </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <div class="rounded-xl border border-slate-200 nx-glass-tile p-5 dark:border-[#2D4060]">
                 <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                     <x-icon name="credit-card" class="h-4 w-4" /> USD balance
                 </div>
@@ -129,7 +129,7 @@
         {{-- Top up (Module 32 pick — Na3ar-17 collapsible payment card, made
              functional): graceful expand, payment-method radios, quick-cash
              blocks — all wired to the real gateway initialisation. --}}
-        <div class="nx-topup rounded-2xl border border-slate-200 bg-white dark:border-[#2D4060] dark:bg-[#1A2840]"
+        <div class="nx-topup rounded-2xl border border-slate-200 nx-glass-tile dark:border-[#2D4060]"
              x-data="{ open: true }">
             <button type="button" @click="open = !open" :aria-expanded="open.toString()"
                     class="flex w-full items-center justify-between gap-2 p-5">

@@ -37,7 +37,7 @@
             <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Favourites</p>
             <div class="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
                 @foreach ($favorites as $fav)
-                    <div wire:key="fav-{{ $fav->id }}" class="flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border border-slate-200 bg-white p-3 text-center dark:border-white/10 dark:bg-white/5">
+                    <div wire:key="fav-{{ $fav->id }}" class="flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-2xl border border-slate-200 nx-glass-tile p-3 text-center dark:border-white/10">
                         @include('partials.contact-avatar', ['contact' => $fav, 'size' => 'h-11 w-11 text-sm'])
                         <span class="w-full truncate text-xs font-medium text-slate-700 dark:text-slate-200">{{ Str::of($fav->name)->before(' ')->whenEmpty(fn () => Str::of($fav->name)) }}</span>
                         <div class="flex items-center gap-3">
@@ -81,7 +81,7 @@
     <div x-show="view === 'grid'" x-cloak class="grid grid-cols-2 gap-3 sm:grid-cols-3">
         @forelse ($grouped->flatten(1) as $c)
             <button type="button" wire:key="gc-{{ $c->id }}" wire:click="edit({{ $c->id }})" @click="sheet = true"
-                    class="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-center transition hover:border-primary/40 hover:shadow-sm dark:border-white/10 dark:bg-white/5">
+                    class="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 nx-glass-tile p-4 text-center transition hover:border-primary/40 hover:shadow-sm dark:border-white/10">
                 @include('partials.contact-avatar', ['contact' => $c, 'size' => 'h-14 w-14 text-base'])
                 <span class="w-full truncate text-sm font-semibold text-slate-900 dark:text-white">{{ $c->name }}</span>
                 <span class="w-full truncate text-xs text-slate-400">{{ $c->phone_number }}</span>
