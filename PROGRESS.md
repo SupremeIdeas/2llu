@@ -9,6 +9,47 @@
 
 ## DONE
 
+### ✅ Partner Program + Merchant V2 — built 2026-07-27
+Two structurally-separate programs on the shared payout/wallet/pricing rails.
+
+**Part 1 — Partner program (platform-wide profit share).**
+- New models/migrations: `partners` (owner, status, admin-confidential
+  `profit_share_pct`, cadence, manual/auto `payout_mode`, `last_period_end`),
+  `partner_earnings` (accrual/hold/release ledger w/ period + balance_after).
+- **Profit-period boundary (exact, auditable):** `platform_profit(period) =
+  Σ OrderLog.profit + Σ SmsOrder.profit − Σ MerchantEarning.accrual`. An order's
+  logged profit is (charged − cost); a merchant customer's charge includes the
+  merchant's own cut, which is separately booked to the merchant ledger — netting
+  those accruals out leaves the platform's retained margin (retail − cost) with NO
+  double count. (`PlatformProfitService`; scope = eSIM + numbers order profit —
+  recurring renewals/voice excluded until profit-logged per txn.)
+- `PartnerEarningsService` (atomic, idempotent). `PartnerPayoutService`: accrues
+  each completed weekly/monthly period (idempotent per period) and pays out on the
+  existing `PayoutService` — manual → pending admin approval, auto → sent.
+  **Withdrawal is UNCONDITIONAL** (no referral/spend/fee/min gate) — only an
+  accrued balance + verified account. `ReturnPartnerEarnings` reverses a failed
+  payout. Scheduled `partners:payout-run` daily. Admin → Partners page + a
+  partner-facing earnings view (dollars only; the % is never rendered).
+
+**Part 2 — Merchant V2 (client management tier).**
+- Migrations: `merchants.tier` (standard|v2) + `upgraded_at`; `merchant_clients`;
+  `merchant_client_id` on `esim_orders` + `sms_orders` (one-to-many). New model
+  `MerchantClient`.
+- `MerchantUpgradeService`: self-pay (wallet, default $125) or admin grant, both
+  idempotent + audited. `MerchantClientService`: V2-gated client CRUD + assign an
+  eSIM via the SAME checkout money path (merchant price, idempotent debit,
+  double-submit guard, ProviderRouter self-refund, orphan guard), tagging the
+  order with the client. `MerchantClients` Livewire (search + paginate). Admin
+  grant/downgrade + upgrade-price setting; dashboard self-upgrade + Clients /
+  Developer-portal shortcuts; "Become a Merchant" nav link. Dev-portal is the same
+  ApiClient pattern; its prepaid top-up is already owner+wallet-scoped (audited,
+  no external funding). Reseller earnings unchanged (additive).
+
+**Admin settings added (default):** `partners.enabled` (false),
+`partners.default_cadence` (monthly), `partners.default_payout_mode` (manual);
+`merchants.upgrade_price_usd` (125). Per-partner share/cadence/mode live on the
+Partner row. Tests: `PartnerProgramTest` (8) + `MerchantV2Test` (8). Suite 794.
+
 ### ✅ Messaging (MMS), Rent durations, toasts + provider-sync clarity — built 2026-07-27
 Clarity pass + fixes before the Partner/Merchant build, verified against real
 provider capabilities (no invented features).
