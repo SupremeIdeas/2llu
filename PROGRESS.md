@@ -9,6 +9,44 @@
 
 ## DONE
 
+### ✅ Claude-assisted blog authoring — built 2026-07-27
+`BlogArticleAssistant` (reuses `AnthropicClient`, key-gated). Suggests the NEXT
+best article from existing posts, drafts SEO body + excerpt + meta, proposes a
+cover-image prompt to copy, and reformats drafts — output in the blog's escaped
+light-markup (never raw HTML). Admin → Blog "Write with Claude" panel. Editing
+past posts unchanged. `BlogAssistantTest` (5). Suite 846.
+
+### ✅ Login notice pop-ups — built 2026-07-27
+`alerts` + `alert_views`; `AlertService.nextFor` (audience all/new/old, time
+window, per-user view cap, dismissal — atomic view counting). `AlertPopup`
+(customer shell, fintech modal, sanitized rich body, coupon copy, CTA, Cancel).
+Admin → Login notices: CRUD + dependency-free rich-text editor. `AlertPopupTest`
+(7). Suite 841.
+
+### ✅ App Export publish-readiness + first-run onboarding — built 2026-07-27
+Live green/red **Publish readiness** checklist in App Builder (every Play/App
+Store control — privacy policy, support, account-deletion, descriptions, data
+safety, rating, signing/target-API/build); account/review steps flagged "(you)"
+and never counted. Store-listing + compliance fields. **First-run onboarding**:
+admin adds 3–4 portrait slides; `/get-started` carousel → **login**; PWA
+start_url flips to onboarding when slides exist; localStorage skips after first
+view. `AppExportTest` +5 (15). Suite 834.
+
+### ✅ Section Builder — login toggle + public status page — built 2026-07-27
+Login treatment toggle (WebGL / image / auto) in Admin → Auth & Footer. Public
+`/status` (unauthenticated): component health DERIVED from ProviderStatus as
+BRANDED groups (never names a supplier — scrub rule 1.2), incident timeline,
+email subscribe; Admin → Status incidents (post/update/resolve + queued email).
+Footer: the existing SiteChrome editor stays the footer builder (no parallel
+system). `StatusPageTest` (5). Suite 830.
+
+### ✅ Section Builder — full section-type library + bento generalization — 2026-07-27
+Added Bento grid (rhythm/featured/uniform, graceful no-image fallback, deep-link
+CTAs), Carousel, FAQ, Testimonial, Logo showcase, Premium quote, Video embed
+(YouTube/Vimeo parsed), Code snippet — each with a renderer + builder editor +
+generic repeater helpers. `builder:import-numbers-bento` folds legacy
+NumbersBentoCard rows into a bento section (idempotent). `PageBuilderTest` 17.
+
 ### ✅ Aurora Welcome Animation (first-login entrance) — built 2026-07-27
 A premium fullscreen aurora + logo-zoom + tagline sequence shown ONCE, right
 after signup, before the dashboard. 100% CSS + Alpine (no external JS).
