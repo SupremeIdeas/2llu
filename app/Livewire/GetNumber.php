@@ -62,6 +62,20 @@ class GetNumber extends Component
         // Pre-fill a coupon claimed from an offer (one-tap path); still validated
         // + MarginGuard-clamped when applied.
         $this->coupon = \App\Support\PendingCoupon::peek() ?? '';
+
+        // Deep-linked modal (e.g. ?modal=line from "Get a Naara Line"): apply the
+        // same request-type default openModal() would, and drop an unknown value.
+        if ($this->modal !== '') {
+            if (! in_array($this->modal, ['verify', 'rent', 'line'], true)) {
+                $this->modal = '';
+            } else {
+                $this->type = match ($this->modal) {
+                    'rent' => NumberRequest::TYPE_RENTAL,
+                    'line' => NumberRequest::TYPE_PERMANENT,
+                    default => NumberRequest::TYPE_OTP,
+                };
+            }
+        }
     }
 
     /** Switching away from rental clears an "any service" (full-rent) pick. */

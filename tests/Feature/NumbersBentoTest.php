@@ -77,6 +77,21 @@ class NumbersBentoTest extends TestCase
             ->assertSeeInOrder(['Naara', 'Verify']);
     }
 
+    public function test_a_deep_linked_modal_opens_with_the_right_request_type(): void
+    {
+        // "Get a Naara Line" (e.g. from Call forwarding / Send message) links to
+        // ?modal=line — mount must open it as a permanent-number request.
+        Livewire::withQueryParams(['modal' => 'line'])
+            ->actingAs(User::factory()->create())->test(GetNumber::class)
+            ->assertSet('modal', 'line')
+            ->assertSet('type', \App\Services\SMS\NumberRequest::TYPE_PERMANENT);
+
+        // An unknown modal value is dropped (no broken half-open state).
+        Livewire::withQueryParams(['modal' => 'garbage'])
+            ->actingAs(User::factory()->create())->test(GetNumber::class)
+            ->assertSet('modal', '');
+    }
+
     public function test_an_admin_can_edit_a_card_and_it_reaches_the_landing(): void
     {
         $this->seed(\Database\Seeders\RoleSeeder::class);

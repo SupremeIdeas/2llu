@@ -6,15 +6,24 @@
     </p>
 
     @if ($numbers->isEmpty())
-        <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-400">
-            You don't have a permanent number yet.
-            <a href="{{ route('numbers') }}" class="font-semibold text-primary hover:underline">Get a Naara Line</a> to set up forwarding.
+        <div class="mt-6 flex flex-col items-center rounded-3xl border border-slate-200 nx-glass-tile px-6 py-12 text-center dark:border-white/10">
+            <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300">
+                <x-icon name="phone-forwarded" class="h-8 w-8" />
+            </span>
+            <h2 class="mt-4 text-lg font-bold text-slate-900 dark:text-white">Forwarding needs a Naara Line</h2>
+            <p class="mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+                Get a permanent voice number, then send its calls to the phone in your pocket — anywhere in the world.
+            </p>
+            <a href="{{ route('numbers', ['modal' => 'line']) }}" wire:navigate
+               class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition hover:bg-primary-dark">
+                <x-icon name="plus" class="h-4 w-4" /> Get a Naara Line
+            </a>
         </div>
     @else
         <div class="mt-6 space-y-3">
             @foreach ($numbers as $number)
                 @php($rule = $rules[$number->id] ?? null)
-                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]" wire:key="num-{{ $number->id }}">
+                <div class="rounded-2xl border border-slate-200 nx-glass-tile p-5 shadow-sm dark:border-[#2D4060]" wire:key="num-{{ $number->id }}">
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-2">
                             <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20"><x-icon name="phone" class="h-4 w-4" /></span>
