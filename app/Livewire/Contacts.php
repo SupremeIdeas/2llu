@@ -62,6 +62,7 @@ class Contacts extends Component
         }
 
         $this->reset('name', 'phone', 'editingId');
+        $this->dispatch('contact-saved'); // closes the sheet
         $this->dispatch('nx-toast', type: 'success', message: 'Contact saved.');
     }
 
@@ -85,6 +86,13 @@ class Contacts extends Component
             $this->reset('name', 'phone', 'editingId');
         }
         $this->dispatch('nx-toast', type: 'success', message: 'Contact removed.');
+    }
+
+    /** Star / unstar a contact for the favourites row. */
+    public function toggleFavorite(int $id): void
+    {
+        $contact = Contact::where('user_id', Auth::id())->findOrFail($id);
+        $contact->update(['is_favorite' => ! $contact->is_favorite]);
     }
 
     /** Bulk import from a CSV or vCard file. */
@@ -152,13 +160,33 @@ class Contacts extends Component
 
     public function render()
     {
-        $contacts = Contact::where('user_id', Auth::id())
+        $all = Contact::where('user_id', Auth::id())
             ->when($this->search !== '', function ($q) {
                 $term = '%'.$this->search.'%';
                 $q->where(fn ($w) => $w->where('name', 'like', $term)->orWhere('phone_number', 'like', $term));
             })
-            ->orderBy('name')->get();
+            ->orderByRaw('LOWER(name)')->get();
 
-        return view('livewire.contacts', ['contacts' => $contacts]);
+        // Group A–Z by first letter (non-letters bucket under '#') for the
+        // sectioned list + the quick-scroll index.
+        $grouped = $all->groupBy(function (Contact $c) {
+            $first = mb_strtoupper(mb_substr(trim($c->name), 0, 1));
+
+            return preg_match('/[A-Z]/', $first) ? $first : '#';
+        })->sortKeys();
+
+        // Message action is only offered when the user owns a Naara Line (an SMS
+        // needs a real "from" number) — Numbers V6 §6.
+        $ownsLine = \App\Models\VirtualNumber::where('user_id', Auth::id())
+            ->where('status', 'active')->exists();
+
+        return view('livewire.contacts', [
+            'total' => $all->count(),
+            'favorites' => $all->where('is_favorite', true)->values(),
+            'grouped' => $grouped,
+            'letters' => $grouped->keys(),
+            'ownsLine' => $ownsLine,
+            'twilioActive' => \App\Support\ProviderStatus::isActive('twilio'),
+        ]);
     }
 }

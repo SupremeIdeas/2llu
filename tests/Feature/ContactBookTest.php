@@ -78,6 +78,36 @@ class ContactBookTest extends TestCase
         $this->assertDatabaseMissing('contacts', ['id' => $c->id]);
     }
 
+    public function test_a_user_can_toggle_a_contact_as_favourite(): void
+    {
+        $user = User::factory()->create();
+        $c = Contact::create(['user_id' => $user->id, 'name' => 'Ada Obi', 'phone_number' => '+2348012345678']);
+
+        Livewire::actingAs($user)->test(Contacts::class)->call('toggleFavorite', $c->id);
+        $this->assertTrue($c->fresh()->is_favorite);
+
+        Livewire::actingAs($user)->test(Contacts::class)->call('toggleFavorite', $c->id);
+        $this->assertFalse($c->fresh()->is_favorite);
+    }
+
+    public function test_a_user_cannot_favourite_another_users_contact(): void
+    {
+        $owner = User::factory()->create();
+        $c = Contact::create(['user_id' => $owner->id, 'name' => 'Secret', 'phone_number' => '+15551110000']);
+        $attacker = User::factory()->create();
+
+        // The auth-scoped lookup refuses a foreign row outright (404), so the
+        // favourite flag can never be flipped by anyone but the owner.
+        try {
+            Livewire::actingAs($attacker)->test(Contacts::class)->call('toggleFavorite', $c->id);
+            $this->fail('Expected the foreign contact to be unreachable.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // expected
+        }
+
+        $this->assertFalse($c->fresh()->is_favorite); // untouched
+    }
+
     public function test_a_user_cannot_touch_another_users_contact(): void
     {
         $owner = User::factory()->create();
