@@ -158,6 +158,12 @@ class AppServiceProvider extends ServiceProvider
             \App\Listeners\ReturnMerchantEarnings::class,
         );
 
+        // Same, for a reversed partner profit-share payout.
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\PayoutReversed::class,
+            \App\Listeners\ReturnPartnerEarnings::class,
+        );
+
         // Extend Socialite with the extra sign-in providers (owner request).
         // Google/Facebook/Twitter are core drivers; Apple/Microsoft/Discord are
         // registered here via their SocialiteProviders packages.

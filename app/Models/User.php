@@ -168,6 +168,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Merchant::class, 'owner_user_id');
     }
 
+    public function partnerAccount(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Partner::class, 'owner_user_id');
+    }
+
     /** The merchant this user is a CUSTOMER of (co-branding follows this). */
     public function merchant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {

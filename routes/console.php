@@ -53,3 +53,7 @@ Schedule::command('backup:run --only-db')->dailyAt('02:45')->withoutOverlapping(
 // Promote local platform media to Wasabi once cloud keys go live (no-ops
 // without keys, so it's safe to run hourly — the migration is automatic).
 Schedule::command('media:migrate-to-wasabi')->hourly()->withoutOverlapping();
+
+// Partner profit-share payouts — daily, but each partner is only paid when a
+// full weekly/monthly period has elapsed (idempotent per period).
+Schedule::command('partners:payout-run')->dailyAt('04:30')->withoutOverlapping();
