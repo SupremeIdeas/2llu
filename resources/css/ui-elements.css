@@ -383,29 +383,20 @@
     .nx-bento:hover { transform: none; }
 }
 
-/* ---- Smooth "flowing" active nav item. A soft brand gradient pill with a
-   rounded accent bar on the left — reads as a channel water flows through, not
-   a blocky highlight. Brand-var driven. Used by the sidebar + More-sheet nav. -- */
+/* ---- "Connected tab" active nav item. The active pill takes the PAGE
+   background colour so it reads as carved out of the tinted sidebar and flowing
+   into the content — like the DeskIn reference — lifted by a soft shadow, with
+   brand-coloured icon + label. Not a blocky tint. -- */
 .nx-navlink { position: relative; transition: background 0.25s ease, color 0.2s ease, box-shadow 0.25s ease; }
 .nx-navlink.is-active {
-    background: linear-gradient(90deg, rgb(var(--brand-primary) / 0.14), rgb(var(--brand-primary) / 0.03));
+    background: #F8F9FA; /* == page background (light) */
     color: rgb(var(--brand-primary-dark));
-    box-shadow: 0 6px 18px -8px rgb(var(--brand-primary) / 0.4);
-}
-.nx-navlink.is-active::before {
-    content: "";
-    position: absolute;
-    left: 0.15rem;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 52%;
-    width: 3px;
-    border-radius: 9999px;
-    background: linear-gradient(180deg, rgb(var(--brand-primary)), rgb(var(--brand-accent)));
+    box-shadow: 0 6px 18px -6px rgb(15 23 42 / 0.14);
 }
 .dark .nx-navlink.is-active {
-    background: linear-gradient(90deg, rgb(var(--brand-primary) / 0.26), rgb(var(--brand-primary) / 0.06));
+    background: rgb(var(--brand-navy)); /* == page background (dark) */
     color: rgb(94 234 212);
+    box-shadow: 0 6px 18px -6px rgb(0 0 0 / 0.55);
 }
 
 /* The one app-wide spinner (owner request — replaces the spinning refresh icon).

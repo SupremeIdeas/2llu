@@ -27,7 +27,7 @@
          icons + labels. The choice is remembered in localStorage. --}}
     <aside class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col lg:p-3 lg:transition-[width] lg:duration-300"
            :class="navCollapsed ? 'lg:!w-24' : ''">
-        <div class="flex h-full flex-col rounded-3xl border border-slate-200/70 bg-white/70 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
+        <div class="flex h-full flex-col rounded-3xl border border-slate-200/70 bg-gradient-to-b from-teal-50 via-slate-50 to-slate-100/70 shadow-sm backdrop-blur-xl dark:border-white/10 dark:from-white/[0.06] dark:via-white/[0.03] dark:to-white/[0.02]">
             <div class="flex items-center py-5" :class="navCollapsed ? 'justify-center px-3' : 'justify-between px-5'">
                 <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex items-center" x-show="!navCollapsed">
                     <x-brand-logo variant="product" class="h-9 max-w-[150px]" :fallback-icon="$brandIcon" />
