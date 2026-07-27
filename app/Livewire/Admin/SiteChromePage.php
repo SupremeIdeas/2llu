@@ -23,6 +23,8 @@ class SiteChromePage extends Component
     use WithFileUploads;
 
     // Auth panel
+    public string $login_style = 'auto';   // auto | webgl | image
+
     public string $media_type = 'image';
 
     public $media = null;         // new upload (image or video)
@@ -43,6 +45,7 @@ class SiteChromePage extends Component
     public function mount(): void
     {
         $auth = SiteChrome::authPanel();
+        $this->login_style = $auth['style'] ?? 'auto';
         $this->media_type = $auth['media_type'];
         $this->headline = $auth['headline'];
         $this->subtext = $auth['subtext'];
@@ -110,6 +113,7 @@ class SiteChromePage extends Component
             'legal.*.url.regex' => 'Each link must be an in-app path (/…) or a full https:// URL.',
         ]);
 
+        Setting::setValue('site.auth.style', in_array($this->login_style, ['auto', 'webgl', 'image'], true) ? $this->login_style : 'auto', 'site');
         Setting::setValue('site.auth.media_type', $this->media_type, 'site');
         if ($this->media) {
             Setting::setValue('site.auth.media_url', MediaStorage::storePublic($this->media, 'auth'), 'site');

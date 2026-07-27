@@ -15,6 +15,15 @@
                 <x-icon name="image" class="h-4 w-4 text-primary" /> Sign-in media panel
             </h2>
 
+            <div class="mt-4 mb-4">
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Login treatment</label>
+                <select wire:model="login_style" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <option value="auto">Auto — your uploaded media if set, else the animated WebGL scene</option>
+                    <option value="webgl">Always the animated WebGL scene</option>
+                    <option value="image">Image / text only (lighter, faster — no WebGL)</option>
+                </select>
+                <p class="mt-1 text-xs text-slate-400">Both treatments stay supported; this only picks which one the login page shows.</p>
+            </div>
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Panel type</label>

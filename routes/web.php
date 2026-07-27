@@ -57,6 +57,9 @@ Route::get('/manifest.webmanifest', \App\Http\Controllers\ManifestController::cl
 Route::get('/download', \App\Http\Controllers\DownloadAppController::class)->name('download');
 Route::view('/offline', 'pages.offline')->name('offline');
 
+// Public, unauthenticated system status page (for users + Developer API integrators).
+Route::get('/status', \App\Livewire\StatusPage::class)->name('status');
+
 // Public blog (Module 30).
 Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog');
 Route::get('/blog/{post:slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
@@ -200,6 +203,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/builder', \App\Livewire\Admin\PageBuilder::class)->name('builder');
             Route::get('/app-builder', \App\Livewire\Admin\AppBuilder::class)->name('app-builder');
             Route::get('/welcome-settings', \App\Livewire\Admin\WelcomeSettings::class)->name('welcome-settings');
+            Route::get('/incidents', \App\Livewire\Admin\Incidents::class)->name('incidents');
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
             Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');

@@ -34,6 +34,7 @@ class SiteChrome
             try {
                 return [
                     'auth' => [
+                        'style' => Setting::getValue('site.auth.style', 'auto') ?: 'auto',
                         'media_type' => Setting::getValue('site.auth.media_type', 'image') ?: 'image',
                         'media_url' => (string) Setting::getValue('site.auth.media_url', ''),
                         'poster_url' => (string) Setting::getValue('site.auth.poster_url', ''),
@@ -81,6 +82,7 @@ class SiteChrome
     public static function defaultAuth(): array
     {
         return [
+            'style' => 'auto',           // auto | webgl | image (login page treatment)
             'media_type' => 'image',
             'media_url' => '',
             'poster_url' => '',
@@ -115,6 +117,7 @@ class SiteChrome
             ['label' => 'Terms', 'url' => '/legal/terms'],
             ['label' => 'Privacy', 'url' => '/legal/privacy'],
             ['label' => 'Refunds', 'url' => '/legal/refund'],
+            ['label' => 'Status', 'url' => '/status'],
         ];
     }
 
