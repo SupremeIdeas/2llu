@@ -76,6 +76,27 @@ exception exists but still needs Apple's per-release notarization, carries extra
 fees, and lapses for a user outside the EU for 30+ days — not worth building
 around unless EU distribution becomes a specific priority.
 
+## Publish-readiness checklist (in the admin)
+
+App Builder shows a live **Publish readiness** panel that ticks green as each
+store requirement is satisfied — app identity/icon/splash/version, **privacy
+policy URL**, support contact, **account-deletion path** (both stores now
+require one; we point it at `/account`), short/full descriptions, **data-safety
+/ privacy declaration**, content rating, and Android signing/target-API/build.
+Items marked **(you)** are the account/review steps only Frank can do (Apple
+$99/yr, Google Play $25 + 12-tester closed test, cloud macOS build service) —
+they never count toward the technical "ready" score, so a green technical build
+is never mistaken for a live listing.
+
+## First-run onboarding
+
+Admin adds **3–4 portrait slides** (image + title + subtitle) in App Builder →
+First-run onboarding. On first app open the installed app enters `/get-started`
+(the PWA `start_url` flips there automatically when slides exist), the user
+swipes/Next through the slides, and lands on the **login page** — the correct
+gateway into the dashboard. A `localStorage` flag skips it on later opens, and
+signed-in users are sent straight to the dashboard.
+
 ## First-release checklist
 1. Set `capacitor.config.json` `server.url` + `appId`.
 2. Enrol in Apple Developer + Google Play Console (above).

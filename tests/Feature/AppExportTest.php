@@ -160,6 +160,49 @@ class AppExportTest extends TestCase
         $this->assertTrue((bool) AppExport::get('keystore_backed_up'));
     }
 
+    public function test_onboarding_redirects_to_login_until_slides_exist(): void
+    {
+        // No slides → onboarding is not "enabled" → straight to login.
+        $this->get('/get-started')->assertRedirect(route('login'));
+
+        AppExport::save(['onboarding_slides' => [
+            ['image' => 'https://cdn/slide1.webp', 'title' => 'Welcome', 'subtitle' => 'Hi'],
+        ]]);
+        $this->get('/get-started')->assertOk()->assertSee('Welcome');
+    }
+
+    public function test_manifest_start_url_enters_onboarding_when_slides_exist(): void
+    {
+        $this->assertSame('/dashboard', AppExport::manifest()['start_url']);
+
+        AppExport::save(['onboarding_slides' => [['image' => 'https://cdn/s.webp', 'title' => 'Hi']]]);
+        $this->assertSame('/get-started', AppExport::manifest()['start_url']);
+    }
+
+    public function test_readiness_checklist_reflects_filled_fields(): void
+    {
+        $before = AppExport::readinessScore()['done'];
+
+        AppExport::save([
+            'privacy_policy_url' => 'https://naara.sim/privacy',
+            'support_email' => 'help@naara.sim',
+            'short_description' => 'Stay connected anywhere.',
+        ]);
+
+        $this->assertGreaterThan($before, AppExport::readinessScore()['done']);
+
+        // Operator-only items (paid accounts) are never counted toward the score.
+        $ios = collect(AppExport::publishChecklist()['iOS']);
+        $this->assertTrue($ios->firstWhere('label', 'Apple Developer Program ($99/yr)')['operator']);
+    }
+
+    public function test_admin_can_add_an_onboarding_slide(): void
+    {
+        Livewire::actingAs($this->admin())->test(AppBuilder::class)
+            ->call('addSlide')
+            ->assertCount('form.onboarding_slides', 1);
+    }
+
     public function test_store_cannot_be_marked_live_without_a_url(): void
     {
         Livewire::actingAs($this->admin())->test(AppBuilder::class)

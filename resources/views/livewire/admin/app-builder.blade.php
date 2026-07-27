@@ -8,6 +8,40 @@
         </p>
     </div>
 
+    {{-- ===== Publish-readiness checklist ================================= --}}
+    <div class="mb-6 rounded-2xl border border-slate-200/70 bg-white p-5 dark:border-white/10 dark:bg-slate-900/60">
+        <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Publish readiness</h2>
+            <span class="rounded-full px-3 py-1 text-xs font-bold {{ $score['done'] === $score['total'] ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300' }}">
+                {{ $score['done'] }} / {{ $score['total'] }} ready
+            </span>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-3">
+            @foreach ($checklist as $group => $items)
+                <div>
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{{ $group }}</p>
+                    <ul class="space-y-1.5">
+                        @foreach ($items as $item)
+                            <li class="flex items-start gap-2 text-xs" title="{{ $item['hint'] }}">
+                                @if ($item['operator'] ?? false)
+                                    <x-icon name="info" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-500" />
+                                    <span class="text-slate-500 dark:text-slate-400">{{ $item['label'] }} <span class="text-slate-400">(you)</span></span>
+                                @elseif ($item['ok'])
+                                    <x-icon name="check" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                                    <span class="text-slate-600 dark:text-slate-300">{{ $item['label'] }}</span>
+                                @else
+                                    <x-icon name="x" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500" />
+                                    <span class="text-slate-600 dark:text-slate-300">{{ $item['label'] }}</span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endforeach
+        </div>
+        <p class="mt-3 text-xs text-slate-400">Blue items marked “(you)” are account/review steps only Frank can complete — see the App Export doc.</p>
+    </div>
+
     {{-- ===== App identity ================================================= --}}
     <div class="mb-6 rounded-2xl border border-slate-200/70 bg-white p-5 dark:border-white/10 dark:bg-slate-900/60">
         <h2 class="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">App identity</h2>
@@ -154,6 +188,83 @@
                     <input type="text" wire:model="placements.{{ $key }}.label" placeholder="Get the app" class="{{ $inp }} ml-auto max-w-[200px]">
                 </div>
             @endforeach
+        </div>
+    </div>
+
+    {{-- ===== Store listing & compliance ================================== --}}
+    <div class="mb-6 rounded-2xl border border-slate-200/70 bg-white p-5 dark:border-white/10 dark:bg-slate-900/60">
+        <h2 class="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Store listing &amp; compliance</h2>
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div><label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Privacy policy URL <span class="text-red-500">*</span></label>
+                <input type="url" wire:model="form.privacy_policy_url" class="{{ $inp }}">
+                @error('form.privacy_policy_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror</div>
+            <div><label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Account deletion URL</label>
+                <input type="text" wire:model="form.account_deletion_url" class="{{ $inp }}"></div>
+            <div><label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Support email</label>
+                <input type="email" wire:model="form.support_email" class="{{ $inp }}">
+                @error('form.support_email') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror</div>
+            <div><label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Support URL</label>
+                <input type="url" wire:model="form.support_url" class="{{ $inp }}"></div>
+            <div><label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Category</label>
+                <input type="text" wire:model="form.category" placeholder="e.g. Travel / Communication" class="{{ $inp }}"></div>
+            <div><label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Content rating</label>
+                <input type="text" wire:model="form.content_rating" placeholder="e.g. Everyone / 4+" class="{{ $inp }}"></div>
+            <div><label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Keywords</label>
+                <input type="text" wire:model="form.keywords" placeholder="comma,separated" class="{{ $inp }}"></div>
+            <div><label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Android target API</label>
+                <input type="number" wire:model="form.min_android_target_api" class="{{ $inp }}"></div>
+        </div>
+        <div class="mt-4">
+            <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Short description</label>
+            <input type="text" wire:model="form.short_description" maxlength="200" class="{{ $inp }}"></div>
+        <div class="mt-3">
+            <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Full description</label>
+            <textarea wire:model="form.full_description" rows="4" class="{{ $inp }}"></textarea></div>
+        <div class="mt-3">
+            <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Data safety / privacy summary</label>
+            <textarea wire:model="form.data_safety" rows="3" placeholder="What data the app collects and why (Google Data Safety / Apple privacy labels)." class="{{ $inp }}"></textarea></div>
+        <div class="mt-3">
+            <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Permissions justification</label>
+            <textarea wire:model="form.permissions_note" rows="2" class="{{ $inp }}"></textarea></div>
+    </div>
+
+    {{-- ===== First-run onboarding slides ================================= --}}
+    <div class="mb-6 rounded-2xl border border-slate-200/70 bg-white p-5 dark:border-white/10 dark:bg-slate-900/60">
+        <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">First-run onboarding</h2>
+            <button type="button" wire:click="addSlide" class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary dark:text-teal-300">+ Slide</button>
+        </div>
+        <label class="mb-3 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+            <input type="checkbox" wire:model="form.onboarding_enabled" class="rounded border-slate-300 text-primary focus:ring-primary">
+            Show onboarding on first app open (portrait slides → login)
+        </label>
+        <div class="space-y-3">
+            @foreach (($form['onboarding_slides'] ?? []) as $i => $slide)
+                <div class="flex gap-3 rounded-xl border border-slate-200/70 p-3 dark:border-white/10" wire:key="slide-{{ $i }}">
+                    <div class="shrink-0">
+                        @if (! empty($slide['image']))
+                            <img src="{{ $slide['image'] }}" class="h-24 w-16 rounded-lg object-cover">
+                        @else
+                            <div class="flex h-24 w-16 items-center justify-center rounded-lg bg-slate-100 text-slate-300 dark:bg-white/5"><x-icon name="image" class="h-5 w-5" /></div>
+                        @endif
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="mb-1 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-400">Slide {{ $i + 1 }} (portrait)</span>
+                            <button type="button" wire:click="removeSlide({{ $i }})" class="text-slate-400 hover:text-red-600"><x-icon name="trash" class="h-3.5 w-3.5" /></button>
+                        </div>
+                        <input type="text" wire:model="form.onboarding_slides.{{ $i }}.title" placeholder="Title" class="{{ $inp }}">
+                        <input type="text" wire:model="form.onboarding_slides.{{ $i }}.subtitle" placeholder="Subtitle" class="{{ $inp }} mt-1.5">
+                        <div class="mt-1.5 flex items-center gap-2">
+                            <input type="file" wire:model="slideImage" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-2 file:rounded-full file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-xs file:text-primary dark:text-slate-400">
+                            <button type="button" wire:click="uploadSlideImage({{ $i }})" class="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary dark:text-teal-300">Set</button>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+            @if (empty($form['onboarding_slides']))
+                <p class="text-sm text-slate-400">No slides yet — add 3–4 portrait slides users swipe through on first open.</p>
+            @endif
         </div>
     </div>
 

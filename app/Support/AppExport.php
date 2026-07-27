@@ -67,6 +67,24 @@ class AppExport
             'keystore_backed_up' => false,
             'ci_webhook_url' => '',
             'placements' => [],               // key => ['active'=>bool,'label'=>?string]
+
+            // --- Store listing + compliance (required for Play/App Store pass) ---
+            'privacy_policy_url' => '',
+            'support_email' => '',
+            'support_url' => '',
+            'account_deletion_url' => '/account',   // both stores require a deletion path
+            'category' => '',
+            'content_rating' => '',
+            'short_description' => '',
+            'full_description' => '',
+            'keywords' => '',
+            'data_safety' => '',                    // Google Data Safety / Apple privacy summary
+            'min_android_target_api' => 35,         // Play requires a recent target API
+            'permissions_note' => '',
+
+            // --- First-run onboarding slides (portrait), Next → login ---
+            'onboarding_enabled' => true,
+            'onboarding_slides' => [],              // [{image, title, subtitle}]
         ];
     }
 
@@ -137,7 +155,8 @@ class AppExport
         return [
             'name' => self::get('app_name'),
             'short_name' => self::get('short_name'),
-            'start_url' => '/dashboard',
+            // First launch enters onboarding (self-skips once seen) → login → dashboard.
+            'start_url' => self::onboardingEnabled() ? '/get-started' : '/dashboard',
             'scope' => '/',
             'display' => 'standalone',
             'orientation' => 'portrait',
@@ -163,6 +182,84 @@ class AppExport
     public static function qrDataUri(string $url, int $size = 190): string
     {
         return 'data:image/svg+xml;base64,'.base64_encode(self::qrSvg($url, $size));
+    }
+
+    /* -------- Onboarding slides ------------------------------------------ */
+
+    /** @return array<int, array{image:string, title:string, subtitle:string}> */
+    public static function onboardingSlides(): array
+    {
+        return array_values(array_filter(
+            (array) self::get('onboarding_slides', []),
+            fn ($s) => is_array($s) && ! empty($s['image']),
+        ));
+    }
+
+    public static function onboardingEnabled(): bool
+    {
+        return (bool) self::get('onboarding_enabled', true) && self::onboardingSlides() !== [];
+    }
+
+    /* -------- Publish-readiness checklist -------------------------------- */
+
+    /**
+     * Every control a real Play Store / App Store submission needs, with a live
+     * green/red state (App Export prompt — "make everything tick green"). The
+     * items Claude Code can't satisfy (paid accounts, review) are flagged as
+     * operator tasks, never silently ticked.
+     *
+     * @return array<string, array<int, array{label:string, ok:bool, hint:string, operator?:bool}>>
+     */
+    public static function publishChecklist(): array
+    {
+        $has = fn (string $k) => trim((string) self::get($k)) !== '';
+
+        $shared = [
+            self::item('App name set', $has('app_name'), 'Set the app name.'),
+            self::item('App icon uploaded', $has('icon_url'), 'Upload a square ≥512px icon.'),
+            self::item('Splash screen uploaded', $has('splash_url'), 'Upload a splash image.'),
+            self::item('Version set (x.y.z)', (bool) preg_match('/^\d+\.\d+\.\d+$/', (string) self::get('version')), 'Use semantic version like 1.0.0.'),
+            self::item('Privacy policy URL', $has('privacy_policy_url'), 'Required by both stores — add a public privacy policy URL.'),
+            self::item('Support email or URL', $has('support_email') || $has('support_url'), 'Stores require a support contact.'),
+            self::item('Account deletion path', $has('account_deletion_url'), 'Both stores require an in-app + web account-deletion path.'),
+            self::item('Short description', $has('short_description'), 'Add a short store description.'),
+            self::item('Full description', $has('full_description'), 'Add the full store description.'),
+            self::item('Data safety / privacy summary', $has('data_safety'), 'Declare what data the app collects.'),
+            self::item('Content rating', $has('content_rating'), 'Complete the content-rating questionnaire answer.'),
+        ];
+
+        $android = [
+            self::item('Signing keystore stored', self::hasCredential('android_keystore'), 'Upload the release keystore (encrypted).'),
+            self::item('Keystore backup confirmed', (bool) self::get('keystore_backed_up'), 'Confirm you have securely backed up the keystore.'),
+            self::item('Recent target API', (int) self::get('min_android_target_api') >= 34, 'Play requires a recent target API level.'),
+            self::item('A build marked ready', self::androidDownloadable(), 'Generate an APK build and mark it ready.'),
+            self::operatorItem('Google Play Console account ($25 + closed test)', 'One-time fee, ID verification, and a 12-tester closed test — Frank must complete this.'),
+        ];
+
+        $ios = [
+            self::item('App Store URL (when live)', $has('ios_store_url'), 'Add the App Store listing URL once created.'),
+            self::operatorItem('Apple Developer Program ($99/yr)', 'Enrollment + identity verification — Frank must complete this.'),
+            self::operatorItem('Cloud macOS build service', 'iOS IPA needs a macOS build environment (Codemagic/Capawesome/etc.).'),
+        ];
+
+        return ['Shared' => $shared, 'Android' => $android, 'iOS' => $ios];
+    }
+
+    public static function readinessScore(): array
+    {
+        $items = collect(self::publishChecklist())->flatten(1)->reject(fn ($i) => $i['operator'] ?? false);
+
+        return ['done' => $items->where('ok', true)->count(), 'total' => $items->count()];
+    }
+
+    private static function item(string $label, bool $ok, string $hint): array
+    {
+        return ['label' => $label, 'ok' => $ok, 'hint' => $hint, 'operator' => false];
+    }
+
+    private static function operatorItem(string $label, string $hint): array
+    {
+        return ['label' => $label, 'ok' => false, 'hint' => $hint, 'operator' => true];
     }
 
     /* -------- Signing credentials (encrypted at rest, never logged) ------- */

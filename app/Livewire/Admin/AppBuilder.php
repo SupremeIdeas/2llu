@@ -72,11 +72,26 @@ class AppBuilder extends Component
             'form.ios_store_live' => 'boolean',
             'form.ios_store_url' => 'nullable|url|max:300',
             'form.ci_webhook_url' => 'nullable|url|max:300',
+            'form.privacy_policy_url' => 'nullable|url|max:300',
+            'form.support_email' => 'nullable|email|max:190',
+            'form.support_url' => 'nullable|url|max:300',
+            'form.account_deletion_url' => 'nullable|string|max:300',
+            'form.category' => 'nullable|string|max:60',
+            'form.content_rating' => 'nullable|string|max:60',
+            'form.short_description' => 'nullable|string|max:200',
+            'form.full_description' => 'nullable|string|max:4000',
+            'form.keywords' => 'nullable|string|max:200',
+            'form.data_safety' => 'nullable|string|max:2000',
+            'form.min_android_target_api' => 'nullable|integer|min:30|max:40',
+            'form.permissions_note' => 'nullable|string|max:1000',
+            'form.onboarding_enabled' => 'boolean',
             'splash' => 'nullable|image|mimes:webp,png,jpg,jpeg|max:3000',
             'icon' => 'nullable|image|mimes:webp,png,jpg,jpeg|max:2000',
         ]);
 
-        $payload = $data['form'];
+        // Persist the full form (incl. onboarding slides array) — AppExport::save
+        // keeps only known keys, so unvalidated extras can't sneak in.
+        $payload = array_merge($this->form, $data['form']);
 
         if ($this->splash) {
             $payload['splash_url'] = MediaStorage::storePublic($this->splash, 'app-export');
@@ -115,6 +130,37 @@ class AppBuilder extends Component
         $this->dispatch('nx-toast', type: 'success', message: 'App settings saved.');
     }
 
+    /** Onboarding slide upload (portrait first-run images). */
+    public $slideImage = null;
+
+    public function addSlide(): void
+    {
+        $slides = array_values((array) ($this->form['onboarding_slides'] ?? []));
+        $slides[] = ['image' => '', 'title' => '', 'subtitle' => ''];
+        $this->form['onboarding_slides'] = array_slice($slides, 0, 5);
+    }
+
+    public function removeSlide(int $index): void
+    {
+        $slides = array_values((array) ($this->form['onboarding_slides'] ?? []));
+        unset($slides[$index]);
+        $this->form['onboarding_slides'] = array_values($slides);
+    }
+
+    public function uploadSlideImage(int $index): void
+    {
+        abort_unless(Auth::user()?->hasAnyRole(['super_admin', 'admin']), 403);
+        $this->validate(['slideImage' => 'required|image|mimes:webp,png,jpg,jpeg|max:3000']);
+        $url = MediaStorage::storePublic($this->slideImage, 'app-onboarding');
+        $this->slideImage = null;
+
+        $slides = array_values((array) ($this->form['onboarding_slides'] ?? []));
+        if (isset($slides[$index])) {
+            $slides[$index]['image'] = $url;
+            $this->form['onboarding_slides'] = $slides;
+        }
+    }
+
     public function uploadKeystore(): void
     {
         abort_unless(Auth::user()?->hasAnyRole(['super_admin', 'admin']), 403);
@@ -149,6 +195,8 @@ class AppBuilder extends Component
             'hasKeystore' => AppExport::hasCredential('android_keystore'),
             'keystoreMeta' => AppExport::credentialMeta('android_keystore'),
             'builds' => AppBuild::latest('id')->paginate(8),
+            'checklist' => AppExport::publishChecklist(),
+            'score' => AppExport::readinessScore(),
         ]);
     }
 }

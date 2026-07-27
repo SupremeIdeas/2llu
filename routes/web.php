@@ -56,6 +56,8 @@ Route::view('/faq', 'pages.faq')->name('faq');
 Route::get('/manifest.webmanifest', \App\Http\Controllers\ManifestController::class)->name('manifest');
 Route::get('/download', \App\Http\Controllers\DownloadAppController::class)->name('download');
 Route::view('/offline', 'pages.offline')->name('offline');
+// First-run onboarding carousel (installed app) → lands on login.
+Route::get('/get-started', \App\Http\Controllers\OnboardingController::class)->name('onboarding');
 
 // Public, unauthenticated system status page (for users + Developer API integrators).
 Route::get('/status', \App\Livewire\StatusPage::class)->name('status');
