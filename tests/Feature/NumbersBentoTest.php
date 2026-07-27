@@ -19,17 +19,23 @@ class NumbersBentoTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_cards_render_in_the_fixed_order_with_featured_flags(): void
+    public function test_cards_render_in_the_asymmetric_bento_order_with_spans(): void
     {
         $cards = NumbersBento::cards();
 
         $this->assertSame(
-            ['verify', 'rent', 'line', 'call_forwarding', 'internet_calls', 'contact_management'],
+            ['verify', 'rent', 'line', 'internet_calls', 'call_forwarding', 'contact_management'],
             array_column($cards, 'key'),
         );
-        // Naara Line + Contact Management are the featured (full-width) rows.
-        $featured = collect($cards)->where('featured', true)->pluck('key')->all();
-        $this->assertEqualsCanonicalizing(['line', 'contact_management'], $featured);
+
+        // Row 1 is asymmetric: Verify wide (4) + Rent narrow (2); the rest are
+        // half-width (3). Each row sums to the 6-column grid.
+        $bySpan = collect($cards)->keyBy('key');
+        $this->assertSame(4, $bySpan['verify']['span']);
+        $this->assertTrue($bySpan['verify']['tall']);
+        $this->assertSame(2, $bySpan['rent']['span']);
+        $this->assertSame(3, $bySpan['line']['span']);
+        $this->assertFalse($bySpan['line']['tall']);
     }
 
     public function test_verify_card_appends_a_live_plus_n_more_bullet(): void
@@ -61,10 +67,13 @@ class NumbersBentoTest extends TestCase
 
     public function test_the_bento_renders_on_the_numbers_landing(): void
     {
+        // Titles render two-tone (word-split across spans), so assert on the
+        // contiguous subtitles instead.
         Livewire::actingAs(User::factory()->create())->test(GetNumber::class)
-            ->assertSee('Naara Verify')
-            ->assertSee('Naara Line')
-            ->assertSee('Contact Management');
+            ->assertSee('Receive OTPs and verification codes')
+            ->assertSee('permanent international number')
+            ->assertSee('address book')
+            ->assertSeeInOrder(['Naara', 'Verify']);
     }
 
     public function test_an_admin_can_edit_a_card_and_it_reaches_the_landing(): void
