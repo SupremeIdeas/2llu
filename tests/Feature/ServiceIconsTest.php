@@ -81,14 +81,19 @@ class ServiceIconsTest extends TestCase
         $this->actingAs($user)->get('/adminmaster/service-icons')->assertNotFound();
     }
 
-    public function test_get_number_page_shows_service_logos_and_flags(): void
+    public function test_the_pickers_show_service_logos_and_flags(): void
     {
         $user = User::factory()->create()->fresh();
 
-        $this->actingAs($user)->get('/numbers')
-            ->assertOk()
-            ->assertSee('svc-whatsapp', false)   // sprite reference rendered
-            ->assertSee('fi fi-us', false);      // default country flag (usa)
+        // Service logos render in the service picker (opened from the modals)…
+        \Livewire\Livewire::actingAs($user)->test(\App\Livewire\ServicePicker::class)
+            ->call('openModal', 'numbers')
+            ->assertSee('svc-whatsapp', false);   // sprite reference rendered
+
+        // …and country flags in the country picker.
+        \Livewire\Livewire::actingAs($user)->test(\App\Livewire\CountryPicker::class)
+            ->call('openModal', 'numbers')
+            ->assertSee('fi fi-', false);
     }
 
     public function test_dashboard_renders_the_premium_wallet_card(): void

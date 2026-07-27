@@ -84,9 +84,14 @@ class NumberCatalogueTest extends TestCase
         $this->seed(RoleSeeder::class);
         $user = User::factory()->create(['is_active' => true]);
 
+        // The landing loads the full catalogue…
         Livewire::actingAs($user)->test(GetNumber::class)
             ->assertViewHas('countries', fn ($c) => count($c) > 100)
-            ->assertViewHas('services', fn ($s) => count($s) > 90)
+            ->assertViewHas('services', fn ($s) => count($s) > 90);
+
+        // …and the service picker (opened from the Verify/Rent modals) renders it.
+        Livewire::actingAs($user)->test(\App\Livewire\ServicePicker::class)
+            ->call('openModal', 'numbers')
             ->assertSee('WhatsApp')
             ->assertSee('Binance');
     }
