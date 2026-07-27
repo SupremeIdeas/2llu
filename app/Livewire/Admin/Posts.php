@@ -50,6 +50,90 @@ class Posts extends Component
 
     public ?string $saved = null;
 
+    // --- Claude assist ---
+    public ?array $suggestion = null;
+
+    public string $aiImagePrompt = '';
+
+    public ?string $aiError = null;
+
+    private function assistant(): \App\Services\Blog\BlogArticleAssistant
+    {
+        return app(\App\Services\Blog\BlogArticleAssistant::class);
+    }
+
+    /** Suggest the next most-important article based on existing posts. */
+    public function suggestTopic(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $this->aiError = null;
+        try {
+            $this->suggestion = $this->assistant()->suggestTopic();
+        } catch (\Throwable $e) {
+            $this->aiError = 'Claude could not suggest a topic right now.';
+        }
+    }
+
+    /** Accept the suggestion into a fresh draft form. */
+    public function useSuggestion(): void
+    {
+        if (! $this->suggestion) {
+            return;
+        }
+        $this->resetForm();
+        $this->title = $this->suggestion['title'] ?? '';
+        $this->category = $this->suggestion['category'] ?? 'Guides';
+        $this->slug = Str::slug($this->title);
+        $this->showForm = true;
+    }
+
+    /** Generate the full article body + SEO fields for the current title. */
+    public function generateDraft(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $this->validate(['title' => 'required|string|max:160']);
+        $this->aiError = null;
+        try {
+            $angle = $this->suggestion['angle'] ?? '';
+            $draft = $this->assistant()->generateDraft($this->title, $this->category, $angle);
+            $this->body = $draft['body'];
+            $this->excerpt = $draft['excerpt'];
+            $this->meta_title = $draft['meta_title'];
+            $this->meta_description = $draft['meta_description'];
+            $this->dispatch('nx-toast', type: 'success', message: 'Draft generated — review, then add a cover image.');
+        } catch (\Throwable $e) {
+            $this->aiError = 'Claude could not generate the draft right now.';
+        }
+    }
+
+    /** Produce a cover-image prompt for the admin to copy + generate elsewhere. */
+    public function getImagePrompt(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $this->aiError = null;
+        try {
+            $this->aiImagePrompt = $this->assistant()->imagePrompt($this->title, $this->body);
+        } catch (\Throwable $e) {
+            $this->aiError = 'Claude could not produce an image prompt right now.';
+        }
+    }
+
+    /** Reformat the current body for clean, consistent reading. */
+    public function reformatBody(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        if (trim($this->body) === '') {
+            return;
+        }
+        $this->aiError = null;
+        try {
+            $this->body = $this->assistant()->reformat($this->body);
+            $this->dispatch('nx-toast', type: 'success', message: 'Reformatted for readability.');
+        } catch (\Throwable $e) {
+            $this->aiError = 'Claude could not reformat right now.';
+        }
+    }
+
     public function newPost(): void
     {
         $this->resetForm();
@@ -158,6 +242,7 @@ class Posts extends Component
     {
         return view('livewire.admin.posts', [
             'posts' => Post::latest()->paginate(10),
+            'aiEnabled' => $this->assistant()->enabled(),
         ]);
     }
 }
