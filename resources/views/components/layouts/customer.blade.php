@@ -49,6 +49,11 @@
         array_unshift($more, ['route' => 'partner.earnings', 'label' => 'Partner earnings', 'icon' => 'wallet']);
     }
 
+    // Non-merchants get an easy, always-visible route to the merchant program.
+    if ($u && ($u->merchantAccount === null || $u->merchantAccount->status === \App\Models\Merchant::REJECTED) && \App\Support\MerchantSettings::enabled()) {
+        $more[] = ['route' => 'merchant.apply', 'label' => 'Become a Merchant', 'icon' => 'package'];
+    }
+
     // Staff/admins use the same end-user app and can jump to their panel.
     if ($u && $u->hasAnyRole(['super_admin', 'admin', 'staff'])) {
         $more[] = ['route' => 'admin.dashboard', 'label' => 'Admin', 'icon' => 'id-card'];

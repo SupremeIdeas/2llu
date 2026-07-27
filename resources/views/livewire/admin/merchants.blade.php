@@ -51,6 +51,12 @@
                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
                     @error('minReferrals') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">V2 upgrade price (USD)</label>
+                    <input type="number" step="1" min="0" wire:model="upgradePrice"
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @error('upgradePrice') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
             </div>
             <p class="mt-2 text-[11px] text-slate-400">A user unlocks the programme by hitting the spend threshold, paying the one-time fast-route fee from their wallet, or reaching the referral target.</p>
         </div>
@@ -111,8 +117,18 @@
                     <tr class="border-b border-slate-50 dark:border-[#22314e]" wire:key="m-active-{{ $m->id }}">
                         <td class="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{{ $m->business_name }} <span class="text-slate-400">/{{ $m->slug }}</span></td>
                         <td class="px-4 py-3 text-right text-slate-600 dark:text-slate-300">{{ $m->customers_count }}</td>
-                        <td class="px-4 py-3"><span class="rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize {{ $badge }}">{{ $m->status }}</span></td>
+                        <td class="px-4 py-3">
+                            <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize {{ $badge }}">{{ $m->status }}</span>
+                            @if ($m->isV2())<span class="nx-badge ml-1">V2</span>@endif
+                        </td>
                         <td class="px-4 py-3 text-right">
+                            @if ($m->isV2())
+                                <button type="button" wire:click="downgrade({{ $m->id }})" wire:confirm="Return this merchant to the standard tier?"
+                                        class="mr-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300">Downgrade</button>
+                            @else
+                                <button type="button" wire:click="upgrade({{ $m->id }})" wire:confirm="Grant Merchant V2 (client management) for free?"
+                                        class="mr-1 rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 dark:text-teal-300">Grant V2</button>
+                            @endif
                             @if ($m->status === 'active')
                                 <button type="button" wire:click="suspend({{ $m->id }})" wire:confirm="Suspend this merchant?"
                                         class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-red-300 hover:text-red-600 dark:border-[#2D4060] dark:text-slate-300">Suspend</button>

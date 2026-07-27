@@ -30,6 +30,8 @@ class Merchants extends Component
 
     public $minReferrals = 1000;
 
+    public $upgradePrice = 125;
+
     public ?string $saved = null;
 
     public function mount(): void
@@ -40,6 +42,7 @@ class Merchants extends Component
         $this->minSpend = MerchantSettings::minSpendUsd();
         $this->enrollmentFee = MerchantSettings::enrollmentFeeUsd();
         $this->minReferrals = MerchantSettings::minReferrals();
+        $this->upgradePrice = MerchantSettings::upgradePriceUsd();
     }
 
     public function save(): void
@@ -50,6 +53,7 @@ class Merchants extends Component
             'minSpend' => 'required|numeric|min:0|max:1000000',
             'enrollmentFee' => 'required|numeric|min:0|max:1000000',
             'minReferrals' => 'required|integer|min:0|max:10000000',
+            'upgradePrice' => 'required|numeric|min:0|max:100000',
         ]);
 
         Setting::setValue(MerchantSettings::FLAG, $this->enabled, 'merchants');
@@ -57,6 +61,7 @@ class Merchants extends Component
         Setting::setValue(MerchantSettings::MIN_SPEND, (float) $this->minSpend, 'merchants');
         Setting::setValue(MerchantSettings::ENROLLMENT_FEE, (float) $this->enrollmentFee, 'merchants');
         Setting::setValue(MerchantSettings::MIN_REFERRALS, (int) $this->minReferrals, 'merchants');
+        Setting::setValue(MerchantSettings::UPGRADE_PRICE, (float) $this->upgradePrice, 'merchants');
         Auditor::log('merchants.settings_updated', null, null, [
             'enabled' => $this->enabled, 'margin' => $this->resellerMargin,
             'min_spend' => $this->minSpend, 'enrollment_fee' => $this->enrollmentFee, 'min_referrals' => $this->minReferrals,
@@ -82,6 +87,18 @@ class Merchants extends Component
     {
         $merchants->suspend(Merchant::findOrFail($id), Auth::user());
         $this->dispatch('nx-toast', type: 'success', message: 'Merchant suspended.');
+    }
+
+    public function upgrade(int $id, \App\Services\Merchants\MerchantUpgradeService $upgrades): void
+    {
+        $upgrades->grant(Merchant::findOrFail($id), Auth::user());
+        $this->dispatch('nx-toast', type: 'success', message: 'Upgraded to V2.');
+    }
+
+    public function downgrade(int $id, \App\Services\Merchants\MerchantUpgradeService $upgrades): void
+    {
+        $upgrades->downgrade(Merchant::findOrFail($id), Auth::user());
+        $this->dispatch('nx-toast', type: 'success', message: 'Returned to standard tier.');
     }
 
     public function render()

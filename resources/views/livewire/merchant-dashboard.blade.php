@@ -27,6 +27,34 @@
         </div>
     </div>
 
+    {{-- Merchant V2 --}}
+    @if ($merchant->isV2())
+        <div class="mt-6 grid gap-3 sm:grid-cols-2">
+            <a href="{{ route('merchant.clients') }}" wire:navigate class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-primary/40 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300"><x-icon name="users" class="h-5 w-5" /></span>
+                <div><p class="font-semibold text-slate-900 dark:text-white">Clients</p><p class="text-xs text-slate-400">Manage eSIMs for people without an account</p></div>
+            </a>
+            <a href="{{ route('developer') }}" wire:navigate class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-primary/40 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300"><x-icon name="key" class="h-5 w-5" /></span>
+                <div><p class="font-semibold text-slate-900 dark:text-white">Developer portal</p><p class="text-xs text-slate-400">API keys &amp; docs — first-class access</p></div>
+            </a>
+        </div>
+    @else
+        <div class="mt-6 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.08] to-accent/[0.06] p-5 dark:border-primary/30 dark:from-primary/15 dark:to-accent/10">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="min-w-0">
+                    <p class="flex items-center gap-2 font-bold text-slate-900 dark:text-white"><span class="nx-badge">V2</span> Upgrade to Merchant V2</p>
+                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Manage eSIMs &amp; numbers for clients who never log in, plus first-class developer-portal access. One-time <span class="font-semibold">${{ number_format(\App\Support\MerchantSettings::upgradePriceUsd(), 2) }}</span> from your wallet.</p>
+                </div>
+                <button type="button" wire:click="upgradeToV2" wire:loading.attr="disabled" wire:target="upgradeToV2"
+                        class="shrink-0 rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition hover:bg-primary-dark disabled:opacity-60">
+                    <span wire:loading.remove wire:target="upgradeToV2">Upgrade now</span>
+                    <span wire:loading wire:target="upgradeToV2">Upgrading…</span>
+                </button>
+            </div>
+        </div>
+    @endif
+
     {{-- Invite link --}}
     <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]"
          x-data="{ copied: false, copy() { navigator.clipboard.writeText('{{ $inviteUrl }}').then(() => { this.copied = true; setTimeout(() => this.copied = false, 1500); }); } }">

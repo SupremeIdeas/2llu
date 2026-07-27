@@ -120,4 +120,29 @@ class MerchantV2Test extends TestCase
         $this->expectException(MerchantException::class);
         app(MerchantClientService::class)->addClient($standard, ['name' => 'X']);
     }
+
+    public function test_admin_can_grant_v2_and_set_the_upgrade_price(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $merchant = $this->merchant();
+
+        Livewire::actingAs($admin)->test(\App\Livewire\Admin\Merchants::class)
+            ->set('upgradePrice', 150)->call('save')
+            ->call('upgrade', $merchant->id)->assertHasNoErrors();
+
+        $this->assertTrue($merchant->fresh()->isV2());
+        $this->assertSame(150.0, MerchantSettings::upgradePriceUsd());
+    }
+
+    public function test_the_dashboard_self_upgrade_flips_the_tier(): void
+    {
+        \App\Models\Setting::setValue(MerchantSettings::UPGRADE_PRICE, 125);
+        $merchant = $this->merchant(fund: 200);
+
+        Livewire::actingAs($merchant->owner)->test(\App\Livewire\MerchantDashboard::class)
+            ->call('upgradeToV2');
+
+        $this->assertTrue($merchant->fresh()->isV2());
+    }
 }

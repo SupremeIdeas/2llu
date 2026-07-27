@@ -44,6 +44,22 @@ class MerchantDashboard extends Component
 
     public ?string $withdrawError = null;
 
+    public function upgradeToV2(\App\Services\Merchants\MerchantUpgradeService $upgrades): void
+    {
+        try {
+            $upgrades->selfUpgrade($this->merchant);
+        } catch (\App\Services\Merchants\MerchantException $e) {
+            $this->dispatch('nx-toast', variant: 'hero', type: 'error', title: 'Upgrade not completed', message: $e->getMessage(),
+                cta: ['label' => 'Top up wallet', 'href' => route('wallet')]);
+
+            return;
+        }
+        $this->merchant = $this->merchant->fresh();
+        $this->dispatch('nx-toast', variant: 'hero', type: 'success', title: 'You’re now Merchant V2',
+            message: 'Client management and the developer portal are unlocked.',
+            cta: ['label' => 'Manage clients', 'href' => route('merchant.clients')]);
+    }
+
     public function mount(): void
     {
         $merchant = Auth::user()->merchantAccount;
