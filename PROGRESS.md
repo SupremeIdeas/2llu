@@ -9,6 +9,30 @@
 
 ## DONE
 
+### ✅ Numbers V6 — Stage 6: iOS-level Contacts, Dialer & Send Message — built 2026-07-27
+Brought the Numbers "phone" surfaces up to a native-app standard.
+- **Contacts** rebuilt as an iOS address book: favourites strip, A–Z sectioned
+  list + quick-scroll index, gradient **initials avatars** (inline hex — dynamic
+  Tailwind classes would be JIT-purged), per-row call / message / favourite
+  actions, swipe-to-delete, a grid-view toggle and a bottom-sheet add/edit/import.
+  Added an `is_favorite` column + auth-scoped `toggleFavorite`. `ContactBookTest`
+  now 12.
+- **Dialer** given an iOS keypad (letter subtitles, long-press `0`→`+`, big
+  centred display, one green call button — the money path in `dial()` stays
+  authoritative) and a full-screen **in-call screen**: gradient initials avatar,
+  the callee's saved name, live timer, mute / keypad / speaker controls and a red
+  end-call button. `dialer.js` now drives real mute + DTMF on the live Twilio call
+  and best-effort speaker routing. No pricing/settlement logic touched.
+- **Send Message from a Naara Line** (§6) — a real outbound-SMS money path.
+  `MessageSenderService` quotes the live per-segment retail through PricingEngine
+  (MarginGuard-floored, cost never exposed), charges retail × segments with an
+  **atomic** wallet debit before the message leaves, and **refunds in full on any
+  delivery failure** (never charged without delivering). New `outbound_messages`
+  table + model (provider masked, cost never stored), `outboundSmsCost()` on the
+  number-provider contract (Twilio/Telnyx, admin-tunable), and a `SendMessage`
+  modal gated on owning an active SMS-capable Line with a live retail quote.
+  `MessageSenderTest` (8). Suite 758.
+
 ### ✅ eSIM upgrade — Naara Connect (Full eSIMs) + 4-provider lane — built 2026-07-26
 The storefront now sells two eSIM lines. A `has_voice` flag on esim_plans splits
 the catalogue into **eSIM Data** (data-only) and **Naara Connect** (Full eSIMs —
