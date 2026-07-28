@@ -46,7 +46,15 @@ class Posts extends Component
 
     public string $meta_description = '';
 
+    public string $accent_color = '';
+
     public string $status = 'draft';
+
+    // Blog hero (4-image reveal) — admin-managed via BlogSettings.
+    public string $heroTitle = '';
+    public string $heroSubtitle = '';
+    public array $heroImages = [];
+    public $heroUpload = null;
 
     public ?string $saved = null;
 
@@ -134,6 +142,44 @@ class Posts extends Component
         }
     }
 
+    public function mount(): void
+    {
+        $hero = \App\Support\BlogSettings::all();
+        $this->heroTitle = (string) $hero['title'];
+        $this->heroSubtitle = (string) $hero['subtitle'];
+        $this->heroImages = \App\Support\BlogSettings::images();
+    }
+
+    public function addHeroImage(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $this->validate(['heroUpload' => 'required|image|mimes:webp,jpg,jpeg,png|max:3000']);
+        $this->heroImages[] = MediaStorage::storePublic($this->heroUpload, 'blog-hero');
+        $this->heroImages = array_slice($this->heroImages, 0, 4);
+        $this->heroUpload = null;
+    }
+
+    public function removeHeroImage(int $i): void
+    {
+        unset($this->heroImages[$i]);
+        $this->heroImages = array_values($this->heroImages);
+    }
+
+    public function saveHero(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $this->validate([
+            'heroTitle' => 'required|string|max:120',
+            'heroSubtitle' => 'nullable|string|max:300',
+        ]);
+        \App\Support\BlogSettings::save([
+            'title' => trim($this->heroTitle),
+            'subtitle' => trim($this->heroSubtitle),
+            'images' => $this->heroImages,
+        ]);
+        $this->dispatch('nx-toast', type: 'success', message: 'Blog hero saved.');
+    }
+
     public function newPost(): void
     {
         $this->resetForm();
@@ -151,6 +197,7 @@ class Posts extends Component
         $this->body = $post->body;
         $this->coverUrl = $post->cover_image_url;
         $this->cover = null;
+        $this->accent_color = (string) $post->accent_color;
         $this->meta_title = (string) $post->meta_title;
         $this->meta_description = (string) $post->meta_description;
         $this->status = $post->status;
@@ -179,6 +226,7 @@ class Posts extends Component
             'cover' => 'nullable|file|mimes:webp,jpg,jpeg,png|max:2048',
             'meta_title' => 'nullable|string|max:160',
             'meta_description' => 'nullable|string|max:300',
+            'accent_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'status' => 'required|in:draft,published',
         ]);
 
@@ -193,6 +241,7 @@ class Posts extends Component
             'body' => trim($this->body),
             'meta_title' => trim($this->meta_title) ?: null,
             'meta_description' => trim($this->meta_description) ?: null,
+            'accent_color' => trim($this->accent_color) ?: null,
             'status' => $this->status,
         ];
 
@@ -233,7 +282,7 @@ class Posts extends Component
 
     public function resetForm(): void
     {
-        $this->reset(['editingId', 'showForm', 'title', 'slug', 'category', 'excerpt', 'body', 'cover', 'coverUrl', 'meta_title', 'meta_description', 'status']);
+        $this->reset(['editingId', 'showForm', 'title', 'slug', 'category', 'excerpt', 'body', 'cover', 'coverUrl', 'accent_color', 'meta_title', 'meta_description', 'status']);
         $this->category = 'News';
         $this->status = 'draft';
     }

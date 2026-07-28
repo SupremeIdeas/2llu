@@ -62,8 +62,9 @@ Route::get('/get-started', \App\Http\Controllers\OnboardingController::class)->n
 // Public, unauthenticated system status page (for users + Developer API integrators).
 Route::get('/status', \App\Livewire\StatusPage::class)->name('status');
 
-// Public blog (Module 30).
-Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog');
+// Public blog (Module 30 · Blog overhaul). Index is a Livewire component so the
+// SAME hero/carousel/infinite-feed serves marketing + the in-app floating nav.
+Route::get('/blog', \App\Livewire\Blog::class)->name('blog');
 Route::get('/blog/{post:slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
 
 // Public pricing page (Module 29) — real plans when live, estimate tiers before.

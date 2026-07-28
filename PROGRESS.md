@@ -9,6 +9,25 @@
 
 ## DONE
 
+### ✅ Blog overhaul frontend — built 2026-07-28
+The public blog rebuilt as a Livewire component (one component serves marketing +
+the in-app floating nav — now a seeded nav slot).
+- **Hero:** reuses the shared Section-Builder hero (images-reveal mode) for the
+  4-image interchanging reveal — admin-managed title/subtitle + up to 4 images
+  via `BlogSettings` (Setting-backed, resilient) on the admin Blog page.
+- **Swelling "Recents" carousel:** scroll-snap row; an IntersectionObserver
+  "swells" the card nearest the row centre (reduced-motion safe). Scoped to the
+  active category filter.
+- **Infinite scroll:** replaced `paginate(9)` with a `loadMore` feed that appends
+  6 at a time, auto-triggered by an IntersectionObserver sentinel (button
+  fallback), ending with a soft "You're all caught up." **Decision (documented):
+  standard infinite-scroll, not looping** — looping real articles reads as broken.
+- **Accent scroll-tint:** `posts.accent_color` (admin colour picker) drives a
+  scroll-tied background wash via observers; graceful fallback = a deterministic
+  per-category hue, else brand teal (`Post::accentColor()`). Single-post page gets
+  a matching accent wash.
+- Tests: `BlogOverhaulTest` (6). Suite 873.
+
 ### ✅ Homepage floating-nav merge (NavSlot + Wizard centrepiece) — built 2026-07-27
 The floating navigation pill on the public site, admin-assignable, with the
 Wizard merged in as the glowing centrepiece — on desktop AND mobile.

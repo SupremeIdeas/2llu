@@ -14,9 +14,49 @@ use Illuminate\Support\Str;
 class Post extends Model
 {
     protected $fillable = [
-        'title', 'slug', 'category', 'excerpt', 'body', 'cover_image_url',
+        'title', 'slug', 'category', 'excerpt', 'body', 'cover_image_url', 'accent_color',
         'meta_title', 'meta_description', 'status', 'published_at', 'author_id',
     ];
+
+    /**
+     * The accent colour driving the scroll-tint (Blog overhaul §5). Graceful
+     * fallback: the admin-set colour, else a stable colour derived from the
+     * category, else the brand teal — so it always looks intentional.
+     */
+    public function accentColor(): string
+    {
+        if ($this->accent_color && preg_match('/^#[0-9A-Fa-f]{6}$/', $this->accent_color)) {
+            return $this->accent_color;
+        }
+
+        // Deterministic pleasant hue from the category name (HSL → hex).
+        $cat = trim((string) $this->category);
+        if ($cat === '') {
+            return '#0A6E6E';
+        }
+        $hue = crc32(mb_strtolower($cat)) % 360;
+
+        return self::hslToHex($hue, 55, 42);
+    }
+
+    private static function hslToHex(float $h, float $s, float $l): string
+    {
+        $s /= 100;
+        $l /= 100;
+        $c = (1 - abs(2 * $l - 1)) * $s;
+        $x = $c * (1 - abs(fmod($h / 60, 2) - 1));
+        $m = $l - $c / 2;
+        [$r, $g, $b] = match (true) {
+            $h < 60 => [$c, $x, 0],
+            $h < 120 => [$x, $c, 0],
+            $h < 180 => [0, $c, $x],
+            $h < 240 => [0, $x, $c],
+            $h < 300 => [$x, 0, $c],
+            default => [$c, 0, $x],
+        };
+
+        return sprintf('#%02x%02x%02x', (int) round(($r + $m) * 255), (int) round(($g + $m) * 255), (int) round(($b + $m) * 255));
+    }
 
     protected function casts(): array
     {

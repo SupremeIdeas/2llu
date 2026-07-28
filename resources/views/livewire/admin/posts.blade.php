@@ -14,6 +14,38 @@
         </div>
     @endif
 
+    {{-- Blog hero (4-image reveal) — admin-managed. --}}
+    <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <h2 class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100"><x-icon name="image" class="h-4 w-4 text-primary" /> Blog hero</h2>
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div><label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Title</label>
+                <input type="text" wire:model="heroTitle" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100"></div>
+            <div><label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Subtitle</label>
+                <input type="text" wire:model="heroSubtitle" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100"></div>
+        </div>
+        <div class="mt-3">
+            <label class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-slate-400">Hero images (up to 4, interchanging)</label>
+            @if ($heroImages)
+                <div class="mb-2 grid grid-cols-4 gap-2">
+                    @foreach ($heroImages as $i => $img)
+                        <div class="group relative aspect-video overflow-hidden rounded-lg border border-slate-200 dark:border-[#2D4060]">
+                            <img src="{{ $img }}" class="h-full w-full object-cover">
+                            <button type="button" wire:click="removeHeroImage({{ $i }})" class="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"><x-icon name="x" class="h-3 w-3" /></button>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+            @if (count($heroImages) < 4)
+                <div class="flex items-center gap-2">
+                    <input type="file" wire:model="heroUpload" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-2 file:rounded-full file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary dark:text-slate-400">
+                    <button type="button" wire:click="addHeroImage" class="shrink-0 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary dark:text-teal-300">Add</button>
+                </div>
+                @error('heroUpload') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            @endif
+        </div>
+        <button type="button" wire:click="saveHero" class="mt-3 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-dark">Save hero</button>
+    </div>
+
     {{-- Claude assist: suggest the next article to write. --}}
     @if ($aiEnabled)
         <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
@@ -80,6 +112,16 @@
                 @if ($coverUrl)
                     <img src="{{ $coverUrl }}" alt="" class="mt-2 h-24 w-40 rounded-lg border border-slate-200 object-cover dark:border-[#2D4060]">
                 @endif
+            </div>
+
+            <div>
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Accent colour <span class="font-normal text-slate-400">(scroll-tint; blank = auto from category)</span></label>
+                <div class="flex items-center gap-2">
+                    <input type="color" wire:model="accent_color" class="h-9 w-14 rounded-lg border border-slate-300 dark:border-[#2D4060]">
+                    <input type="text" wire:model="accent_color" placeholder="#0A6E6E" class="w-32 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @if ($accent_color)<button type="button" wire:click="$set('accent_color', '')" class="text-xs text-slate-400 hover:text-slate-600">Clear</button>@endif
+                </div>
+                @error('accent_color') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
 
             <div>

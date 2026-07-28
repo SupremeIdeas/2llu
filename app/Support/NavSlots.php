@@ -22,9 +22,10 @@ class NavSlots
             ['position' => 2, 'label' => 'Plans', 'icon' => 'wifi', 'target' => 'pricing', 'visibility' => 'all', 'is_center' => false],
             ['position' => 0, 'label' => 'Ask NaaraSim', 'icon' => 'message-circle', 'target' => NavSlot::TARGET_WIZARD, 'visibility' => 'all', 'is_center' => true],
             ['position' => 3, 'label' => 'Numbers', 'icon' => 'phone', 'target' => 'pricing', 'visibility' => 'all', 'is_center' => false],
-            ['position' => 4, 'label' => 'About', 'icon' => 'info', 'target' => 'about', 'visibility' => 'all', 'is_center' => false],
-            ['position' => 5, 'label' => 'Account', 'icon' => 'id-card', 'target' => 'dashboard', 'visibility' => 'auth', 'is_center' => false],
-            ['position' => 5, 'label' => 'Get started', 'icon' => 'id-card', 'target' => 'register', 'visibility' => 'guest', 'is_center' => false],
+            ['position' => 4, 'label' => 'Blog', 'icon' => 'file-text', 'target' => 'blog', 'visibility' => 'all', 'is_center' => false],
+            ['position' => 5, 'label' => 'About', 'icon' => 'info', 'target' => 'about', 'visibility' => 'all', 'is_center' => false],
+            ['position' => 6, 'label' => 'Account', 'icon' => 'id-card', 'target' => 'dashboard', 'visibility' => 'auth', 'is_center' => false],
+            ['position' => 6, 'label' => 'Get started', 'icon' => 'id-card', 'target' => 'register', 'visibility' => 'guest', 'is_center' => false],
         ];
     }
 
