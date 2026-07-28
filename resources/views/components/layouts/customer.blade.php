@@ -63,6 +63,9 @@
     if (\App\Support\AppExport::placementActive('customer_menu')) {
         $more[] = ['route' => 'download', 'label' => \App\Support\AppExport::placementLabel('customer_menu'), 'icon' => 'download'];
     }
+
+    // In-app guide + agreement (auto-selects the user's audience).
+    $more[] = ['route' => 'guide', 'label' => 'Guide & policy', 'icon' => 'help-circle'];
 @endphp
 
 <x-layouts.app :title="$title ?? config('app.name')" :body-class="\App\Support\PlatformTheme::bodyClass()">

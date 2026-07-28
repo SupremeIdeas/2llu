@@ -6,10 +6,16 @@
                 Create keys, top up your prepaid API balance, and resell from your own app.
             </p>
         </div>
-        <a href="{{ route('developers') }}" target="_blank" rel="noopener"
-           class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
-            <x-icon name="file-text" class="h-4 w-4" /> API docs
-        </a>
+        <div class="flex shrink-0 items-center gap-2">
+            <a href="{{ route('guide', ['audience' => 'developer']) }}"
+               class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
+                <x-icon name="help-circle" class="h-4 w-4" /> Guide
+            </a>
+            <a href="{{ route('developers') }}" target="_blank" rel="noopener"
+               class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
+                <x-icon name="file-text" class="h-4 w-4" /> API docs
+            </a>
+        </div>
     </div>
 
     @if ($error)

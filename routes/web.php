@@ -133,6 +133,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     // dashboard. Guards itself: no `just_registered` flag → straight to home.
     Route::get('/welcome', \App\Livewire\WelcomeAurora::class)->name('welcome');
 
+    // In-app user guide + agreement (per-audience: user / merchant / V2 / developer).
+    Route::get('/guide', \App\Livewire\Guide::class)->name('guide');
+
     // Account & data rights (blueprint Section 26) — reachable while unverified
     // so a user can still manage or delete their account and resend the email.
     Route::get('/account', \App\Livewire\Account::class)->name('account');
@@ -209,6 +212,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/incidents', \App\Livewire\Admin\Incidents::class)->name('incidents');
             Route::get('/notices', \App\Livewire\Admin\Alerts::class)->name('notices');
             Route::get('/nav', \App\Livewire\Admin\NavSlots::class)->name('nav');
+            Route::get('/guides', \App\Livewire\Admin\Guides::class)->name('guides');
             Route::get('/service-icons', \App\Livewire\Admin\ServiceIconsPage::class)->name('service-icons');
             Route::get('/banners', \App\Livewire\Admin\Banners::class)->name('banners');
             Route::get('/coupons', \App\Livewire\Admin\Coupons::class)->name('coupons');

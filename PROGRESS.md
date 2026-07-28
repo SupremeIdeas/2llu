@@ -9,6 +9,26 @@
 
 ## DONE
 
+### ✅ User guides + agreements (per-audience, admin-editable) — built 2026-07-28
+In-app guides + contract/policy for normal user / merchant / merchant V2 /
+developer, planted in each user-facing area.
+- `user_guides` + `UserGuide`; `UserGuides` support (audiences, labels, per-
+  audience default content seeded on first read, `audienceFor(User)` auto-detect).
+- Each guide = title + intro + ordered sections (heading + rich body + image) +
+  an **agreement** block: the flat/reasonable retail-pricing promise, what users
+  enjoy, rules & regulations, and the **one-account / one-verification** policy
+  with the explicit multi-account auto-restriction warning.
+- `/guide` (auth) auto-selects the signed-in user's audience with a switcher;
+  bodies + agreement sanitized on render. Linked from the customer side menu
+  ("Guide & policy") and the Developer portal (developer guide).
+- **Admin → User guides**: per-audience editor — title/intro, add/remove sections
+  with **per-section image upload**, and the agreement; HTML allowlist-sanitized
+  on save. `UserGuidesTest` (4). Suite 877.
+- **Developer API check (assessment):** production-solid (pricing lane, prepaid
+  wallet, scoped keys, idempotency, docs, portal, admin) — no upgrade needed to
+  function; the one high-value future enhancement is outbound webhooks
+  (order-delivered / OTP callbacks) so integrators stop polling. Flagged, not built.
+
 ### ✅ Blog overhaul frontend — built 2026-07-28
 The public blog rebuilt as a Livewire component (one component serves marketing +
 the in-app floating nav — now a seeded nav slot).
