@@ -4,6 +4,7 @@ namespace App\Services\Merchants;
 
 use App\Exceptions\EsimProviderException;
 use App\Exceptions\InsufficientBalanceException;
+use App\Jobs\AlertAdminJob;
 use App\Mail\ClientEsimMail;
 use App\Models\EsimOrder;
 use App\Models\EsimPlan;
@@ -175,13 +176,16 @@ class MerchantClientService
     }
 
     /**
-     * Turn on auto-renewal for a subscription: RESERVE the next renewal amount
-     * from the merchant wallet (earmarked, non-reusable). Per the platform rule
-     * this is intentionally one-way — the reservation is only ever freed by the
-     * due-date run (settled on success, released if provisioning fails). Throws
-     * if the wallet's spendable balance can't cover the reserve.
+     * Turn on auto-renewal for a subscription and PRE-FUND it. A merchant can
+     * lock a client's line for many renewal cycles up front — 2, 6, 12+ months —
+     * by earmarking `$cycles × renewal_price` from the wallet, or choose "keep it
+     * for life" (`$indefinite`), which reserves a single rolling cycle that tops
+     * itself back up after every renewal (you can't literally pre-fund infinite
+     * months). Per the platform rule the earmark is one-way — freed only by the
+     * due-date run (settled on success, released if provisioning fails) or an
+     * explicit disable. Throws if spendable balance can't cover the reserve.
      */
-    public function enableAutoRenew(Merchant $merchant, MerchantClientSubscription $subscription): void
+    public function enableAutoRenew(Merchant $merchant, MerchantClientSubscription $subscription, int $cycles = 1, bool $indefinite = false): void
     {
         $this->assertOwnsSubscription($merchant, $subscription);
         if ($subscription->auto_renew) {
@@ -196,28 +200,38 @@ class MerchantClientService
             throw new MerchantException('This subscription has no renewal price to reserve.');
         }
 
+        // Indefinite = one rolling cycle. Finite = clamp 1..MAX and pre-fund all.
+        $cycles = $indefinite ? 1 : max(1, min($cycles, MerchantClientSubscription::MAX_RESERVE_CYCLES));
+        $reserveAmount = round($cycles * $price, 4);
+
         try {
-            $this->wallet->reserve($merchant->owner, $price);
+            $this->wallet->reserve($merchant->owner, $reserveAmount);
         } catch (InsufficientBalanceException $e) {
-            throw new MerchantException('Your spendable merchant balance is too low to lock $'.number_format($price, 2).' for auto-renewal.');
+            $label = $indefinite ? '$'.number_format($price, 2).' (rolling, for continuous renewal)'
+                : $cycles.' cycle'.($cycles > 1 ? 's' : '').' ($'.number_format($reserveAmount, 2).')';
+            throw new MerchantException('Your spendable merchant balance is too low to lock '.$label.' for auto-renewal.');
         }
 
         $subscription->update([
             'auto_renew' => true,
             'reserve_reference' => 'sub-reserve:'.$subscription->id,
+            'reserved_cycles' => $cycles,
+            'renew_indefinitely' => $indefinite,
         ]);
         Auditor::log('merchant.autorenew_reserved', 'MerchantClientSubscription', $subscription->id, [
-            'merchant_id' => $merchant->id, 'amount' => $price,
+            'merchant_id' => $merchant->id, 'amount' => $reserveAmount, 'cycles' => $cycles, 'indefinite' => $indefinite,
         ]);
     }
 
     /**
-     * Settle a due auto-renewal (called by the scheduled command). Frees the
-     * earmark, then re-provisions through the SAME money-safe path as a normal
-     * assign (debit → provider → refund-on-failure). On success the subscription
-     * is renewed; on failure the merchant keeps the funds (the earmark is freed
-     * by the release, and the failed provider order self-refunds any debit) —
-     * the only route by which a reserved auto-renewal is returned.
+     * Settle a due auto-renewal (called by the scheduled command). Frees ONE
+     * cycle's earmark, then re-provisions through the SAME money-safe path as a
+     * normal assign (debit → provider → refund-on-failure). On success the fresh
+     * subscription CARRIES THE REMAINING pre-funded cycles forward (still
+     * earmarked — no new reserve needed) so a multi-month lock keeps renewing
+     * hands-free; an "indefinite" lock rolls a single earmark forward instead. On
+     * failure the merchant keeps the funds (the released cycle + the failed
+     * provider order's self-refund) — the only route back for a reserved cycle.
      */
     public function renewDueSubscription(MerchantClientSubscription $subscription): bool
     {
@@ -229,11 +243,16 @@ class MerchantClientService
             return false;
         }
 
-        // Free the earmark so the real debit can draw on those funds.
+        $price = round((float) $subscription->renewal_price, 4);
+        $indefinite = (bool) $subscription->renew_indefinitely;
+        // Cycles still pre-funded AFTER the one we're about to consume now.
+        $remaining = $indefinite ? 0 : max(0, (int) $subscription->reserved_cycles - 1);
+
+        // Free this cycle's earmark so the real debit can draw on those funds.
         if ($subscription->reserve_reference) {
-            $this->wallet->release($merchant->owner, (float) $subscription->renewal_price);
+            $this->wallet->release($merchant->owner, $price);
         }
-        $subscription->update(['auto_renew' => false, 'reserve_reference' => null]);
+        $subscription->update(['auto_renew' => false, 'reserve_reference' => null, 'reserved_cycles' => 0, 'renew_indefinitely' => false]);
 
         try {
             $order = $this->assignEsim($merchant, $client, $plan, force: true);
@@ -249,8 +268,40 @@ class MerchantClientService
 
         // assignEsim created a fresh subscription row; retire the old one.
         $subscription->update(['status' => MerchantClientSubscription::STATUS_EXPIRED, 'esim_order_id' => $order->id]);
+
+        // Carry the auto-renew lock onto the fresh subscription.
+        $fresh = $client->activeSubscription();
+        if ($fresh) {
+            if ($indefinite) {
+                // Roll the single earmark forward: top it back up for next time.
+                try {
+                    $this->wallet->reserve($merchant->owner, $price);
+                    $fresh->update([
+                        'auto_renew' => true, 'renew_indefinitely' => true, 'reserved_cycles' => 1,
+                        'reserve_reference' => 'sub-reserve:'.$fresh->id,
+                    ]);
+                } catch (InsufficientBalanceException $e) {
+                    // Funds ran dry — renew succeeded but we can't lock the next one.
+                    // Alert the merchant so they can top up; leave it off auto-renew.
+                    AlertAdminJob::dispatch(
+                        code: 'merchant_autorenew_lapsed',
+                        message: "Merchant #{$merchant->id} \"life\" auto-renew for client {$client->name} renewed, but the wallet is too low to reserve the next cycle — auto-renew paused.",
+                        context: ['merchant_id' => $merchant->id, 'subscription_id' => $fresh->id, 'amount' => $price],
+                    );
+                }
+            } elseif ($remaining > 0) {
+                // Remaining cycles are still earmarked from the original block —
+                // just carry the bookkeeping, no new reserve.
+                $fresh->update([
+                    'auto_renew' => true, 'reserved_cycles' => $remaining,
+                    'reserve_reference' => 'sub-reserve:'.$fresh->id,
+                ]);
+            }
+        }
+
         Auditor::log('merchant.autorenew_settled', 'MerchantClientSubscription', $subscription->id, [
             'merchant_id' => $merchant->id, 'order_id' => $order->id,
+            'remaining_cycles' => $indefinite ? 'indefinite' : $remaining,
         ]);
 
         return true;
@@ -346,16 +397,19 @@ class MerchantClientService
     public function disableEsim(Merchant $merchant, MerchantClientSubscription $subscription): void
     {
         $this->assertOwnsSubscription($merchant, $subscription);
-        // If it was earmarked for auto-renew, free the funds (this is a merchant
-        // action on a non-paying client, distinct from the one-way reserve rule
-        // which governs the auto-charge itself).
+        // If it was earmarked for auto-renew, free ALL remaining pre-funded cycles
+        // (this is a merchant action on a non-paying client, distinct from the
+        // one-way reserve rule which governs the auto-charge itself).
         if ($subscription->auto_renew && $subscription->reserve_reference) {
-            $this->wallet->release($merchant->owner, (float) $subscription->renewal_price);
+            $cycles = max(1, (int) $subscription->reserved_cycles);
+            $this->wallet->release($merchant->owner, round($cycles * (float) $subscription->renewal_price, 4));
         }
         $subscription->update([
             'status' => MerchantClientSubscription::STATUS_DISABLED,
             'auto_renew' => false,
             'reserve_reference' => null,
+            'reserved_cycles' => 0,
+            'renew_indefinitely' => false,
         ]);
         Auditor::log('merchant.client_esim_disabled', 'MerchantClientSubscription', $subscription->id, [
             'merchant_id' => $merchant->id,

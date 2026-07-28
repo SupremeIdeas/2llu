@@ -30,11 +30,9 @@
             {{-- Ambient brand glow (intensifies on hover) --}}
             <div class="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/5 blur-3xl transition-opacity duration-300 group-hover:bg-primary/15 dark:bg-teal-500/10 dark:group-hover:bg-teal-500/20"></div>
 
-            {{-- Badge --}}
+            {{-- Badge — compact (no icon, tighter) so it never crowds the title. --}}
             @if ($card['badge_label'])
-                <span class="nx-badge absolute right-3 top-3 z-20">
-                    <x-icon name="star" class="h-2.5 w-2.5" /> {{ $card['badge_label'] }}
-                </span>
+                <span class="nx-badge absolute right-2.5 top-2.5 z-20 !px-1.5 !py-0.5 !text-[8px] !tracking-normal">{{ $card['badge_label'] }}</span>
             @endif
 
             <div class="relative z-10 flex h-full w-full gap-3 {{ $wide ? 'items-center' : 'flex-col' }}">
@@ -59,8 +57,12 @@
 
                     @if (! empty($card['bullets']))
                         @if ($card['key'] === 'verify')
+                            {{-- Keep it to two service pills + a "+more" so the card stays tidy. --}}
+                            @php($pills = count($card['bullets']) > 3
+                                ? array_merge(array_slice($card['bullets'], 0, 2), [end($card['bullets'])])
+                                : $card['bullets'])
                             <div class="mt-2.5 flex flex-wrap gap-1.5">
-                                @foreach ($card['bullets'] as $b)
+                                @foreach ($pills as $b)
                                     <span class="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:border-teal-400/25 dark:bg-teal-500/5 dark:text-slate-200">
                                         <x-icon name="badge-check" class="h-2.5 w-2.5 text-primary dark:text-teal-300" /> {{ $b }}
                                     </span>

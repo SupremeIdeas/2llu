@@ -9,6 +9,29 @@
 
 ## DONE
 
+### ♾️ Merchant V2 — multi-month & "for life" auto-renew reserve — 2026-07-28
+Merchants can now pre-fund a client's eSIM for **many renewal cycles up front**
+(2, 3, 6, 12… up to `MAX_RESERVE_CYCLES = 36`) or choose **"keep it for life"** —
+because a lot of clients keep the same line for years. Money-safety unchanged
+(earmark = `WalletService::reserve`, one-way, real charge only at renewal time):
+- New columns on `merchant_client_subscriptions`: `reserved_cycles`,
+  `renew_indefinitely`.
+- `enableAutoRenew($merchant, $sub, int $cycles = 1, bool $indefinite = false)`
+  reserves `cycles × renewal_price` (clamped 1..36), or ONE rolling cycle when
+  indefinite. `renewDueSubscription` frees one cycle, re-provisions through the
+  same debit→provider→refund-on-failure path, then **carries the remaining
+  earmarked cycles onto the fresh subscription** (no new reserve — the block
+  already covered them); "for life" tops the single earmark back up each time,
+  and alerts the merchant (`merchant_autorenew_lapsed`) if the wallet can't cover
+  the next roll. `disableEsim` now releases **all** remaining reserved cycles.
+- UI: the merchant clients screen's "Auto-renew" action opens a reserve sheet —
+  quick-pick 2/3/6/12/24, a custom cycle field, a "keep it for life" toggle, and
+  a live "reserved now" cost preview. The locked badge shows cycle count / "for
+  life". Existing single-cycle behaviour is the `cycles = 1` case (backward
+  compatible; legacy rows with `reserved_cycles = 0` still renew once then stop).
+- Tests: multi-cycle reserve, remaining-cycles carry-forward, last-cycle stop,
+  indefinite roll-forward, disable-releases-all (suite 931 green).
+
 ### ✨ Lottie animations — gift-store preloader + rewards hero — 2026-07-28
 Self-hosted (CSP-safe; **not** the lottie.host/unpkg CDN embeds — those break under
 the network policy + leak visitor data). `lottie-web` and each animation JSON are

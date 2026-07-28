@@ -1,5 +1,6 @@
-<div class="mx-auto max-w-2xl" x-data="{ sheet: false, assign: false, invoice: false, deliver: false }"
-     @close-client-sheet.window="sheet = false">
+<div class="mx-auto max-w-2xl" x-data="{ sheet: false, assign: false, invoice: false, deliver: false, reserve: false }"
+     @close-client-sheet.window="sheet = false"
+     @close-reserve-sheet.window="reserve = false">
     {{-- Header + wallet --}}
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -53,7 +54,14 @@
                     <div class="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 dark:bg-white/5">
                         <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase {{ $tone }}">{{ $sub->esim_type === 'connect' ? 'Naara Connect' : 'Naara Data' }}</span>
                         <span class="text-xs font-medium text-slate-600 dark:text-slate-300">{{ ucfirst($sub->status) }}@if ($countdown) · {{ $countdown }}@endif</span>
-                        @if ($sub->auto_renew)<span class="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400"><x-icon name="refresh" class="h-3 w-3" /> Auto-renew locked</span>@endif
+                        @if ($sub->auto_renew)
+                            <span class="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                                <x-icon name="refresh" class="h-3 w-3" />
+                                @if ($sub->renew_indefinitely) Auto-renew · for life
+                                @elseif ((int) $sub->reserved_cycles > 1) Auto-renew · {{ (int) $sub->reserved_cycles }} cycles reserved
+                                @else Auto-renew locked @endif
+                            </span>
+                        @endif
                     </div>
                 @endif
 
@@ -63,8 +71,8 @@
                             class="rounded-xl bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/20 disabled:opacity-50 dark:bg-primary/20 dark:text-teal-300"><x-icon name="plus" class="mr-0.5 inline h-3.5 w-3.5" /> {{ $sub && $sub->status !== 'disabled' ? 'New / renew eSIM' : 'Assign eSIM' }}</button>
 
                     @if ($sub && $sub->isActive() && ! $sub->auto_renew)
-                        <button type="button" wire:click="enableAutoRenew({{ $sub->id }})" wire:confirm="Lock ${{ number_format((float) $sub->renewal_price, 2) }} from your wallet to auto-renew this eSIM? This reserves the funds and can't be undone (only released if a future renewal fails to provision)."
-                                class="rounded-xl border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-300">Mark auto-billed</button>
+                        <button type="button" wire:click="openReserve({{ $sub->id }})" @click="reserve = true"
+                                class="rounded-xl border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-300"><x-icon name="refresh" class="mr-0.5 inline h-3.5 w-3.5" /> Auto-renew</button>
                     @endif
                     @if ($sub && $sub->status !== 'disabled')
                         <button type="button" wire:click="openDeliver({{ $sub->id }})" @click="deliver = true"
@@ -237,6 +245,70 @@
 
                     <p class="mt-3 text-[11px] text-slate-400 dark:text-slate-500">Email includes the scannable QR; WhatsApp includes the tap-to-install code. Both carry the manual install steps.</p>
                 @endif
+            @endif
+        </div>
+    </div>
+
+    {{-- Auto-renew reserve sheet — pre-fund N renewal cycles up front (or "for
+         life", a rolling single earmark). Keeps a client's line renewing
+         hands-free for as long as the merchant chooses. --}}
+    <div x-show="reserve" x-cloak class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="reserve = false" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="reserve = false"></div>
+        <div x-show="reserve" x-transition class="relative w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
+            <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-white/20 sm:hidden"></div>
+            @if ($reserveSub)
+                @php $price = (float) $reserveSub->renewal_price; @endphp
+                <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">Lock auto-renewal</h2>
+                <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">
+                    {{ $reserveSub->client?->name }} · ${{ number_format($price, 2) }} per renewal cycle. We set the funds aside now so the line renews itself — a lot of clients keep the same eSIM for years.
+                </p>
+
+                {{-- For-life toggle --}}
+                <label class="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+                    <span class="min-w-0">
+                        <span class="block text-sm font-semibold text-amber-800 dark:text-amber-300">Keep it for life</span>
+                        <span class="block text-[11px] text-amber-700/80 dark:text-amber-300/70">Reserves one cycle and tops it back up after every renewal — renews forever while your wallet has funds.</span>
+                    </span>
+                    <input type="checkbox" wire:model.live="reserveIndefinite" class="h-5 w-5 shrink-0 rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                </label>
+
+                <div x-show="! $wire.reserveIndefinite">
+                    <p class="mb-2 text-xs font-semibold text-slate-600 dark:text-slate-300">How many cycles to pre-fund?</p>
+                    <div class="mb-3 flex flex-wrap gap-1.5">
+                        @foreach ([2, 3, 6, 12, 24] as $n)
+                            <button type="button" wire:click="$set('reserveCycles', {{ $n }})"
+                                    @class(['rounded-full border px-3 py-1.5 text-xs font-semibold transition', 'border-primary bg-primary/10 text-primary dark:text-teal-300' => $reserveCycles === $n, 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300' => $reserveCycles !== $n])>{{ $n }}</button>
+                        @endforeach
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs text-slate-500 dark:text-slate-400">Cycles</label>
+                        <input type="number" min="1" max="{{ $maxReserveCycles }}" wire:model.live="reserveCycles"
+                               class="w-24 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-[#243352] dark:text-slate-100">
+                        <span class="text-[11px] text-slate-400">up to {{ $maxReserveCycles }} — beyond that, use “for life”.</span>
+                    </div>
+                    @error('reserveCycles')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+
+                {{-- Live cost preview --}}
+                <div class="mt-4 rounded-2xl bg-slate-50 px-4 py-3 dark:bg-white/5"
+                     x-data="{ price: {{ $price }} }">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-500 dark:text-slate-400" x-text="$wire.reserveIndefinite ? 'Reserved now (rolling)' : 'Reserved now'"></span>
+                        <span class="text-lg font-bold text-amber-600 dark:text-amber-400"
+                              x-text="'$' + ($wire.reserveIndefinite ? price : price * Math.max(1, Number($wire.reserveCycles || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-slate-400 dark:text-slate-500" x-show="! $wire.reserveIndefinite" x-cloak>
+                        <span x-text="Number($wire.reserveCycles || 0)"></span> renewal cycle(s) set aside from your spendable balance.
+                    </p>
+                </div>
+
+                <p class="mt-3 text-[11px] text-slate-400 dark:text-slate-500">Reserved funds stay earmarked and can only be freed by disabling the eSIM or a renewal that fails to provision. Real charges always run at renewal time.</p>
+
+                <button type="button" wire:click="enableAutoRenew" wire:loading.attr="disabled" wire:target="enableAutoRenew"
+                        class="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60">
+                    <span wire:loading.remove wire:target="enableAutoRenew"><x-icon name="refresh" class="mr-1 inline h-4 w-4" /> Lock auto-renewal</span>
+                    <span wire:loading wire:target="enableAutoRenew" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Reserving…</span>
+                </button>
             @endif
         </div>
     </div>

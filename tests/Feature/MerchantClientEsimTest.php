@@ -6,7 +6,7 @@ use App\Livewire\MerchantClients;
 use App\Models\EsimPlan;
 use App\Models\Merchant;
 use App\Models\MerchantClient;
-use App\Models\MerchantClientSubscription;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\Merchants\MerchantClientService;
 use App\Services\Merchants\MerchantException;
@@ -33,7 +33,7 @@ class MerchantClientEsimTest extends TestCase
         parent::setUp();
         $this->seed(RoleSeeder::class);
         $this->seed(PricingSettingsSeeder::class);
-        \App\Models\Setting::setValue(MerchantSettings::FLAG, true);
+        Setting::setValue(MerchantSettings::FLAG, true);
     }
 
     private function merchant(float $fund = 200): Merchant
@@ -167,6 +167,120 @@ class MerchantClientEsimTest extends TestCase
         $this->assertSame(0.0, $wallet->reservedUsd($m->owner->fresh()));  // earmark freed
         // Money fully returned: released earmark + provider self-refund.
         $this->assertSame(round($balanceBefore, 4), round((float) $m->owner->wallet->fresh()->usd_balance, 4));
+    }
+
+    public function test_multi_cycle_reserve_locks_every_cycle_up_front(): void
+    {
+        $this->fakeProvider();
+        $m = $this->merchant();
+        $client = $this->client($m);
+        $svc = app(MerchantClientService::class);
+        $wallet = app(WalletService::class);
+
+        $svc->assignEsim($m, $client, $this->plan());
+        $sub = $client->fresh()->activeSubscription();
+        $price = (float) $sub->renewal_price;
+
+        $svc->enableAutoRenew($m, $sub->fresh(), 4);
+
+        $sub = $sub->fresh();
+        $this->assertTrue($sub->auto_renew);
+        $this->assertSame(4, $sub->reserved_cycles);
+        $this->assertFalse($sub->renew_indefinitely);
+        $this->assertSame(round(4 * $price, 4), $wallet->reservedUsd($m->owner->fresh()));
+    }
+
+    public function test_multi_cycle_renewal_carries_remaining_cycles_forward(): void
+    {
+        $this->fakeProvider();
+        $m = $this->merchant();
+        $client = $this->client($m);
+        $svc = app(MerchantClientService::class);
+        $wallet = app(WalletService::class);
+
+        $svc->assignEsim($m, $client, $this->plan());
+        $sub = $client->fresh()->activeSubscription();
+        $price = (float) $sub->renewal_price;
+        $svc->enableAutoRenew($m, $sub->fresh(), 3);
+        $sub->update(['expires_at' => now()->subDay()]);
+
+        $this->assertTrue($svc->renewDueSubscription($sub->fresh()));
+
+        // Old row retired; a fresh active row carries the 2 remaining cycles,
+        // still earmarked (no fresh reserve — the block covered them already).
+        $fresh = $client->fresh()->activeSubscription();
+        $this->assertSame('active', $fresh->status);
+        $this->assertTrue($fresh->auto_renew);
+        $this->assertSame(2, $fresh->reserved_cycles);
+        $this->assertSame(round(2 * $price, 4), $wallet->reservedUsd($m->owner->fresh()));
+    }
+
+    public function test_last_reserved_cycle_renews_then_stops_auto_renew(): void
+    {
+        $this->fakeProvider();
+        $m = $this->merchant();
+        $client = $this->client($m);
+        $svc = app(MerchantClientService::class);
+        $wallet = app(WalletService::class);
+
+        $svc->assignEsim($m, $client, $this->plan());
+        $sub = $client->fresh()->activeSubscription();
+        $svc->enableAutoRenew($m, $sub->fresh(), 1);
+        $sub->update(['expires_at' => now()->subDay()]);
+
+        $this->assertTrue($svc->renewDueSubscription($sub->fresh()));
+
+        $fresh = $client->fresh()->activeSubscription();
+        $this->assertSame('active', $fresh->status);
+        $this->assertFalse($fresh->auto_renew);              // block exhausted
+        $this->assertSame(0, $fresh->reserved_cycles);
+        $this->assertSame(0.0, $wallet->reservedUsd($m->owner->fresh()));
+    }
+
+    public function test_indefinite_renewal_rolls_the_earmark_forward(): void
+    {
+        $this->fakeProvider();
+        $m = $this->merchant();
+        $client = $this->client($m);
+        $svc = app(MerchantClientService::class);
+        $wallet = app(WalletService::class);
+
+        $svc->assignEsim($m, $client, $this->plan());
+        $sub = $client->fresh()->activeSubscription();
+        $price = (float) $sub->renewal_price;
+        $svc->enableAutoRenew($m, $sub->fresh(), 1, indefinite: true);
+
+        $this->assertSame(round($price, 4), $wallet->reservedUsd($m->owner->fresh()));
+        $sub->update(['expires_at' => now()->subDay()]);
+
+        $this->assertTrue($svc->renewDueSubscription($sub->fresh()));
+
+        // Renewed AND re-armed: a single cycle stays reserved, indefinitely.
+        $fresh = $client->fresh()->activeSubscription();
+        $this->assertTrue($fresh->auto_renew);
+        $this->assertTrue($fresh->renew_indefinitely);
+        $this->assertSame(1, $fresh->reserved_cycles);
+        $this->assertSame(round($price, 4), $wallet->reservedUsd($m->owner->fresh()));
+    }
+
+    public function test_disable_releases_all_reserved_cycles(): void
+    {
+        $this->fakeProvider();
+        $m = $this->merchant();
+        $client = $this->client($m);
+        $svc = app(MerchantClientService::class);
+        $wallet = app(WalletService::class);
+
+        $svc->assignEsim($m, $client, $this->plan());
+        $sub = $client->fresh()->activeSubscription();
+        $price = (float) $sub->renewal_price;
+        $svc->enableAutoRenew($m, $sub->fresh(), 5);
+        $this->assertSame(round(5 * $price, 4), $wallet->reservedUsd($m->owner->fresh()));
+
+        $svc->disableEsim($m, $sub->fresh());
+
+        $this->assertSame('disabled', $sub->fresh()->status);
+        $this->assertSame(0.0, $wallet->reservedUsd($m->owner->fresh()));  // every cycle freed
     }
 
     public function test_disable_releases_earmark_and_marks_disabled(): void

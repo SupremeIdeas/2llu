@@ -14,16 +14,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MerchantClientSubscription extends Model
 {
     public const TYPE_DATA = 'data';
+
     public const TYPE_CONNECT = 'connect';
 
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_EXPIRED = 'expired';
+
     public const STATUS_DISABLED = 'disabled';
+
+    /**
+     * Upper bound on how many renewal cycles a merchant may PRE-FUND in one lock.
+     * Beyond this, "keep it for life" (rolling indefinite renewal) is the path —
+     * you can't literally earmark unlimited months up front.
+     */
+    public const MAX_RESERVE_CYCLES = 36;
 
     protected $fillable = [
         'merchant_id', 'merchant_client_id', 'esim_order_id', 'plan_id', 'esim_type',
         'status', 'activated_at', 'expires_at', 'auto_renew', 'renewal_price',
-        'reserve_reference', 'due_alerted_at',
+        'reserve_reference', 'reserved_cycles', 'renew_indefinitely', 'due_alerted_at',
     ];
 
     protected function casts(): array
@@ -33,6 +43,8 @@ class MerchantClientSubscription extends Model
             'expires_at' => 'datetime',
             'auto_renew' => 'boolean',
             'renewal_price' => 'decimal:4',
+            'reserved_cycles' => 'integer',
+            'renew_indefinitely' => 'boolean',
             'due_alerted_at' => 'datetime',
         ];
     }

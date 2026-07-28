@@ -73,6 +73,13 @@ class MerchantClients extends Component
 
     public ?string $deliverWaLink = null;
 
+    // Auto-renew reserve buffer (how many cycles to pre-fund up front).
+    public ?int $reserveSubId = null;
+
+    public int $reserveCycles = 3;
+
+    public bool $reserveIndefinite = false;
+
     public ?string $error = null;
 
     private function merchant(): Merchant
@@ -187,13 +194,30 @@ class MerchantClients extends Component
             title: 'eSIM assigned', message: "It's provisioning now and will show under the client.");
     }
 
-    public function enableAutoRenew(int $subscriptionId, MerchantClientService $service): void
+    /** Open the auto-renew reserve sheet for a subscription. */
+    public function openReserve(int $subscriptionId): void
     {
         $merchant = $this->merchant();
         $sub = MerchantClientSubscription::where('merchant_id', $merchant->id)->findOrFail($subscriptionId);
+        $this->reserveSubId = $sub->id;
+        $this->reserveCycles = 3;
+        $this->reserveIndefinite = false;
+    }
+
+    public function enableAutoRenew(MerchantClientService $service): void
+    {
+        $merchant = $this->merchant();
+        $sub = MerchantClientSubscription::where('merchant_id', $merchant->id)->findOrFail($this->reserveSubId);
+        $this->validate([
+            'reserveCycles' => 'required|integer|min:1|max:'.MerchantClientSubscription::MAX_RESERVE_CYCLES,
+        ]);
         try {
-            $service->enableAutoRenew($merchant, $sub);
-            $this->dispatch('nx-toast', type: 'success', message: 'Auto-renewal locked. The next renewal amount is reserved.');
+            $service->enableAutoRenew($merchant, $sub, $this->reserveCycles, $this->reserveIndefinite);
+            $this->reset('reserveSubId', 'reserveCycles', 'reserveIndefinite');
+            $this->dispatch('close-reserve-sheet');
+            $this->dispatch('nx-toast', type: 'success', message: $this->reserveIndefinite
+                ? 'Auto-renew locked for life — one cycle is reserved and tops up after each renewal.'
+                : 'Auto-renewal locked. The reserved cycles are set aside from your wallet.');
         } catch (MerchantException $e) {
             $this->dispatch('nx-toast', type: 'error', message: $e->getMessage());
         }
@@ -296,9 +320,16 @@ class MerchantClients extends Component
                 ->where('merchant_id', $merchant->id)->find($this->deliverSubId)
             : null;
 
+        $reserveSub = $this->reserveSubId
+            ? MerchantClientSubscription::with('client')
+                ->where('merchant_id', $merchant->id)->find($this->reserveSubId)
+            : null;
+
         return view('livewire.merchant-clients', [
             'clients' => $clients,
             'deliverSub' => $deliverSub,
+            'reserveSub' => $reserveSub,
+            'maxReserveCycles' => MerchantClientSubscription::MAX_RESERVE_CYCLES,
             'dataPlans' => EsimPlan::where('is_active', true)->where('has_voice', false)->orderBy('name')->limit(200)->get(['id', 'name']),
             'connectPlans' => EsimPlan::where('is_active', true)->where('has_voice', true)->orderBy('name')->limit(200)->get(['id', 'name']),
             'walletUsd' => round((float) ($merchant->owner->wallet?->usd_balance ?? 0), 2),
