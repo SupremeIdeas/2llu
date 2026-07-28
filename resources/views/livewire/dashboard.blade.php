@@ -188,9 +188,11 @@
                             </button>
 
                             <div x-show="setup" x-cloak class="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-[#243352]">
-                                @if ($esim->qr_code_url)
+                                {{-- QR: the provider's image if it gave one, otherwise generated
+                                     from the LPA so a scannable code always exists. --}}
+                                @if ($esim->qr_code_url || $esim->lpa_string)
                                     <div class="flex flex-col items-center">
-                                        <img src="{{ $esim->qr_code_url }}" alt="eSIM QR code" class="h-40 w-40 rounded-lg border border-slate-200 bg-white p-1 dark:border-[#2D4060]">
+                                        <img src="{{ $esim->qr_code_url ?: route('esim.qr', $esim) }}" alt="eSIM QR code" class="h-40 w-40 rounded-lg border border-slate-200 bg-white p-1 dark:border-[#2D4060]">
                                         <span class="mt-1 text-xs text-slate-400">Scan to install</span>
                                     </div>
                                 @endif
