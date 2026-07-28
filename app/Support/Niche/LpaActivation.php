@@ -42,6 +42,20 @@ class LpaActivation
         return rtrim('LPA:1$'.$smdp.'$'.$matchingId.($confirmationCode ? '$'.$confirmationCode : ''), '$');
     }
 
+    /**
+     * Apple one-tap install link (iOS 17.4+). Tapping it on an iPhone opens the
+     * "Add eSIM" flow pre-filled — no scanning. Android falls back to the manual
+     * code (the link simply won't resolve there), so we always show both.
+     */
+    public static function universalLink(string $lpa): ?string
+    {
+        if (! str_starts_with(strtoupper(trim($lpa)), 'LPA:')) {
+            return null;
+        }
+
+        return 'https://esimsetup.apple.com/esim_qrcode_provisioning?carddata='.rawurlencode(trim($lpa));
+    }
+
     /** Step-by-step manual install text shown beside the QR. */
     public static function steps(): array
     {

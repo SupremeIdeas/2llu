@@ -2,18 +2,21 @@
 
 namespace App\Services\Merchants;
 
+use App\Exceptions\EsimProviderException;
 use App\Exceptions\InsufficientBalanceException;
+use App\Mail\ClientEsimMail;
 use App\Models\EsimOrder;
 use App\Models\EsimPlan;
 use App\Models\Merchant;
 use App\Models\MerchantClient;
 use App\Models\MerchantClientSubscription;
-use App\Exceptions\EsimProviderException;
 use App\Services\eSIM\ProviderRouter;
 use App\Services\Pricing\PricingEngine;
 use App\Services\Wallet\WalletService;
 use App\Support\Auditor;
+use App\Support\Niche\DeviceCompat;
 use App\Support\Niche\LpaActivation;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -30,8 +33,7 @@ class MerchantClientService
         private WalletService $wallet,
         private ProviderRouter $router,
         private PricingEngine $pricing,
-    ) {
-    }
+    ) {}
 
     /** V2 gate + ownership: only an active V2 merchant may manage clients. */
     private function guardV2(Merchant $merchant): void
@@ -100,7 +102,7 @@ class MerchantClientService
 
         // Device compatibility gate (Merchant V2): block a KNOWN-incompatible
         // device unless the merchant explicitly overrides. Unknown = allowed.
-        $compat = \App\Support\Niche\DeviceCompat::check((string) ($client->device_os ?: $client->device));
+        $compat = DeviceCompat::check((string) ($client->device_os ?: $client->device));
         if ($compat === false && ! $force) {
             throw new MerchantException("That client's device may not support eSIM. Confirm compatibility, then assign with override.");
         }
@@ -153,13 +155,13 @@ class MerchantClientService
 
         // Record/refresh the subscription lifecycle (type, expiry countdown).
         $expiresAt = $plan->validity_days ? now()->addDays((int) $plan->validity_days) : null;
-        \App\Models\MerchantClientSubscription::create([
+        MerchantClientSubscription::create([
             'merchant_id' => $merchant->id,
             'merchant_client_id' => $client->id,
             'esim_order_id' => $order->id,
             'plan_id' => $plan->id,
-            'esim_type' => $plan->has_voice ? \App\Models\MerchantClientSubscription::TYPE_CONNECT : \App\Models\MerchantClientSubscription::TYPE_DATA,
-            'status' => \App\Models\MerchantClientSubscription::STATUS_ACTIVE,
+            'esim_type' => $plan->has_voice ? MerchantClientSubscription::TYPE_CONNECT : MerchantClientSubscription::TYPE_DATA,
+            'status' => MerchantClientSubscription::STATUS_ACTIVE,
             'activated_at' => now(),
             'expires_at' => $expiresAt,
             'renewal_price' => $price,
@@ -252,6 +254,92 @@ class MerchantClientService
         ]);
 
         return true;
+    }
+
+    /**
+     * Deliver a client's eSIM (QR + activation code + install steps) to the
+     * client over their chosen channel(s): email, WhatsApp, or both. Email carries
+     * the scannable QR inline; WhatsApp carries the tap-to-install code + steps
+     * (a wa.me message can't attach an image). Returns what was sent so the UI can
+     * surface the WhatsApp forward link. Never sends before the eSIM is ready.
+     *
+     * @return array{email_sent: bool, whatsapp_link: ?string}
+     *
+     * @throws MerchantException
+     */
+    public function deliverEsim(Merchant $merchant, MerchantClientSubscription $subscription, string $channel): array
+    {
+        $this->assertOwnsSubscription($merchant, $subscription);
+        if (! in_array($channel, ['email', 'whatsapp', 'both'], true)) {
+            throw new MerchantException('Choose how to send it: email, WhatsApp, or both.');
+        }
+
+        $order = $subscription->order;
+        $client = $subscription->client;
+        if (! $order || ! $client) {
+            throw new MerchantException('That eSIM could not be found.');
+        }
+        if (! $order->isDeliverable()) {
+            throw new MerchantException("This eSIM is still provisioning — its activation code isn't ready yet. Try again in a moment.");
+        }
+
+        $brand = $merchant->business_name ?: 'Your provider';
+        $planName = $subscription->plan?->name ?? $order->plan?->name ?? 'eSIM plan';
+        $lpa = $order->lpa_string;
+        $result = ['email_sent' => false, 'whatsapp_link' => null];
+
+        if (in_array($channel, ['email', 'both'], true)) {
+            if (blank($client->email)) {
+                throw new MerchantException('Add an email to this client to send it by email.');
+            }
+            Mail::to($client->email)->send(new ClientEsimMail(
+                clientName: (string) $client->name,
+                brand: $brand,
+                planName: (string) $planName,
+                lpa: $lpa,
+                qrCodeUrl: $order->qr_code_url,
+                universalLink: $lpa ? LpaActivation::universalLink($lpa) : null,
+                steps: LpaActivation::steps(),
+            ));
+            $result['email_sent'] = true;
+        }
+
+        if (in_array($channel, ['whatsapp', 'both'], true)) {
+            if (blank($client->whatsapp)) {
+                throw new MerchantException('Add a WhatsApp number to this client to send it on WhatsApp.');
+            }
+            $result['whatsapp_link'] = $client->whatsappLink($this->esimWhatsappText($brand, $client->name, $planName, $lpa));
+        }
+
+        Auditor::log('merchant.client_esim_delivered', 'MerchantClientSubscription', $subscription->id, [
+            'merchant_id' => $merchant->id, 'channel' => $channel,
+        ]);
+
+        return $result;
+    }
+
+    /** Branded WhatsApp install message (tap-to-install link + manual code). */
+    private function esimWhatsappText(string $brand, string $clientName, string $planName, ?string $lpa): string
+    {
+        $lines = [
+            "*{$brand} — your eSIM is ready*",
+            '',
+            "Hi {$clientName}, your {$planName} eSIM is set up. Install it before you travel:",
+        ];
+        if ($lpa && ($link = LpaActivation::universalLink($lpa))) {
+            $lines[] = '';
+            $lines[] = "iPhone (one tap): {$link}";
+        }
+        if ($lpa) {
+            $lines[] = '';
+            $lines[] = 'Manual code (Android / older iPhone):';
+            $lines[] = $lpa;
+        }
+        $lines[] = '';
+        $lines[] = 'Add it under Settings → Mobile/Cellular → Add eSIM → Enter details manually.';
+        $lines[] = 'Keep this code private — it activates only once.';
+
+        return implode("\n", $lines);
     }
 
     /** Disable a client's eSIM (non-payment) — stop it counting as active. */

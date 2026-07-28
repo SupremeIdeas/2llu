@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-2xl" x-data="{ sheet: false, assign: false, invoice: false }"
+<div class="mx-auto max-w-2xl" x-data="{ sheet: false, assign: false, invoice: false, deliver: false }"
      @close-client-sheet.window="sheet = false">
     {{-- Header + wallet --}}
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -65,6 +65,10 @@
                     @if ($sub && $sub->isActive() && ! $sub->auto_renew)
                         <button type="button" wire:click="enableAutoRenew({{ $sub->id }})" wire:confirm="Lock ${{ number_format((float) $sub->renewal_price, 2) }} from your wallet to auto-renew this eSIM? This reserves the funds and can't be undone (only released if a future renewal fails to provision)."
                                 class="rounded-xl border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-300">Mark auto-billed</button>
+                    @endif
+                    @if ($sub && $sub->status !== 'disabled')
+                        <button type="button" wire:click="openDeliver({{ $sub->id }})" @click="deliver = true"
+                                class="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary-dark"><x-icon name="send" class="mr-0.5 inline h-3.5 w-3.5" /> Deliver eSIM</button>
                     @endif
                     @if ($sub && $sub->isActive())
                         <button type="button" wire:click="disableEsim({{ $sub->id }})" wire:confirm="Disable this client's eSIM?"
@@ -166,6 +170,74 @@
                     @endif
                 @endif
             </div>
+        </div>
+    </div>
+
+    {{-- Deliver eSIM sheet — QR + activation code + status, forwardable to the
+         client by email / WhatsApp / both. --}}
+    <div x-show="deliver" x-cloak class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="deliver = false" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="deliver = false"></div>
+        <div x-show="deliver" x-transition class="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
+            <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-white/20 sm:hidden"></div>
+            @if ($deliverSub)
+                @php $order = $deliverSub->order; $client = $deliverSub->client; $ready = $order && $order->isDeliverable(); @endphp
+                <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">Deliver eSIM</h2>
+                <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">{{ $client?->name }} · {{ $deliverSub->plan?->name ?? 'eSIM plan' }}</p>
+
+                @if (! $ready)
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center text-sm text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                        <x-ui.spinner class="mx-auto mb-2 h-5 w-5" />
+                        Still provisioning — the activation code isn't ready yet. Check back in a moment.
+                    </div>
+                @else
+                    {{-- QR + code (what the client scans / taps) --}}
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5" x-data="{ copied: false }">
+                        <div class="flex justify-center">
+                            <img src="{{ route('esim.qr', $order) }}" alt="eSIM QR code" width="176" height="176" class="h-44 w-44 rounded-xl border border-slate-200 bg-white p-1 dark:border-white/10">
+                        </div>
+                        @if ($order->lpa_string)
+                            <p class="mt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Activation code</p>
+                            <div class="mt-1 flex items-center gap-2">
+                                <code class="min-w-0 flex-1 break-all rounded-lg bg-slate-100 px-2 py-1.5 font-mono text-[11px] text-slate-800 dark:bg-[#243352] dark:text-slate-200">{{ $order->lpa_string }}</code>
+                                <button type="button" @click="navigator.clipboard.writeText(@js($order->lpa_string)); copied = true; setTimeout(() => copied = false, 1500)"
+                                        class="shrink-0 rounded-lg border border-slate-300 p-1.5 text-slate-500 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5" aria-label="Copy activation code"><x-icon name="copy" class="h-4 w-4" /></button>
+                            </div>
+                            <p class="mt-1 text-[11px] text-slate-400" x-show="copied" x-cloak>Copied.</p>
+                        @endif
+                        @if ($order->iccid)<p class="mt-2 text-[11px] text-slate-400">ICCID: <span class="font-mono">{{ $order->iccid }}</span></p>@endif
+                    </div>
+
+                    {{-- Channel choice --}}
+                    <p class="mb-2 mt-4 text-xs font-semibold text-slate-600 dark:text-slate-300">Send it to your client</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        @php $hasEmail = filled($client?->email); $hasWa = filled($client?->whatsapp); @endphp
+                        <button type="button" wire:click="$set('deliverChannel', 'email')" @disabled(! $hasEmail)
+                                @class(['rounded-xl border py-2 text-xs font-semibold transition disabled:opacity-40', 'border-primary bg-primary/10 text-primary dark:text-teal-300' => $deliverChannel === 'email', 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300' => $deliverChannel !== 'email'])>Email</button>
+                        <button type="button" wire:click="$set('deliverChannel', 'whatsapp')" @disabled(! $hasWa)
+                                @class(['rounded-xl border py-2 text-xs font-semibold transition disabled:opacity-40', 'border-primary bg-primary/10 text-primary dark:text-teal-300' => $deliverChannel === 'whatsapp', 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300' => $deliverChannel !== 'whatsapp'])>WhatsApp</button>
+                        <button type="button" wire:click="$set('deliverChannel', 'both')" @disabled(! ($hasEmail && $hasWa))
+                                @class(['rounded-xl border py-2 text-xs font-semibold transition disabled:opacity-40', 'border-primary bg-primary/10 text-primary dark:text-teal-300' => $deliverChannel === 'both', 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300' => $deliverChannel !== 'both'])>Both</button>
+                    </div>
+                    @unless ($hasEmail && $hasWa)
+                        <p class="mt-2 text-[11px] text-amber-600 dark:text-amber-400">Add {{ ! $hasEmail ? 'an email' : '' }}{{ ! $hasEmail && ! $hasWa ? ' and ' : '' }}{{ ! $hasWa ? 'a WhatsApp number' : '' }} to this client to unlock every channel.</p>
+                    @endunless
+
+                    @if ($error)<p class="mt-3 text-xs text-red-600">{{ $error }}</p>@endif
+
+                    <button type="button" wire:click="deliver" wire:loading.attr="disabled" wire:target="deliver"
+                            class="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
+                        <span wire:loading.remove wire:target="deliver"><x-icon name="send" class="mr-1 inline h-4 w-4" /> Send eSIM</span>
+                        <span wire:loading wire:target="deliver" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Sending…</span>
+                    </button>
+
+                    @if ($deliverWaLink)
+                        <a href="{{ $deliverWaLink }}" target="_blank" rel="noopener"
+                           class="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"><x-icon name="message-circle" class="h-4 w-4" /> Open WhatsApp to send</a>
+                    @endif
+
+                    <p class="mt-3 text-[11px] text-slate-400 dark:text-slate-500">Email includes the scannable QR; WhatsApp includes the tap-to-install code. Both carry the manual install steps.</p>
+                @endif
+            @endif
         </div>
     </div>
 </div>

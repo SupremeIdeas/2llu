@@ -55,4 +55,15 @@ class EsimOrder extends Model
     {
         return $this->belongsTo(EsimPlan::class, 'plan_id');
     }
+
+    public function merchantClient(): BelongsTo
+    {
+        return $this->belongsTo(MerchantClient::class, 'merchant_client_id');
+    }
+
+    /** Ready to deliver/install once the activation code (LPA) or QR is present. */
+    public function isDeliverable(): bool
+    {
+        return filled($this->lpa_string) || filled($this->qr_code_url);
+    }
 }

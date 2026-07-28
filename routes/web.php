@@ -130,6 +130,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/merchant', \App\Livewire\MerchantDashboard::class)->name('merchant.dashboard');
         // Merchant V2 — client management (404s for a non-V2 merchant).
         Route::get('/merchant/clients', \App\Livewire\MerchantClients::class)->name('merchant.clients');
+
+        // eSIM activation QR (SVG), generated from the LPA string. Owner- or
+        // assigning-merchant-scoped inside the controller.
+        Route::get('/esim/{order}/qr', \App\Http\Controllers\EsimQrController::class)->name('esim.qr');
     });
 
     // Aurora Welcome entrance (first-login animation) — reachable while

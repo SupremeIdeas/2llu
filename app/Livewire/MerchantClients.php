@@ -31,26 +31,47 @@ class MerchantClients extends Component
 
     // Add/edit form.
     public ?int $editingId = null;
+
     public string $name = '';
+
     public string $contact = '';
+
     public string $whatsapp = '';
+
     public string $email = '';
+
     public string $device = '';
+
     public string $device_os = '';
+
     public string $notes = '';
 
     // Assign-eSIM buffer.
     public ?int $assignClientId = null;
+
     public string $assignType = 'data';   // data | connect
+
     public ?int $assignPlanId = null;
+
     public bool $assignForce = false;
 
     // Invoice buffer.
     public ?int $invoiceClientId = null;
+
     public string $invoiceDesc = '';
+
     public $invoiceAmount = null;
+
     public ?string $invoiceLink = null;
+
     public ?string $invoiceText = null;
+
+    // Deliver-eSIM buffer.
+    public ?int $deliverSubId = null;
+
+    public string $deliverChannel = 'email';   // email | whatsapp | both
+
+    public ?string $deliverWaLink = null;
 
     public ?string $error = null;
 
@@ -190,6 +211,40 @@ class MerchantClients extends Component
         }
     }
 
+    /** Open the deliver-eSIM sheet for a client's current subscription. */
+    public function openDeliver(int $subscriptionId): void
+    {
+        $merchant = $this->merchant();
+        $sub = MerchantClientSubscription::with('client')
+            ->where('merchant_id', $merchant->id)->findOrFail($subscriptionId);
+        $this->reset('deliverWaLink', 'error');
+        $this->deliverSubId = $sub->id;
+        // Default to whatever contact the client has (prefer email).
+        $this->deliverChannel = filled($sub->client?->email) ? 'email'
+            : (filled($sub->client?->whatsapp) ? 'whatsapp' : 'email');
+    }
+
+    /** Send the eSIM (QR + code + steps) to the client over the chosen channel(s). */
+    public function deliver(MerchantClientService $service): void
+    {
+        $this->error = null;
+        $merchant = $this->merchant();
+        $sub = MerchantClientSubscription::where('merchant_id', $merchant->id)->findOrFail($this->deliverSubId);
+
+        try {
+            $res = $service->deliverEsim($merchant, $sub, $this->deliverChannel);
+        } catch (MerchantException $e) {
+            $this->error = $e->getMessage();
+            $this->dispatch('nx-toast', type: 'error', message: $e->getMessage());
+
+            return;
+        }
+
+        $this->deliverWaLink = $res['whatsapp_link'];
+        $this->dispatch('nx-toast', type: 'success',
+            message: $res['email_sent'] ? 'eSIM emailed to the client.' : 'Ready to forward on WhatsApp.');
+    }
+
     /** Open the invoice builder for a client. */
     public function openInvoice(int $clientId): void
     {
@@ -226,7 +281,7 @@ class MerchantClients extends Component
 
         $clients = MerchantClient::where('merchant_id', $merchant->id)
             ->withCount('esimOrders')
-            ->with(['subscriptions' => fn ($q) => $q->where('status', '!=', MerchantClientSubscription::STATUS_DISABLED)->latest('id')->limit(1)])
+            ->with(['subscriptions' => fn ($q) => $q->where('status', '!=', MerchantClientSubscription::STATUS_DISABLED)->latest('id')->limit(1)->with('order')])
             ->when($this->search !== '', function ($q) {
                 $term = '%'.$this->search.'%';
                 $q->where(fn ($w) => $w->where('name', 'like', $term)
@@ -236,8 +291,14 @@ class MerchantClients extends Component
             ->orderByDesc('is_active')->orderBy('name')
             ->paginate(12);
 
+        $deliverSub = $this->deliverSubId
+            ? MerchantClientSubscription::with(['client', 'plan', 'order'])
+                ->where('merchant_id', $merchant->id)->find($this->deliverSubId)
+            : null;
+
         return view('livewire.merchant-clients', [
             'clients' => $clients,
+            'deliverSub' => $deliverSub,
             'dataPlans' => EsimPlan::where('is_active', true)->where('has_voice', false)->orderBy('name')->limit(200)->get(['id', 'name']),
             'connectPlans' => EsimPlan::where('is_active', true)->where('has_voice', true)->orderBy('name')->limit(200)->get(['id', 'name']),
             'walletUsd' => round((float) ($merchant->owner->wallet?->usd_balance ?? 0), 2),
