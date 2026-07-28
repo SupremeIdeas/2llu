@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\ServiceIconsPage;
+use App\Livewire\CountryPicker;
+use App\Livewire\ServicePicker;
 use App\Models\User;
+use App\Models\UserWallet;
 use App\Support\CountryFlags;
 use App\Support\ServiceIcons;
 use Database\Seeders\RoleSeeder;
@@ -86,12 +89,12 @@ class ServiceIconsTest extends TestCase
         $user = User::factory()->create()->fresh();
 
         // Service logos render in the service picker (opened from the modals)…
-        \Livewire\Livewire::actingAs($user)->test(\App\Livewire\ServicePicker::class)
+        Livewire::actingAs($user)->test(ServicePicker::class)
             ->call('openModal', 'numbers')
             ->assertSee('svc-whatsapp', false);   // sprite reference rendered
 
         // …and country flags in the country picker.
-        \Livewire\Livewire::actingAs($user)->test(\App\Livewire\CountryPicker::class)
+        Livewire::actingAs($user)->test(CountryPicker::class)
             ->call('openModal', 'numbers')
             ->assertSee('fi fi-', false);
     }
@@ -99,7 +102,7 @@ class ServiceIconsTest extends TestCase
     public function test_dashboard_renders_the_premium_wallet_card(): void
     {
         $user = User::factory()->create()->fresh();
-        \App\Models\UserWallet::create(['user_id' => $user->id, 'usd_balance' => 12.5, 'ngn_balance' => 4000]);
+        UserWallet::create(['user_id' => $user->id, 'usd_balance' => 12.5, 'ngn_balance' => 4000]);
 
         $this->actingAs($user)->get('/dashboard')
             ->assertOk()
@@ -112,7 +115,8 @@ class ServiceIconsTest extends TestCase
     {
         $this->get('/')->assertOk()
             ->assertSee('data-products-pin', false)
-            ->assertSee('What NaaraSim Gives You')
+            ->assertSee('What Naara Gives You')
+            ->assertSee('Naara Gift Cards') // the gift-card product now advertised on the front end
             ->assertSee('data-countup="190"', false);
     }
 }

@@ -3,7 +3,9 @@
     <h2 data-reveal class="text-center text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white">{{ $s['headline'] }}</h2>
 
     <div class="mt-10 space-y-3">
-        @foreach (range(1, 5) as $n)
+        {{-- Renders every populated Q&A (admin can add up to 12); empty slots skipped. --}}
+        @foreach (range(1, 12) as $n)
+            @continue(empty($s["q{$n}"] ?? null))
             <details data-reveal style="--reveal-delay: {{ ($n - 1) * 0.05 }}s"
                      class="group rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#16233d]">
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-slate-900 dark:text-white">
