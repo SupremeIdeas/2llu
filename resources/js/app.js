@@ -132,13 +132,6 @@ function initScrollCraft() {
         scenes.forEach((el) => bgIo.observe(el));
     }
 
-    const sentinel = document.querySelector('[data-hero-sentinel]');
-    const stickyCta = document.querySelector('.mkt-sticky-cta');
-    if (sentinel && stickyCta) {
-        new IntersectionObserver((entries) => {
-            entries.forEach((e) => stickyCta.classList.toggle('is-shown', !e.isIntersecting));
-        }, { threshold: 0 }).observe(sentinel);
-    }
 }
 
 document.addEventListener('DOMContentLoaded', initScrollCraft);

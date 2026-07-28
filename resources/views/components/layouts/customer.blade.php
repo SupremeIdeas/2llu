@@ -5,12 +5,21 @@
     $u = auth()->user();
 
     // Core end-user destinations (bottom bar on mobile, top of the sidebar).
+    // Bar layout: eSIMs · Numbers · [More] · Gifts · Wallet. Home lives on the
+    // clickable logo + the top of the More sheet, freeing a slot for Naara Gift
+    // right beside Wallet.
     $primary = [
-        ['route' => 'dashboard', 'label' => 'Home', 'icon' => 'signal'],
         ['route' => 'catalogue', 'label' => 'eSIMs', 'icon' => 'globe'],
         ['route' => 'numbers', 'label' => 'Numbers', 'icon' => 'hash'],
-        ['route' => 'wallet', 'label' => 'Wallet', 'icon' => 'wallet'],
     ];
+    // Naara Gift lives in the bar whenever the feature isn't switched off. It
+    // shows a "Soon" badge until the API keys flip it live (the store page itself
+    // renders a Coming-Soon state until then) — no manual editing needed.
+    if (\App\Support\FeatureFlags::adminEnabled('naara_gift')) {
+        $primary[] = ['route' => 'gift-cards', 'label' => 'Gifts', 'icon' => 'gift',
+            'badge' => \App\Support\FeatureFlags::configured('naara_gift') ? null : 'Soon'];
+    }
+    $primary[] = ['route' => 'wallet', 'label' => 'Wallet', 'icon' => 'wallet'];
 
     $more = [
         // The most-reached number tools live up top of More (owner request).
@@ -67,10 +76,9 @@
     // In-app guide + agreement (auto-selects the user's audience).
     $more[] = ['route' => 'guide', 'label' => 'Guide & policy', 'icon' => 'help-circle'];
 
-    // Naara Gift storefront — only when the feature is live.
-    if (\App\Support\FeatureFlags::enabled('naara_gift')) {
-        array_unshift($more, ['route' => 'gift-cards', 'label' => 'Naara Gift', 'icon' => 'gift']);
-    }
+    // Home moved off the bottom bar → the clickable logo goes home, and it sits
+    // at the very top of the More sheet so it's never lost.
+    array_unshift($more, ['route' => 'dashboard', 'label' => 'Home', 'icon' => 'signal']);
 @endphp
 
 <x-layouts.app :title="$title ?? config('app.name')" :body-class="\App\Support\PlatformTheme::bodyClass()">

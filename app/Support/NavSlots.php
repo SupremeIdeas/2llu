@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\NavSlot;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -14,20 +15,24 @@ class NavSlots
 {
     private const CACHE_KEY = 'nav.slots.v1';
 
-    /** The default floating-bar set (prompt: Home, eSIMs, Numbers, Account, About + Wizard centre). */
+    /**
+     * The default floating-bar set: a deliberately minimal THREE items + the
+     * Wizard centrepiece. Everything else lives in the top-header mega menu, so
+     * the bottom bar never crowds or blocks content. The admin can swap which
+     * three via Admin → Floating nav; the bar renders at most three (see MAX).
+     */
     public static function defaults(): array
     {
         return [
+            ['position' => 0, 'label' => 'Ask NaaraSim', 'icon' => 'message-circle', 'target' => NavSlot::TARGET_WIZARD, 'visibility' => 'all', 'is_center' => true],
             ['position' => 1, 'label' => 'Home', 'icon' => 'globe', 'target' => 'home', 'visibility' => 'all', 'is_center' => false],
             ['position' => 2, 'label' => 'Plans', 'icon' => 'wifi', 'target' => 'pricing', 'visibility' => 'all', 'is_center' => false],
-            ['position' => 0, 'label' => 'Ask NaaraSim', 'icon' => 'message-circle', 'target' => NavSlot::TARGET_WIZARD, 'visibility' => 'all', 'is_center' => true],
             ['position' => 3, 'label' => 'Numbers', 'icon' => 'phone', 'target' => 'pricing', 'visibility' => 'all', 'is_center' => false],
-            ['position' => 4, 'label' => 'Blog', 'icon' => 'file-text', 'target' => 'blog', 'visibility' => 'all', 'is_center' => false],
-            ['position' => 5, 'label' => 'About', 'icon' => 'info', 'target' => 'about', 'visibility' => 'all', 'is_center' => false],
-            ['position' => 6, 'label' => 'Account', 'icon' => 'id-card', 'target' => 'dashboard', 'visibility' => 'auth', 'is_center' => false],
-            ['position' => 6, 'label' => 'Get started', 'icon' => 'id-card', 'target' => 'register', 'visibility' => 'guest', 'is_center' => false],
         ];
     }
+
+    /** The floating bar shows at most this many regular items (+ the centre). */
+    public const MAX_REGULAR = 3;
 
     /** Seed the default set once (called lazily on first read; also usable by admin). */
     public static function ensureSeeded(): void
@@ -40,7 +45,7 @@ class NavSlots
         }
     }
 
-    /** @return \Illuminate\Support\Collection<int, NavSlot> */
+    /** @return Collection<int, NavSlot> */
     public static function all()
     {
         try {
@@ -65,7 +70,9 @@ class NavSlots
     {
         $active = self::all()->where('is_active', true)->filter(fn (NavSlot $s) => $s->visibleTo($authed));
         $center = $active->firstWhere('is_center', true);
-        $regular = $active->where('is_center', false)->values();
+        // Keep the bar minimal — at most MAX_REGULAR items; the rest belong in the
+        // top-header mega menu.
+        $regular = $active->where('is_center', false)->values()->take(self::MAX_REGULAR);
 
         $half = (int) ceil($regular->count() / 2);
 

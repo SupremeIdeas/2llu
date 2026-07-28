@@ -4,17 +4,16 @@
 @endphp
 <div class="mx-auto max-w-5xl" x-data="{ view: localStorage.getItem('nx_gift_view') || 'grid', detail: @entangle('selectedId') }"
      x-effect="localStorage.setItem('nx_gift_view', view)">
-    {{-- Store entry preloader (self-hosted Lottie). A viewport-centred splash
-         shown briefly while the storefront + brand logos settle, then faded —
-         mirrors the global brand-preloader. Self-dismisses on a timer so it can
-         never trap the page; reduced-motion shows the settled frame. --}}
-    <div x-data="{ loading: true }" x-init="setTimeout(() => loading = false, 1300)"
-         x-show="loading" x-transition:leave.opacity.duration.500ms
-         class="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-white/95 backdrop-blur-sm dark:bg-[#0D1B2A]/95"
-         role="status" aria-live="polite">
-        <x-lottie name="gift-preloader" label="Loading gift store" class="h-44 w-44" />
-        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Opening your gift store…</p>
-    </div>
+    {{-- Store entry preloader (self-hosted Lottie). Only while the store is live. --}}
+    @if ($live)
+        <div x-data="{ loading: true }" x-init="setTimeout(() => loading = false, 1300)"
+             x-show="loading" x-transition:leave.opacity.duration.500ms
+             class="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-white/95 backdrop-blur-sm dark:bg-[#0D1B2A]/95"
+             role="status" aria-live="polite">
+            <x-lottie name="gift-preloader" label="Loading gift store" class="h-44 w-44" />
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Opening your gift store…</p>
+        </div>
+    @endif
 
     {{-- Header — the Naara Gift storefront wears its own admin-set logo
          (falls back to the gift icon + wordmark when none is uploaded). --}}
@@ -22,6 +21,23 @@
         <x-brand-logo variant="gift" label="Naara Gift" fallbackIcon="gift" class="h-9" />
         <p class="mt-1.5 text-sm text-slate-500 dark:text-slate-400">Gift cards for the brands you love — delivered instantly.</p>
     </div>
+
+    @if (! $live)
+        {{-- Coming Soon — the store flips live automatically the moment the API
+             keys are saved (no manual editing). --}}
+        <div class="mx-auto max-w-lg rounded-3xl border border-slate-200/70 bg-white p-8 text-center shadow-sm dark:border-white/10 dark:bg-slate-900/60">
+            <span class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15 text-primary dark:text-teal-300">
+                <x-icon name="gift" class="h-8 w-8" />
+            </span>
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Naara Gift is coming soon</h2>
+            <p class="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                Send gift cards for the brands people love — shopping, airtime, streaming and games — delivered instantly by email or WhatsApp. We're putting the finishing touches on the store. Check back shortly.
+            </p>
+            <a href="{{ route('catalogue') }}" wire:navigate class="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark">
+                <x-icon name="globe" class="h-4 w-4" /> Explore eSIM plans meanwhile
+            </a>
+        </div>
+    @else
 
     {{-- Search + country + grid/list toggle --}}
     <div class="mb-5 flex flex-wrap items-center gap-3">
@@ -140,4 +156,5 @@
             </div>
         </div>
     @endif
+    @endif {{-- /$live --}}
 </div>

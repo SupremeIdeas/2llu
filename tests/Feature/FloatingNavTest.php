@@ -47,7 +47,11 @@ class FloatingNavTest extends TestCase
 
     public function test_visibility_splits_guest_and_auth_slots(): void
     {
-        NavSlots::ensureSeeded();
+        // A guest-only and an auth-only slot alongside a shared one.
+        NavSlot::create(['position' => 1, 'label' => 'Home', 'icon' => 'globe', 'target' => 'home', 'visibility' => 'all', 'is_center' => false, 'is_active' => true]);
+        NavSlot::create(['position' => 2, 'label' => 'Get started', 'icon' => 'id-card', 'target' => 'register', 'visibility' => 'guest', 'is_center' => false, 'is_active' => true]);
+        NavSlot::create(['position' => 2, 'label' => 'Account', 'icon' => 'id-card', 'target' => 'dashboard', 'visibility' => 'auth', 'is_center' => false, 'is_active' => true]);
+        NavSlots::flush();
 
         $guestLabels = collect(array_merge(NavSlots::bar(false)['left'], NavSlots::bar(false)['right']))->pluck('label');
         $authLabels = collect(array_merge(NavSlots::bar(true)['left'], NavSlots::bar(true)['right']))->pluck('label');
@@ -56,6 +60,19 @@ class FloatingNavTest extends TestCase
         $this->assertFalse($guestLabels->contains('Account'));
         $this->assertTrue($authLabels->contains('Account'));
         $this->assertFalse($authLabels->contains('Get started'));
+    }
+
+    public function test_the_bar_is_capped_to_three_regular_items(): void
+    {
+        NavSlots::ensureSeeded(); // 3 items + wizard centre by default
+        foreach (range(1, 4) as $i) {
+            NavSlot::create(['position' => 10 + $i, 'label' => "Extra {$i}", 'icon' => 'globe', 'target' => 'home', 'visibility' => 'all', 'is_center' => false, 'is_active' => true]);
+        }
+        NavSlots::flush();
+
+        $bar = NavSlots::bar(false);
+        $this->assertCount(3, array_merge($bar['left'], $bar['right']));
+        $this->assertNotNull($bar['center']);
     }
 
     public function test_marketing_page_renders_the_floating_nav(): void

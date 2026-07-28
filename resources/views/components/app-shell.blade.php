@@ -59,6 +59,9 @@
                            ])>
                             <x-icon :name="$item['icon']" class="h-5 w-5 shrink-0" />
                             <span class="truncate" x-show="!navCollapsed">{{ $item['label'] }}</span>
+                            @if ($item['badge'] ?? null)
+                                <span x-show="!navCollapsed" class="ml-auto rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-accent-dark dark:text-accent">{{ $item['badge'] }}</span>
+                            @endif
                         </a>
                     @endif
                 @endforeach

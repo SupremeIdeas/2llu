@@ -117,20 +117,28 @@
          cards, rebuilt on brand): the three product lines as floating glass
          cards with our SVG feature icons. --}}
     @unless ($hasAny)
+        @php($showcase = [
+            ['globe', 'eSIM Data Plans', 'Local data in 190+ countries — installed before you fly, connected when you land.', route('catalogue'), 'Browse plans', null],
+            ['signal', 'Naara Connect', 'Full eSIM — calls, SMS and data on one eSIM, with its own number.', route('catalogue', ['tab' => 'full']), 'See Full eSIMs', null],
+            ['hash', 'Verification Numbers', 'Receive one-time codes for WhatsApp, Google, Facebook and more — in seconds.', route('numbers'), 'Get a number', null],
+            ['phone', 'Virtual Numbers', 'A permanent second line for calls and SMS, without a second phone.', route('numbers'), 'Explore numbers', null],
+        ])
+        {{-- Naara Gift entry — flips from "Coming soon" to a live link the moment the API keys are added. --}}
+        @if (\App\Support\FeatureFlags::adminEnabled('naara_gift'))
+            @php($giftLive = \App\Support\FeatureFlags::configured('naara_gift'))
+            @php($showcase[] = ['gift', 'Naara Gift', 'Send gift cards for 1,000+ brands — delivered instantly by email or WhatsApp.', route('gift-cards'), $giftLive ? 'Browse gifts' : 'Coming soon', $giftLive ? null : 'Soon'])
+        @endif
         <div class="mb-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            @foreach ([
-                ['globe', 'eSIM Data Plans', 'Local data in 190+ countries — installed before you fly, connected when you land.', route('catalogue'), 'Browse plans'],
-                ['signal', 'Naara Connect', 'Full eSIM — calls, SMS and data on one eSIM, with its own number.', route('catalogue', ['tab' => 'full']), 'See Full eSIMs'],
-                ['hash', 'Verification Numbers', 'Receive one-time codes for WhatsApp, Google, Facebook and more — in seconds.', route('numbers'), 'Get a number'],
-                ['phone', 'Virtual Numbers', 'A permanent second line for calls and SMS, without a second phone.', route('numbers'), 'Explore numbers'],
-            ] as [$icon, $title, $text, $url, $cta])
-                <a href="{{ $url }}" class="nx-card3d group block">
+            @foreach ($showcase as [$icon, $title, $text, $url, $cta, $badge])
+                <a href="{{ $url }}" wire:navigate class="nx-card3d group block">
                     <div class="nx-card3d__body">
                         <span class="nx-card3d__glass" aria-hidden="true"></span>
                         <span class="nx-card3d__icon">
                             <x-icon :name="$icon" class="h-6 w-6" />
                         </span>
-                        <h3 class="relative mt-5 font-display text-lg font-bold text-slate-900 dark:text-white">{{ $title }}</h3>
+                        <h3 class="relative mt-5 flex items-center gap-2 font-display text-lg font-bold text-slate-900 dark:text-white">{{ $title }}
+                            @if ($badge)<span class="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase text-accent-dark dark:text-accent">{{ $badge }}</span>@endif
+                        </h3>
                         <p class="relative mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ $text }}</p>
                         <span class="relative mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary dark:text-teal-300">
                             {{ $cta }} <x-icon name="chevron-right" class="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />

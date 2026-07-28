@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\GiftCardProduct;
+use App\Services\GiftCards\GiftCardException;
+use App\Services\GiftCards\GiftCardOrderService;
 use App\Support\FeatureFlags;
 use App\Support\GiftCardPricing;
 use Illuminate\Support\Facades\Auth;
@@ -37,9 +39,16 @@ class GiftCards extends Component
     /** Dynamic required-field values, keyed by field key. */
     public array $fields = [];
 
+    /** Live once the API keys are in; otherwise the page shows Coming Soon. */
+    public bool $live = false;
+
     public function booted(): void
     {
-        abort_unless(FeatureFlags::enabled('naara_gift'), 404);
+        // Admin kill-switch off → hide entirely. Admin on but no keys yet →
+        // reachable, but renders a Coming-Soon state (flips live automatically
+        // the moment the keys are saved — no manual editing).
+        abort_unless(FeatureFlags::adminEnabled('naara_gift'), 404);
+        $this->live = FeatureFlags::configured('naara_gift');
     }
 
     public function updatingSearch(): void
@@ -64,12 +73,13 @@ class GiftCards extends Component
     }
 
     /** Buy the selected gift card → the money path, then the receipt screen. */
-    public function buy(\App\Services\GiftCards\GiftCardOrderService $orders)
+    public function buy(GiftCardOrderService $orders)
     {
+        abort_unless($this->live, 404); // no purchases in Coming-Soon mode
         $product = GiftCardProduct::storefront()->findOrFail($this->selectedId);
         try {
             $order = $orders->purchase(Auth::user(), $product, (float) $this->amount, array_map('strval', $this->fields));
-        } catch (\App\Services\GiftCards\GiftCardException $e) {
+        } catch (GiftCardException $e) {
             $this->dispatch('nx-toast', type: 'error', message: $e->getMessage());
 
             return null;
@@ -80,6 +90,13 @@ class GiftCards extends Component
 
     public function render()
     {
+        // Coming-Soon mode (no keys yet): skip the catalogue queries entirely.
+        if (! $this->live) {
+            return view('livewire.gift-cards', [
+                'products' => null, 'countries' => collect(), 'selected' => null, 'denominations' => null,
+            ]);
+        }
+
         $products = GiftCardProduct::storefront()
             ->when($this->search !== '', fn ($q) => $q->where('brand_name', 'like', '%'.$this->search.'%'))
             ->when($this->country, fn ($q) => $q->where('country', $this->country))
