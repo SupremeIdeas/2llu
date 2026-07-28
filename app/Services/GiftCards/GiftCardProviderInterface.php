@@ -27,6 +27,17 @@ interface GiftCardProviderInterface
     public function getBalance(): float;
 
     /**
+     * Live connectivity self-test for the admin panel. Actually authenticates and
+     * reaches the API with the CURRENT keys — so a green/red readout confirms a
+     * key really works BEFORE any customer transacts (the money-path tests only
+     * prove our code handles the shape we expect, not that a real key is valid).
+     * Never throws; surfaces the failure in `error`.
+     *
+     * @return array{ok: bool, balance: ?float, currency: ?string, products: ?int, error: ?string}
+     */
+    public function preflight(): array;
+
+    /**
      * Place an order for a gift card and return a NORMALIZED result:
      *   ['provider_tx_id' => string, 'status' => 'delivered'|'processing'|'failed',
      *    'receipt' => ['epin'=>?, 'code'=>?, 'redemption_url'=>?, 'account_id'=>?,

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Admin → Naara Gift. One screen where Reloadly and Zendit sit side by side as
@@ -45,6 +46,9 @@ class GiftCards extends Component
     public string $search = '';
 
     public string $providerFilter = '';
+
+    /** Live connection-test results, keyed by provider. */
+    public array $probe = [];
 
     public function mount(): void
     {
@@ -102,6 +106,37 @@ class GiftCards extends Component
         SyncStatus::flush();
         $this->dispatch('nx-toast', type: $count > 0 ? 'success' : 'error',
             message: $count > 0 ? ucfirst($provider).": synced {$count} products." : ucfirst($provider).': sync returned nothing (check keys).');
+    }
+
+    /** Live self-test: actually authenticate + reach the API with the current keys. */
+    public function preflight(string $provider, GiftCardCatalogueSyncService $svc): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        abort_unless(in_array($provider, ['reloadly', 'zendit'], true), 422);
+
+        $this->probe[$provider] = $svc->provider($provider)->preflight();
+        $this->dispatch('nx-toast', type: $this->probe[$provider]['ok'] ? 'success' : 'error',
+            message: $this->probe[$provider]['ok'] ? ucfirst($provider).' connected.' : ucfirst($provider).' test failed.');
+    }
+
+    /** Reconciliation export — retail only, never provider cost. */
+    public function exportCsv(): StreamedResponse
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        $rows = GiftCardOrder::with('user:id,email')->latest()->limit(10000)->get();
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['id', 'created_at', 'buyer', 'brand', 'face_value', 'currency', 'price_charged_usd', 'status', 'reference']);
+            foreach ($rows as $o) {
+                fputcsv($out, [
+                    $o->id, $o->created_at, $o->user?->email, $o->brand_name,
+                    $o->face_value, $o->currency, $o->price_charged, $o->status, $o->transaction_ref,
+                ]);
+            }
+            fclose($out);
+        }, 'naara-gift-orders-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     }
 
     public function approve(int $id, GiftCardOrderService $orders): void

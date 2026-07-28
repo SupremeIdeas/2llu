@@ -111,6 +111,43 @@ class ReloadlyGiftCardService implements GiftCardProviderInterface
         }
     }
 
+    public function preflight(): array
+    {
+        $blank = ['ok' => false, 'balance' => null, 'currency' => null, 'products' => null, 'error' => null];
+        if (! $this->available()) {
+            return ['error' => 'Add your Reloadly client ID + secret on Admin → API keys first.'] + $blank;
+        }
+
+        // Re-authenticate from scratch so a just-changed key is genuinely tested.
+        Cache::forget('reloadly.giftcards.token');
+        try {
+            $client = $this->client();
+            $bal = (array) $client->get('/accounts/balance')->throw()->json();
+            $probe = $client->get('/products', ['page' => 1, 'size' => 1])->throw();
+            $count = $probe->json('totalElements');
+
+            return [
+                'ok' => true,
+                'balance' => isset($bal['balance']) ? (float) $bal['balance'] : null,
+                'currency' => $bal['currencyCode'] ?? null,
+                'products' => is_numeric($count) ? (int) $count : null,
+                'error' => null,
+            ];
+        } catch (\Throwable $e) {
+            return ['error' => $this->sanitize($e)] + $blank;
+        }
+    }
+
+    /** Short, key-free error line for the admin readout. */
+    private function sanitize(\Throwable $e): string
+    {
+        $msg = str_contains($e->getMessage(), 'Unauthenticated') || str_contains($e->getMessage(), '401')
+            ? 'Authentication failed — check the key, secret and sandbox/live toggle.'
+            : $e->getMessage();
+
+        return mb_substr($msg, 0, 200);
+    }
+
     public function order(string $providerProductId, float $amount, string $currency, array $fields, string $reference): array
     {
         try {

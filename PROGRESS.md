@@ -9,6 +9,23 @@
 
 ## DONE
 
+### 🔨 Naara Gift — Phase 4: live-key preflight + reconciliation export — built 2026-07-28
+De-risks the go-live moment. The money-path tests only prove our code handles
+the shape we *expect* — they can't prove a real key authenticates. So:
+- **Provider preflight self-test** (`preflight()` on the interface + both
+  services): actually re-authenticates and hits `/accounts/balance` +
+  a 1-item catalogue probe (Reloadly) / `/balance` + `/vouchers/offers`
+  (Zendit) with the CURRENT keys. Never throws — returns
+  `{ok, balance, currency, products, error}` with a key-free, sanitized error
+  line. Admin → Naara Gift gets a **"Test"** button per provider with a
+  green/red readout **before any customer transacts** (blueprint S17.4 discipline:
+  sandbox keys first). Auth failure → "check the key, secret and sandbox/live toggle."
+- **Reconciliation CSV** (`exportCsv`): admin-gated order export — id, buyer,
+  brand, face, **retail `price_charged_usd`**, status, ref. Cost never in the file.
+- `NaaraGiftCatalogueTest` +3 (preflight OK / bad-key / missing-key),
+  `NaaraGiftOrderTest` +2 (admin preflight readout, CSV has retail not cost).
+  **Suite 903.**
+
 ### 🔨 Naara Gift — Phase 3: purchase money path + admin — built 2026-07-28
 The live checkout, held to the same money-safety discipline as eSIM/merchant.
 - **`GiftCardOrderService::purchase()`** — authoritative retail through

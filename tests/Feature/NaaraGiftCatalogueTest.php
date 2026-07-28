@@ -6,6 +6,7 @@ use App\Models\GiftCardProduct;
 use App\Services\GiftCards\GiftCardCatalogueSyncService;
 use App\Services\GiftCards\ReloadlyGiftCardService;
 use App\Services\GiftCards\ZenditVoucherService;
+use App\Support\SyncStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -126,6 +127,44 @@ class NaaraGiftCatalogueTest extends TestCase
         config(['services.reloadly.client_id' => null, 'services.reloadly.client_secret' => null]);
 
         $this->assertSame(0, app(GiftCardCatalogueSyncService::class)->sync('reloadly'));
-        $this->assertFalse(\App\Support\SyncStatus::for('giftcards:reloadly')['ok']);
+        $this->assertFalse(SyncStatus::for('giftcards:reloadly')['ok']);
+    }
+
+    public function test_reloadly_preflight_reports_a_working_key(): void
+    {
+        Http::fake([
+            'auth.reloadly.com/*' => Http::response(['access_token' => 'tok', 'expires_in' => 3600]),
+            'giftcards-sandbox.reloadly.com/accounts/balance' => Http::response(['balance' => 500, 'currencyCode' => 'USD']),
+            'giftcards-sandbox.reloadly.com/products*' => Http::response(['content' => [], 'totalElements' => 4200, 'last' => true]),
+        ]);
+
+        $r = app(ReloadlyGiftCardService::class)->preflight();
+
+        $this->assertTrue($r['ok']);
+        $this->assertSame(500.0, $r['balance']);
+        $this->assertSame('USD', $r['currency']);
+        $this->assertSame(4200, $r['products']);
+    }
+
+    public function test_reloadly_preflight_surfaces_a_bad_key_without_throwing(): void
+    {
+        Http::fake([
+            'auth.reloadly.com/*' => Http::response(['error' => 'invalid_client'], 401),
+        ]);
+
+        $r = app(ReloadlyGiftCardService::class)->preflight();
+
+        $this->assertFalse($r['ok']);
+        $this->assertNotEmpty($r['error']);
+    }
+
+    public function test_preflight_tells_the_admin_to_add_keys_when_missing(): void
+    {
+        config(['services.reloadly.client_id' => null, 'services.reloadly.client_secret' => null]);
+
+        $r = app(ReloadlyGiftCardService::class)->preflight();
+
+        $this->assertFalse($r['ok']);
+        $this->assertStringContainsString('Admin', $r['error']);
     }
 }

@@ -88,6 +88,35 @@ class ZenditVoucherService implements GiftCardProviderInterface
         }
     }
 
+    public function preflight(): array
+    {
+        $blank = ['ok' => false, 'balance' => null, 'currency' => null, 'products' => null, 'error' => null];
+        if (! $this->available()) {
+            return ['error' => 'Add your Zendit API key on Admin → API keys first.'] + $blank;
+        }
+
+        try {
+            $bal = (array) $this->client()->get('/balance')->throw()->json();
+            $divisor = (int) ($bal['currencyDivisor'] ?? 1) ?: 1;
+            // Prove the vouchers catalogue is reachable with these keys.
+            $this->client()->get('/vouchers/offers', ['_limit' => 1, '_offset' => 0])->throw();
+
+            return [
+                'ok' => true,
+                'balance' => isset($bal['availableBalance']) ? (float) $bal['availableBalance'] / $divisor : null,
+                'currency' => $bal['currency'] ?? null,
+                'products' => null,
+                'error' => null,
+            ];
+        } catch (\Throwable $e) {
+            $msg = str_contains($e->getMessage(), '401') || str_contains($e->getMessage(), 'Unauthenticated')
+                ? 'Authentication failed — check the Zendit API key and base URL.'
+                : $e->getMessage();
+
+            return ['error' => mb_substr($msg, 0, 200)] + $blank;
+        }
+    }
+
     public function order(string $providerProductId, float $amount, string $currency, array $fields, string $reference): array
     {
         try {

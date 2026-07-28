@@ -19,12 +19,32 @@
                             {{ $p['configured'] ? 'Keys configured · Active' : 'Add keys on Admin → API keys' }}
                         </p>
                     </div>
-                    <button type="button" wire:click="sync('{{ $p['key'] }}')" wire:loading.attr="disabled" wire:target="sync('{{ $p['key'] }}')"
-                            class="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
-                        <span wire:loading.remove wire:target="sync('{{ $p['key'] }}')">Sync now</span>
-                        <span wire:loading wire:target="sync('{{ $p['key'] }}')">Syncing…</span>
-                    </button>
+                    <div class="flex shrink-0 items-center gap-2">
+                        <button type="button" wire:click="preflight('{{ $p['key'] }}')" wire:loading.attr="disabled" wire:target="preflight('{{ $p['key'] }}')"
+                                class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-primary hover:text-primary disabled:opacity-60 dark:border-[#2D4060] dark:text-slate-300">
+                            <span wire:loading.remove wire:target="preflight('{{ $p['key'] }}')">Test</span>
+                            <span wire:loading wire:target="preflight('{{ $p['key'] }}')">Testing…</span>
+                        </button>
+                        <button type="button" wire:click="sync('{{ $p['key'] }}')" wire:loading.attr="disabled" wire:target="sync('{{ $p['key'] }}')"
+                                class="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
+                            <span wire:loading.remove wire:target="sync('{{ $p['key'] }}')">Sync now</span>
+                            <span wire:loading wire:target="sync('{{ $p['key'] }}')">Syncing…</span>
+                        </button>
+                    </div>
                 </div>
+
+                @if (! empty($probe[$p['key']]))
+                    @php $pr = $probe[$p['key']]; @endphp
+                    <div class="mt-3 rounded-xl border p-3 text-xs {{ $pr['ok'] ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300' }}">
+                        @if ($pr['ok'])
+                            <span class="font-semibold">Connected.</span>
+                            @if ($pr['balance'] !== null) Balance {{ $pr['currency'] ?: '' }} {{ number_format((float) $pr['balance'], 2) }}.@endif
+                            @if ($pr['products'] !== null) {{ number_format($pr['products']) }} products available.@endif
+                        @else
+                            <span class="font-semibold">Failed.</span> {{ $pr['error'] }}
+                        @endif
+                    </div>
+                @endif
                 <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div class="rounded-xl bg-slate-50 p-3 dark:bg-[#243352]">
                         <dt class="text-[11px] uppercase tracking-wide text-slate-400">Products</dt>
@@ -181,7 +201,13 @@
     <div class="mt-4">{{ $catalogue->links() }}</div>
 
     {{-- Recent orders --}}
-    <h2 class="mt-8 text-sm font-semibold text-slate-900 dark:text-slate-100">Recent orders</h2>
+    <div class="mt-8 flex items-center justify-between gap-3">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Recent orders</h2>
+        <button type="button" wire:click="exportCsv"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-primary hover:text-primary dark:border-[#2D4060] dark:text-slate-300">
+            <x-icon name="file-text" class="h-3.5 w-3.5" /> Export CSV
+        </button>
+    </div>
     <div class="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
         <table class="w-full text-sm">
             <thead>

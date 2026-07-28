@@ -90,6 +90,11 @@ class NaaraGiftOrderTest extends TestCase
                 return 0.0;
             }
 
+            public function preflight(): array
+            {
+                return ['ok' => true, 'balance' => 100.0, 'currency' => 'USD', 'products' => 5, 'error' => null];
+            }
+
             public function order(string $providerProductId, float $amount, string $currency, array $fields, string $reference): array
             {
                 if ($this->status === 'throw') {
@@ -285,5 +290,44 @@ class NaaraGiftOrderTest extends TestCase
             ->call('approve', $order->id);
 
         $this->assertSame(GiftCardOrder::STATUS_DELIVERED, $order->fresh()->status);
+    }
+
+    public function test_admin_preflight_shows_a_live_connection_result(): void
+    {
+        $this->fakeProvider(); // fake preflight returns ok + a balance
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole('super_admin');
+
+        Livewire::actingAs($admin)->test(AdminGiftCards::class)
+            ->call('preflight', 'reloadly')
+            ->assertSet('probe.reloadly.ok', true)
+            ->assertSee('Connected');
+    }
+
+    public function test_admin_csv_export_lists_orders_but_never_cost(): void
+    {
+        $this->fakeProvider();
+        $p = $this->product();
+        $user = $this->funded();
+        app(GiftCardOrderService::class)->purchase($user, $p, 50.0, ['email' => 'r@example.com']);
+
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole('super_admin');
+
+        // The action is admin-gated and downloads a CSV.
+        Livewire::actingAs($admin)->test(AdminGiftCards::class)
+            ->call('exportCsv')
+            ->assertFileDownloaded('naara-gift-orders-'.now()->format('Y-m-d').'.csv');
+
+        // Capture the streamed body to prove it carries retail, not cost.
+        $this->actingAs($admin);
+        ob_start();
+        (new AdminGiftCards)->exportCsv()->sendContent();
+        $content = ob_get_clean();
+
+        $this->assertStringContainsString('price_charged_usd', $content);
+        $this->assertStringContainsString('Amazon', $content);
+        $this->assertStringNotContainsString('cost_meta', $content);
+        $this->assertStringNotContainsString('discountPercentage', $content);
     }
 }
