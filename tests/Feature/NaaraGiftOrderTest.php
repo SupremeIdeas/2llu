@@ -17,8 +17,10 @@ use App\Support\GiftCardPricing;
 use Database\Seeders\PricingSettingsSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
+use Tests\Support\FakeGiftCardProvider;
 use Tests\TestCase;
 
 /**
@@ -290,6 +292,70 @@ class NaaraGiftOrderTest extends TestCase
             ->call('approve', $order->id);
 
         $this->assertSame(GiftCardOrder::STATUS_DELIVERED, $order->fresh()->status);
+    }
+
+    public function test_a_same_second_double_submit_charges_and_orders_exactly_once(): void
+    {
+        // Freeze time so both submits share the same time-bucketed reference.
+        Carbon::setTestNow(Carbon::create(2026, 7, 28, 12, 0, 0));
+
+        $fake = new FakeGiftCardProvider;
+        $this->app->instance('giftcard.reloadly', $fake);
+        $p = $this->product();
+        $user = $this->funded();
+        $before = (float) $user->wallet->fresh()->usd_balance;
+        $retail = round(app(GiftCardPricing::class)->retail($p, 50.0, log: false), 4);
+
+        $svc = app(GiftCardOrderService::class);
+        $a = $svc->purchase($user, $p, 50.0, ['email' => 'r@example.com']);
+        $b = $svc->purchase($user, $p, 50.0, ['email' => 'r@example.com']); // racing re-submit
+
+        $this->assertSame(1, $fake->orderCalls, 'provider must be ordered once');
+        $this->assertSame(1, GiftCardOrder::where('user_id', $user->id)->count());
+        $this->assertSame($a->id, $b->id); // both land on the same order
+        $this->assertEqualsWithDelta($before - $retail, (float) $user->wallet->fresh()->usd_balance, 0.0001);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_a_provider_that_returns_failed_without_throwing_still_refunds(): void
+    {
+        // Some providers answer 200 with status FAILED instead of an error.
+        $this->app->instance('giftcard.reloadly', new FakeGiftCardProvider(status: 'failed'));
+        $p = $this->product();
+        $user = $this->funded();
+        $before = (float) $user->wallet->fresh()->usd_balance;
+
+        try {
+            app(GiftCardOrderService::class)->purchase($user, $p, 50.0, ['email' => 'r@example.com']);
+        } catch (GiftCardException) {
+            // acceptable — the buyer sees a failure
+        }
+
+        $order = GiftCardOrder::latest()->first();
+        $this->assertSame(GiftCardOrder::STATUS_FAILED, $order->status);
+        $this->assertEqualsWithDelta($before, (float) $user->wallet->fresh()->usd_balance, 0.0001); // refunded
+    }
+
+    public function test_a_failed_webhook_on_a_processing_order_refunds_the_buyer(): void
+    {
+        $this->app->instance('giftcard.reloadly', new FakeGiftCardProvider(status: 'processing', receipt: []));
+        config(['services.reloadly.webhook_secret' => 'shh']);
+        $p = $this->product();
+        $user = $this->funded();
+        $before = (float) $user->wallet->fresh()->usd_balance;
+        $order = app(GiftCardOrderService::class)->purchase($user, $p, 50.0, ['email' => 'r@example.com']);
+        $this->assertSame(GiftCardOrder::STATUS_PROCESSING, $order->status);
+        $this->assertLessThan($before, (float) $user->wallet->fresh()->usd_balance); // charged
+
+        $payload = json_encode(['customIdentifier' => $order->transaction_ref, 'status' => 'FAILED']);
+        $sig = hash_hmac('sha256', $payload, 'shh');
+        $this->call('POST', route('webhooks.giftcards', 'reloadly'), [], [], [],
+            ['HTTP_X-Naara-Signature' => $sig, 'CONTENT_TYPE' => 'application/json'], $payload)->assertOk();
+
+        $order->refresh();
+        $this->assertContains($order->status, [GiftCardOrder::STATUS_FAILED, GiftCardOrder::STATUS_REFUNDED]);
+        $this->assertEqualsWithDelta($before, (float) $user->wallet->fresh()->usd_balance, 0.0001); // refunded in full
     }
 
     public function test_admin_preflight_shows_a_live_connection_result(): void

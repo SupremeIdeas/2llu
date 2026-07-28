@@ -69,10 +69,10 @@ class FeatureFlags
             'name' => 'Naara Gift (gift cards)',
             'group' => 'Products',
             'icon' => 'gift',
-            'description' => 'The gift-card storefront powered by Reloadly (primary) + Zendit (failover). Off until the catalogue is synced and checkout is live.',
+            'description' => 'The gift-card storefront powered by Reloadly (primary) + Zendit (failover). On by default; still stays "Coming Soon" until the Reloadly keys are added and the catalogue is synced.',
             'requires' => ['services.reloadly.client_id', 'services.reloadly.client_secret'],
             'guide' => null,
-            'default' => false,
+            'default' => true,
         ],
     ];
 

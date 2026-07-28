@@ -11,7 +11,6 @@ use App\Services\Wallet\WalletService;
 use App\Support\Auditor;
 use App\Support\GiftCardFraud;
 use App\Support\GiftCardPricing;
-use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -62,7 +61,11 @@ class GiftCardOrderService
         // Fraud gate (velocity + cooling-off) BEFORE any money moves.
         GiftCardFraud::assert($user, $retail);
 
-        $ref = 'giftcard:'.$user->id.':'.$product->id.':'.Str::uuid();
+        // Time-bucketed reference (money-safety rule 7): a same-second re-submit
+        // of the SAME product+amount shares this reference, so the idempotent
+        // debit dedupes it and we return the existing order instead of charging
+        // and ordering twice (consistent with the eSIM/merchant checkout).
+        $ref = 'giftcard:'.$user->id.':'.$product->id.':'.(int) round($amount * 100).':'.now()->timestamp;
 
         // Atomic, idempotent debit.
         try {
@@ -74,7 +77,14 @@ class GiftCardOrderService
             throw new GiftCardException('Your wallet is too low — top up at least $'.number_format($retail, 2).'.');
         }
         if (! $debit->wasRecentlyCreated) {
-            throw new GiftCardException('That purchase is already being processed.');
+            // This charge was already placed — return the existing order (no
+            // second debit, no second provider order). Idempotent success.
+            $existing = GiftCardOrder::where('transaction_ref', $ref)->first();
+            if ($existing) {
+                return $existing;
+            }
+            // Charged but the order row never landed (rare partial failure): fall
+            // through and build it against the SAME already-charged reference.
         }
 
         // Record the order BEFORE calling the provider (no orphan charge).
@@ -116,12 +126,16 @@ class GiftCardOrderService
                 $order->transaction_ref,
             );
         } catch (GiftCardProviderException $e) {
-            $this->wallet->refund($order->user, (float) $order->price_charged, 'USD', [
-                'reference' => 'refund:'.$order->transaction_ref,
-                'description' => 'Gift card could not be delivered',
-            ]);
-            $order->update(['status' => GiftCardOrder::STATUS_FAILED]);
-            Auditor::log('giftcard.failed_refunded', GiftCardOrder::class, $order->id);
+            $this->failAndRefund($order);
+
+            throw new GiftCardException('That gift card could not be delivered right now — your wallet was refunded.');
+        }
+
+        // A provider may answer 200 with a terminal 'failed' status instead of
+        // throwing — treat that exactly like a thrown failure (refund, never
+        // leave the buyer charged for an undelivered card).
+        if (($result['status'] ?? null) === 'failed') {
+            $this->failAndRefund($order);
 
             throw new GiftCardException('That gift card could not be delivered right now — your wallet was refunded.');
         }
@@ -145,6 +159,24 @@ class GiftCardOrderService
         Auditor::log('giftcard.purchased', GiftCardOrder::class, $order->id, ['status' => $order->status]);
 
         return $order->fresh();
+    }
+
+    /**
+     * Refund a charged order and mark it failed. Idempotent: the refund is keyed
+     * on `refund:{ref}`, so a webhook and the inline path can both call it without
+     * double-crediting, and a card that is already terminal is left untouched.
+     */
+    public function failAndRefund(GiftCardOrder $order): void
+    {
+        if (in_array($order->status, [GiftCardOrder::STATUS_DELIVERED, GiftCardOrder::STATUS_FAILED, GiftCardOrder::STATUS_REFUNDED], true)) {
+            return;
+        }
+        $this->wallet->refund($order->user, (float) $order->price_charged, 'USD', [
+            'reference' => 'refund:'.$order->transaction_ref,
+            'description' => 'Gift card could not be delivered',
+        ]);
+        $order->update(['status' => GiftCardOrder::STATUS_FAILED]);
+        Auditor::log('giftcard.failed_refunded', GiftCardOrder::class, $order->id);
     }
 
     /** Admin approves a held order → fulfil it. */

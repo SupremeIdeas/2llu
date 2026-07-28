@@ -17,7 +17,7 @@ class GiftCardProduct extends Model
         'provider', 'provider_product_id', 'brand_key', 'brand_name', 'country', 'currency',
         'denomination_type', 'fixed_denominations', 'min_amount', 'max_amount', 'logo_url',
         'brand_color', 'category', 'required_fields', 'redeem_instruction', 'cost_meta',
-        'provider_enabled', 'admin_enabled', 'is_primary', 'featured',
+        'provider_enabled', 'admin_enabled', 'is_primary', 'featured', 'priceable',
     ];
 
     /** Never leak provider/cost to a user-facing serialization. */
@@ -35,13 +35,19 @@ class GiftCardProduct extends Model
             'admin_enabled' => 'boolean',
             'is_primary' => 'boolean',
             'featured' => 'boolean',
+            'priceable' => 'boolean',
         ];
     }
 
-    /** Products the storefront may sell: primary provider, enabled both sides. */
+    /**
+     * Products the storefront may sell: primary provider, enabled both sides, and
+     * PRICEABLE — a card we can't convert to a real USD cost is withheld so a
+     * currency mismatch can never sell it below cost (money-safety rule 1.4).
+     */
     public function scopeStorefront(Builder $q): Builder
     {
-        return $q->where('is_primary', true)->where('admin_enabled', true)->where('provider_enabled', true);
+        return $q->where('is_primary', true)->where('admin_enabled', true)
+            ->where('provider_enabled', true)->where('priceable', true);
     }
 
     public function isRange(): bool

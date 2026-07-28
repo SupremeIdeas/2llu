@@ -55,6 +55,7 @@ class GiftCardCatalogueSyncService
                         'brand_key', 'brand_name', 'country', 'currency', 'denomination_type',
                         'fixed_denominations', 'min_amount', 'max_amount', 'logo_url', 'brand_color',
                         'category', 'required_fields', 'redeem_instruction', 'cost_meta', 'provider_enabled',
+                        'priceable',
                     ])->all(),
                 );
                 $count++;

@@ -75,6 +75,23 @@ class ReloadlyGiftCardService implements GiftCardProviderInterface
     private function map(array $p): array
     {
         $brandName = data_get($p, 'brand.brandName') ?: ($p['productName'] ?? 'Gift card');
+        $type = strtoupper((string) ($p['denominationType'] ?? 'FIXED'));
+        $recipientCcy = (string) ($p['recipientCurrencyCode'] ?? '') ?: null;
+        $senderCcy = (string) ($p['senderCurrencyCode'] ?? '') ?: null;
+
+        // The recipient→sender price map is what WE actually pay, in our account
+        // (sender) currency. Money-safety: cost must come from this, never from
+        // the recipient face value — a ₦5,000 face is not $5,000 (rule 1.3).
+        $senderMap = (array) ($p['fixedRecipientToSenderDenominationsMap'] ?? []);
+        $minSender = $p['minSenderDenomination'] ?? null;
+        $maxSender = $p['maxSenderDenomination'] ?? null;
+
+        // Priceable only when we can convert the face to a real cost: same
+        // currency, a fixed map (FIXED), or a sender range (RANGE). Anything else
+        // is withheld from the storefront rather than mispriced.
+        $priceable = ($recipientCcy !== null && $recipientCcy === $senderCcy)
+            || ($type === 'FIXED' && $senderMap !== [])
+            || ($type === 'RANGE' && is_numeric($minSender) && is_numeric($maxSender));
 
         return [
             'provider' => 'reloadly',
@@ -82,8 +99,8 @@ class ReloadlyGiftCardService implements GiftCardProviderInterface
             'brand_key' => Str::slug($brandName),
             'brand_name' => $brandName,
             'country' => strtoupper((string) (data_get($p, 'country.isoName') ?? '')) ?: null,
-            'currency' => (string) ($p['recipientCurrencyCode'] ?? '') ?: null,
-            'denomination_type' => strtoupper((string) ($p['denominationType'] ?? 'FIXED')),
+            'currency' => $recipientCcy,
+            'denomination_type' => $type,
             'fixed_denominations' => array_values((array) ($p['fixedRecipientDenominations'] ?? [])),
             'min_amount' => $p['minRecipientDenomination'] ?? null,
             'max_amount' => $p['maxRecipientDenomination'] ?? null,
@@ -95,10 +112,13 @@ class ReloadlyGiftCardService implements GiftCardProviderInterface
             'cost_meta' => [
                 'senderFee' => $p['senderFee'] ?? null,
                 'discountPercentage' => $p['discountPercentage'] ?? null,
-                'senderCurrencyCode' => $p['senderCurrencyCode'] ?? null,
-                'fixedSenderDenominations' => $p['fixedSenderDenominations'] ?? null,
+                'senderCurrencyCode' => $senderCcy,
+                'senderMap' => $senderMap ?: null,
+                'minSender' => $minSender,
+                'maxSender' => $maxSender,
             ],
             'provider_enabled' => true,
+            'priceable' => $priceable,
         ];
     }
 

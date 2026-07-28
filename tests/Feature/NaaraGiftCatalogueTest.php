@@ -6,6 +6,7 @@ use App\Models\GiftCardProduct;
 use App\Services\GiftCards\GiftCardCatalogueSyncService;
 use App\Services\GiftCards\ReloadlyGiftCardService;
 use App\Services\GiftCards\ZenditVoucherService;
+use App\Support\GiftCardPricing;
 use App\Support\SyncStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -47,8 +48,9 @@ class NaaraGiftCatalogueTest extends TestCase
     {
         return [
             'productId' => $id, 'productName' => "{$brand} Gift Card", 'denominationType' => 'FIXED',
-            'recipientCurrencyCode' => 'USD', 'fixedRecipientDenominations' => [25, 50, 100],
-            'senderFee' => 1.0, 'discountPercentage' => 7.5, 'senderCurrencyCode' => 'USD',
+            'recipientCurrencyCode' => 'USD', 'senderCurrencyCode' => 'USD',
+            'fixedRecipientDenominations' => [25, 50, 100],
+            'senderFee' => 1.0, 'discountPercentage' => 7.5,
             'logoUrls' => ["https://cdn/{$brand}.png"], 'brand' => ['brandName' => $brand],
             'category' => ['name' => 'Shopping'], 'country' => ['isoName' => $iso],
             'redeemInstruction' => ['verbose' => 'Redeem at site', 'concise' => 'Redeem'],
@@ -128,6 +130,44 @@ class NaaraGiftCatalogueTest extends TestCase
 
         $this->assertSame(0, app(GiftCardCatalogueSyncService::class)->sync('reloadly'));
         $this->assertFalse(SyncStatus::for('giftcards:reloadly')['ok']);
+    }
+
+    public function test_a_non_usd_card_is_priced_from_the_sender_map_not_the_face(): void
+    {
+        // A ₦5,000 face that really costs us ~$4 must NOT be priced as $5,000.
+        $this->fakeReloadly([[
+            'productId' => 9, 'productName' => 'Naija Store', 'denominationType' => 'FIXED',
+            'recipientCurrencyCode' => 'NGN', 'senderCurrencyCode' => 'USD',
+            'fixedRecipientDenominations' => [5000], 'fixedRecipientToSenderDenominationsMap' => ['5000' => 4.00],
+            'senderFee' => 0.5, 'discountPercentage' => 0, 'brand' => ['brandName' => 'Naija Store'],
+            'country' => ['isoName' => 'NG'],
+        ]]);
+        app(GiftCardCatalogueSyncService::class)->sync('reloadly');
+
+        $p = GiftCardProduct::where('brand_key', 'naija-store')->first();
+        $this->assertTrue($p->priceable);
+        $retail = app(GiftCardPricing::class)->retail($p, 5000.0);
+
+        // Cost basis is ~$4.50 (sender 4.00 + $0.50 fee), so retail is a few
+        // dollars — nowhere near the ₦5,000 face number.
+        $this->assertGreaterThan(4.5, $retail);
+        $this->assertLessThan(20, $retail);
+    }
+
+    public function test_a_card_we_cannot_price_is_withheld_from_the_storefront(): void
+    {
+        // Non-USD, FIXED, but NO sender map → unpriceable → must not be sellable.
+        $this->fakeReloadly([[
+            'productId' => 10, 'productName' => 'Mystery', 'denominationType' => 'FIXED',
+            'recipientCurrencyCode' => 'KWD', 'senderCurrencyCode' => 'USD',
+            'fixedRecipientDenominations' => [10], 'brand' => ['brandName' => 'Mystery'],
+            'country' => ['isoName' => 'KW'],
+        ]]);
+        app(GiftCardCatalogueSyncService::class)->sync('reloadly');
+
+        $p = GiftCardProduct::where('brand_key', 'mystery')->first();
+        $this->assertFalse($p->priceable);
+        $this->assertSame(0, GiftCardProduct::storefront()->where('id', $p->id)->count());
     }
 
     public function test_reloadly_preflight_reports_a_working_key(): void

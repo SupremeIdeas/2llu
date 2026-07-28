@@ -54,6 +54,7 @@ class ZenditVoucherService implements GiftCardProviderInterface
         $brandName = (string) ($o['brandName'] ?? $o['brand'] ?? 'Gift card');
         $divisor = (int) (data_get($o, 'price.currencyDivisor') ?: 1) ?: 1;
         $scale = fn ($v) => is_numeric($v) ? round(((float) $v) / $divisor, 2) : null;
+        $ccy = strtoupper((string) (data_get($o, 'price.currency') ?? ''));
 
         return [
             'provider' => 'zendit',
@@ -71,8 +72,11 @@ class ZenditVoucherService implements GiftCardProviderInterface
             'category' => (string) ($o['subType'] ?? $o['productType'] ?? '') ?: null,
             'required_fields' => $this->fields((array) ($o['requiredFields'] ?? [])),
             'redeem_instruction' => (string) ($o['notes'] ?? $o['shortNotes'] ?? '') ?: null,
-            'cost_meta' => ['cost' => $o['cost'] ?? null],
+            'cost_meta' => ['cost' => $o['cost'] ?? null, 'priceCurrency' => $ccy ?: null],
             'provider_enabled' => (bool) ($o['enabled'] ?? true),
+            // Failover pricing is only trustworthy without an FX gap. Non-USD
+            // Zendit offers are withheld rather than mispriced against a USD wallet.
+            'priceable' => $ccy === '' || $ccy === 'USD',
         ];
     }
 

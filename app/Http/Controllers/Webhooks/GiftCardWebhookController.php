@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
 use App\Models\GiftCardOrder;
+use App\Services\GiftCards\GiftCardOrderService;
 use App\Support\Auditor;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ use Illuminate\Http\Request;
  */
 class GiftCardWebhookController extends Controller
 {
-    public function __invoke(Request $request, string $provider)
+    public function __invoke(Request $request, string $provider, GiftCardOrderService $orders)
     {
         $secret = (string) config("services.{$provider}.webhook_secret", '');
         if ($secret !== '') {
@@ -35,9 +36,18 @@ class GiftCardWebhookController extends Controller
         }
 
         $status = strtoupper((string) ($data['status'] ?? ''));
+
+        // A terminal failure from the provider must refund the (already charged)
+        // buyer — not just flip the status. Idempotent on the reference.
+        if ($status === 'FAILED') {
+            $orders->failAndRefund($order);
+            Auditor::log('giftcard.webhook', GiftCardOrder::class, $order->id, ['status' => GiftCardOrder::STATUS_FAILED]);
+
+            return response()->json(['ok' => true]);
+        }
+
         $mapped = match ($status) {
             'DONE', 'SUCCESSFUL', 'DELIVERED' => GiftCardOrder::STATUS_DELIVERED,
-            'FAILED' => GiftCardOrder::STATUS_FAILED,
             default => GiftCardOrder::STATUS_PROCESSING,
         };
 

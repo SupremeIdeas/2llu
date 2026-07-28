@@ -53,11 +53,49 @@ class GiftCardPricing
             $discount = (float) ($meta['discountPercentage'] ?? 0);
             $fee = (float) ($meta['senderFee'] ?? 0);
 
-            return round($face * (1 - $discount / 100) + $fee, 4);
+            // Base cost is in OUR (sender) currency, NEVER the recipient face — a
+            // ₦5,000 face is not a $5,000 cost. Use the recipient→sender map for
+            // FIXED and the sender range for RANGE; fall back to face only when
+            // the currencies already match (scopeStorefront withholds the rest).
+            $base = $this->senderBase($product, $meta, $face);
+
+            return round($base * (1 - $discount / 100) + $fee, 4);
         }
 
-        // Zendit (failover): best-effort; default to face so MarginGuard floors
-        // retail sensibly when a precise per-denomination cost isn't available.
+        // Zendit (failover, USD-only in the storefront): the offer's scaled price
+        // is already in the charged currency, so face is the cost basis.
         return round($face, 4);
+    }
+
+    /** The sender-currency (USD) base amount we pay for a recipient face value. */
+    private function senderBase(GiftCardProduct $product, array $meta, float $face): float
+    {
+        $recipientCcy = $product->currency;
+        $senderCcy = $meta['senderCurrencyCode'] ?? null;
+        if ($recipientCcy !== null && $recipientCcy === $senderCcy) {
+            return $face; // no FX gap
+        }
+
+        if (! $product->isRange()) {
+            // FIXED: look the face up in the recipient→sender map (keys may be
+            // "5000" or "5000.00").
+            $map = (array) ($meta['senderMap'] ?? []);
+            foreach ([(string) $face, (string) (int) $face, number_format($face, 2, '.', '')] as $k) {
+                if (isset($map[$k]) && is_numeric($map[$k])) {
+                    return (float) $map[$k];
+                }
+            }
+
+            return $face; // last resort (only reached for currency-matched cards)
+        }
+
+        // RANGE: scale linearly by the sender/recipient max (both provider-given).
+        $maxSender = (float) ($meta['maxSender'] ?? 0);
+        $maxRecipient = (float) $product->max_amount;
+        if ($maxSender > 0 && $maxRecipient > 0) {
+            return round($face * ($maxSender / $maxRecipient), 4);
+        }
+
+        return $face;
     }
 }

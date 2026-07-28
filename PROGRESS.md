@@ -9,6 +9,34 @@
 
 ## DONE
 
+### 🛡️ Naara Gift — money-path bug hunt (pre-launch due diligence) — 2026-07-28
+Deep audit of the newest money path before real keys go in. **5 real bugs found
++ fixed, each locked by a regression test** (suite 908):
+1. **Double-charge on double-submit.** `purchase()` used a random UUID per call,
+   so two clicks = two debits/orders. Now a **time-bucketed reference**
+   (`giftcard:{user}:{product}:{cents}:{ts}`) dedupes a same-second re-submit and
+   returns the existing order — consistent with the eSIM/merchant checkout.
+2. **Provider "failed" without throwing left the buyer charged.** A 200 response
+   carrying a terminal `failed` status slipped into `processing` with no refund.
+   `fulfil()` now treats a returned `failed` exactly like a thrown failure →
+   refund + mark failed.
+3. **A FAILED delivery webhook didn't refund.** It flipped status but left the
+   wallet debited. Now routes through a shared, idempotent `failAndRefund()`.
+4. **Non-USD cards could sell BELOW cost.** Cost was derived from the recipient
+   face (`₦5,000`/`10 KWD`) as if it were USD; MarginGuard couldn't catch it
+   because it saw the same wrong number. Cost now comes from Reloadly's
+   **sender-side** (USD) price map (FIXED) / sender range (RANGE).
+5. **Unpriceable cards auto-exposed.** With `admin_enabled`/`is_primary` defaulting
+   on, every synced card was instantly live. New **`priceable`** flag + a
+   `scopeStorefront` filter withholds any card we can't convert to a real USD
+   cost, so a currency mismatch can never reach checkout.
+Shared `WalletService` core re-verified (lock + tx + `lockForUpdate`, idempotent,
+reserved-funds floor, distinct `refund` type). Also: `naara_gift` feature default
+flipped **ON** (still gated by keys, so it stays "Coming Soon" until Reloadly
+keys land) — admin can toggle it any time on Admin → Features.
+New tests: `FakeGiftCardProvider` double; double-submit, non-throwing-failure,
+failed-webhook-refund, sender-map pricing, unpriceable-withheld.
+
 ### 🔨 Naara Gift — Phase 4: live-key preflight + reconciliation export — built 2026-07-28
 De-risks the go-live moment. The money-path tests only prove our code handles
 the shape we *expect* — they can't prove a real key authenticates. So:
