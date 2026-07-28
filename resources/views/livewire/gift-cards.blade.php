@@ -4,6 +4,18 @@
 @endphp
 <div class="mx-auto max-w-5xl" x-data="{ view: localStorage.getItem('nx_gift_view') || 'grid', detail: @entangle('selectedId') }"
      x-effect="localStorage.setItem('nx_gift_view', view)">
+    {{-- Store entry preloader (self-hosted Lottie). A viewport-centred splash
+         shown briefly while the storefront + brand logos settle, then faded —
+         mirrors the global brand-preloader. Self-dismisses on a timer so it can
+         never trap the page; reduced-motion shows the settled frame. --}}
+    <div x-data="{ loading: true }" x-init="setTimeout(() => loading = false, 1300)"
+         x-show="loading" x-transition:leave.opacity.duration.500ms
+         class="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-white/95 backdrop-blur-sm dark:bg-[#0D1B2A]/95"
+         role="status" aria-live="polite">
+        <x-lottie name="gift-preloader" label="Loading gift store" class="h-44 w-44" />
+        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Opening your gift store…</p>
+    </div>
+
     {{-- Header --}}
     <div class="mb-5">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Naara Gift</h1>

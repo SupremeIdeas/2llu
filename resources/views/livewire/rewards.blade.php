@@ -1,6 +1,9 @@
 <div class="mx-auto max-w-3xl">
     <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Rewards</h1>
-    <p class="mb-6 text-sm text-slate-500 dark:text-slate-400">Earn <span class="font-semibold text-primary dark:text-teal-300">NaaraCredits</span> and spend them like cash on eSIMs and numbers. {{ $perUsd }} credits = $1.</p>
+    <p class="mb-2 text-sm text-slate-500 dark:text-slate-400">Earn <span class="font-semibold text-primary dark:text-teal-300">NaaraCredits</span> and spend them like cash on eSIMs and numbers. {{ $perUsd }} credits = $1.</p>
+
+    {{-- Hero illustration (self-hosted Lottie, reduced-motion aware). --}}
+    <x-lottie name="reward" label="Rewards" class="mx-auto -mt-2 mb-4 h-48 w-48 sm:h-56 sm:w-56" />
 
     @unless ($enabled)
         <div class="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-400 dark:border-[#2D4060] dark:text-slate-500">

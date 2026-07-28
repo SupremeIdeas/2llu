@@ -9,6 +9,21 @@
 
 ## DONE
 
+### ✨ Lottie animations — gift-store preloader + rewards hero — 2026-07-28
+Self-hosted (CSP-safe; **not** the lottie.host/unpkg CDN embeds — those break under
+the network policy + leak visitor data). `lottie-web` and each animation JSON are
+code-split into their own lazy chunks (runtime 79 KB gzip, gift 3.5 KB, reward
+19 KB) loaded **only** on pages that render one — the main bundle is unchanged.
+- `resources/js/lottie.js` — hydrates every `[data-lottie]` node on load +
+  `livewire:navigated`; reduced-motion shows the settled last frame.
+- `<x-lottie name="…" label="…" />` Blade component (registry: `gift-preloader`,
+  `reward`).
+- **Gift store entry preloader**: the gift-card animation as a viewport-centred
+  splash (mirrors `brand-preloader`), self-dismissing on a 1.3 s timer so it can
+  never trap the page.
+- **Rewards hero**: the trophy/reward burst below the title + description.
+- Verified rendering with a headless-Chromium screenshot; suite 908 green.
+
 ### 🛡️ Naara Gift — money-path bug hunt (pre-launch due diligence) — 2026-07-28
 Deep audit of the newest money path before real keys go in. **5 real bugs found
 + fixed, each locked by a regression test** (suite 908):

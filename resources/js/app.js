@@ -1,4 +1,5 @@
 import './bootstrap';
+import './lottie';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 

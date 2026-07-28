@@ -1,13 +1,28 @@
 {
+  "__commonjsHelpers-CqkleIqs.js": {
+    "file": "assets/_commonjsHelpers-CqkleIqs.js",
+    "name": "_commonjsHelpers"
+  },
+  "_lottie-DG5NakNH.js": {
+    "file": "assets/lottie-DG5NakNH.js",
+    "name": "lottie",
+    "isDynamicEntry": true,
+    "imports": [
+      "__commonjsHelpers-CqkleIqs.js"
+    ]
+  },
   "_three.module-DAbQJLGd.js": {
     "file": "assets/three.module-DAbQJLGd.js",
     "name": "three.module"
   },
   "node_modules/@twilio/voice-sdk/esm/twilio.js": {
-    "file": "assets/twilio-D3I-d2Mf.js",
+    "file": "assets/twilio-C5IOeHeB.js",
     "name": "twilio",
     "src": "node_modules/@twilio/voice-sdk/esm/twilio.js",
-    "isDynamicEntry": true
+    "isDynamicEntry": true,
+    "imports": [
+      "__commonjsHelpers-CqkleIqs.js"
+    ]
   },
   "node_modules/flag-icons/flags/1x1/ad.svg": {
     "file": "assets/ad-Blhdm5jl.svg",
@@ -2178,23 +2193,38 @@
     "src": "node_modules/flag-icons/flags/4x3/zw.svg"
   },
   "resources/css/app.css": {
-    "file": "assets/app-C76FbwO0.css",
+    "file": "assets/app-C6iZVMGM.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
+  "resources/js/animations/gift-preloader.json": {
+    "file": "assets/gift-preloader-DJ_1phcE.js",
+    "name": "gift-preloader",
+    "src": "resources/js/animations/gift-preloader.json",
+    "isDynamicEntry": true
+  },
+  "resources/js/animations/reward.json": {
+    "file": "assets/reward-BKLkSPTy.js",
+    "name": "reward",
+    "src": "resources/js/animations/reward.json",
+    "isDynamicEntry": true
+  },
   "resources/js/app.js": {
-    "file": "assets/app-Dk-6q-l8.js",
+    "file": "assets/app-Dno1FX1g.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "dynamicImports": [
+      "resources/js/animations/gift-preloader.json",
+      "resources/js/animations/reward.json",
+      "_lottie-DG5NakNH.js",
       "resources/js/webgl/login-scene.js",
       "resources/js/webgl/hero-scene.js",
       "resources/js/dialer.js"
     ]
   },
   "resources/js/dialer.js": {
-    "file": "assets/dialer-DxGL6xEG.js",
+    "file": "assets/dialer-C5NdDSad.js",
     "name": "dialer",
     "src": "resources/js/dialer.js",
     "isDynamicEntry": true,
