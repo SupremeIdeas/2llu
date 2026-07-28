@@ -22,14 +22,16 @@
 
         @php
             $groups = [
-                ['NaaraSim product logo', [['product_light', 'Light background', 'product_light', false], ['product_dark', 'Dark background', 'product_dark', true]]],
-                ['Supreme Ideas Agency logo', [['agency_light', 'Light background', 'agency_light', false], ['agency_dark', 'Dark background', 'agency_dark', true]]],
+                ['NaaraSim product logo', [['product_light', 'Light background', 'product_light', false], ['product_dark', 'Dark background', 'product_dark', true]], 'Shown across the connectivity platform (dashboard, marketing site, emails).'],
+                ['Naara Gift store logo', [['gift_light', 'Light background', 'gift_light', false], ['gift_dark', 'Dark background', 'gift_dark', true]], 'A separate mark just for the Naara Gift storefront. Leave blank to use the gift icon + "Naara Gift" wordmark.'],
+                ['Supreme Ideas Agency logo', [['agency_light', 'Light background', 'agency_light', false], ['agency_dark', 'Dark background', 'agency_dark', true]], 'The "from Supreme Ideas" endorsement mark.'],
             ];
         @endphp
 
-        @foreach ($groups as [$title, $slots])
+        @foreach ($groups as [$title, $slots, $hint])
             <div class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
-                <h2 class="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ $title }}</h2>
+                <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ $title }}</h2>
+                <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">{{ $hint }} Use a transparent PNG/SVG; both variants render at the same height, so keep them the same proportions.</p>
                 <div class="grid gap-5 sm:grid-cols-2">
                     @foreach ($slots as [$field, $label, $brandKey, $darkPreview])
                         @php $current = $brand[$brandKey] ?? ''; @endphp

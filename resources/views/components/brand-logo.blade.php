@@ -4,11 +4,13 @@
      page theme; pass `theme="light"` or `theme="dark"` to FORCE one variant on a
      surface whose background is fixed regardless of theme (e.g. the navy footer
      or the auth media panel), so the mark always has proper contrast. --}}
-@props(['variant' => 'product', 'class' => 'h-8', 'fallbackIcon' => 'signal', 'theme' => 'auto'])
+@props(['variant' => 'product', 'class' => 'h-8', 'fallbackIcon' => 'signal', 'theme' => 'auto', 'label' => null])
 @php
     $light = \App\Support\BrandSettings::resolvedLogo($variant, 'light');
     $dark = \App\Support\BrandSettings::resolvedLogo($variant, 'dark');
-    $name = \App\Support\BrandSettings::name();
+    // `label` names a sub-brand (e.g. "Naara Gift") for the alt text + wordmark
+    // fallback; the platform brand name is the default.
+    $name = $label ?: \App\Support\BrandSettings::name();
 @endphp
 @if ($light || $dark)
     <span {{ $attributes->only('class')->merge(['class' => 'inline-flex items-center']) }}>

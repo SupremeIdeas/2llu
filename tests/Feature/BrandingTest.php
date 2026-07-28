@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Support\BrandSettings;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Testing\File;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -72,6 +74,46 @@ class BrandingTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertSame('NaaraSim Global', BrandSettings::name());
+    }
+
+    public function test_naara_gift_has_its_own_admin_settable_logo(): void
+    {
+        // No gift logo ships by default → the storefront falls back to the wordmark.
+        $this->assertNull(BrandSettings::resolvedLogo('gift', 'light'));
+
+        Setting::setValue('brand.logo_gift_light', 'https://cdn.test/naara-gift.png', 'brand');
+        BrandSettings::flush();
+
+        $this->assertSame('https://cdn.test/naara-gift.png', BrandSettings::resolvedLogo('gift', 'light'));
+        // Cross-theme fallback: one upload serves both light and dark.
+        $this->assertSame('https://cdn.test/naara-gift.png', BrandSettings::resolvedLogo('gift', 'dark'));
+
+        $html = view('components.brand-logo', ['variant' => 'gift', 'label' => 'Naara Gift', 'fallbackIcon' => 'gift'])->render();
+        $this->assertStringContainsString('naara-gift.png', $html);
+    }
+
+    public function test_gift_logo_falls_back_to_the_naara_gift_wordmark_not_the_platform_name(): void
+    {
+        Setting::setValue('brand.name', 'NaaraSim', 'brand');
+        BrandSettings::flush();
+
+        $html = view('components.brand-logo', ['variant' => 'gift', 'label' => 'Naara Gift', 'fallbackIcon' => 'gift'])->render();
+        $this->assertStringContainsString('Naara Gift', $html);
+    }
+
+    public function test_admin_can_upload_a_naara_gift_logo(): void
+    {
+        Storage::fake('wasabi');
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(Branding::class)
+            ->set('brand_name', 'NaaraSim')
+            ->set('gift_light', File::image('gift.png', 200, 80))
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertNotNull(BrandSettings::resolvedLogo('gift', 'light'));
     }
 
     public function test_the_brand_fonts_are_present_and_wired(): void

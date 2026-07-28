@@ -16,10 +16,11 @@
         <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Opening your gift store…</p>
     </div>
 
-    {{-- Header --}}
+    {{-- Header — the Naara Gift storefront wears its own admin-set logo
+         (falls back to the gift icon + wordmark when none is uploaded). --}}
     <div class="mb-5">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Naara Gift</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400">Gift cards for the brands you love — delivered instantly.</p>
+        <x-brand-logo variant="gift" label="Naara Gift" fallbackIcon="gift" class="h-9" />
+        <p class="mt-1.5 text-sm text-slate-500 dark:text-slate-400">Gift cards for the brands you love — delivered instantly.</p>
     </div>
 
     {{-- Search + country + grid/list toggle --}}

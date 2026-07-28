@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Setting;
 use App\Support\Auditor;
 use App\Support\BrandSettings;
+use App\Support\HeroBackground;
 use App\Support\MediaStorage;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -49,6 +50,11 @@ class Branding extends Component
 
     public $agency_dark = null;
 
+    // Naara Gift storefront logo (its own sub-brand mark) — light + dark.
+    public $gift_light = null;
+
+    public $gift_dark = null;
+
     public $favicon = null;
 
     // Premium dashboard hero backgrounds (owner request) — light + dark, WebP/JPG.
@@ -64,9 +70,11 @@ class Branding extends Component
         'product_dark' => 'brand.logo_product_dark',
         'agency_light' => 'brand.logo_agency_light',
         'agency_dark' => 'brand.logo_agency_dark',
+        'gift_light' => 'brand.logo_gift_light',
+        'gift_dark' => 'brand.logo_gift_dark',
         'favicon' => 'brand.favicon',
-        'hero_light' => \App\Support\HeroBackground::LIGHT_KEY,
-        'hero_dark' => \App\Support\HeroBackground::DARK_KEY,
+        'hero_light' => HeroBackground::LIGHT_KEY,
+        'hero_dark' => HeroBackground::DARK_KEY,
     ];
 
     public function mount(): void
@@ -142,6 +150,8 @@ class Branding extends Component
             'product_dark' => 'nullable|image|max:2048',
             'agency_light' => 'nullable|image|max:2048',
             'agency_dark' => 'nullable|image|max:2048',
+            'gift_light' => 'nullable|image|max:2048',
+            'gift_dark' => 'nullable|image|max:2048',
             'favicon' => 'nullable|image|max:1024',
             // Hero art: WebP or JPG only, kept small for fast in-app loading.
             'hero_light' => 'nullable|mimes:webp,jpg,jpeg|max:600',
@@ -164,7 +174,7 @@ class Branding extends Component
         }
 
         BrandSettings::flush();
-        \App\Support\HeroBackground::flush();
+        HeroBackground::flush();
         Auditor::log('brand.updated');
         $this->saved = 'Branding saved. Your logo and name now show across the platform.';
         $this->dispatch('nx-toast', type: 'success', message: 'Branding saved — live everywhere.');
@@ -175,10 +185,10 @@ class Branding extends Component
     {
         abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
 
-        foreach ([\App\Support\HeroBackground::LIGHT_KEY, \App\Support\HeroBackground::DARK_KEY] as $key) {
+        foreach ([HeroBackground::LIGHT_KEY, HeroBackground::DARK_KEY] as $key) {
             Setting::where('key', $key)->get()->each->delete();
         }
-        \App\Support\HeroBackground::flush();
+        HeroBackground::flush();
         Auditor::log('brand.hero_removed');
         $this->saved = 'Hero backgrounds removed — the dashboard uses the default heading.';
     }
