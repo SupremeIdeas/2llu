@@ -7,7 +7,7 @@
     on hover + focus (.nx-bento). Titles are normal-case: small "Naara" kicker
     over the emphasised word. Collapses to one column on mobile, order preserved.
 --}}
-<div class="mb-8 grid grid-cols-1 gap-3 md:grid-cols-6">
+<div class="mb-8 grid grid-cols-2 gap-3 md:grid-cols-6">
     @foreach ($__cards as $card)
         @php($isRoute = isset($card['link']['route']))
         @php($tag = $isRoute ? 'a' : 'button')
@@ -15,6 +15,9 @@
         @php($wide = $span >= 3)
         @php($full = $span === 6)
         @php($spanClass = ['6' => 'md:col-span-6', '4' => 'md:col-span-4', '3' => 'md:col-span-3', '2' => 'md:col-span-2'][$span] ?? 'md:col-span-3')
+        {{-- Mobile: full-width cards (Naara Line, Contacts) span both columns; the
+             pair cards (Verify + Rent, Calls + Forwarding) sit two-up. --}}
+        @php($mobileSpan = $full ? 'col-span-2' : 'col-span-1')
         @php($minH = $card['tall'] ? 'md:min-h-[188px]' : 'md:min-h-[150px]')
         @php([$w1, $w2] = array_pad(explode(' ', $card['title'], 2), 2, ''))
 
@@ -22,7 +25,7 @@
             @if ($isRoute) href="{{ route($card['link']['route']) }}" wire:navigate
             @else type="button" wire:click="openModal('{{ $card['link']['modal'] }}')" @endif
             wire:key="bento-{{ $card['key'] }}"
-            class="nx-bento group relative flex overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-gradient-to-br dark:from-[#0C2434] dark:to-[#081521] dark:shadow-[0_12px_40px_-18px_rgba(0,0,0,0.7)] {{ $spanClass }} {{ $minH }}">
+            class="nx-bento group relative flex overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-gradient-to-br dark:from-[#0C2434] dark:to-[#081521] dark:shadow-[0_12px_40px_-18px_rgba(0,0,0,0.7)] {{ $mobileSpan }} {{ $spanClass }} {{ $minH }}">
 
             {{-- Ambient brand glow (intensifies on hover) --}}
             <div class="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/5 blur-3xl transition-opacity duration-300 group-hover:bg-primary/15 dark:bg-teal-500/10 dark:group-hover:bg-teal-500/20"></div>
@@ -43,7 +46,8 @@
                         </span>
                         <h3 class="min-w-0 font-display leading-tight">
                             @if ($w2)
-                                <span class="block text-[11px] font-semibold tracking-wide text-slate-400 dark:text-white/55">{{ $w1 }}</span>
+                                {{-- Kicker hidden on the tight two-up mobile cards so the badge never clips it. --}}
+                                <span class="hidden text-[11px] font-semibold tracking-wide text-slate-400 sm:block dark:text-white/55">{{ $w1 }}</span>
                                 <span class="block font-bold text-primary dark:text-teal-300 {{ $card['tall'] ? 'text-lg' : 'text-base' }}">{{ $w2 }}</span>
                             @else
                                 <span class="block font-bold text-primary dark:text-teal-300 {{ $card['tall'] ? 'text-lg' : 'text-base' }}">{{ $w1 }}</span>
@@ -79,8 +83,9 @@
                     <img src="{{ $card['image'] }}" alt="" loading="lazy" decoding="async"
                          class="hidden shrink-0 self-stretch object-contain object-right sm:block {{ $full ? 'sm:w-[28%] sm:max-w-[240px]' : 'sm:w-[36%] sm:max-w-[170px]' }}">
                 @else
+                    {{-- Hidden on mobile (keeps the two-up grid tight); shown from sm up. --}}
                     <img src="{{ $card['image'] }}" alt="" loading="lazy" decoding="async"
-                         class="mt-2 h-16 w-full shrink-0 object-contain object-center">
+                         class="mt-2 hidden h-16 w-full shrink-0 object-contain object-center sm:block">
                 @endif
             </div>
         </{{ $tag }}>

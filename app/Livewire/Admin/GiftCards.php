@@ -9,11 +9,13 @@ use App\Services\GiftCards\GiftCardCatalogueSyncService;
 use App\Services\GiftCards\GiftCardOrderService;
 use App\Support\Auditor;
 use App\Support\GiftCardFraud;
+use App\Support\MediaStorage;
 use App\Support\ProviderStatus;
 use App\Support\SyncStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -27,7 +29,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('components.layouts.admin')]
 class GiftCards extends Component
 {
+    use WithFileUploads;
     use WithPagination;
+
+    /** Per-brand logo uploads (for products that synced without a logo). */
+    public array $logoUploads = [];
 
     /** Fraud thresholds (admin-editable — no hardcoded limits). */
     public float $max_amount_24h = 500;
@@ -83,6 +89,21 @@ class GiftCards extends Component
         }
         Auditor::log('giftcard.fraud_updated', null, null, ['review_threshold' => $this->review_threshold]);
         $this->dispatch('nx-toast', type: 'success', message: 'Fraud controls saved.');
+    }
+
+    /** Upload a logo for a brand that synced without one (or replace it). */
+    public function updatedLogoUploads($value, $key): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $this->validate(['logoUploads.'.$key => 'image|max:1024']);
+
+        $product = GiftCardProduct::findOrFail((int) $key);
+        $url = MediaStorage::storePublic($this->logoUploads[$key], 'giftcards');
+        $product->update(['logo_url' => $url]);
+        unset($this->logoUploads[$key]);
+
+        Auditor::log('giftcard.logo_set', GiftCardProduct::class, $product->id);
+        $this->dispatch('nx-toast', type: 'success', message: 'Logo updated.');
     }
 
     /** Toggle a per-brand admin switch (enable / feature). */

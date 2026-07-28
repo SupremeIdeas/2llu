@@ -7,5 +7,7 @@
     data-lottie-loop="{{ $loop ? 'true' : 'false' }}"
     data-lottie-autoplay="{{ $autoplay ? 'true' : 'false' }}"
     @if ($label) role="img" aria-label="{{ $label }}" @else aria-hidden="true" @endif
-    {{ $attributes->merge(['class' => 'w-full h-full']) }}
+    {{-- `block` only — the caller sizes it (e.g. class="h-48 w-48"); we must not
+         force w-full/h-full or it overrides the caller's size and renders huge. --}}
+    {{ $attributes->merge(['class' => 'block']) }}
 ></div>

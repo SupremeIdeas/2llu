@@ -166,9 +166,20 @@
                     <tr class="border-b border-slate-50 dark:border-[#22314e]" wire:key="cat-{{ $c->id }}">
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2">
-                                @if ($c->logo_url)<img src="{{ $c->logo_url }}" alt="" class="h-6 w-6 rounded object-contain" loading="lazy" />@endif
+                                @if ($c->logo_url)
+                                    <img src="{{ $c->logo_url }}" alt="" class="h-6 w-6 rounded object-contain" loading="lazy" />
+                                @else
+                                    <span class="flex h-6 w-6 items-center justify-center rounded bg-slate-100 text-[10px] font-bold text-slate-400 dark:bg-white/10">{{ mb_substr($c->brand_name, 0, 1) }}</span>
+                                @endif
                                 <span class="font-medium text-slate-800 dark:text-slate-100">{{ $c->brand_name }}</span>
+                                {{-- Add / replace a logo (for brands that synced without one). --}}
+                                <label class="cursor-pointer text-[11px] font-semibold text-primary hover:underline dark:text-teal-300" title="Upload a logo">
+                                    {{ $c->logo_url ? 'Replace' : 'Add logo' }}
+                                    <input type="file" wire:model="logoUploads.{{ $c->id }}" accept="image/png,image/webp,image/svg+xml,image/jpeg" class="hidden" />
+                                </label>
+                                <span wire:loading wire:target="logoUploads.{{ $c->id }}" class="text-[11px] text-slate-400">Uploading…</span>
                             </div>
+                            @error('logoUploads.'.$c->id)<p class="mt-1 text-[11px] text-red-500">{{ $message }}</p>@enderror
                         </td>
                         <td class="px-4 py-3 text-xs capitalize text-slate-500 dark:text-slate-400">{{ $c->provider }}</td>
                         <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{{ $c->country ?: 'Global' }}</td>

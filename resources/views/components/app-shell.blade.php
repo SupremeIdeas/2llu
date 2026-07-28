@@ -117,12 +117,6 @@
             ? 'inset-x-3 bottom-3 rounded-[1.75rem] shadow-[0_10px_40px_rgba(13,27,42,0.16)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)]'
             : 'inset-x-0 bottom-0 rounded-t-3xl border-b-0 shadow-[0_-10px_30px_rgba(13,27,42,0.10)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.4)]'"
          style="padding-bottom: env(safe-area-inset-bottom);">
-        {{-- Grab handle — tap to switch floating ⇄ docked. --}}
-        <button type="button" @click="navFloating = !navFloating"
-                :aria-label="navFloating ? 'Dock the navigation bar' : 'Float the navigation bar'"
-                class="absolute left-1/2 top-1 flex h-4 w-12 -translate-x-1/2 items-center justify-center">
-            <span class="h-1 w-9 rounded-full bg-slate-300 transition dark:bg-white/20"></span>
-        </button>
 
         <div class="mx-auto grid max-w-md grid-cols-5 items-center px-1 pt-1.5">
             @foreach ([$slots[0], $slots[1]] as $item)
