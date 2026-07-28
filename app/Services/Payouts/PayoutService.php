@@ -34,9 +34,7 @@ use Throwable;
 class PayoutService
 {
     /** @param list<PayoutGatewayInterface> $gateways */
-    public function __construct(private array $gateways)
-    {
-    }
+    public function __construct(private array $gateways) {}
 
     public function gatewayFor(?string $provider): ?PayoutGatewayInterface
     {
@@ -213,6 +211,18 @@ class PayoutService
         if ($request->status === PayoutRequest::PAID) {
             return $request;
         }
+        // A 'paid' confirmation for an already-reversed/failed payout is a
+        // conflict — the held funds were already returned. Never silently flip to
+        // PAID (that double-pays); freeze the state and alert for reconciliation.
+        if (in_array($request->status, [PayoutRequest::FAILED, PayoutRequest::REVERSED], true)) {
+            AlertAdminJob::dispatch(
+                code: 'payout_confirm_conflict',
+                message: "Payout #{$request->id} reported PAID by the PSP but is already {$request->status} (held funds returned). Manual reconciliation needed.",
+                context: ['payout_id' => $request->id, 'amount' => $request->amount, 'currency' => $request->currency],
+            );
+
+            return $request;
+        }
 
         $request->forceFill([
             'status' => PayoutRequest::PAID,
@@ -229,6 +239,18 @@ class PayoutService
     public function fail(PayoutRequest $request, string $reason): PayoutRequest
     {
         if (in_array($request->status, [PayoutRequest::FAILED, PayoutRequest::REVERSED], true)) {
+            return $request;
+        }
+        // A 'failed' report for an already-PAID transfer is a conflict — reversing
+        // it would return funds after the cash left. Freeze the PAID state and
+        // alert for reconciliation instead of blindly reversing.
+        if ($request->status === PayoutRequest::PAID) {
+            AlertAdminJob::dispatch(
+                code: 'payout_fail_conflict',
+                message: "Payout #{$request->id} reported {$reason} by the PSP but is already PAID. Manual reconciliation needed.",
+                context: ['payout_id' => $request->id, 'amount' => $request->amount, 'currency' => $request->currency],
+            );
+
             return $request;
         }
 

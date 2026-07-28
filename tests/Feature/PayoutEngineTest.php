@@ -4,16 +4,19 @@ namespace Tests\Feature;
 
 use App\Events\PayoutReversed;
 use App\Events\PayoutSettled;
-use App\Models\ErrorLog;
 use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
 use App\Models\User;
+use App\Services\Payouts\PayoutEvent;
+use App\Services\Payouts\PayoutException;
 use App\Services\Payouts\PayoutGatewayInterface;
 use App\Services\Payouts\PayoutService;
 use App\Services\Payouts\PayoutTransferResult;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /**
@@ -38,9 +41,7 @@ class PayoutEngineTest extends TestCase
         {
             public int $sends = 0;
 
-            public function __construct(private string $sendStatus, private ?string $fail)
-            {
-            }
+            public function __construct(private string $sendStatus, private ?string $fail) {}
 
             public function name(): string
             {
@@ -64,12 +65,12 @@ class PayoutEngineTest extends TestCase
                 return new PayoutTransferResult(status: $this->sendStatus, providerRef: 'TRF_1', failureReason: $this->fail);
             }
 
-            public function verifyWebhook(\Illuminate\Http\Request $request): bool
+            public function verifyWebhook(Request $request): bool
             {
                 return true;
             }
 
-            public function parseWebhook(\Illuminate\Http\Request $request): ?\App\Services\Payouts\PayoutEvent
+            public function parseWebhook(Request $request): ?PayoutEvent
             {
                 return null;
             }
@@ -112,7 +113,7 @@ class PayoutEngineTest extends TestCase
         $other = $this->account(User::factory()->create());
         $svc = $this->service($this->gateway());
 
-        $this->expectException(\App\Services\Payouts\PayoutException::class);
+        $this->expectException(PayoutException::class);
         $svc->createRequest($user, 10.0, 'USD', 'referral_credits', $other, 'wd:x');
     }
 
@@ -141,7 +142,7 @@ class PayoutEngineTest extends TestCase
         $svc = $this->service($this->gateway());
         $req = $svc->createRequest($user, 10.0, 'USD', 'referral_credits', $account, 'wd:3');
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
         $svc->approve($req, User::factory()->create());
     }
 
@@ -189,6 +190,46 @@ class PayoutEngineTest extends TestCase
         $this->assertSame(PayoutRequest::PAID, $req->fresh()->status);
         $this->assertNotNull($req->fresh()->settled_at);
         Event::assertDispatchedTimes(PayoutSettled::class, 1);
+    }
+
+    public function test_a_late_paid_webhook_never_resurrects_a_reversed_payout(): void
+    {
+        Event::fake([PayoutSettled::class, PayoutReversed::class]);
+        $user = User::factory()->create();
+        $account = $this->account($user);
+        $svc = $this->service($this->gateway('failed', 'Insufficient balance'));
+        $req = $svc->createRequest($user, 10.0, 'USD', 'referral_credits', $account, 'wd:late-paid');
+
+        $svc->send($req); // fails → FAILED, held funds returned via PayoutReversed
+        $this->assertSame(PayoutRequest::FAILED, $req->fresh()->status);
+
+        // A conflicting late 'paid' must NOT flip to PAID — that would be a
+        // double-pay (funds already returned + now marked settled).
+        $svc->confirm($req->fresh(), 'TRF_late');
+
+        $this->assertNotSame(PayoutRequest::PAID, $req->fresh()->status);
+        Event::assertNotDispatched(PayoutSettled::class);
+        $this->assertDatabaseHas('error_logs', ['code' => 'payout_confirm_conflict']);
+    }
+
+    public function test_a_late_failed_webhook_never_reverses_a_paid_payout(): void
+    {
+        Event::fake([PayoutSettled::class, PayoutReversed::class]);
+        $user = User::factory()->create();
+        $account = $this->account($user);
+        $svc = $this->service($this->gateway());
+        $req = $svc->createRequest($user, 10.0, 'USD', 'referral_credits', $account, 'wd:paid-then-fail');
+
+        $svc->confirm($req, 'TRF_ok'); // PAID
+        $this->assertSame(PayoutRequest::PAID, $req->fresh()->status);
+
+        // A conflicting late 'failed' must NOT reverse a paid transfer (returning
+        // funds after the cash already went out is a loss).
+        $svc->fail($req->fresh(), 'Provider reported: failed');
+
+        $this->assertSame(PayoutRequest::PAID, $req->fresh()->status);
+        Event::assertNotDispatched(PayoutReversed::class);
+        $this->assertDatabaseHas('error_logs', ['code' => 'payout_fail_conflict']);
     }
 
     public function test_the_paystack_payout_webhook_settles_the_request(): void
