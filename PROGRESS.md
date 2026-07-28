@@ -9,6 +9,29 @@
 
 ## DONE
 
+### 🔨 Naara Gift — Phase 1: dual-provider catalogue — built 2026-07-28
+Gift-card storefront foundation. **Reloadly = primary, Zendit = failover**
+(owner decision). Product name: **Naara Gift**. Sandbox-only, no money path yet
+(that's Phase 2).
+- `GiftCardProviderInterface` + `ReloadlyGiftCardService` (OAuth2
+  client-credentials, gift-card audience/host, `/products` paginated) +
+  `ZenditVoucherService` (shared Zendit key, `/vouchers/offers`, divisor-scaled).
+  Both normalize to one shape.
+- `gift_card_products` + `GiftCardProduct` (provider + cost_meta are
+  `$hidden` — money-safety scrub 1.2: brand shown, supplier never). `scopeStorefront`.
+- `GiftCardCatalogueSyncService` (mirrors eSIM CatalogueSyncService; inherits the
+  queue-restart-on-key-save fix): upserts both providers, then recomputes
+  `is_primary` — **Reloadly wins per brand+country, Zendit fills the gaps**.
+  `giftcards:sync` command (scheduled daily 03:15). `ProviderStatus` +
+  `services.reloadly.*` config (sandbox default). `NaaraGiftCatalogueTest` (5).
+  Suite 882.
+- **Next phases (planned):** brand assets + redemption instructions; storefront
+  (hero/grid/list, FIXED/RANGE denominations, dynamic required-fields checkout)
+  priced through PricingEngine; `POST` order + webhook + 3-state redemption
+  (code/link/account); **fraud controls** (velocity, cooling-off, review queue);
+  admin catalogue/margin/fraud/sync/reports. Live keys go in last (money paths
+  on sandbox only until hardening).
+
 ### ✅ User guides + agreements (per-audience, admin-editable) — built 2026-07-28
 In-app guides + contract/policy for normal user / merchant / merchant V2 /
 developer, planted in each user-facing area.

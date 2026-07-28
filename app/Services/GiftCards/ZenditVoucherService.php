@@ -1,0 +1,100 @@
+<?php
+
+namespace App\Services\GiftCards;
+
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+
+/**
+ * Zendit Vouchers — the FAILOVER Naara Gift provider (same Zendit account/key as
+ * the eSIM integration; inherits the queue-restart-on-key-save fix). Normalizes
+ * the /vouchers/offers catalogue to the shared shape. Cost stays private.
+ */
+class ZenditVoucherService implements GiftCardProviderInterface
+{
+    public function key(): string
+    {
+        return 'zendit';
+    }
+
+    public function available(): bool
+    {
+        return filled(config('services.zendit.api_key'));
+    }
+
+    private function client(): PendingRequest
+    {
+        return Http::withToken((string) config('services.zendit.api_key'))
+            ->baseUrl((string) config('services.zendit.base_url'))
+            ->timeout(60);
+    }
+
+    public function getCatalogue(): array
+    {
+        $out = [];
+        $offset = 0;
+        $limit = 1024;
+        do {
+            $res = $this->client()->get('/vouchers/offers', ['_limit' => $limit, '_offset' => $offset])->throw();
+            $offers = (array) ($res->json('list') ?? $res->json() ?? []);
+            foreach ($offers as $o) {
+                if (is_array($o)) {
+                    $out[] = $this->map($o);
+                }
+            }
+            $offset += $limit;
+        } while (count($offers) === $limit && $offset <= 20480);
+
+        return $out;
+    }
+
+    private function map(array $o): array
+    {
+        $brandName = (string) ($o['brandName'] ?? $o['brand'] ?? 'Gift card');
+        $divisor = (int) (data_get($o, 'price.currencyDivisor') ?: 1) ?: 1;
+        $scale = fn ($v) => is_numeric($v) ? round(((float) $v) / $divisor, 2) : null;
+
+        return [
+            'provider' => 'zendit',
+            'provider_product_id' => (string) ($o['offerId'] ?? ''),
+            'brand_key' => Str::slug($brandName),
+            'brand_name' => $brandName,
+            'country' => strtoupper((string) ($o['country'] ?? '')) ?: null,
+            'currency' => (string) (data_get($o, 'price.currency') ?? '') ?: null,
+            'denomination_type' => strtoupper((string) ($o['priceType'] ?? 'FIXED')),
+            'fixed_denominations' => array_map(fn ($v) => $scale($v), (array) (data_get($o, 'price.fixed') ?? [])),
+            'min_amount' => $scale(data_get($o, 'price.min')),
+            'max_amount' => $scale(data_get($o, 'price.max')),
+            'logo_url' => null, // fetched from /brands/{brand} in a later phase
+            'brand_color' => null,
+            'category' => (string) ($o['subType'] ?? $o['productType'] ?? '') ?: null,
+            'required_fields' => $this->fields((array) ($o['requiredFields'] ?? [])),
+            'redeem_instruction' => (string) ($o['notes'] ?? $o['shortNotes'] ?? '') ?: null,
+            'cost_meta' => ['cost' => $o['cost'] ?? null],
+            'provider_enabled' => (bool) ($o['enabled'] ?? true),
+        ];
+    }
+
+    public function getBalance(): float
+    {
+        try {
+            $b = $this->client()->get('/balance')->json();
+            $divisor = (int) ($b['currencyDivisor'] ?? 1) ?: 1;
+
+            return (float) ($b['availableBalance'] ?? 0) / $divisor;
+        } catch (\Throwable) {
+            return 0.0;
+        }
+    }
+
+    private function fields(array $required): array
+    {
+        return collect($required)->map(fn ($f) => [
+            'key' => is_array($f) ? ($f['key'] ?? $f['name'] ?? 'field') : (string) $f,
+            'label' => is_array($f) ? ($f['label'] ?? ucfirst((string) ($f['key'] ?? 'Field'))) : ucfirst((string) $f),
+            'type' => 'text',
+            'required' => true,
+        ])->values()->all();
+    }
+}

@@ -16,6 +16,7 @@ class ProviderStatus
         'airalo' => ['services.airalo.client_id', 'services.airalo.client_secret'],
         'quibity' => ['services.quibity.api_key'],
         'zendit' => ['services.zendit.api_key'],
+        'reloadly' => ['services.reloadly.client_id', 'services.reloadly.client_secret'],
         'oneglobal' => ['services.oneglobal.client_id', 'services.oneglobal.client_secret'],
         'montymobile' => ['services.montymobile.api_key'],
         'gigs' => ['services.gigs.api_key', 'services.gigs.project'],

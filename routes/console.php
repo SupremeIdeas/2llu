@@ -61,3 +61,6 @@ Schedule::command('partners:payout-run')->dailyAt('04:30')->withoutOverlapping()
 // Merchant V2 client eSIM control: settle due auto-renewals, expire lapsed
 // subscriptions, and alert merchants about upcoming renewals (money-safe).
 Schedule::command('merchant:client-subscriptions')->dailyAt('05:30')->withoutOverlapping();
+
+// Naara Gift: sync the gift-card catalogue from Reloadly (primary) + Zendit.
+Schedule::command('giftcards:sync')->dailyAt('03:15')->withoutOverlapping();

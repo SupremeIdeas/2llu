@@ -325,4 +325,14 @@ return [
         'ci_secret' => env('APPEXPORT_CI_SECRET'),
     ],
 
+    // Reloadly Gift Cards (Naara Gift — primary gift-card provider). OAuth2
+    // client-credentials; the gift-card API is a separate audience/host from
+    // Reloadly's other products. Sandbox by default (real keys go in last).
+    'reloadly' => [
+        'client_id' => env('RELOADLY_CLIENT_ID'),
+        'client_secret' => env('RELOADLY_CLIENT_SECRET'),
+        'sandbox' => env('RELOADLY_SANDBOX', true),
+        'auth_url' => env('RELOADLY_AUTH_URL', 'https://auth.reloadly.com/oauth/token'),
+    ],
+
 ];
