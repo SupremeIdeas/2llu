@@ -9,6 +9,23 @@
 
 ## DONE
 
+### 🔨 Naara Gift — Phase 2: storefront + pricing — built 2026-07-28
+Feature-gated storefront (`naara_gift` flag, off by default) on the Phase-1
+catalogue.
+- **Pricing:** `PricingEngine::giftCardRetail(cost, provider, log)` — admin markup
+  (`pricing.giftcard_markup_pct`, default 8) + MarginGuard floor; display calls
+  don't log (only the Phase-3 purchase quote will). `GiftCardPricing` derives the
+  private provider cost from `cost_meta` (Reloadly: face×(1−discount)+fee; Zendit:
+  face fallback) and returns retail — **provider suggested price never shown, cost
+  never exposed**.
+- **Storefront** (`/gift-cards`, `naara_gift`-gated 404): brand catalogue with a
+  grid/list toggle, search + country filter, graceful logo/tint fallback; a brand
+  detail sheet with FIXED denomination chips (each priced at retail) or a RANGE
+  amount input, the dynamic **required-fields** form driven by the offer's real
+  fields, and redemption notes. Checkout is disabled ("coming soon") — the money
+  path is Phase 3. Discovery nav item shown only when the feature is live.
+- `NaaraGiftStorefrontTest` (5). Suite 887.
+
 ### 🔨 Naara Gift — Phase 1: dual-provider catalogue — built 2026-07-28
 Gift-card storefront foundation. **Reloadly = primary, Zendit = failover**
 (owner decision). Product name: **Naara Gift**. Sandbox-only, no money path yet

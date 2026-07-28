@@ -84,6 +84,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::middleware('verified.mail')->group(function () {
         Route::get('/dashboard', Dashboard::class)->name('dashboard');
         Route::get('/catalogue', Catalogue::class)->name('catalogue');
+        // Naara Gift storefront (feature-gated: 404 until naara_gift is live).
+        Route::get('/gift-cards', \App\Livewire\GiftCards::class)->name('gift-cards');
         Route::get('/checkout/{plan}', Checkout::class)->name('checkout');
         Route::get('/wallet', Wallet::class)->name('wallet');
         Route::get('/numbers', GetNumber::class)->name('numbers');

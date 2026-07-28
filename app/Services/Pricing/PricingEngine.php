@@ -103,6 +103,37 @@ class PricingEngine
     }
 
     /**
+     * Retail (USD) for a gift card (Naara Gift). The provider COST for a face
+     * value goes in (never the provider's suggested retail), the admin markup is
+     * applied, and MarginGuard floors it at cost + minimum profit. Cost is never
+     * returned or exposed — only this retail is shown to the customer.
+     */
+    public function giftCardRetail(float $cost, string $provider = 'giftcard', bool $log = true): float
+    {
+        $markup = (float) Setting::getValue('pricing.giftcard_markup_pct', 8);
+        $computed = round($cost * (1 + $markup / 100), 2);
+
+        $minProfit = (float) Setting::getValue('pricing.giftcard_min_profit', 0.25);
+        $final = max($computed, round($cost + $minProfit, 2));
+
+        // Only log the authoritative quote at purchase time, not on every
+        // storefront render (which prices many denominations).
+        if ($log) {
+            $this->log(
+                planId: null,
+                provider: 'giftcard:'.$provider,
+                cost: $cost,
+                markup: $markup,
+                computed: $computed,
+                final: $final,
+                guard: $final > $computed ? 'margin_guard' : 'none',
+            );
+        }
+
+        return $final;
+    }
+
+    /**
      * Retail (USD) per-MINUTE for an outbound in-browser call (Live Voice —
      * Part B). Live wholesale cost in, per-provider voice markup applied, floored
      * by a per-minute minimum-profit MarginGuard. Same discipline as SMS: cost is

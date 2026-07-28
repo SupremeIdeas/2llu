@@ -65,6 +65,15 @@ class FeatureFlags
             'guide' => 'elevenlabs',
             'default' => true,
         ],
+        'naara_gift' => [
+            'name' => 'Naara Gift (gift cards)',
+            'group' => 'Products',
+            'icon' => 'gift',
+            'description' => 'The gift-card storefront powered by Reloadly (primary) + Zendit (failover). Off until the catalogue is synced and checkout is live.',
+            'requires' => ['services.reloadly.client_id', 'services.reloadly.client_secret'],
+            'guide' => null,
+            'default' => false,
+        ],
     ];
 
     /** Admin's on/off switch for a feature (ignores whether keys are present). */

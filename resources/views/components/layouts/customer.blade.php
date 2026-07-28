@@ -66,6 +66,11 @@
 
     // In-app guide + agreement (auto-selects the user's audience).
     $more[] = ['route' => 'guide', 'label' => 'Guide & policy', 'icon' => 'help-circle'];
+
+    // Naara Gift storefront — only when the feature is live.
+    if (\App\Support\FeatureFlags::enabled('naara_gift')) {
+        array_unshift($more, ['route' => 'gift-cards', 'label' => 'Naara Gift', 'icon' => 'gift']);
+    }
 @endphp
 
 <x-layouts.app :title="$title ?? config('app.name')" :body-class="\App\Support\PlatformTheme::bodyClass()">
