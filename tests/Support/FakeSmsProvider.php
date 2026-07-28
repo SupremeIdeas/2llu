@@ -19,6 +19,9 @@ class FakeSmsProvider implements SmsProviderInterface
 
     public int $cancelCalls = 0;
 
+    /** When true, cancel() throws — to prove the refund isn't gated behind it. */
+    public bool $cancelThrows = false;
+
     public bool $fullRent = false;
 
     /** Options passed to the last buy call, so tests can assert the operator. */
@@ -34,8 +37,7 @@ class FakeSmsProvider implements SmsProviderInterface
         // Optional per-operator breakdown so router->compareOperators can be
         // exercised: [operator => [cost, count, rate]].
         private array $operators = [],
-    ) {
-    }
+    ) {}
 
     /** Present only when seeded — mirrors FiveSimService::operators(). */
     public function operators(string $country, string $service): array
@@ -95,6 +97,9 @@ class FakeSmsProvider implements SmsProviderInterface
     public function cancel(string $providerRef): void
     {
         $this->cancelCalls++;
+        if ($this->cancelThrows) {
+            throw new \RuntimeException('provider cancel failed');
+        }
     }
 
     public function balance(): float

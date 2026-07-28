@@ -69,6 +69,25 @@ class PollSmsOtpJobTest extends TestCase
         $this->assertSame(1, $user->walletTransactions()->where('type', 'refund')->count());
     }
 
+    public function test_a_failing_provider_cancel_still_refunds_the_user(): void
+    {
+        // The auto-refund is the money promise — it must not be gated behind a
+        // best-effort provider cancel that can fail.
+        $user = User::factory()->create();
+        $order = $this->order($user, ['ordered_at' => now()->subMinutes(20)]);
+
+        $fake = new FakeSmsProvider(checkResponse: ['status' => OtpStatus::PENDING, 'code' => null]);
+        $fake->cancelThrows = true;
+        app()->instance('number.fivesim', $fake);
+
+        (new PollSmsOtpJob($order->id, 'USD'))->handle(app(WalletService::class));
+
+        $order->refresh();
+        $this->assertSame('timeout', $order->status);
+        $this->assertSame('3.0000', (string) $user->wallet->fresh()->usd_balance); // refunded despite cancel throwing
+        $this->assertSame(1, $user->walletTransactions()->where('type', 'refund')->count());
+    }
+
     public function test_still_waiting_reschedules_another_poll(): void
     {
         Queue::fake();

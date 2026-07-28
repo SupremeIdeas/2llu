@@ -9,6 +9,7 @@ use App\Services\SMS\SmsProviderInterface;
 use App\Services\Wallet\WalletService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Polls a provider for an OTP code every 5s up to a 15-minute window
@@ -30,8 +31,7 @@ class PollSmsOtpJob implements ShouldQueue
     public function __construct(
         public int $smsOrderId,
         public string $currency = 'USD',
-    ) {
-    }
+    ) {}
 
     public function handle(WalletService $wallet): void
     {
@@ -56,15 +56,24 @@ class PollSmsOtpJob implements ShouldQueue
             return;
         }
 
-        // Timed out? Cancel + refund.
+        // Timed out? Refund + cancel. The auto-refund is the money promise, so it
+        // must NOT be gated behind the provider cancel — cancel is best-effort
+        // (frees the number / protects our rating) and may fail; the refund is
+        // idempotent on the order, so a queue retry can never double it.
         if ($order->ordered_at !== null && $order->ordered_at->diffInMinutes(now()) >= self::TIMEOUT_MINUTES) {
-            $svc->cancel($order->getatext_id);
             $order->update(['status' => 'timeout']);
 
             $wallet->refund($order->user, (float) $order->charged_to_user, $this->currency, [
                 'description' => 'OTP not received in time — auto-refund',
                 'reference' => "otp-timeout-refund:{$order->id}",
             ]);
+
+            try {
+                $svc->cancel($order->getatext_id);
+            } catch (\Throwable $e) {
+                // Best-effort — the user is already refunded; log and move on.
+                Log::warning("OTP cancel failed for order {$order->id}: {$e->getMessage()}");
+            }
 
             return;
         }
