@@ -88,6 +88,54 @@ class ZenditVoucherService implements GiftCardProviderInterface
         }
     }
 
+    public function order(string $providerProductId, float $amount, string $currency, array $fields, string $reference): array
+    {
+        try {
+            $body = [
+                'offerId' => $providerProductId,
+                'transactionId' => $reference,
+                'fields' => collect($fields)->map(fn ($v, $k) => ['key' => $k, 'value' => $v])->values()->all(),
+            ];
+            // RANGE offers require the value; FIXED omit it.
+            $body['value'] = ['type' => 'SEND', 'value' => (int) round($amount * 100)];
+
+            $res = $this->client()->post('/vouchers/purchases', $body)->throw();
+            $status = strtoupper((string) ($res->json('status') ?? 'PENDING'));
+            $receipt = $this->receipt((array) ($res->json('receipt') ?? []));
+
+            return [
+                'provider_tx_id' => $reference,
+                'status' => $this->mapStatus($status),
+                'receipt' => $receipt,
+            ];
+        } catch (\Throwable $e) {
+            throw new GiftCardProviderException('Zendit voucher purchase failed: '.$e->getMessage(), previous: $e);
+        }
+    }
+
+    private function mapStatus(string $status): string
+    {
+        return match ($status) {
+            'DONE' => 'delivered',
+            'FAILED' => 'failed',
+            default => 'processing',
+        };
+    }
+
+    /** Normalize a Zendit receipt to the shared three-state shape. */
+    public function receipt(array $r): array
+    {
+        return array_filter([
+            'epin' => $r['epin'] ?? null,
+            'redemption_url' => $r['redemptionUrl'] ?? null,
+            'account_id' => $r['accountId'] ?? null,
+            'instructions' => $r['instructions'] ?? null,
+            'terms' => $r['terms'] ?? null,
+            'expires_at' => $r['expiresAt'] ?? null,
+            'delivery_type' => $r['deliveryType'] ?? null,
+        ], fn ($v) => $v !== null);
+    }
+
     private function fields(array $required): array
     {
         return collect($required)->map(fn ($f) => [

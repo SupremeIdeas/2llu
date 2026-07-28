@@ -25,4 +25,19 @@ interface GiftCardProviderInterface
 
     /** Provider wallet balance (for admin oversight). */
     public function getBalance(): float;
+
+    /**
+     * Place an order for a gift card and return a NORMALIZED result:
+     *   ['provider_tx_id' => string, 'status' => 'delivered'|'processing'|'failed',
+     *    'receipt' => ['epin'=>?, 'code'=>?, 'redemption_url'=>?, 'account_id'=>?,
+     *                  'instructions'=>?, 'terms'=>?, 'expires_at'=>?, 'delivery_type'=>?]]
+     * The caller has already debited the wallet; throw GiftCardProviderException
+     * on failure so the caller can refund.
+     *
+     * @param  array<string, string>  $fields  recipient/required fields (key => value)
+     * @return array<string, mixed>
+     *
+     * @throws GiftCardProviderException
+     */
+    public function order(string $providerProductId, float $amount, string $currency, array $fields, string $reference): array;
 }

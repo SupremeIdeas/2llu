@@ -63,6 +63,21 @@ class GiftCards extends Component
         $this->fields = [];
     }
 
+    /** Buy the selected gift card → the money path, then the receipt screen. */
+    public function buy(\App\Services\GiftCards\GiftCardOrderService $orders)
+    {
+        $product = GiftCardProduct::storefront()->findOrFail($this->selectedId);
+        try {
+            $order = $orders->purchase(Auth::user(), $product, (float) $this->amount, array_map('strval', $this->fields));
+        } catch (\App\Services\GiftCards\GiftCardException $e) {
+            $this->dispatch('nx-toast', type: 'error', message: $e->getMessage());
+
+            return null;
+        }
+
+        return $this->redirect(route('gift-cards.order', $order), navigate: true);
+    }
+
     public function render()
     {
         $products = GiftCardProduct::storefront()

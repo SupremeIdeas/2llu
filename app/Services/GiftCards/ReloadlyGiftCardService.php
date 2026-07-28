@@ -110,4 +110,44 @@ class ReloadlyGiftCardService implements GiftCardProviderInterface
             return 0.0;
         }
     }
+
+    public function order(string $providerProductId, float $amount, string $currency, array $fields, string $reference): array
+    {
+        try {
+            $res = $this->client()->post('/orders', array_filter([
+                'productId' => (int) $providerProductId,
+                'quantity' => 1,
+                'unitPrice' => $amount,
+                'customIdentifier' => $reference,
+                'senderName' => 'NaaraSim',
+                'recipientEmail' => $fields['email'] ?? null,
+            ], fn ($v) => $v !== null))->throw();
+
+            $txId = (string) ($res->json('transactionId') ?? $res->json('id') ?? '');
+            $status = strtoupper((string) ($res->json('status') ?? 'PROCESSING'));
+
+            $receipt = ['delivery_type' => 'code'];
+            $mapped = match ($status) {
+                'SUCCESSFUL' => 'delivered',
+                'FAILED', 'REFUNDED' => 'failed',
+                default => 'processing',
+            };
+
+            if ($mapped === 'delivered' && $txId !== '') {
+                // Redemption codes are a separate call on Reloadly.
+                try {
+                    $cards = (array) $this->client()->get("/orders/transactions/{$txId}/cards")->json();
+                    $card = $cards[0] ?? [];
+                    $receipt['code'] = $card['cardNumber'] ?? null;
+                    $receipt['epin'] = $card['pinCode'] ?? ($card['cardNumber'] ?? null);
+                } catch (\Throwable) {
+                    $mapped = 'processing'; // code not ready yet — webhook/poll will fill it
+                }
+            }
+
+            return ['provider_tx_id' => $txId, 'status' => $mapped, 'receipt' => $receipt];
+        } catch (\Throwable $e) {
+            throw new GiftCardProviderException('Reloadly order failed: '.$e->getMessage(), previous: $e);
+        }
+    }
 }

@@ -116,11 +116,13 @@
                         </details>
                     @endif
 
-                    {{-- Checkout (Phase 3) --}}
-                    <button type="button" disabled
-                            class="mt-5 w-full cursor-not-allowed rounded-2xl bg-slate-200 py-3 text-sm font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-400">
-                        Checkout coming soon
+                    {{-- Checkout — the money path --}}
+                    <button type="button" wire:click="buy" wire:loading.attr="disabled" wire:target="buy" @disabled(! $amount)
+                            class="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-50">
+                        <span wire:loading.remove wire:target="buy"><x-icon name="gift" class="mr-1 inline h-4 w-4" /> Buy gift card</span>
+                        <span wire:loading wire:target="buy" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Processing…</span>
                     </button>
+                    <p class="mt-2 text-center text-[11px] text-slate-400">Gift cards are final — no refunds once delivered.</p>
                 </div>
             </div>
         </div>

@@ -86,6 +86,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/catalogue', Catalogue::class)->name('catalogue');
         // Naara Gift storefront (feature-gated: 404 until naara_gift is live).
         Route::get('/gift-cards', \App\Livewire\GiftCards::class)->name('gift-cards');
+        Route::get('/gift-cards/orders', [\App\Http\Controllers\GiftCardOrderController::class, 'index'])->name('gift-cards.orders');
+        Route::get('/gift-cards/orders/{order}', [\App\Http\Controllers\GiftCardOrderController::class, 'show'])->name('gift-cards.order');
         Route::get('/checkout/{plan}', Checkout::class)->name('checkout');
         Route::get('/wallet', Wallet::class)->name('wallet');
         Route::get('/numbers', GetNumber::class)->name('numbers');
@@ -221,6 +223,7 @@ Route::middleware(['admin', 'throttle:admin'])
             // Announcements & offers — push to every user's notification bell.
             Route::get('/announcements', \App\Livewire\Admin\Announcements::class)->name('announcements');
             Route::get('/credits', \App\Livewire\Admin\Credits::class)->name('credits');
+            Route::get('/gift-cards', \App\Livewire\Admin\GiftCards::class)->name('gift-cards');
             Route::get('/developer-api', \App\Livewire\Admin\DeveloperApi::class)->name('developer-api');
             Route::get('/payouts', \App\Livewire\Admin\Payouts::class)->name('payouts');
             Route::get('/kyc', \App\Livewire\Admin\KycReview::class)->name('kyc');
@@ -292,3 +295,8 @@ Route::match(['get', 'post'], '/webhooks/offerwall', \App\Http\Controllers\Webho
 // build queued→building→ready/failed and attaches the artifact + logs.
 Route::post('/webhooks/appbuild/{provider}', \App\Http\Controllers\Webhooks\AppBuildWebhookController::class)
     ->name('webhooks.appbuild');
+
+// Naara Gift async delivery callback (Reloadly/Zendit): HMAC-verified,
+// idempotent, fills the three-state receipt so the redemption screen updates.
+Route::post('/webhooks/giftcards/{provider}', \App\Http\Controllers\Webhooks\GiftCardWebhookController::class)
+    ->name('webhooks.giftcards');

@@ -9,6 +9,34 @@
 
 ## DONE
 
+### 🔨 Naara Gift — Phase 3: purchase money path + admin — built 2026-07-28
+The live checkout, held to the same money-safety discipline as eSIM/merchant.
+- **`GiftCardOrderService::purchase()`** — authoritative retail through
+  `PricingEngine` (this quote logs), fraud gate BEFORE any money moves, ATOMIC +
+  idempotent wallet debit (`Cache::lock` + `DB::transaction`, unique
+  `transaction_ref`; `InsufficientBalance` → friendly top-up prompt; a repeated
+  ref is a double-submit guard). Order row created **BEFORE** the provider call —
+  no orphan charge. On `GiftCardProviderException` → **refund + status failed**.
+  Receipt-save failure never refunds a delivered card (alerts an admin instead).
+- **Provider `order()`** — Reloadly `POST /orders` + `/orders/transactions/{id}/cards`
+  for the code; Zendit `POST /vouchers/purchases`. Both normalize to
+  `{provider_tx_id, status, receipt}` for the three-state redemption.
+- **Fraud controls** (`GiftCardFraud`, all admin-set — no hardcoded limits):
+  per-account 24h $/count, 7-day $, new-account cooling-off, and a manual-review
+  threshold. High-value buys **hold in review** (funds committed) → admin approve
+  fulfils, reject refunds.
+- **Redemption** (`/gift-cards/orders`, owner-scoped, feature-gated): three-state
+  receipt — code (copy) / link (redeem) / account (credited) — with status banners.
+- **Async webhook** `POST /webhooks/giftcards/{provider}` — HMAC-verified
+  (`hash_equals`), idempotent (never downgrades a terminal order), fills the receipt.
+- **Admin → Naara Gift** (`/adminmaster/gift-cards`): Reloadly + Zendit side by
+  side (status, last sync, sync-now, catalogue depth), the merged catalogue with
+  per-brand enable/feature toggles, editable fraud thresholds, and the review queue.
+- `NaaraGiftOrderTest` (11: happy-path debit+deliver, refund-on-failure,
+  no-orphan on insufficient balance, review hold approve/reject, cooling-off,
+  velocity, owner-scoped receipt, storefront buy redirect, HMAC webhook, admin
+  approve). **Suite 898.**
+
 ### 🔨 Naara Gift — Phase 2: storefront + pricing — built 2026-07-28
 Feature-gated storefront (`naara_gift` flag, off by default) on the Phase-1
 catalogue.
