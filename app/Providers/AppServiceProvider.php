@@ -57,6 +57,7 @@ use App\Services\Wallet\WalletService;
 use App\Support\Banners;
 use App\Support\BrandSettings;
 use App\Support\CreditSettings;
+use App\Support\EnvironmentGuard;
 use App\Support\EsimHeroContent;
 use App\Support\FeatureFlags;
 use App\Support\Geo\CloudflareGeoResolver;
@@ -82,6 +83,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -219,6 +221,14 @@ class AppServiceProvider extends ServiceProvider
         // it keeps working with zero Wasabi keys and upgrades automatically once
         // keys are present. (Not a static .env value — that's the footgun.)
         config(['livewire.temporary_file_upload.disk' => MediaStorage::disk()]);
+
+        // Production misconfiguration guard (BUILD-1 §2.2 / §3.8): if the queue is
+        // sync or debug is on in production, log it loudly once per boot. The same
+        // warnings render as a banner on the admin dashboard so a non-technical
+        // operator actually sees them (EnvironmentGuard).
+        foreach (EnvironmentGuard::warnings() as $w) {
+            Log::warning('[env-guard] '.$w['title'].' — '.$w['detail']);
+        }
 
         // Blueprint Section 3.1: super_admin bypasses every authorization gate.
         // Admins can only assign roles below their own (enforced per-action later).

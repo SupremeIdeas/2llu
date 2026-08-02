@@ -1,6 +1,18 @@
 <div>
     <h1 class="mb-6 text-2xl font-bold text-slate-900 dark:text-slate-100">Overview</h1>
 
+    {{-- Production misconfiguration banner (BUILD-1 §2.2 / §3.8): loud, admin-
+         visible warnings for a sync queue or debug-on in production. --}}
+    @foreach (\App\Support\EnvironmentGuard::warnings() as $warn)
+        <div wire:key="envwarn-{{ $warn['key'] }}" class="mb-4 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-500/40 dark:bg-amber-500/10">
+            <x-icon name="shield-check" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div>
+                <p class="text-sm font-bold text-amber-800 dark:text-amber-300">{{ $warn['title'] }}</p>
+                <p class="mt-1 text-xs leading-relaxed text-amber-700 dark:text-amber-200/80">{{ $warn['detail'] }}</p>
+            </div>
+        </div>
+    @endforeach
+
     @unless ($privileged)
         {{-- Staff view: scopes only, no business figures. --}}
         <div class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
