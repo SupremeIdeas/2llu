@@ -12,11 +12,43 @@ use Illuminate\Support\Str;
  * on the wire; normalised to major units here. Webhook signature is
  * HMAC-SHA512 of the raw body with the secret key (header x-paystack-signature).
  */
-class PaystackGateway implements PaymentGatewayInterface
+class PaystackGateway implements PaymentGatewayInterface, RefundableGateway
 {
     public function name(): string
     {
         return 'paystack';
+    }
+
+    /**
+     * Refund a settled charge (BUILD-2 §7.1). Paystack's POST /refund takes the
+     * original transaction reference; an amount (in kobo) makes it partial, else
+     * it's a full refund. Bounded timeout like every provider call. Returns the
+     * provider refund id on success, a safe error otherwise — the caller only
+     * reverses the wallet ledger when this is ok.
+     */
+    public function refund(string $reference, float $amount, string $currency, array $context = []): RefundResult
+    {
+        $secret = (string) config('services.paystack.secret_key');
+        if ($secret === '') {
+            return RefundResult::fail('Paystack is not configured.');
+        }
+
+        try {
+            $res = Http::withToken($secret)->acceptJson()
+                ->timeout(15)->connectTimeout(3)
+                ->post(rtrim((string) config('services.paystack.base_url'), '/').'/refund', [
+                    'transaction' => $reference,
+                    'amount' => (int) round($amount * 100), // kobo
+                ]);
+        } catch (\Throwable $e) {
+            return RefundResult::fail('Could not reach Paystack to refund.');
+        }
+
+        if (! $res->successful() || data_get($res->json(), 'status') !== true) {
+            return RefundResult::fail((string) (data_get($res->json(), 'message') ?: 'Paystack refused the refund.'));
+        }
+
+        return RefundResult::ok((string) data_get($res->json(), 'data.id'));
     }
 
     public function initialize(User $user, float $amount, string $currency, array $meta = []): array

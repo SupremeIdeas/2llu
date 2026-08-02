@@ -18,8 +18,7 @@ class PaymentEvent
         public readonly string $currency,
         public readonly string $status,   // success | failed | pending
         public readonly array $raw = [],
-    ) {
-    }
+    ) {}
 
     public function isSuccessful(): bool
     {
