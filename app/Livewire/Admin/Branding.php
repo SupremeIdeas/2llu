@@ -42,6 +42,11 @@ class Branding extends Component
     public string $preloader_style = 'pulse-logo';
 
     // One upload slot per asset (all optional; blank = keep existing).
+    // Naara family (umbrella) mark — home dashboard, marketing, Aurora welcome.
+    public $family_light = null;
+
+    public $family_dark = null;
+
     public $product_light = null;
 
     public $product_dark = null;
@@ -66,6 +71,8 @@ class Branding extends Component
 
     /** field => setting key. */
     private const SLOTS = [
+        'family_light' => 'brand.logo_family_light',
+        'family_dark' => 'brand.logo_family_dark',
         'product_light' => 'brand.logo_product_light',
         'product_dark' => 'brand.logo_product_dark',
         'agency_light' => 'brand.logo_agency_light',
@@ -146,6 +153,8 @@ class Branding extends Component
 
         $this->validate([
             'brand_name' => 'required|string|max:60',
+            'family_light' => 'nullable|image|max:2048',
+            'family_dark' => 'nullable|image|max:2048',
             'product_light' => 'nullable|image|max:2048',
             'product_dark' => 'nullable|image|max:2048',
             'agency_light' => 'nullable|image|max:2048',

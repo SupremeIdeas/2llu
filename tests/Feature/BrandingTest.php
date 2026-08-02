@@ -36,6 +36,10 @@ class BrandingTest extends TestCase
         $this->assertNull(BrandSettings::logo('product', 'light')); // no admin override
         $this->assertSame('/brand/naarasim-product-light.png', BrandSettings::resolvedLogo('product', 'light'));
         $this->assertSame('/brand/naarasim-favicon.png', BrandSettings::favicon());
+        // Each sub-brand ships its own mark: family (Naara umbrella) + gift.
+        $this->assertSame('/brand/naara-family-light.png', BrandSettings::resolvedLogo('family', 'light'));
+        $this->assertSame('/brand/naara-family-dark.png', BrandSettings::resolvedLogo('family', 'dark'));
+        $this->assertSame('/brand/naara-gift-light.png', BrandSettings::resolvedLogo('gift', 'light'));
     }
 
     public function test_a_saved_logo_url_is_returned_and_theme_variants_fall_back(): void
@@ -78,8 +82,9 @@ class BrandingTest extends TestCase
 
     public function test_naara_gift_has_its_own_admin_settable_logo(): void
     {
-        // No gift logo ships by default → the storefront falls back to the wordmark.
-        $this->assertNull(BrandSettings::resolvedLogo('gift', 'light'));
+        // The Naara Gift mark ships as a default; an admin upload overrides it.
+        $this->assertSame('/brand/naara-gift-light.png', BrandSettings::resolvedLogo('gift', 'light'));
+        $this->assertNull(BrandSettings::logo('gift', 'light')); // no admin override yet
 
         Setting::setValue('brand.logo_gift_light', 'https://cdn.test/naara-gift.png', 'brand');
         BrandSettings::flush();
@@ -92,13 +97,36 @@ class BrandingTest extends TestCase
         $this->assertStringContainsString('naara-gift.png', $html);
     }
 
-    public function test_gift_logo_falls_back_to_the_naara_gift_wordmark_not_the_platform_name(): void
+    public function test_the_naara_family_mark_is_admin_settable_and_overrides_the_default(): void
     {
-        Setting::setValue('brand.name', 'NaaraSim', 'brand');
+        // The umbrella Naara mark ships as a default (home dashboard, marketing,
+        // Aurora welcome) and an admin upload overrides it.
+        $this->assertSame('/brand/naara-family-light.png', BrandSettings::resolvedLogo('family', 'light'));
+        $this->assertNull(BrandSettings::logo('family', 'light'));
+
+        Setting::setValue('brand.logo_family_dark', 'https://cdn.test/naara.png', 'brand');
         BrandSettings::flush();
 
-        $html = view('components.brand-logo', ['variant' => 'gift', 'label' => 'Naara Gift', 'fallbackIcon' => 'gift'])->render();
-        $this->assertStringContainsString('Naara Gift', $html);
+        // Admin upload wins; the light variant cross-falls back to the upload.
+        $this->assertSame('https://cdn.test/naara.png', BrandSettings::resolvedLogo('family', 'dark'));
+
+        $html = view('components.brand-logo', ['variant' => 'family', 'label' => 'Naara'])->render();
+        $this->assertStringContainsString('naara.png', $html);
+    }
+
+    public function test_admin_can_upload_a_naara_family_logo(): void
+    {
+        Storage::fake('wasabi');
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(Branding::class)
+            ->set('brand_name', 'NaaraSim')
+            ->set('family_light', File::image('naara.png', 240, 90))
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertNotNull(BrandSettings::logo('family', 'light'));
     }
 
     public function test_admin_can_upload_a_naara_gift_logo(): void

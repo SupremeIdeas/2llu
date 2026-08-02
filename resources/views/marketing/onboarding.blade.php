@@ -23,7 +23,7 @@
 
         {{-- Skip --}}
         <div class="flex items-center justify-between p-5">
-            <x-brand-logo variant="product" theme="dark" class="h-7 max-w-[140px]" fallback-icon="signal" />
+            <x-brand-logo variant="family" theme="dark" class="h-7 max-w-[140px]" fallback-icon="signal" />
             <button type="button" @click="skip()" class="text-sm font-medium text-white/70 hover:text-white">Skip</button>
         </div>
 

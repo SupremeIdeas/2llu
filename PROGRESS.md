@@ -9,6 +9,25 @@
 
 ## DONE
 
+### 🎨 Brand logo set — Naara / NaaraSim / Naara Gift wired per surface — 2026-07-28
+Installed the real brand marks (light + dark PNGs, transparent, 24–42 KB each)
+and mapped each to the surface it owns, all admin-overridable in Admin →
+Branding:
+- **Naara (family / umbrella mark)** — new `family` variant. Home dashboard
+  header (click → dashboard), the marketing/front-end nav + footer, the auth
+  brand panel, onboarding, and the **Aurora welcome screen**.
+- **NaaraSim (product mark)** — now scoped to the connectivity surfaces: the
+  **eSIM** catalogue header and the **Numbers** section header (+ inner pages
+  via those layouts).
+- **Naara Gift** — the `gift` mark on the gift storefront (already wired; now
+  ships a default instead of only the wordmark).
+- `BrandSettings`: added the `family` variant to KEYS / current() / defaults() /
+  LOGO_DEFAULTS; gift now has shipped defaults too. Admin Branding gains a
+  "Naara family logo" upload group (light + dark) and clearer per-mark hints.
+- Files: `public/brand/naara-family-{light,dark}.png`,
+  `naara-gift-{light,dark}.png`, refreshed `naarasim-product-{light,dark}.png`.
+- Tests updated for the new shipped defaults + family upload (suite 932 green).
+
 ### ♾️ Merchant V2 — multi-month & "for life" auto-renew reserve — 2026-07-28
 Merchants can now pre-fund a client's eSIM for **many renewal cycles up front**
 (2, 3, 6, 12… up to `MAX_RESERVE_CYCLES = 36`) or choose **"keep it for life"** —

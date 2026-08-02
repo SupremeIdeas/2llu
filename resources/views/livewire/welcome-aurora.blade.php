@@ -33,7 +33,7 @@
     {{-- Content --}}
     <div class="nx-welcome__content relative z-10 px-6 text-center">
         <div class="nx-welcome__logo mb-6 flex justify-center">
-            <x-brand-logo variant="product" theme="dark" class="h-20 w-auto md:h-28" fallback-icon="signal" />
+            <x-brand-logo variant="family" theme="dark" class="h-20 w-auto md:h-28" fallback-icon="signal" />
         </div>
         <h1 class="nx-welcome__title text-3xl font-bold text-white md:text-5xl">
             {{ $s['welcome_text'] ?? 'Welcome to' }}

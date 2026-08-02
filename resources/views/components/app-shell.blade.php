@@ -30,7 +30,7 @@
         <div class="flex h-full flex-col rounded-3xl border border-slate-200/70 bg-gradient-to-b from-teal-50 via-slate-50 to-slate-100/70 shadow-sm backdrop-blur-xl dark:border-white/10 dark:from-white/[0.06] dark:via-white/[0.03] dark:to-white/[0.02]">
             <div class="flex items-center py-5" :class="navCollapsed ? 'justify-center px-3' : 'justify-between px-5'">
                 <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex items-center" x-show="!navCollapsed">
-                    <x-brand-logo variant="product" class="h-9 max-w-[150px]" :fallback-icon="$brandIcon" />
+                    <x-brand-logo variant="family" class="h-9 max-w-[150px]" :fallback-icon="$brandIcon" />
                 </a>
                 <button type="button" @click="navCollapsed = !navCollapsed"
                         :aria-label="navCollapsed ? 'Expand menu' : 'Collapse menu'" :aria-expanded="(!navCollapsed).toString()"
@@ -84,7 +84,7 @@
     {{-- ============ MOBILE: top brand bar ============ --}}
     <header class="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/70 bg-white/80 px-4 py-3 backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/80">
         <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex items-center">
-            <x-brand-logo variant="product" class="h-8 max-w-[150px]" :fallback-icon="$brandIcon" />
+            <x-brand-logo variant="family" class="h-8 max-w-[150px]" :fallback-icon="$brandIcon" />
         </a>
         <div class="flex items-center gap-1">
             {{ $headerActions ?? '' }}

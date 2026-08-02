@@ -22,6 +22,8 @@ class BrandSettings
     /** Setting keys this feature owns (for upload + cache-bust). */
     public const KEYS = [
         'brand.name',
+        'brand.logo_family_light',
+        'brand.logo_family_dark',
         'brand.logo_product_light',
         'brand.logo_product_dark',
         'brand.logo_agency_light',
@@ -56,8 +58,15 @@ class BrandSettings
      * Agency marks out of the box instead of the text wordmark.
      */
     public const LOGO_DEFAULTS = [
+        // family = the umbrella "Naara" mark (home dashboard, marketing, Aurora
+        // welcome); product = NaaraSim (eSIM + number surfaces); gift = Naara
+        // Gift (the gift storefront); agency = Supreme Ideas Agency.
+        'family_light' => '/brand/naara-family-light.png',
+        'family_dark' => '/brand/naara-family-dark.png',
         'product_light' => '/brand/naarasim-product-light.png',
         'product_dark' => '/brand/naarasim-product-dark.png',
+        'gift_light' => '/brand/naara-gift-light.png',
+        'gift_dark' => '/brand/naara-gift-dark.png',
         'agency_light' => '/brand/supreme-ideas-light.png',
         'agency_dark' => '/brand/supreme-ideas-dark.png',
         'favicon' => '/brand/naarasim-favicon.png',
@@ -70,6 +79,8 @@ class BrandSettings
             try {
                 return [
                     'name' => (string) (Setting::getValue('brand.name') ?: config('app.name', 'NaaraSim')),
+                    'family_light' => (string) Setting::getValue('brand.logo_family_light', ''),
+                    'family_dark' => (string) Setting::getValue('brand.logo_family_dark', ''),
                     'product_light' => (string) Setting::getValue('brand.logo_product_light', ''),
                     'product_dark' => (string) Setting::getValue('brand.logo_product_dark', ''),
                     'agency_light' => (string) Setting::getValue('brand.logo_agency_light', ''),
@@ -96,6 +107,7 @@ class BrandSettings
     {
         return [
             'name' => config('app.name', 'NaaraSim'),
+            'family_light' => '', 'family_dark' => '',
             'product_light' => '', 'product_dark' => '',
             'agency_light' => '', 'agency_dark' => '',
             'gift_light' => '', 'gift_dark' => '',

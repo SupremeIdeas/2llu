@@ -22,7 +22,8 @@
 
         @php
             $groups = [
-                ['NaaraSim product logo', [['product_light', 'Light background', 'product_light', false], ['product_dark', 'Dark background', 'product_dark', true]], 'Shown across the connectivity platform (dashboard, marketing site, emails).'],
+                ['Naara family logo', [['family_light', 'Light background', 'family_light', false], ['family_dark', 'Dark background', 'family_dark', true]], 'The umbrella “Naara” mark — shown on the home dashboard, the marketing/front-end site, and the Aurora welcome screen. Clicking it always returns to the dashboard.'],
+                ['NaaraSim product logo', [['product_light', 'Light background', 'product_light', false], ['product_dark', 'Dark background', 'product_dark', true]], 'The connectivity mark — shown in the eSIM and Numbers sections and their inner pages.'],
                 ['Naara Gift store logo', [['gift_light', 'Light background', 'gift_light', false], ['gift_dark', 'Dark background', 'gift_dark', true]], 'A separate mark just for the Naara Gift storefront. Leave blank to use the gift icon + "Naara Gift" wordmark.'],
                 ['Supreme Ideas Agency logo', [['agency_light', 'Light background', 'agency_light', false], ['agency_dark', 'Dark background', 'agency_dark', true]], 'The "from Supreme Ideas" endorsement mark.'],
             ];
