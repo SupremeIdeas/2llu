@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -74,7 +75,7 @@ class PaymentWebhookTest extends TestCase
         $this->postRaw('/webhooks/payments/paystack', $payload, ['x-paystack-signature' => $sig])->assertOk();
 
         // Queued, not run inline: a job is parked and nothing is credited yet.
-        $this->assertSame(1, \Illuminate\Support\Facades\DB::table('jobs')->count(), 'credit must be queued, not inline');
+        $this->assertSame(1, DB::table('jobs')->count(), 'credit must be queued, not inline');
         $this->assertNull($user->wallet, 'wallet must not be credited until the worker runs');
 
         // Drain the queue (the scheduled `queue:work --stop-when-empty` path).
@@ -82,7 +83,7 @@ class PaymentWebhookTest extends TestCase
 
         // Credit landed: ledger row written, jobs table emptied.
         $this->assertSame(1, WalletTransaction::where('reference', 'topup:paystack:NAARA-PS-1')->count());
-        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('jobs')->count());
+        $this->assertSame(0, DB::table('jobs')->count());
         $this->assertSame('5000.00', (string) $user->fresh()->wallet->ngn_balance);
 
         // A retried delivery after the first credit adds no second credit.

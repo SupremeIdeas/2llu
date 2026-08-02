@@ -219,7 +219,13 @@
                                             <input type="radio" wire:model.live="gateway" value="{{ $gw }}" class="text-primary focus:ring-primary/40">
                                             <x-payment-icon :slug="$gw" class="h-9" />
                                             <span class="min-w-0">
-                                                <span class="block text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $gwLabel }}</span>
+                                                <span class="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                                    {{ $gwLabel }}
+                                                    {{-- Honest test-mode tag (BUILD-2 §8): never hidden from the user. --}}
+                                                    @if (\App\Support\PaymentSandbox::isTest($gw))
+                                                        <span class="rounded-full bg-orange-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">Test mode</span>
+                                                    @endif
+                                                </span>
                                                 <span class="block truncate text-[11px] text-slate-400 dark:text-slate-500">{{ $gwHint }}</span>
                                             </span>
                                         </label>
