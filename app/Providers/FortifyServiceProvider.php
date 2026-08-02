@@ -6,12 +6,17 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Models\User;
+use App\Support\MerchantBranding;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
+use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Contracts\RegisterResponse;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -24,13 +29,13 @@ class FortifyServiceProvider extends ServiceProvider
         // Return users to the page they were heading to after login (so the
         // secret admin path works from any device — see LoginResponse).
         $this->app->singleton(
-            \Laravel\Fortify\Contracts\LoginResponse::class,
+            LoginResponse::class,
             \App\Http\Responses\LoginResponse::class,
         );
 
         // After signup, play the Aurora Welcome entrance before the dashboard.
         $this->app->singleton(
-            \Laravel\Fortify\Contracts\RegisterResponse::class,
+            RegisterResponse::class,
             \App\Http\Responses\RegisterResponse::class,
         );
     }
@@ -45,7 +50,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::registerView(fn () => view('auth.register', [
             // Co-branding (ROADMAP §Layer 3.3): if the visitor arrived via a
             // merchant invite, show the merchant on the signup form.
-            'inviteMerchant' => \App\Support\MerchantBranding::inviteMerchant(),
+            'inviteMerchant' => MerchantBranding::inviteMerchant(),
         ]));
 
         // The 2FA challenge page (TOTP — Google Authenticator/Authy/1Password —
@@ -67,9 +72,24 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            $email = Str::lower((string) $request->input(Fortify::username()));
+            $throttleKey = Str::transliterate($email.'|'.$request->ip());
 
-            return Limit::perMinute(5)->by($throttleKey);
+            // Admins (super_admin/admin) must be able to log in from ANY device,
+            // browser, or IP with just email + password and never hit a 429
+            // (blueprint S3.1 / BUILD-1 §3.1). They get a high, non-IP-punitive
+            // cap; everyone else keeps the tight 5/min brute-force guard. The
+            // role lookup is cached briefly so it isn't a DB hit per attempt —
+            // the SAME super_admin/admin source of truth, never a second flag.
+            $isAdmin = $email !== '' && Cache::remember(
+                'loginlimit:isadmin:'.md5($email),
+                60,
+                fn () => User::where('email', $email)
+                    ->whereHas('roles', fn ($q) => $q->whereIn('name', ['super_admin', 'admin']))
+                    ->exists()
+            );
+
+            return Limit::perMinute($isAdmin ? 200 : 5)->by($throttleKey);
         });
 
         RateLimiter::for('two-factor', function (Request $request) {
