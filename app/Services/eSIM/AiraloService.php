@@ -32,7 +32,8 @@ class AiraloService implements EsimProviderInterface
     private function accessToken(): string
     {
         return Cache::remember(self::TOKEN_CACHE_KEY, now()->addHours(23), function () {
-            $response = Http::asMultipart()
+            $response = Http::timeout(8)->connectTimeout(3)
+                ->asMultipart()
                 ->acceptJson()
                 ->post($this->baseUrl().'/token', [
                     'client_id' => config('services.airalo.client_id'),
@@ -53,7 +54,10 @@ class AiraloService implements EsimProviderInterface
 
     private function client(): PendingRequest
     {
+        // Bounded so a slow/dead provider can't hang the worker + session lock.
+        // 3s connect, 8s total for reads; orderBundle() overrides to 15s.
         return Http::baseUrl($this->baseUrl())
+            ->timeout(8)->connectTimeout(3)
             ->withToken($this->accessToken())
             ->acceptJson();
     }
@@ -72,7 +76,8 @@ class AiraloService implements EsimProviderInterface
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
     {
-        return $this->client()->asMultipart()->post('/orders', [
+        // Purchase call — longer 15s ceiling for a real order confirmation.
+        return $this->client()->timeout(15)->asMultipart()->post('/orders', [
             'package_id' => $planId,
             'quantity' => $qty,
             'type' => 'sim',

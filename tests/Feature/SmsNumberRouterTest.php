@@ -2,17 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Exceptions\LowBalanceException;
 use App\Exceptions\OutOfStockException;
 use App\Exceptions\SmsException;
 use App\Jobs\AlertAdminJob;
-use App\Models\SmsOrder;
 use App\Models\User;
 use App\Services\SMS\NumberRequest;
 use App\Services\SMS\OtpStatus;
 use App\Services\SMS\SmsNumberRouter;
 use Database\Seeders\PricingSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Queue;
 use Tests\Support\FakeSmsProvider;
 use Tests\TestCase;
@@ -89,6 +88,27 @@ class SmsNumberRouterTest extends TestCase
         $this->assertSame('herosms', $result->provider);
         $this->assertSame(0, $fivesim->buyCalls, '5sim must be skipped for full rent (per-service only)');
         $this->assertSame(1, $herosms->buyCalls);
+    }
+
+    public function test_a_timed_out_provider_fails_over_to_the_next_in_lane(): void
+    {
+        // The real point of the provider-timeout hotfix: when a provider hangs
+        // and its Http call throws a ConnectionException (Laravel's timeout
+        // exception), the lane must fail over to the next provider — not bubble
+        // the exception up and freeze the request. ConnectionException is a
+        // Throwable, so SmsNumberRouter::attempt()'s catch handles it.
+        $getatext = new FakeSmsProvider(price: new ConnectionException('cURL error 28: timed out'));
+        $fivesim = new FakeSmsProvider(price: 0.30, buyResponse: [
+            'provider_ref' => '5S-TO', 'number' => '15559990000', 'cost' => 0.30, 'status' => OtpStatus::PENDING,
+        ]);
+        app()->instance('number.getatext', $getatext);
+        app()->instance('number.fivesim', $fivesim);
+
+        $result = app(SmsNumberRouter::class)->order($this->request('US'));
+
+        $this->assertSame('fivesim', $result->provider);     // failed over past the timeout
+        $this->assertSame(0, $getatext->buyCalls);            // never bought from the hung provider
+        $this->assertSame(1, $fivesim->buyCalls);
     }
 
     public function test_out_of_stock_falls_back_within_the_same_lane(): void

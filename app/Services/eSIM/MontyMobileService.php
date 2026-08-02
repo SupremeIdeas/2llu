@@ -24,6 +24,7 @@ class MontyMobileService implements EsimProviderInterface
     private function client(): PendingRequest
     {
         return Http::baseUrl(rtrim(config('services.montymobile.base_url'), '/'))
+            ->timeout(8)->connectTimeout(3)
             ->withToken(config('services.montymobile.api_key'))
             ->acceptJson();
     }
@@ -35,7 +36,7 @@ class MontyMobileService implements EsimProviderInterface
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
     {
-        return $this->client()->post('/rsp/v1/esims', array_filter([
+        return $this->client()->timeout(15)->post('/rsp/v1/esims', array_filter([
             'planId' => $planId,
             'quantity' => $qty,
             'iccid' => $iccid,

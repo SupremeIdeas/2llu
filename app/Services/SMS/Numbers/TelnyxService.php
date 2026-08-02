@@ -3,6 +3,7 @@
 namespace App\Services\SMS\Numbers;
 
 use App\Exceptions\OutOfStockException;
+use App\Models\Setting;
 use App\Services\SMS\NumberProviderInterface;
 use Illuminate\Support\Facades\Http;
 
@@ -23,9 +24,12 @@ class TelnyxService implements NumberProviderInterface
 
     private function client()
     {
+        // 3s connect catches a dead host fast; 30s total covers permanent-number
+        // provisioning, which can legitimately run longer than a price check.
         return Http::withToken((string) config('services.telnyx.api_key'))
             ->baseUrl('https://api.telnyx.com/v2')
             ->acceptJson()
+            ->connectTimeout(3)
             ->timeout(30);
     }
 
@@ -115,7 +119,7 @@ class TelnyxService implements NumberProviderInterface
      */
     public function outboundSmsCost(string $to): float
     {
-        return (float) \App\Models\Setting::getValue(
+        return (float) Setting::getValue(
             'pricing.sms_send_cost.telnyx',
             (float) config('services.telnyx.default_sms_cost', 0.004),
         );

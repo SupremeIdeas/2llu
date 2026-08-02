@@ -3,6 +3,7 @@
 namespace App\Services\SMS;
 
 use App\Exceptions\OutOfStockException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -66,9 +67,11 @@ class HeroSmsService implements SmsProviderInterface
      * expects. Params are proper query args so the response is faked/asserted
      * against the query string.
      */
-    private function send(string $action, array $params = []): \Illuminate\Http\Client\Response
+    private function send(string $action, array $params = [], int $timeout = 8): Response
     {
-        return Http::acceptJson()->get($this->cfg('base_url'), array_merge([
+        // Bounded so a slow/dead provider can't hang the worker + session lock.
+        // 3s connect, 8s total for reads; purchase actions pass 15s.
+        return Http::timeout($timeout)->connectTimeout(3)->acceptJson()->get($this->cfg('base_url'), array_merge([
             'api_key' => $this->cfg('api_key'),
             'action' => $action,
         ], $params));
@@ -121,7 +124,7 @@ class HeroSmsService implements SmsProviderInterface
             'service' => $this->service($service),
             'country' => $this->country($country),
             'maxPrice' => $options['max_price'] ?? null,
-        ]))->throw()->body();
+        ]), timeout: 15)->throw()->body(); // purchase call
 
         return $this->parseAccessNumber($body);
     }
@@ -140,7 +143,7 @@ class HeroSmsService implements SmsProviderInterface
             'service' => $rentService,
             'country' => $this->country($country),
             'rent_time' => $options['rent_hours'] ?? null,
-        ]))->throw()->json() ?? [];
+        ]), timeout: 15)->throw()->json() ?? []; // purchase call
 
         if (($json['status'] ?? null) !== 'success' || ! isset($json['phone'])) {
             throw new OutOfStockException($this->label()." has no rental for {$service} in {$country}.");
@@ -209,7 +212,7 @@ class HeroSmsService implements SmsProviderInterface
     private function parseAccessNumber(string $body): array
     {
         if (! str_starts_with($body, 'ACCESS_NUMBER:')) {
-            throw new OutOfStockException($this->label()." could not buy a number: ".$body);
+            throw new OutOfStockException($this->label().' could not buy a number: '.$body);
         }
 
         [, $id, $number] = array_pad(explode(':', $body, 3), 3, '');

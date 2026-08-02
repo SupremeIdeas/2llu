@@ -17,6 +17,7 @@ class QuibityService implements EsimProviderInterface
     private function client(): PendingRequest
     {
         return Http::baseUrl(rtrim(config('services.quibity.base_url'), '/'))
+            ->timeout(8)->connectTimeout(3)
             ->withToken(config('services.quibity.api_key'))
             ->withHeaders(array_filter([
                 'x-sandbox' => config('services.quibity.sandbox') ? 'on' : null,
@@ -31,7 +32,7 @@ class QuibityService implements EsimProviderInterface
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
     {
-        return $this->client()->post('/orders', [
+        return $this->client()->timeout(15)->post('/orders', [
             'plan_id' => $planId,
             'quantity' => $qty,
             'customer_ref' => (string) Str::uuid(),

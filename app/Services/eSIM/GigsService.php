@@ -29,6 +29,7 @@ class GigsService implements EsimProviderInterface
     private function client(): PendingRequest
     {
         return Http::baseUrl(rtrim(config('services.gigs.base_url'), '/'))
+            ->timeout(8)->connectTimeout(3)
             ->withToken(config('services.gigs.api_key'))
             ->acceptJson();
     }
@@ -43,7 +44,7 @@ class GigsService implements EsimProviderInterface
     {
         // A Gigs subscription provisions the plan onto a (e)SIM. Idempotent on
         // our reference so a retry never double-provisions.
-        return $this->client()->post("/projects/{$this->project()}/subscriptions", array_filter([
+        return $this->client()->timeout(15)->post("/projects/{$this->project()}/subscriptions", array_filter([
             'plan' => $planId,
             'iccid' => $iccid,
             'metadata' => ['reference' => 'naara-'.Str::uuid()->toString()],

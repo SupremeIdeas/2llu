@@ -4,7 +4,11 @@ namespace App\Services\eSIM;
 
 use App\Models\EsimPlan;
 use App\Services\Pricing\PricingEngine;
+use App\Support\CountryPickerSources;
+use App\Support\SupplierScrub;
+use App\Support\SyncStatus;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Syncs each provider's catalogue into esim_plans and recomputes retail
@@ -19,9 +23,7 @@ use Illuminate\Support\Arr;
  */
 class CatalogueSyncService
 {
-    public function __construct(private readonly PricingEngine $pricing)
-    {
-    }
+    public function __construct(private readonly PricingEngine $pricing) {}
 
     /** Sync one provider; returns the number of plans upserted. Records the
      *  outcome (success/fail + count/error) for admin observability either way. */
@@ -29,12 +31,12 @@ class CatalogueSyncService
     {
         try {
             $count = $this->doSync($provider);
-            \App\Support\SyncStatus::record($provider, ok: true, count: $count);
+            SyncStatus::record($provider, ok: true, count: $count);
 
             return $count;
         } catch (\Throwable $e) {
-            \App\Support\SyncStatus::record($provider, ok: false, error: $e->getMessage());
-            \Illuminate\Support\Facades\Log::warning("[esim] Catalogue sync failed for {$provider}: ".$e->getMessage());
+            SyncStatus::record($provider, ok: false, error: $e->getMessage());
+            Log::warning("[esim] Catalogue sync failed for {$provider}: ".$e->getMessage());
             throw $e;
         }
     }
@@ -56,7 +58,7 @@ class CatalogueSyncService
                 [
                     // Scrub any supplier brand out of the name before storing it,
                     // so provider identity can never leak to users (rule 1.2).
-                    'name' => \App\Support\SupplierScrub::name((string) $row['name']),
+                    'name' => SupplierScrub::name((string) $row['name']),
                     'type' => $row['type'] ?? null,
                     'has_voice' => $row['has_voice'] ?? false, // Naara Connect (Zendit) only
                     'data_mb' => $row['data_mb'] ?? null,
@@ -74,7 +76,7 @@ class CatalogueSyncService
         }
 
         // The country picker's per-country tallies just changed.
-        \App\Support\CountryPickerSources::flush();
+        CountryPickerSources::flush();
 
         return count($rows);
     }

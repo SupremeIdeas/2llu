@@ -16,8 +16,7 @@ class SmsOrderResult
         public readonly array $payload,
         public readonly float $cost,
         public readonly float $retail,
-    ) {
-    }
+    ) {}
 
     public static function success(string $provider, SmsOrder $order, array $payload, float $cost, float $retail): self
     {

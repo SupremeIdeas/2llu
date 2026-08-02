@@ -12,7 +12,9 @@ use App\Models\User;
 class NumberRequest
 {
     public const TYPE_OTP = 'otp';
+
     public const TYPE_RENTAL = 'rental';
+
     public const TYPE_PERMANENT = 'permanent';
 
     /** Rental "any service" (full rent) — receive SMS from every service. */
@@ -32,8 +34,7 @@ class NumberRequest
         // the provider's default short-term rental (5sim hosting elsewhere).
         public readonly ?string $rentalTime = null,
         public readonly bool $autoRenew = false,
-    ) {
-    }
+    ) {}
 
     /** Duration options offered for US long rentals, mapped to Getatext codes. */
     public const RENTAL_DURATIONS = ['1w' => '1 week', '1mo' => '1 month', '3mo' => '3 months'];

@@ -10,8 +10,12 @@ namespace App\Services\SMS;
 final class OtpStatus
 {
     public const PENDING = 'pending';   // bought, awaiting SMS
+
     public const RECEIVED = 'received'; // code arrived
+
     public const TIMEOUT = 'timeout';   // no SMS in window
+
     public const CANCELED = 'canceled'; // cancelled/banned
+
     public const FINISHED = 'finished'; // completed & closed
 }

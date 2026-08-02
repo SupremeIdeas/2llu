@@ -20,7 +20,10 @@ class GetatextService implements SmsProviderInterface
 {
     private function client(): PendingRequest
     {
+        // Bounded so a slow/dead provider can't hang the worker + session lock.
+        // 3s connect, 8s total; purchase calls override to 15s.
         return Http::baseUrl(rtrim(config('services.getatext.base_url'), '/'))
+            ->timeout(8)->connectTimeout(3)
             ->withHeaders(['Auth' => config('services.getatext.api_key')])
             ->acceptJson()
             ->asJson();
@@ -52,7 +55,8 @@ class GetatextService implements SmsProviderInterface
             'area_codes' => $options['area_codes'] ?? null,
         ], fn ($v) => $v !== null);
 
-        $json = $this->guard($this->client()->post('/rent-a-number', $payload)->json());
+        // Purchase call — longer 15s ceiling for a real buy.
+        $json = $this->guard($this->client()->timeout(15)->post('/rent-a-number', $payload)->json());
 
         return [
             'provider_ref' => (string) $json['id'],
@@ -64,7 +68,8 @@ class GetatextService implements SmsProviderInterface
 
     public function buyRental(string $country, string $service, array $options = []): array
     {
-        $json = $this->guard($this->client()->post('/long-rentals', array_filter([
+        // Purchase call — longer 15s ceiling for a real rental buy.
+        $json = $this->guard($this->client()->timeout(15)->post('/long-rentals', array_filter([
             'service' => $service,
             'rental_time' => $options['rental_time'] ?? '1w',
             'auto_renew' => $options['auto_renew'] ?? false,

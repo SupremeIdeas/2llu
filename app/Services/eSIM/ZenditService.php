@@ -25,6 +25,7 @@ class ZenditService implements EsimProviderInterface
     private function client(): PendingRequest
     {
         return Http::baseUrl(rtrim(config('services.zendit.base_url'), '/'))
+            ->timeout(8)->connectTimeout(3)
             ->withToken(config('services.zendit.api_key'))
             ->acceptJson();
     }
@@ -66,7 +67,7 @@ class ZenditService implements EsimProviderInterface
     {
         $transactionId = 'naara-'.Str::uuid()->toString();
 
-        $this->client()->post('/esim/purchases', array_filter([
+        $this->client()->timeout(15)->post('/esim/purchases', array_filter([
             'transactionId' => $transactionId,
             'offerId' => $planId,
             'iccid' => $iccid,

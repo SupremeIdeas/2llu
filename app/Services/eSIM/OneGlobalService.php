@@ -35,7 +35,7 @@ class OneGlobalService implements EsimProviderInterface
     private function accessToken(): string
     {
         return Cache::remember(self::TOKEN_CACHE_KEY, now()->addMinutes(50), function () {
-            $response = Http::asForm()->acceptJson()
+            $response = Http::timeout(8)->connectTimeout(3)->asForm()->acceptJson()
                 ->post($this->baseUrl().'/oauth2/token', [
                     'grant_type' => 'client_credentials',
                     'client_id' => config('services.oneglobal.client_id'),
@@ -53,7 +53,10 @@ class OneGlobalService implements EsimProviderInterface
 
     private function client(): PendingRequest
     {
+        // Bounded so a slow/dead provider can't hang the worker + session lock.
+        // 3s connect, 8s total for reads; orderBundle() overrides to 15s.
         return Http::baseUrl($this->baseUrl())
+            ->timeout(8)->connectTimeout(3)
             ->withToken($this->accessToken())
             ->acceptJson();
     }
@@ -65,7 +68,8 @@ class OneGlobalService implements EsimProviderInterface
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
     {
-        return $this->client()->post('/esims', array_filter([
+        // Purchase call — longer 15s ceiling for a real order confirmation.
+        return $this->client()->timeout(15)->post('/esims', array_filter([
             'planId' => $planId,
             'quantity' => $qty,
             'iccid' => $iccid,

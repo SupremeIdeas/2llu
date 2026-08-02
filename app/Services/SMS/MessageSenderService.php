@@ -2,7 +2,6 @@
 
 namespace App\Services\SMS;
 
-use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\SmsException;
 use App\Jobs\AlertAdminJob;
 use App\Models\OutboundMessage;
@@ -34,8 +33,7 @@ class MessageSenderService
     public function __construct(
         private readonly PricingEngine $pricing,
         private readonly WalletService $wallet,
-    ) {
-    }
+    ) {}
 
     /** Hard ceiling on a single message's length (segments), admin-tunable. */
     private function maxSegments(): int

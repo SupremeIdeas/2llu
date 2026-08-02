@@ -7,10 +7,11 @@ use App\Exceptions\MaintenanceException;
 use App\Exceptions\OutOfStockException;
 use App\Exceptions\SmsException;
 use App\Jobs\AlertAdminJob;
-use App\Models\SmsOrder;
 use App\Models\Setting;
+use App\Models\SmsOrder;
 use App\Services\Pricing\PricingEngine;
 use App\Services\Wallet\WalletService;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -25,8 +26,7 @@ class SmsNumberRouter
     public function __construct(
         private readonly PricingEngine $pricing,
         private readonly WalletService $wallet,
-    ) {
-    }
+    ) {}
 
     public function order(NumberRequest $request): SmsOrderResult
     {
@@ -98,6 +98,7 @@ class SmsNumberRouter
                 $maxCost = round($retail - $minProfit, 4);
                 if ($cost > $maxCost && $cost > 0) {
                     $errors[$provider] = 'cost_exceeds_margin';
+
                     continue;
                 }
 
@@ -259,7 +260,7 @@ class SmsNumberRouter
         $op = str_replace('_', ' ', $op);
         $op = preg_replace('/([a-z])(\d)/', '$1 $2', $op) ?? $op;
 
-        return \Illuminate\Support\Str::title($op);
+        return Str::title($op);
     }
 
     /**
@@ -275,7 +276,7 @@ class SmsNumberRouter
         }
         $defaults = ['1w' => 1.0, '1mo' => 3.5, '3mo' => 9.0];
 
-        return (float) \App\Models\Setting::getValue(
+        return (float) Setting::getValue(
             "numbers.rental_multiplier.{$request->rentalTime}",
             $defaults[$request->rentalTime] ?? 1.0,
         );

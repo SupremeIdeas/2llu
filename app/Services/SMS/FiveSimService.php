@@ -21,7 +21,11 @@ class FiveSimService implements SmsProviderInterface
 {
     private function client(): PendingRequest
     {
+        // Every call is bounded so a slow/dead provider can never hang the PHP
+        // worker (and, with a file session lock, the user's whole session). 3s
+        // to connect, 8s total for reads; purchase calls override to 15s.
         return Http::baseUrl(rtrim(config('services.fivesim.base_url'), '/'))
+            ->timeout(8)->connectTimeout(3)
             ->withToken(config('services.fivesim.api_key'))
             ->acceptJson();
     }
@@ -124,7 +128,8 @@ class FiveSimService implements SmsProviderInterface
             'maxPrice' => $options['max_price'] ?? null,
         ]);
 
-        $json = $this->guard($this->client()
+        // Purchase call — a real buy can take a little longer than a price check.
+        $json = $this->guard($this->client()->timeout(15)
             ->get("/user/buy/activation/{$country}/{$operator}/{$service}", $query)->json());
 
         return $this->normalizeBuy($json);
@@ -133,7 +138,8 @@ class FiveSimService implements SmsProviderInterface
     public function buyRental(string $country, string $service, array $options = []): array
     {
         $operator = $options['operator'] ?? 'any';
-        $json = $this->guard($this->client()
+        // Purchase call — allow the longer 15s ceiling for a real rental buy.
+        $json = $this->guard($this->client()->timeout(15)
             ->get("/user/buy/hosting/{$country}/{$operator}/{$service}")->json());
 
         return $this->normalizeBuy($json);

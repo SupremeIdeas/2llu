@@ -15,8 +15,7 @@ class EsimOrderResult
         public readonly float $cost,
         public readonly float $charged,
         public readonly float $profit,
-    ) {
-    }
+    ) {}
 
     public static function success(string $provider, array $payload, float $cost, float $charged): self
     {

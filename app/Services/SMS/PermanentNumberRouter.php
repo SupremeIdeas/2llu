@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\VirtualNumber;
 use App\Services\Pricing\PricingEngine;
 use App\Services\Wallet\WalletService;
+use App\Support\ProviderModels;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -33,8 +34,7 @@ class PermanentNumberRouter
     public function __construct(
         private readonly WalletService $wallet,
         private readonly PricingEngine $pricing,
-    ) {
-    }
+    ) {}
 
     /** Providers in the lane that actually have keys configured. */
     public function configuredLane(): array
@@ -44,7 +44,7 @@ class PermanentNumberRouter
 
     private function isConfigured(string $provider): bool
     {
-        return \App\Support\ProviderModels::providerConfigured($provider);
+        return ProviderModels::providerConfigured($provider);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Services\SMS\Numbers;
 
 use App\Exceptions\OutOfStockException;
+use App\Models\Setting;
 use App\Services\SMS\NumberProviderInterface;
 use App\Services\SMS\VoiceProviderInterface;
 use Illuminate\Http\Request;
@@ -158,7 +159,7 @@ class TwilioService implements NumberProviderInterface, VoiceProviderInterface
             $res = Http::withBasicAuth(
                 (string) config('services.twilio.account_sid'),
                 (string) config('services.twilio.auth_token'),
-            )->timeout(20)->get('https://pricing.twilio.com/v2/Voice/Numbers/'.$destination);
+            )->connectTimeout(3)->timeout(20)->get('https://pricing.twilio.com/v2/Voice/Numbers/'.$destination);
 
             $prices = collect($res->json('outbound_call_prices', []))
                 ->pluck('current_price')
@@ -178,10 +179,13 @@ class TwilioService implements NumberProviderInterface, VoiceProviderInterface
 
     private function client()
     {
+        // 3s connect catches a dead host fast; 30s total covers real
+        // number provisioning, which can run longer than a price check.
         return Http::withBasicAuth(
             (string) config('services.twilio.account_sid'),
             (string) config('services.twilio.auth_token'),
         )->baseUrl('https://api.twilio.com/2010-04-01/Accounts/'.config('services.twilio.account_sid'))
+            ->connectTimeout(3)
             ->timeout(30);
     }
 
@@ -273,7 +277,7 @@ class TwilioService implements NumberProviderInterface, VoiceProviderInterface
      */
     public function outboundSmsCost(string $to): float
     {
-        return (float) \App\Models\Setting::getValue(
+        return (float) Setting::getValue(
             'pricing.sms_send_cost.twilio',
             (float) config('services.twilio.default_sms_cost', 0.0079),
         );
@@ -303,7 +307,7 @@ class TwilioService implements NumberProviderInterface, VoiceProviderInterface
             $res = Http::withBasicAuth(
                 (string) config('services.twilio.account_sid'),
                 (string) config('services.twilio.auth_token'),
-            )->timeout(20)->get('https://pricing.twilio.com/v1/PhoneNumbers/Countries/'.strtoupper($this->iso($country)));
+            )->connectTimeout(3)->timeout(20)->get('https://pricing.twilio.com/v1/PhoneNumbers/Countries/'.strtoupper($this->iso($country)));
 
             $local = collect($res->json('phone_number_prices', []))
                 ->firstWhere('number_type', 'local');

@@ -46,9 +46,7 @@ class ProviderRouter
      */
     protected array $voiceChain = ['zendit', 'oneglobal', 'montymobile', 'gigs'];
 
-    public function __construct(private readonly WalletService $wallet)
-    {
-    }
+    public function __construct(private readonly WalletService $wallet) {}
 
     public function orderPlan(string $naaraPlanId, User $user, string $currency = 'USD', ?float $charged = null): EsimOrderResult
     {
