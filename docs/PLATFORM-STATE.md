@@ -6,6 +6,53 @@ exists and must not be removed again.
 
 ---
 
+## Payments build (BUILD-2) — 2026-08-02
+
+### Done
+- **Crypto signature verification, doc-verified + fixed.** Confirmed each
+  provider's current scheme against live docs. Found + fixed a real money bug:
+  **Cryptomus** was signing with `JSON_UNESCAPED_SLASHES`, but the canonical is
+  slash-escaped — this broke payment creation (the `sign` we send includes
+  `url_callback`/`url_return`) and webhook verification for any payload with a
+  `/`. Fixed to the documented flags; verification now also accepts the
+  unescaped variant defensively. **NOWPayments** verification made tolerant to
+  the same slash-escaping nuance. **CoinPayments** HMACs the raw body — correct
+  as-is. Regression test: a slash-containing Cryptomus webhook now credits.
+- **Paystack credit proven end-to-end against the real `database` queue** —
+  queued (not inline), drains to a single credit + ledger row, idempotent on a
+  retried delivery.
+- **Global sandbox/test-mode indicator** — `PaymentSandbox` detects test keys
+  (Stripe/Paystack `sk_test_`, Flutterwave `FLWSECK_TEST-`, PayPal/NOWPayments
+  sandbox host); admin-dashboard banner + honest per-gateway checkout tag; never
+  falsely flags a gateway it can't tell.
+- **`docs/PAYMENT-GATEWAYS.md`** — per-gateway base URLs, signature methods,
+  inline-vs-redirect state, refund/dispute status, and the Paystack sandbox test
+  steps. All nine gateways confirmed wired to the unified webhook controller.
+
+### The reported "top-up didn't credit" (SEV-1) — root cause is operational
+The credit path is proven correct in code. The live failure is therefore
+configuration: **(a)** the Paystack **webhook URL must be registered** on the
+Paystack dashboard (`/webhooks/payments/paystack`) — no registered webhook means
+no credit; and **(b)** the **queue worker/cron must run** on the cPanel host. The
+admin dashboard's env-guard banner already warns if the queue is misconfigured.
+Frank: verify both on the live host.
+
+### Flagged but not yet built (the payments follow-up — money-moving, do with care)
+- **Admin-triggered refunds** for all nine gateways (reverse the wallet ledger
+  atomically, fully audited). Confirm each provider's current refund API first.
+- **Dispute/chargeback webhooks** (Stripe/Paystack/Flutterwave/PayPal): flag the
+  txn, **freeze the disputed amount from withdrawal**, alert via `AlertAdminJob`.
+- **Full per-gateway admin schema** (§3): explicit sandbox/live toggle that swaps
+  key set + base URL, webhook/callback URL copy buttons, and a "test connection"
+  button. Today keys live in Provider Keys and test mode is *detected*, not
+  toggled.
+- **Inline/embedded checkout** where supported (Paystack Inline, Stripe Payment
+  Element, Flutterwave modal). Everything is redirect/hosted today.
+These are grouped so they get one careful, reviewed pass rather than being rushed
+onto a live money path.
+
+---
+
 ## Foundation build + provider-timeout hotfix — 2026-08-02
 
 ### Done

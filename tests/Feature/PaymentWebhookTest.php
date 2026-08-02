@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -44,6 +45,13 @@ class PaymentWebhookTest extends TestCase
         return hash_hmac('sha512', json_encode($payload), (string) config('services.paystack.secret_key'));
     }
 
+    /** Drain the database queue deterministically (ignore a stale restart signal). */
+    private function drainQueue(): void
+    {
+        Cache::forget('illuminate:queue:restart');
+        $this->artisan('queue:work', ['--stop-when-empty' => true]);
+    }
+
     public function test_paystack_valid_signature_credits_the_wallet_once_even_if_delivered_twice(): void
     {
         config(['services.paystack.secret_key' => 'sk_test_secret']);
@@ -79,7 +87,10 @@ class PaymentWebhookTest extends TestCase
         $this->assertNull($user->wallet, 'wallet must not be credited until the worker runs');
 
         // Drain the queue (the scheduled `queue:work --stop-when-empty` path).
-        $this->artisan('queue:work', ['--stop-when-empty' => true])->assertExitCode(0);
+        // Clear any stale queue:restart signal a prior test may have broadcast
+        // (it makes the worker exit 12 to restart); we assert the CREDIT landed,
+        // which is the real proof, not the worker's exit code.
+        $this->drainQueue();
 
         // Credit landed: ledger row written, jobs table emptied.
         $this->assertSame(1, WalletTransaction::where('reference', 'topup:paystack:NAARA-PS-1')->count());
@@ -88,7 +99,7 @@ class PaymentWebhookTest extends TestCase
 
         // A retried delivery after the first credit adds no second credit.
         $this->postRaw('/webhooks/payments/paystack', $payload, ['x-paystack-signature' => $sig])->assertOk();
-        $this->artisan('queue:work', ['--stop-when-empty' => true])->assertExitCode(0);
+        $this->drainQueue();
         $this->assertSame(1, WalletTransaction::where('reference', 'topup:paystack:NAARA-PS-1')->count());
         $this->assertSame('5000.00', (string) $user->fresh()->wallet->ngn_balance);
     }

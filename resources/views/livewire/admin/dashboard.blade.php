@@ -15,14 +15,13 @@
 
     {{-- Payment sandbox indicator (BUILD-2 §8): unmissable if any gateway is
          still pointed at its test environment (real money will NOT move). --}}
-    @php($sandboxGateways = \App\Support\PaymentSandbox::testGateways())
-    @if ($sandboxGateways !== [])
+    @if (count($sandboxGateways) > 0)
         <div class="mb-4 flex items-start gap-3 rounded-2xl border border-orange-300 bg-orange-50 p-4 dark:border-orange-500/40 dark:bg-orange-500/10">
             <x-icon name="shield-check" class="mt-0.5 h-5 w-5 shrink-0 text-orange-600 dark:text-orange-400" />
             <div>
                 <p class="text-sm font-bold text-orange-800 dark:text-orange-300">Payment gateway in TEST / sandbox mode</p>
                 <p class="mt-1 text-xs leading-relaxed text-orange-700 dark:text-orange-200/80">
-                    {{ implode(', ', $sandboxGateways) }} {{ count($sandboxGateways) === 1 ? 'is' : 'are' }} using test keys — real money will not move. Switch to live keys before going live.
+                    {{ implode(', ', $sandboxGateways) }} {{ count($sandboxGateways) === 1 ? 'is' : 'are' }} using test keys. Real money will not move until you switch to live keys.
                 </p>
             </div>
         </div>

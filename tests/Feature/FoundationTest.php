@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
@@ -14,7 +15,7 @@ class FoundationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
     }
 
     public function test_the_blank_layout_boots_with_the_theme_toggle(): void
@@ -62,11 +63,13 @@ class FoundationTest extends TestCase
 
     public function test_default_disk_is_local_public_and_wasabi_is_configured_ready(): void
     {
-        // The default disk is the local `public` disk (BUILD-1 §4): a fresh
-        // install's uploads must work with ZERO Wasabi keys. Wasabi is opt-in —
-        // MediaStorage upgrades to it automatically once keys are present — but
-        // its disk stays fully configured so it's ready the moment keys land.
-        $this->assertSame('public', config('filesystems.default'));
+        // A fresh install must default to the local `public` disk so uploads work
+        // with ZERO Wasabi keys (BUILD-1 §4). Assert the SHIPPED default in
+        // .env.example rather than the ambient config (which follows the runner's
+        // own .env). Wasabi is opt-in — MediaStorage upgrades to it once keys are
+        // present — but its disk stays fully configured, ready the moment keys land.
+        $env = file_get_contents(base_path('.env.example'));
+        $this->assertMatchesRegularExpression('/^FILESYSTEM_DISK=public$/m', $env);
         $this->assertSame('s3', config('filesystems.disks.wasabi.driver'));
         $this->assertSame('private', config('filesystems.disks.wasabi.visibility'));
     }

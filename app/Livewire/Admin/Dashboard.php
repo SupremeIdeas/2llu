@@ -7,6 +7,7 @@ use App\Models\EsimOrder;
 use App\Models\OrderLog;
 use App\Models\SmsOrder;
 use App\Models\User;
+use App\Support\PaymentSandbox;
 use App\Support\ProviderModels;
 use App\Support\ProviderStatus;
 use App\Support\StaffScopes;
@@ -31,6 +32,7 @@ class Dashboard extends Component
         if (! $user->hasAnyRole(['super_admin', 'admin'])) {
             return view('livewire.admin.dashboard', [
                 'privileged' => false,
+                'sandboxGateways' => PaymentSandbox::testGateways(),
                 'myScopes' => array_values(array_intersect(
                     StaffScopes::all(),
                     $user->getPermissionNames()->all()
@@ -147,6 +149,7 @@ class Dashboard extends Component
 
         return view('livewire.admin.dashboard', [
             'privileged' => true,
+            'sandboxGateways' => PaymentSandbox::testGateways(),
             'totalUsers' => $totalUsers,
             'newUsersWeek' => $newUsersWeek,
             'profitWeek' => $profitWeek,
