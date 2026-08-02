@@ -19,6 +19,19 @@ app run straight from `public_html` with no document-root change.
 4. Keep the DB name, user, and password handy for step 4. (Host is usually
    `localhost`, port `3306`.)
 
+> **Footgun — cPanel silently truncates long MySQL usernames.** cPanel prefixes
+> your username with `cpuser_` and caps the total length. The name you *typed*
+> and the name cPanel actually *created* can differ. Always copy the **exact
+> username cPanel shows** after you create the user (not the one you intended)
+> into step 4 — a mismatch here is the most common "installer can't connect to
+> the database" cause.
+>
+> **Footgun — MySQL DDL is not transactional.** If the installer fails partway
+> through migrating, MySQL does **not** roll the half-created tables back. A
+> second attempt then fails with "table already exists." Before retrying, fully
+> **drop and recreate the database** (cPanel → MySQL Databases → delete, then
+> create again) so migrations start from a clean slate.
+
 ## 2. Upload the files (cPanel → File Manager)
 Upload the **entire project** into your domain's document root — for the primary
 domain that is **`public_html`** (for an addon/subdomain, its own docroot).
