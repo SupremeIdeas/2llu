@@ -1,4 +1,4 @@
-<x-layouts.app title="Install — Server Requirements">
+<x-layouts.install title="Install — Server Requirements">
     <x-install-shell :step="2">
         <h2 class="mb-4 text-center text-lg font-bold text-slate-900 dark:text-slate-100">Server Requirements</h2>
         <ul class="space-y-2">
@@ -29,4 +29,4 @@
             @endif
         </div>
     </x-install-shell>
-</x-layouts.app>
+</x-layouts.install>

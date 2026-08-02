@@ -1,4 +1,4 @@
-<x-layouts.app title="Install — Done">
+<x-layouts.install title="Install — Done">
     <x-install-shell :step="4">
         <div class="text-center">
             <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Application has been successfully installed.</p>
@@ -38,4 +38,4 @@
             </a>
         </div>
     </x-install-shell>
-</x-layouts.app>
+</x-layouts.install>

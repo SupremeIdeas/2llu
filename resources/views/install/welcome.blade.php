@@ -1,4 +1,4 @@
-<x-layouts.app title="Install — Welcome">
+<x-layouts.install title="Install — Welcome">
     <x-install-shell :step="1">
         <div class="text-center">
             <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Welcome</h2>
@@ -16,4 +16,4 @@
             </a>
         </div>
     </x-install-shell>
-</x-layouts.app>
+</x-layouts.install>

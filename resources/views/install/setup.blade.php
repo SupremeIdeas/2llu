@@ -1,4 +1,4 @@
-<x-layouts.app title="Install — Database Setup">
+<x-layouts.install title="Install — Database Setup">
     <x-install-shell :step="3">
         <h2 class="mb-4 text-center text-lg font-bold text-slate-900 dark:text-slate-100">Setup</h2>
 
@@ -110,4 +110,4 @@
             </a>
         </div>
     </x-install-shell>
-</x-layouts.app>
+</x-layouts.install>
