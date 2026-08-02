@@ -100,3 +100,42 @@ re-install (e.g. wrong DB), delete that file and visit `/install` again.
 Shared hosting can't rebuild assets. If you change front-end code, run
 `npm run build` locally and upload the refreshed **`public/build`** folder, then
 `php artisan optimize:clear` on the server.
+
+---
+
+## Building the installable package from source
+
+You never have to hand-assemble a package again. From a **clean checkout** of the
+repo (run it in a throwaway clone, or `git stash` local changes first):
+
+```bash
+bash scripts/package-release.sh                 # → dist/naarasim-cpanel-<timestamp>.zip
+bash scripts/package-release.sh my-package-name # optional custom name
+```
+
+The script, in order:
+1. Runs `php bin/check-install-integrity.php` (fails fast if an install-critical
+   file drifted out — see below).
+2. `composer install --no-dev --optimize-autoloader` (ships `vendor/`).
+3. `npm ci && npm run build` (ships compiled `public/build/`).
+4. Recreates the writable runtime directories so the ZIP is bulletproof even if a
+   later re-zip strips dotfiles.
+5. Zips a clean tree (no `.git`, `node_modules`, tests, or `.env`) into `dist/`.
+
+The resulting ZIP needs no Composer or npm on the server — upload it per the
+steps above.
+
+## Why these files must never be deleted (install-critical)
+
+Four files silently drifted out of the repo once and broke fresh installs until a
+byte-level diff against a known-working package found them. They are now guarded
+by `bin/check-install-integrity.php` (a CI gate — see
+`.github/workflows/tests.yml`) and by the packaging script. Do **not** delete or
+`.gitignore` any of them:
+
+| File / path | Why it's install-critical |
+| --- | --- |
+| `config/view.php` | Without it Laravel's default compiled-view path is `realpath(storage/framework/views)`, which is `false` before that dir exists on a fresh install → Blade fails with "Please provide a valid cache path". This file uses `storage_path(...)` (no `realpath`) so the path resolves regardless. |
+| `resources/views/components/layouts/install.blade.php` | The DB-free layout every install step renders through. Without it the wizard throws "component not found"; using the full app layout instead would paint the wizard with splash/preloader/PWA chrome and query the not-yet-migrated `settings` table. |
+| `database/migrations/*_create_partner_earnings_table.php` timestamp | Must sort **after** `create_partners_table` (it has a foreign key into it). Kept one second later (`130956` vs `130955`) so `migrate` never hits a foreign-key-order failure. The integrity check fails on any new migration timestamp collision. |
+| The `.gitignore` placeholders in `bootstrap/cache` + `storage/framework/*` + `storage/logs` | Keep those writable runtime directories present through a `git clone`/export. (`public/storage` is intentionally **not** committed — it's the symlink created by `php artisan storage:link` at install.) |
