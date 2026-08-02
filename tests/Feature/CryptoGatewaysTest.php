@@ -4,10 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\WalletTransaction;
-use App\Services\Payments\CoinPaymentsGateway;
 use App\Services\Payments\CryptomusGateway;
 use App\Services\Payments\NowPaymentsGateway;
-use App\Services\Payments\PayssionGateway;
 use App\Support\ProviderStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -130,6 +128,33 @@ class CryptoGatewaysTest extends TestCase
         // Tampered amount → sign no longer matches → rejected.
         $tampered = json_encode(['status' => 'paid', 'order_id' => $user->id.':NAARA-CM-9', 'amount' => '999.00', 'currency' => 'USD', 'sign' => $sign]);
         $this->postRaw('/webhooks/payments/cryptomus', $tampered)->assertStatus(401);
+    }
+
+    public function test_cryptomus_webhook_with_a_slash_in_the_payload_is_verified_the_canonical_way(): void
+    {
+        // Regression: Cryptomus signs md5(base64(json_encode($d, JSON_UNESCAPED_UNICODE)) . key)
+        // — slashes ESCAPED. The old code signed with JSON_UNESCAPED_SLASHES, so
+        // ANY payload containing a "/" (a network name, a URL, a txid path) would
+        // have its valid signature rejected and the credit silently lost. This
+        // payload contains slashes and is signed the canonical (escaped) way.
+        config(['services.cryptomus.merchant_id' => 'M1', 'services.cryptomus.api_key' => 'apikey']);
+        $user = User::factory()->create();
+
+        $data = [
+            'status' => 'paid',
+            'order_id' => $user->id.':NAARA-CM-SL',
+            'amount' => '20.00',
+            'currency' => 'USD',
+            'network' => 'TRON/TRC20',                         // <- contains a slash
+            'url_callback' => 'https://naara.test/webhooks/payments/cryptomus',
+        ];
+        // Canonical Cryptomus signing: escaped slashes (no JSON_UNESCAPED_SLASHES).
+        $sign = md5(base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE)).'apikey');
+        $body = json_encode($data + ['sign' => $sign]);
+
+        $this->postRaw('/webhooks/payments/cryptomus', $body)->assertOk();
+        $this->assertSame(1, WalletTransaction::where('reference', $this->balanceKey('cryptomus', 'NAARA-CM-SL'))->count());
+        $this->assertSame('20.0000', (string) $user->wallet->fresh()->usd_balance);
     }
 
     // ── CoinPayments ────────────────────────────────────────────────────────

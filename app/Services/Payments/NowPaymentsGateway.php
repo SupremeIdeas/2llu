@@ -64,9 +64,21 @@ class NowPaymentsGateway implements PaymentGatewayInterface
         }
 
         $sorted = $this->ksortRecursive($request->json()->all());
-        $expected = hash_hmac('sha512', json_encode($sorted, JSON_UNESCAPED_SLASHES), $secret);
 
-        return hash_equals($expected, $signature);
+        // NOWPayments' canonical Python signs the sorted JSON with compact
+        // separators and UNESCAPED slashes (json.dumps never escapes "/"), but
+        // their own WooCommerce PHP plugin re-encodes with slashes ESCAPED.
+        // Accept either — both are HMAC'd with the secret IPN key, so this can
+        // never weaken security, it only stops a valid credit being silently
+        // rejected on the slash-escaping nuance.
+        foreach ([JSON_UNESCAPED_SLASHES, 0] as $flags) {
+            $expected = hash_hmac('sha512', (string) json_encode($sorted, $flags), $secret);
+            if (hash_equals($expected, $signature)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function parseWebhook(Request $request): ?PaymentEvent

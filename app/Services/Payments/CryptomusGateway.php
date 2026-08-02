@@ -32,10 +32,20 @@ class CryptomusGateway implements PaymentGatewayInterface
         return rtrim((string) config('services.cryptomus.base_url', 'https://api.cryptomus.com'), '/');
     }
 
-    /** Cryptomus signs md5(base64_encode(json) . api_key) with unescaped JSON. */
-    private function sign(array $payload): string
+    /**
+     * Cryptomus signs md5(base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE)) . api_key)
+     * — per doc.cryptomus.com the canonical JSON escapes slashes (only
+     * JSON_UNESCAPED_UNICODE is set, NOT JSON_UNESCAPED_SLASHES). Getting this
+     * wrong silently breaks BOTH payment creation (the sign header we send
+     * carries url_callback/url_return, which are full of "/") and webhook
+     * verification (any payload with a "/"). $unescapedSlashes is only used as a
+     * defensive fallback when VERIFYING an inbound webhook, never when signing
+     * our own requests.
+     */
+    private function sign(array $payload, bool $unescapedSlashes = false): string
     {
-        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $flags = JSON_UNESCAPED_UNICODE | ($unescapedSlashes ? JSON_UNESCAPED_SLASHES : 0);
+        $json = json_encode($payload, $flags);
 
         return md5(base64_encode($json).(string) config('services.cryptomus.api_key'));
     }
@@ -78,7 +88,12 @@ class CryptomusGateway implements PaymentGatewayInterface
         }
         unset($data['sign']);
 
-        return hash_equals($this->sign($data), $signature);
+        // Match the documented (slash-escaped) canonical, and defensively also
+        // accept the unescaped-slash variant — both are derived from the secret
+        // api_key, so accepting either never weakens security, it only prevents
+        // a valid credit from being silently rejected on a serialization nuance.
+        return hash_equals($this->sign($data), $signature)
+            || hash_equals($this->sign($data, unescapedSlashes: true), $signature);
     }
 
     public function parseWebhook(Request $request): ?PaymentEvent
