@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
  * on the wire; normalised to major units here. Webhook signature is
  * HMAC-SHA512 of the raw body with the secret key (header x-paystack-signature).
  */
-class PaystackGateway implements PaymentGatewayInterface, RefundableGateway
+class PaystackGateway implements DisputeAwareGateway, PaymentGatewayInterface, RefundableGateway
 {
     public function name(): string
     {
@@ -87,6 +87,42 @@ class PaystackGateway implements PaymentGatewayInterface, RefundableGateway
         $expected = hash_hmac('sha512', $request->getContent(), $secret);
 
         return hash_equals($expected, $signature);
+    }
+
+    /**
+     * Dispute/chargeback events (BUILD-2 §7.2). Paystack sends
+     * charge.dispute.create when one is logged and charge.dispute.resolve on
+     * resolution — data.resolution "merchant-accepted" (or a refund_amount)
+     * means we lost, otherwise we kept the money. Returns null for anything
+     * else (e.g. charge.dispute.remind) so the normal path is untouched.
+     */
+    public function parseDispute(Request $request): ?DisputeEvent
+    {
+        $event = (string) $request->input('event');
+        if (! in_array($event, ['charge.dispute.create', 'charge.dispute.resolve'], true)) {
+            return null;
+        }
+
+        $data = $request->input('data', []);
+        $status = DisputeEvent::OPEN;
+        if ($event === 'charge.dispute.resolve') {
+            $lost = data_get($data, 'resolution') === 'merchant-accepted'
+                || (float) data_get($data, 'refund_amount', 0) > 0;
+            $status = $lost ? DisputeEvent::LOST : DisputeEvent::WON;
+        }
+
+        // The disputed amount is in kobo on the transaction (fallback refund_amount).
+        $amount = (float) (data_get($data, 'transaction.amount') ?? data_get($data, 'refund_amount', 0)) / 100;
+
+        return new DisputeEvent(
+            gateway: $this->name(),
+            providerDisputeId: (string) data_get($data, 'id', ''),
+            reference: (string) (data_get($data, 'transaction.reference') ?? data_get($data, 'transaction_reference') ?? ''),
+            amount: $amount,
+            currency: strtoupper((string) (data_get($data, 'transaction.currency') ?? 'NGN')),
+            status: $status,
+            raw: $request->all(),
+        );
     }
 
     public function parseWebhook(Request $request): ?PaymentEvent

@@ -230,6 +230,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/gift-cards', \App\Livewire\Admin\GiftCards::class)->name('gift-cards');
             Route::get('/developer-api', \App\Livewire\Admin\DeveloperApi::class)->name('developer-api');
             Route::get('/payouts', \App\Livewire\Admin\Payouts::class)->name('payouts');
+            Route::get('/refunds', \App\Livewire\Admin\Refunds::class)->name('refunds');
             Route::get('/kyc', \App\Livewire\Admin\KycReview::class)->name('kyc');
             Route::get('/merchants', \App\Livewire\Admin\Merchants::class)->name('merchants');
             Route::get('/partners', \App\Livewire\Admin\Partners::class)->name('partners');

@@ -37,11 +37,25 @@ no credit; and **(b)** the **queue worker/cron must run** on the cPanel host. Th
 admin dashboard's env-guard banner already warns if the queue is misconfigured.
 Frank: verify both on the live host.
 
-### Flagged but not yet built (the payments follow-up — money-moving, do with care)
-- **Admin-triggered refunds** for all nine gateways (reverse the wallet ledger
-  atomically, fully audited). Confirm each provider's current refund API first.
-- **Dispute/chargeback webhooks** (Stripe/Paystack/Flutterwave/PayPal): flag the
-  txn, **freeze the disputed amount from withdrawal**, alert via `AlertAdminJob`.
+### Refunds & disputes — built 2026-08-02 (BUILD-2 §7)
+- **Admin-triggered refunds** (Admin → Payments → Refunds & Disputes):
+  `RefundService` is provider-first, ledger-reversing, idempotent, and refuses to
+  refund already-spent funds (no silent loss). `RefundableGateway` contract wired
+  for **Paystack**; the other card gateways drop in by implementing it (Stripe,
+  Flutterwave, PayPal endpoints noted in docs/PAYMENT-GATEWAYS.md). Crypto →
+  manual task + alert.
+- **Dispute/chargeback handling**: `DisputeService` freezes the disputed amount
+  from the wallet on open (reserve earmark → unspendable + unwithdrawable),
+  releases on win, releases + debits on loss; idempotent. Wired for **Paystack**
+  via the shared signed webhook; `DisputeAwareGateway::parseDispute` is the seam
+  for Stripe/Flutterwave/PayPal (payloads differ — verify each before wiring).
+  The USD reserve is the only wallet earmark, so non-USD disputes are recorded +
+  alerted for manual handling.
+
+### Still flagged (the remaining payments follow-up — money-moving, do with care)
+- **Refund/dispute wiring for the other card gateways** (Stripe, Flutterwave,
+  PayPal) — the contracts + services exist; each gateway's refund call and
+  dispute payload need implementing + verifying against current docs.
 - **Full per-gateway admin schema** (§3): explicit sandbox/live toggle that swaps
   key set + base URL, webhook/callback URL copy buttons, and a "test connection"
   button. Today keys live in Provider Keys and test mode is *detected*, not

@@ -80,21 +80,41 @@ version against the provider's docs before wiring (this changes often).
 
 ---
 
-## Refunds & disputes (BUILD-2 §7) — NOT YET IMPLEMENTED
+## Refunds & disputes (BUILD-2 §7)
 
-No payment service class contains refund or dispute logic yet. This is real
-financial exposure and is the primary payments follow-up. When built:
+**Refunds — built.** Admin → Payments → **Refunds & Disputes** lists wallet
+top-ups with a Refund action, handled by `RefundService`:
+- Provider-first: the gateway refund must succeed **before** the wallet is
+  touched, so we never remove funds without the money going back.
+- Ledger discipline: the reversal is a `debit` `wallet_transactions` row (never a
+  direct decrement), fully audited (who/when/how much/why), idempotent (a top-up
+  refunds at most once).
+- Never a silent loss: a refund is **refused** if the user already spent the
+  funds (resolve manually) rather than pushing the wallet negative.
+- The gateway call is behind a `RefundableGateway` contract. **Paystack** is
+  wired (`POST /refund` by reference). The other card gateways are added by
+  implementing the same contract — Stripe `POST /v1/refunds` (payment_intent /
+  charge, partial via `amount`), Flutterwave `POST /v3/transactions/{id}/refund`
+  (needs the numeric txn id captured at webhook time), PayPal
+  `/v2/payments/captures/{id}/refund`. Crypto rails are irreversible → recorded
+  as a **manual** task + admin alert, never auto-moved.
 
-- **Admin refund** per transaction → call the gateway's refund endpoint (confirm
-  each provider's current API + sync/async behaviour first), then reverse the
-  wallet ledger **atomically** (a `refund`-type `wallet_transactions` row, never
-  a direct decrement), fully audited (who/when/how much/why).
-- **Dispute/chargeback webhooks** (Stripe `charge.dispute.created`, Paystack
-  `charge.dispute.create`, Flutterwave, PayPal) → flag the transaction, **freeze
-  the disputed amount from withdrawal**, and alert via the existing
-  `AlertAdminJob` (same pattern as the provider low-balance alerts).
-- Per-gateway terms to capture when implementing: partial-refund support,
-  dispute-response window, dispute-loss fee.
+**Disputes / chargebacks — built.** The same signed webhook endpoint handles
+dispute events (`DisputeService`):
+- On open → **freeze** the disputed amount from the wallet (a `reserve` earmark,
+  so it can be neither spent nor withdrawn while contested) and alert.
+- On resolution → release the earmark (won), or release then **debit** it (lost /
+  charged back). Idempotent per `(gateway, provider_dispute_id)`.
+- The wallet earmark is USD-only, so non-USD disputes are recorded + alerted for
+  manual handling rather than pretending to freeze.
+- **Paystack** is wired (`charge.dispute.create` / `charge.dispute.resolve`;
+  `resolution=merchant-accepted` or a `refund_amount` ⇒ lost). Stripe
+  (`charge.dispute.created` / `charge.dispute.closed`), Flutterwave and PayPal
+  dispute webhooks are added by implementing `DisputeAwareGateway::parseDispute`
+  for each (their payloads differ; verify each before wiring).
+
+Per-gateway terms to capture when adding each: partial-refund support,
+dispute-response window, dispute-loss fee.
 
 ---
 

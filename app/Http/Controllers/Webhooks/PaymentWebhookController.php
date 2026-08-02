@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\CreditWalletJob;
+use App\Models\TopUpIntent;
 use App\Models\WebhookLog;
+use App\Services\Payments\DisputeAwareGateway;
+use App\Services\Payments\DisputeService;
 use App\Services\Payments\PaymentGatewayInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,13 +54,23 @@ class PaymentWebhookController extends Controller
             return response()->json(['ok' => false, 'error' => 'invalid signature'], 401);
         }
 
+        // Dispute/chargeback events (BUILD-2 §7.2) share the same signed webhook
+        // endpoint — handle them (freeze funds + alert) before the payment path.
+        if ($svc instanceof DisputeAwareGateway
+            && ($dispute = $svc->parseDispute($request)) !== null) {
+            app(DisputeService::class)->handle($dispute);
+            $log->update(['processed' => true, 'processed_at' => now()]);
+
+            return response()->json(['ok' => true]);
+        }
+
         $event = $svc->parseWebhook($request);
         if ($event !== null && $event->isSuccessful() && $event->userId !== null) {
             // Local-currency deposit: if the user paid in a non-USD/NGN currency,
             // credit the USD amount LOCKED at initiation (TopUpIntent) — never the
             // gateway's reported figure — so the wallet is credited exactly what we
             // quoted. USD/NGN deposits have no intent and credit as reported.
-            $intent = \App\Models\TopUpIntent::where('gateway', $event->gateway)
+            $intent = TopUpIntent::where('gateway', $event->gateway)
                 ->where('reference', $event->reference)->first();
 
             [$amount, $currency] = $intent
