@@ -144,8 +144,9 @@
                             <div class="mt-2 grid max-h-56 grid-cols-1 gap-2 overflow-y-auto pr-1">
                                 @foreach ($countries as $slug => $label)
                                     <button type="button" wire:click="chooseCountry('{{ $slug }}')" wire:key="country-{{ $slug }}"
+                                            wire:loading.attr="disabled"
                                             x-show="cq === '' || '{{ Str::lower($label) }}'.includes(cq.toLowerCase())"
-                                            class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left text-sm text-slate-800 transition hover:border-primary hover:bg-primary/5 dark:border-[#2D4060] dark:bg-[#182742] dark:text-slate-100 dark:hover:border-primary">
+                                            class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left text-sm text-slate-800 transition hover:border-primary hover:bg-primary/5 disabled:opacity-60 dark:border-[#2D4060] dark:bg-[#182742] dark:text-slate-100 dark:hover:border-primary">
                                         <x-country-flag :country="$slug" class="h-4 w-6 shrink-0" wire:key="wflag-{{ $slug }}" />
                                         {{ $label }}
                                     </button>

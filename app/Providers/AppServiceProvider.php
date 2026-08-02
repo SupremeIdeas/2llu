@@ -2,11 +2,91 @@
 
 namespace App\Providers;
 
+use App\Events\PayoutReversed;
+use App\Listeners\ReturnMerchantEarnings;
+use App\Listeners\ReturnPartnerEarnings;
+use App\Listeners\ReturnWithdrawnCredits;
+use App\Models\Banner;
+use App\Models\NumbersBentoCard;
+use App\Models\Setting;
+use App\Notifications\Channels\WebPushChannel;
+use App\Services\eSIM\AiraloService;
+use App\Services\eSIM\EsimGoService;
+use App\Services\eSIM\GigsService;
+use App\Services\eSIM\MontyMobileService;
+use App\Services\eSIM\OneGlobalService;
+use App\Services\eSIM\QuibityService;
+use App\Services\eSIM\ZenditService;
+use App\Services\Kyc\DojahKycProvider;
+use App\Services\Kyc\KycService;
+use App\Services\Kyc\ManualKycProvider;
+use App\Services\Kyc\SmileIdKycProvider;
+use App\Services\Maintenance\ClaudeFixProposer;
+use App\Services\Maintenance\Contracts\CodeHostClient;
+use App\Services\Maintenance\Contracts\FixProposer;
+use App\Services\Maintenance\GitHubCodeHostClient;
+use App\Services\Payments\BinancePayGateway;
+use App\Services\Payments\CoinPaymentsGateway;
+use App\Services\Payments\CryptomusGateway;
+use App\Services\Payments\FlutterwaveGateway;
+use App\Services\Payments\NowPaymentsGateway;
+use App\Services\Payments\PaypalGateway;
+use App\Services\Payments\PayssionGateway;
+use App\Services\Payments\PaystackGateway;
+use App\Services\Payments\StripeGateway;
+use App\Services\Payouts\FlutterwaveBankResolver;
+use App\Services\Payouts\FlutterwavePayoutGateway;
+use App\Services\Payouts\PayoutAccountService;
+use App\Services\Payouts\PayoutService;
+use App\Services\Payouts\PaystackBankResolver;
+use App\Services\Payouts\PaystackPayoutGateway;
+use App\Services\Pricing\PricingEngine;
+use App\Services\Push\MinishlinkPushSender;
+use App\Services\Push\WebPushSender;
+use App\Services\SMS\FiveSimService;
+use App\Services\SMS\GetatextService;
+use App\Services\SMS\HeroSmsService;
+use App\Services\SMS\Numbers\TelnyxService;
+use App\Services\SMS\Numbers\TwilioService;
+use App\Services\SMS\VirtSmsService;
+use App\Services\Support\ClaudeChatModel;
+use App\Services\Support\Contracts\ChatModel;
+use App\Services\Support\Contracts\VoiceSynthesizer;
+use App\Services\Support\ElevenLabsVoice;
+use App\Services\Wallet\WalletService;
+use App\Support\Banners;
+use App\Support\BrandSettings;
+use App\Support\CreditSettings;
+use App\Support\EsimHeroContent;
+use App\Support\FeatureFlags;
+use App\Support\Geo\CloudflareGeoResolver;
+use App\Support\Geo\GeoResolver;
+use App\Support\HeroBackground;
+use App\Support\IconOverrides;
+use App\Support\Installer;
+use App\Support\LegalContent;
+use App\Support\MailSettings;
+use App\Support\MediaStorage;
+use App\Support\NumberCatalogue;
+use App\Support\NumbersBento;
+use App\Support\NumbersHeroContent;
+use App\Support\ProviderKeys;
+use App\Support\SecuritySettings;
+use App\Support\ServiceIcons;
+use App\Support\SiteChrome;
+use App\Support\SiteContent;
+use App\Support\SplashSettings;
+use App\Support\SupportAutopilot;
+use App\Support\SupportSettings;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use SocialiteProviders\Apple\Provider;
+use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,109 +99,109 @@ class AppServiceProvider extends ServiceProvider
         // seed an APP_KEY (else the encrypting middleware 500s with no .env) and
         // force file-based session/cache (else StartSession queries a database
         // that doesn't exist yet). Both no-op once the app is installed.
-        \App\Support\Installer::bootstrapKey();
-        \App\Support\Installer::useSafeDriversUntilInstalled();
+        Installer::bootstrapKey();
+        Installer::useSafeDriversUntilInstalled();
 
         // PricingEngine is the single owner of all price math (blueprint 1.4).
-        $this->app->singleton(\App\Services\Pricing\PricingEngine::class);
+        $this->app->singleton(PricingEngine::class);
 
         // WalletService is the single owner of wallet balance changes (1.2).
-        $this->app->singleton(\App\Services\Wallet\WalletService::class);
+        $this->app->singleton(WalletService::class);
 
         // eSIM providers, resolved by name via app("esim.$provider") — one
         // interface, one router (blueprint Section 5.1). Swappable by design.
-        $this->app->singleton('esim.esimgo', \App\Services\eSIM\EsimGoService::class);
-        $this->app->singleton('esim.airalo', \App\Services\eSIM\AiraloService::class);
-        $this->app->singleton('esim.quibity', \App\Services\eSIM\QuibityService::class);
+        $this->app->singleton('esim.esimgo', EsimGoService::class);
+        $this->app->singleton('esim.airalo', AiraloService::class);
+        $this->app->singleton('esim.quibity', QuibityService::class);
         // Full-eSIM providers (Naara Connect: calls + data). Zendit also serves
         // plain data eSIMs, so it doubles as a data-lane backup.
-        $this->app->singleton('esim.zendit', \App\Services\eSIM\ZenditService::class);
-        $this->app->singleton('esim.oneglobal', \App\Services\eSIM\OneGlobalService::class);
-        $this->app->singleton('esim.montymobile', \App\Services\eSIM\MontyMobileService::class);
-        $this->app->singleton('esim.gigs', \App\Services\eSIM\GigsService::class);
+        $this->app->singleton('esim.zendit', ZenditService::class);
+        $this->app->singleton('esim.oneglobal', OneGlobalService::class);
+        $this->app->singleton('esim.montymobile', MontyMobileService::class);
+        $this->app->singleton('esim.gigs', GigsService::class);
 
         // Number providers, resolved by name via app("number.$provider").
         // OTP/rental lane (SmsProviderInterface): Getatext (US), 5sim (global),
         // HeroSMS (SMS-Activate successor — full rent), VirtSMS (fallback).
         // Permanent lane (NumberProviderInterface): Twilio (primary), Telnyx
         // (backup). Router never crosses lanes (S11).
-        $this->app->singleton('number.getatext', \App\Services\SMS\GetatextService::class);
-        $this->app->singleton('number.fivesim', \App\Services\SMS\FiveSimService::class);
-        $this->app->singleton('number.herosms', \App\Services\SMS\HeroSmsService::class);
-        $this->app->singleton('number.virtsms', \App\Services\SMS\VirtSmsService::class);
-        $this->app->singleton('number.twilio', \App\Services\SMS\Numbers\TwilioService::class);
-        $this->app->singleton('number.telnyx', \App\Services\SMS\Numbers\TelnyxService::class);
+        $this->app->singleton('number.getatext', GetatextService::class);
+        $this->app->singleton('number.fivesim', FiveSimService::class);
+        $this->app->singleton('number.herosms', HeroSmsService::class);
+        $this->app->singleton('number.virtsms', VirtSmsService::class);
+        $this->app->singleton('number.twilio', TwilioService::class);
+        $this->app->singleton('number.telnyx', TelnyxService::class);
 
         // Web-push sender (self-hosted VAPID) — swapped for a fake in tests.
-        $this->app->bind(\App\Services\Push\WebPushSender::class, \App\Services\Push\MinishlinkPushSender::class);
+        $this->app->bind(WebPushSender::class, MinishlinkPushSender::class);
 
         // Geo resolver for the admin country allow-list — Cloudflare header by
         // default (zero dependency); a deployer can bind a GeoLite2/API resolver.
-        $this->app->bind(\App\Support\Geo\GeoResolver::class, \App\Support\Geo\CloudflareGeoResolver::class);
+        $this->app->bind(GeoResolver::class, CloudflareGeoResolver::class);
 
         // Payment gateways, resolved by name via app("pay.$gateway").
-        $this->app->singleton('pay.flutterwave', \App\Services\Payments\FlutterwaveGateway::class);
-        $this->app->singleton('pay.paystack', \App\Services\Payments\PaystackGateway::class);
-        $this->app->singleton('pay.stripe', \App\Services\Payments\StripeGateway::class);
-        $this->app->singleton('pay.paypal', \App\Services\Payments\PaypalGateway::class);
-        $this->app->singleton('pay.binance', \App\Services\Payments\BinancePayGateway::class);
-        $this->app->singleton('pay.nowpayments', \App\Services\Payments\NowPaymentsGateway::class);
-        $this->app->singleton('pay.cryptomus', \App\Services\Payments\CryptomusGateway::class);
-        $this->app->singleton('pay.coinpayments', \App\Services\Payments\CoinPaymentsGateway::class);
-        $this->app->singleton('pay.payssion', \App\Services\Payments\PayssionGateway::class);
+        $this->app->singleton('pay.flutterwave', FlutterwaveGateway::class);
+        $this->app->singleton('pay.paystack', PaystackGateway::class);
+        $this->app->singleton('pay.stripe', StripeGateway::class);
+        $this->app->singleton('pay.paypal', PaypalGateway::class);
+        $this->app->singleton('pay.binance', BinancePayGateway::class);
+        $this->app->singleton('pay.nowpayments', NowPaymentsGateway::class);
+        $this->app->singleton('pay.cryptomus', CryptomusGateway::class);
+        $this->app->singleton('pay.coinpayments', CoinPaymentsGateway::class);
+        $this->app->singleton('pay.payssion', PayssionGateway::class);
 
         // Payout account resolution (ROADMAP §Layer 0.1). Paystack first for its
         // markets, Flutterwave as the wider-net resolver. Injected as a list so
         // tests can drive the service with fakes.
-        $this->app->singleton(\App\Services\Payouts\PayoutAccountService::class, fn ($app) => new \App\Services\Payouts\PayoutAccountService([
-            $app->make(\App\Services\Payouts\PaystackBankResolver::class),
-            $app->make(\App\Services\Payouts\FlutterwaveBankResolver::class),
+        $this->app->singleton(PayoutAccountService::class, fn ($app) => new PayoutAccountService([
+            $app->make(PaystackBankResolver::class),
+            $app->make(FlutterwaveBankResolver::class),
         ]));
 
         // Payout (money-out) gateways, resolved by name via app("payout.$provider"),
         // and the engine that owns the withdrawal lifecycle (ROADMAP §Layer 0.2).
-        $this->app->singleton('payout.paystack', \App\Services\Payouts\PaystackPayoutGateway::class);
-        $this->app->singleton('payout.flutterwave', \App\Services\Payouts\FlutterwavePayoutGateway::class);
-        $this->app->singleton(\App\Services\Payouts\PayoutService::class, fn ($app) => new \App\Services\Payouts\PayoutService([
-            $app->make(\App\Services\Payouts\PaystackPayoutGateway::class),
-            $app->make(\App\Services\Payouts\FlutterwavePayoutGateway::class),
+        $this->app->singleton('payout.paystack', PaystackPayoutGateway::class);
+        $this->app->singleton('payout.flutterwave', FlutterwavePayoutGateway::class);
+        $this->app->singleton(PayoutService::class, fn ($app) => new PayoutService([
+            $app->make(PaystackPayoutGateway::class),
+            $app->make(FlutterwavePayoutGateway::class),
         ]));
 
         // KYC/identity providers, resolved by name via app("kyc.$provider"), and
         // the service that owns verification state (ROADMAP §Layer 0.3). Manual
         // review is the always-available fallback.
-        $this->app->singleton('kyc.manual', \App\Services\Kyc\ManualKycProvider::class);
-        $this->app->singleton('kyc.smileid', \App\Services\Kyc\SmileIdKycProvider::class);
-        $this->app->singleton('kyc.dojah', \App\Services\Kyc\DojahKycProvider::class);
-        $this->app->singleton(\App\Services\Kyc\KycService::class, fn ($app) => new \App\Services\Kyc\KycService([
-            $app->make(\App\Services\Kyc\ManualKycProvider::class),
-            $app->make(\App\Services\Kyc\SmileIdKycProvider::class),
-            $app->make(\App\Services\Kyc\DojahKycProvider::class),
+        $this->app->singleton('kyc.manual', ManualKycProvider::class);
+        $this->app->singleton('kyc.smileid', SmileIdKycProvider::class);
+        $this->app->singleton('kyc.dojah', DojahKycProvider::class);
+        $this->app->singleton(KycService::class, fn ($app) => new KycService([
+            $app->make(ManualKycProvider::class),
+            $app->make(SmileIdKycProvider::class),
+            $app->make(DojahKycProvider::class),
         ]));
 
         // Claude-assisted maintenance loop (blueprint Section 29). Bound to the
         // production clients by default; both are gated on config and report
         // unavailable until configured. Tests swap in fakes.
         $this->app->bind(
-            \App\Services\Maintenance\Contracts\FixProposer::class,
-            \App\Services\Maintenance\ClaudeFixProposer::class,
+            FixProposer::class,
+            ClaudeFixProposer::class,
         );
         $this->app->bind(
-            \App\Services\Maintenance\Contracts\CodeHostClient::class,
-            \App\Services\Maintenance\GitHubCodeHostClient::class,
+            CodeHostClient::class,
+            GitHubCodeHostClient::class,
         );
 
         // NaaraCare AI support agent (Module 24). Prod impl calls the Anthropic
         // Messages API with tool-use, gated on the key; tests inject a fake.
         $this->app->bind(
-            \App\Services\Support\Contracts\ChatModel::class,
-            \App\Services\Support\ClaudeChatModel::class,
+            ChatModel::class,
+            ClaudeChatModel::class,
         );
 
         // Support voice (Module 25) — ElevenLabs in prod; faked in tests.
         $this->app->bind(
-            \App\Services\Support\Contracts\VoiceSynthesizer::class,
-            \App\Services\Support\ElevenLabsVoice::class,
+            VoiceSynthesizer::class,
+            ElevenLabsVoice::class,
         );
     }
 
@@ -130,6 +210,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Livewire stores EVERY file upload to a temporary disk before any app
+        // code runs, defaulting to filesystems.default. With FILESYSTEM_DISK set
+        // to an unconfigured Wasabi, that temp store throws before MediaStorage's
+        // Wasabi-or-local fallback can help — silently breaking every upload
+        // sitewide (KYC docs, avatars, chat attachments, admin art). Pin the temp
+        // disk to the SAME resolution MediaStorage uses, evaluated live at boot so
+        // it keeps working with zero Wasabi keys and upgrades automatically once
+        // keys are present. (Not a static .env value — that's the footgun.)
+        config(['livewire.temporary_file_upload.disk' => MediaStorage::disk()]);
+
         // Blueprint Section 3.1: super_admin bypasses every authorization gate.
         // Admins can only assign roles below their own (enforced per-action later).
         Gate::before(function ($user, string $ability) {
@@ -138,37 +228,37 @@ class AppServiceProvider extends ServiceProvider
 
         // Self-hosted web-push channel, addressable as 'webpush' in a
         // notification's via() (owner request — closed-tab notifications).
-        \Illuminate\Support\Facades\Notification::extend(
+        Notification::extend(
             'webpush',
-            fn ($app) => new \App\Notifications\Channels\WebPushChannel,
+            fn ($app) => new WebPushChannel,
         );
 
         // A reversed/failed credit withdrawal returns the held credits
         // (ROADMAP §Layer 1). Registered explicitly so it fires regardless of
         // listener auto-discovery.
-        \Illuminate\Support\Facades\Event::listen(
-            \App\Events\PayoutReversed::class,
-            \App\Listeners\ReturnWithdrawnCredits::class,
+        Event::listen(
+            PayoutReversed::class,
+            ReturnWithdrawnCredits::class,
         );
 
         // A reversed/failed merchant-earnings withdrawal returns the held
         // earnings to the merchant bucket (ROADMAP §Layer 3.4).
-        \Illuminate\Support\Facades\Event::listen(
-            \App\Events\PayoutReversed::class,
-            \App\Listeners\ReturnMerchantEarnings::class,
+        Event::listen(
+            PayoutReversed::class,
+            ReturnMerchantEarnings::class,
         );
 
         // Same, for a reversed partner profit-share payout.
-        \Illuminate\Support\Facades\Event::listen(
-            \App\Events\PayoutReversed::class,
-            \App\Listeners\ReturnPartnerEarnings::class,
+        Event::listen(
+            PayoutReversed::class,
+            ReturnPartnerEarnings::class,
         );
 
         // Extend Socialite with the extra sign-in providers (owner request).
         // Google/Facebook/Twitter are core drivers; Apple/Microsoft/Discord are
         // registered here via their SocialiteProviders packages.
-        \Illuminate\Support\Facades\Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
-            $event->extendSocialite('apple', \SocialiteProviders\Apple\Provider::class);
+        Event::listen(function (SocialiteWasCalled $event) {
+            $event->extendSocialite('apple', Provider::class);
             $event->extendSocialite('microsoft', \SocialiteProviders\Microsoft\Provider::class);
             $event->extendSocialite('discord', \SocialiteProviders\Discord\Provider::class);
         });
@@ -177,78 +267,78 @@ class AppServiceProvider extends ServiceProvider
         // service keeps reading config('services.*') unchanged and providers
         // flip Active the moment a key is saved (blueprint Section 17.4, money
         // rule 10). Runs every request/job; degrades to .env pre-install.
-        \App\Support\ProviderKeys::applyToConfig();
+        ProviderKeys::applyToConfig();
 
         // Same overlay for admin-managed outgoing-mail config (Module 22): the
         // operator sets the mailer + SMTP creds + "from" identity in the panel,
         // and every Mailable/Notification picks them up with no .env editing.
-        \App\Support\MailSettings::applyToConfig();
+        MailSettings::applyToConfig();
 
         // Custom-icon overrides are cached; bust that cache when the mapping
         // setting changes (blueprint Section 16.3).
-        \App\Models\Setting::saved(function (\App\Models\Setting $setting) {
+        Setting::saved(function (Setting $setting) {
             if ($setting->key === 'ui.icon_overrides') {
-                \App\Support\IconOverrides::flush();
+                IconOverrides::flush();
             }
-            if (\App\Support\SplashSettings::isSplashKey($setting->key)) {
-                \App\Support\SplashSettings::flush();
+            if (SplashSettings::isSplashKey($setting->key)) {
+                SplashSettings::flush();
             }
-            if (\App\Support\SecuritySettings::isSecurityKey($setting->key)) {
-                \App\Support\SecuritySettings::flush();
+            if (SecuritySettings::isSecurityKey($setting->key)) {
+                SecuritySettings::flush();
             }
-            if (\App\Support\ProviderKeys::isProviderKey($setting->key)) {
-                \App\Support\ProviderKeys::flush();
+            if (ProviderKeys::isProviderKey($setting->key)) {
+                ProviderKeys::flush();
             }
-            if (\App\Support\MailSettings::isMailKey($setting->key)) {
-                \App\Support\MailSettings::flush();
+            if (MailSettings::isMailKey($setting->key)) {
+                MailSettings::flush();
             }
-            if (\App\Support\SupportSettings::isSupportKey($setting->key)) {
-                \App\Support\SupportSettings::flush();
+            if (SupportSettings::isSupportKey($setting->key)) {
+                SupportSettings::flush();
             }
-            if (\App\Support\SupportAutopilot::isAutopilotKey($setting->key)) {
-                \App\Support\SupportAutopilot::flush();
+            if (SupportAutopilot::isAutopilotKey($setting->key)) {
+                SupportAutopilot::flush();
             }
-            if (\App\Support\BrandSettings::isBrandKey($setting->key)) {
-                \App\Support\BrandSettings::flush();
+            if (BrandSettings::isBrandKey($setting->key)) {
+                BrandSettings::flush();
             }
-            if (\App\Support\HeroBackground::isHeroKey($setting->key)) {
-                \App\Support\HeroBackground::flush();
+            if (HeroBackground::isHeroKey($setting->key)) {
+                HeroBackground::flush();
             }
-            if (\App\Support\FeatureFlags::isFeatureKey($setting->key)) {
-                \App\Support\FeatureFlags::flush();
+            if (FeatureFlags::isFeatureKey($setting->key)) {
+                FeatureFlags::flush();
             }
-            if (\App\Support\EsimHeroContent::isHeroKey($setting->key)) {
-                \App\Support\EsimHeroContent::flush();
+            if (EsimHeroContent::isHeroKey($setting->key)) {
+                EsimHeroContent::flush();
             }
-            if (\App\Support\NumbersHeroContent::isHeroKey($setting->key)) {
-                \App\Support\NumbersHeroContent::flush();
+            if (NumbersHeroContent::isHeroKey($setting->key)) {
+                NumbersHeroContent::flush();
             }
-            if (\App\Support\SiteContent::isSiteKey($setting->key)) {
-                \App\Support\SiteContent::flush();
+            if (SiteContent::isSiteKey($setting->key)) {
+                SiteContent::flush();
             }
-            if (\App\Support\NumberCatalogue::isCatalogueKey($setting->key)) {
-                \App\Support\NumberCatalogue::flush();
+            if (NumberCatalogue::isCatalogueKey($setting->key)) {
+                NumberCatalogue::flush();
             }
-            if (\App\Support\ServiceIcons::isServiceIconKey($setting->key)) {
-                \App\Support\ServiceIcons::flush();
+            if (ServiceIcons::isServiceIconKey($setting->key)) {
+                ServiceIcons::flush();
             }
-            if (\App\Support\SiteChrome::isChromeKey($setting->key)) {
-                \App\Support\SiteChrome::flush();
+            if (SiteChrome::isChromeKey($setting->key)) {
+                SiteChrome::flush();
             }
-            if (\App\Support\LegalContent::isLegalKey($setting->key)) {
-                \App\Support\LegalContent::flush();
+            if (LegalContent::isLegalKey($setting->key)) {
+                LegalContent::flush();
             }
-            if (\App\Support\CreditSettings::isCreditKey($setting->key)) {
-                \App\Support\CreditSettings::flush();
+            if (CreditSettings::isCreditKey($setting->key)) {
+                CreditSettings::flush();
             }
         });
 
         // Banner cache follows the Banner model itself (Module 31).
-        \App\Models\NumbersBentoCard::saved(fn () => \App\Support\NumbersBento::flush());
-        \App\Models\NumbersBentoCard::deleted(fn () => \App\Support\NumbersBento::flush());
+        NumbersBentoCard::saved(fn () => NumbersBento::flush());
+        NumbersBentoCard::deleted(fn () => NumbersBento::flush());
 
-        \App\Models\Banner::saved(fn () => \App\Support\Banners::flush());
-        \App\Models\Banner::deleted(fn () => \App\Support\Banners::flush());
+        Banner::saved(fn () => Banners::flush());
+        Banner::deleted(fn () => Banners::flush());
 
         // Rate limits (blueprint Section 19.2): 300/min authenticated, 60/min
         // public; 10/min for order actions (enforced in the checkout components).

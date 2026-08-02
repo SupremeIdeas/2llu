@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
+use App\Providers\AppServiceProvider;
 use App\Support\MediaStorage;
+use Database\Seeders\DefaultAdminSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -30,6 +33,26 @@ class MediaStorageTest extends TestCase
 
         $this->assertTrue(MediaStorage::wasabiConfigured());
         $this->assertSame('wasabi', MediaStorage::disk());
+    }
+
+    public function test_livewire_temp_upload_disk_follows_the_wasabi_or_local_resolution(): void
+    {
+        // The root cause of "uploads fail sitewide when Wasabi keys are unset":
+        // Livewire stores every upload to a temp disk BEFORE MediaStorage runs.
+        // AppServiceProvider::boot() pins that temp disk to MediaStorage::disk(),
+        // so with zero Wasabi keys it is the local `public` disk (always works),
+        // and it upgrades to `wasabi` automatically once keys are present.
+        config(['filesystems.disks.wasabi.key' => null, 'filesystems.disks.wasabi.bucket' => null]);
+        (new AppServiceProvider($this->app))->boot();
+        $this->assertSame('public', config('livewire.temporary_file_upload.disk'));
+
+        config([
+            'filesystems.disks.wasabi.key' => 'k',
+            'filesystems.disks.wasabi.secret' => 's',
+            'filesystems.disks.wasabi.bucket' => 'b',
+        ]);
+        (new AppServiceProvider($this->app))->boot();
+        $this->assertSame('wasabi', config('livewire.temporary_file_upload.disk'));
     }
 
     public function test_stores_a_png_on_the_public_disk_and_returns_a_url(): void
@@ -85,7 +108,7 @@ class MediaStorageTest extends TestCase
     {
         $this->artisan('db:seed', ['--force' => true])->assertSuccessful();
 
-        $admin = \App\Models\User::where('email', \Database\Seeders\DefaultAdminSeeder::EMAIL)->first();
+        $admin = User::where('email', DefaultAdminSeeder::EMAIL)->first();
         $this->assertNotNull($admin);
         $this->assertTrue($admin->hasRole('super_admin'));
     }
