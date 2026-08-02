@@ -58,6 +58,40 @@ class PaymentWebhookTest extends TestCase
         $this->assertSame(1, WalletTransaction::where('reference', 'topup:paystack:NAARA-PS-1')->count());
     }
 
+    public function test_paystack_credit_is_queued_not_inline_and_drains_to_a_single_credit(): void
+    {
+        // BUILD-2 §2/§9: the credit MUST run as a queued job (so a slow credit
+        // never blocks the webhook 200), and the whole path must be exactly-once
+        // even across a retry. Force the real `database` queue (not sync) and
+        // prove: webhook 200 → job parked in the `jobs` table, wallet NOT yet
+        // credited → worker drains → wallet credited once, ledger row written →
+        // a retried delivery adds no second credit.
+        config(['services.paystack.secret_key' => 'sk_test_secret', 'queue.default' => 'database']);
+        $user = User::factory()->create();
+        $payload = $this->paystackPayload($user);
+        $sig = $this->paystackSign($payload);
+
+        $this->postRaw('/webhooks/payments/paystack', $payload, ['x-paystack-signature' => $sig])->assertOk();
+
+        // Queued, not run inline: a job is parked and nothing is credited yet.
+        $this->assertSame(1, \Illuminate\Support\Facades\DB::table('jobs')->count(), 'credit must be queued, not inline');
+        $this->assertNull($user->wallet, 'wallet must not be credited until the worker runs');
+
+        // Drain the queue (the scheduled `queue:work --stop-when-empty` path).
+        $this->artisan('queue:work', ['--stop-when-empty' => true])->assertExitCode(0);
+
+        // Credit landed: ledger row written, jobs table emptied.
+        $this->assertSame(1, WalletTransaction::where('reference', 'topup:paystack:NAARA-PS-1')->count());
+        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('jobs')->count());
+        $this->assertSame('5000.00', (string) $user->fresh()->wallet->ngn_balance);
+
+        // A retried delivery after the first credit adds no second credit.
+        $this->postRaw('/webhooks/payments/paystack', $payload, ['x-paystack-signature' => $sig])->assertOk();
+        $this->artisan('queue:work', ['--stop-when-empty' => true])->assertExitCode(0);
+        $this->assertSame(1, WalletTransaction::where('reference', 'topup:paystack:NAARA-PS-1')->count());
+        $this->assertSame('5000.00', (string) $user->fresh()->wallet->ngn_balance);
+    }
+
     public function test_paystack_invalid_signature_is_rejected_and_nothing_is_credited(): void
     {
         config(['services.paystack.secret_key' => 'sk_test_secret']);
