@@ -60,9 +60,13 @@ class FoundationTest extends TestCase
         $this->assertTrue(Gate::forUser($super)->allows('some-locked-ability'));
     }
 
-    public function test_wasabi_disk_is_configured_and_default(): void
+    public function test_default_disk_is_local_public_and_wasabi_is_configured_ready(): void
     {
-        $this->assertSame('wasabi', config('filesystems.default'));
+        // The default disk is the local `public` disk (BUILD-1 §4): a fresh
+        // install's uploads must work with ZERO Wasabi keys. Wasabi is opt-in —
+        // MediaStorage upgrades to it automatically once keys are present — but
+        // its disk stays fully configured so it's ready the moment keys land.
+        $this->assertSame('public', config('filesystems.default'));
         $this->assertSame('s3', config('filesystems.disks.wasabi.driver'));
         $this->assertSame('private', config('filesystems.disks.wasabi.visibility'));
     }
