@@ -219,4 +219,36 @@ class MerchantEarningsTest extends TestCase
         $this->assertSame(PayoutRequest::FAILED, $request->fresh()->status);
         $this->assertSame(10.0, app(MerchantEarningsService::class)->balance($m)); // returned
     }
+
+    // ── Deferred verification: payout-size KYB threshold (BUILD-4 §1.3) ────────
+
+    public function test_a_large_payout_clears_without_kyb_when_the_rule_is_off(): void
+    {
+        // The KYB-above-threshold rule ships OFF: a $600 payout (over the $500
+        // default) clears on the verified (KYC-L2) account alone.
+        Setting::setValue(PayoutSettings::FLAG, true, 'payouts');
+        $m = $this->merchant();
+        $customer = User::factory()->create(['merchant_id' => $m->id]);
+        app(MerchantEarningsService::class)->accrue($m, $customer, 'esim', 100.0, 700.0, 'earn:big'); // +600
+        $account = $this->ownerAccount($m);
+
+        $request = app(MerchantWithdrawalService::class)->request($m, $account, 600.0);
+
+        $this->assertSame('merchant_earnings', $request->source_bucket);
+    }
+
+    public function test_a_large_payout_requires_kyb_when_the_rule_is_on(): void
+    {
+        // Switch the rule on: over the threshold, an unverified (no L3) owner is
+        // blocked until they complete business KYB.
+        Setting::setValue(PayoutSettings::FLAG, true, 'payouts');
+        Setting::setValue(MerchantSettings::KYB_OVER_THRESHOLD, true, 'merchants');
+        $m = $this->merchant(); // owner has no L3
+        $customer = User::factory()->create(['merchant_id' => $m->id]);
+        app(MerchantEarningsService::class)->accrue($m, $customer, 'esim', 100.0, 700.0, 'earn:big2'); // +600
+        $account = $this->ownerAccount($m);
+
+        $this->expectException(\App\Services\Payouts\PayoutException::class);
+        app(MerchantWithdrawalService::class)->request($m, $account, 600.0); // > $500, no KYB
+    }
 }

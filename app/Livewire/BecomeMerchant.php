@@ -13,9 +13,11 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 /**
- * Customer path to becoming a merchant (ROADMAP §Layer 3.1). Two stages, shown
- * one at a time: (1) business (KYB / KYC L3) verification, then (2) the merchant
- * application. Admin approval activates the storefront and grants the role.
+ * Customer path to becoming a merchant (ROADMAP §Layer 3.1; BUILD-4 §1). Two
+ * stages: (1) unlock membership (spend / enrollment / referrals), then (2) the
+ * merchant application. Identity verification (KYB) is NO LONGER a front gate —
+ * it's deferred to payout time — so a user can set up a storefront and start
+ * earning first. Admin approval activates the storefront and grants the role.
  */
 #[Layout('components.layouts.customer')]
 class BecomeMerchant extends Component
@@ -96,8 +98,9 @@ class BecomeMerchant extends Component
         return view('livewire.become-merchant', [
             'programmeOpen' => MerchantSettings::enabled(),
             'kybVerified' => $kybVerified,
-            'kybAttempt' => $kyc->latest($user, KycVerification::L3),
-            'eligibility' => $kybVerified ? $merchants->eligibility($user) : null,
+            // Eligibility is computed independently of KYB now (§1) — a user can
+            // unlock and apply without any identity verification up front.
+            'eligibility' => $merchants->eligibility($user),
             'merchant' => Merchant::where('owner_user_id', $user->id)->latest('id')->first(),
         ]);
     }

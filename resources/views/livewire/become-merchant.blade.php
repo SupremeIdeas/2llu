@@ -12,20 +12,23 @@
         </div>
     @else
         @php($unlocked = $eligibility && $eligibility['eligible'])
-        {{-- Stepper --}}
+        {{-- Stepper — two steps now; identity verification is handled later, at
+             payout time (BUILD-4 §1), so it isn't a front step here. --}}
         <ol class="mt-6 flex items-center gap-2 text-xs font-semibold">
-            <li class="flex items-center gap-2 {{ $kybVerified ? 'text-primary' : 'text-slate-900 dark:text-slate-100' }}">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $kybVerified ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600 dark:bg-[#243352] dark:text-slate-300' }}">1</span> Verify identity
+            <li class="flex items-center gap-2 {{ $unlocked ? 'text-primary' : 'text-slate-900 dark:text-slate-100' }}">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $unlocked ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600 dark:bg-[#243352] dark:text-slate-300' }}">1</span> Unlock
             </li>
             <span class="h-px w-6 bg-slate-200 dark:bg-[#2D4060]"></span>
-            <li class="flex items-center gap-2 {{ $unlocked ? 'text-primary' : ($kybVerified ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400') }}">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $unlocked ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500 dark:bg-[#243352]' }}">2</span> Unlock
-            </li>
-            <span class="h-px w-6 bg-slate-200 dark:bg-[#2D4060]"></span>
-            <li class="flex items-center gap-2 {{ $merchant ? 'text-primary' : 'text-slate-400' }}">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $merchant ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500 dark:bg-[#243352]' }}">3</span> Apply
+            <li class="flex items-center gap-2 {{ $merchant ? 'text-primary' : ($unlocked ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400') }}">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $merchant ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500 dark:bg-[#243352]' }}">2</span> Apply
             </li>
         </ol>
+
+        {{-- Deferred-verification note (§1): no KYB up front. --}}
+        <div class="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500 dark:border-[#2D4060] dark:bg-[#152238] dark:text-slate-400">
+            <x-icon name="shield" class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <span>No verification needed to start. You'll confirm your identity later — only when you first cash out your earnings.</span>
+        </div>
 
         @if ($merchant && $merchant->status === 'active')
             <div class="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 dark:border-green-900/50 dark:bg-green-950/40">
@@ -37,47 +40,8 @@
                 <p class="font-semibold text-amber-800 dark:text-amber-300">Application under review</p>
                 <p class="mt-1 text-sm text-amber-700/80 dark:text-amber-400/80">We're reviewing <strong>{{ $merchant->business_name }}</strong>. You'll be notified once it's approved.</p>
             </div>
-        @elseif (! $kybVerified)
-            {{-- Stage 1: KYB --}}
-            <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
-                <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Verify your business identity</p>
-                @if ($kybAttempt && $kybAttempt->status === 'pending')
-                    <div class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">Your business details are being verified — this usually takes a little while.</div>
-                @else
-                    @if ($kybAttempt && $kybAttempt->status === 'rejected')
-                        <div class="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">We couldn't verify your business{{ $kybAttempt->reason ? ': '.$kybAttempt->reason : '.' }} Please try again.</div>
-                    @endif
-                    <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                        <div>
-                            <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Country</label>
-                            <select wire:model="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
-                                <option value="NG">Nigeria</option>
-                                <option value="GH">Ghana</option>
-                                <option value="KE">Kenya</option>
-                                <option value="ZA">South Africa</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Reg. type</label>
-                            <select wire:model="regType" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
-                                <option value="CAC">CAC / RC</option>
-                                <option value="TIN">TIN</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Reg. number</label>
-                            <input type="text" wire:model="regNumber" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
-                            @error('regNumber') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-                    <button type="button" wire:click="submitKyb" wire:loading.attr="disabled" wire:target="submitKyb"
-                            class="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
-                        <x-icon name="shield" class="h-4 w-4" /> Submit for verification
-                    </button>
-                @endif
-            </div>
         @elseif (! $unlocked)
-            {{-- Stage 2: unlock membership — meet ANY one path. --}}
+            {{-- Stage 1: unlock membership — meet ANY one path (§1: no KYB gate). --}}
             <div class="mt-6 space-y-3">
                 <p class="text-sm text-slate-500 dark:text-slate-400">Unlock membership by meeting <strong>any one</strong> of these:</p>
                 @if ($error)

@@ -2,12 +2,15 @@
 
 namespace App\Services\Merchants;
 
+use App\Models\KycVerification;
 use App\Models\Merchant;
 use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
+use App\Services\Kyc\KycService;
 use App\Services\Payouts\PayoutException;
 use App\Services\Payouts\PayoutService;
 use App\Services\Pricing\CurrencyService;
+use App\Support\MerchantSettings;
 use App\Support\PayoutSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -25,6 +28,7 @@ class MerchantWithdrawalService
         private MerchantEarningsService $earnings,
         private PayoutService $payouts,
         private CurrencyService $currency,
+        private KycService $kyc,
     ) {
     }
 
@@ -60,6 +64,9 @@ class MerchantWithdrawalService
         }
 
         $owner = $merchant->owner;
+        // Payout-time identity verification (BUILD-4 §1). A verified payout
+        // account already implies KYC-L2 (adding one is gated kyc:2); this is the
+        // deferred verification that replaced the old KYB-at-signup gate.
         if ($account->user_id !== $owner->id || ! $account->is_verified) {
             throw new PayoutException('Choose a verified payout account.');
         }
@@ -70,6 +77,17 @@ class MerchantWithdrawalService
         }
         if ($usd < PayoutSettings::minWithdrawal()) {
             throw new PayoutException('Below the minimum withdrawal of $'.number_format(PayoutSettings::minWithdrawal(), 2).'.');
+        }
+        // Larger single payouts can require full business KYB (L3) — an admin
+        // rule that ships dormant (§1.3) and is enforced only once switched on.
+        if (MerchantSettings::kybOverThresholdEnabled()
+            && $usd > MerchantSettings::kybThresholdUsd()
+            && ! $this->kyc->hasLevel($owner, KycVerification::L3)) {
+            throw new PayoutException(
+                'Business (KYB) verification is required to cash out more than $'
+                .number_format(MerchantSettings::kybThresholdUsd(), 2).' in one payout. '
+                .'Verify your business to continue, or withdraw a smaller amount.'
+            );
         }
 
         $currency = strtoupper($account->currency);

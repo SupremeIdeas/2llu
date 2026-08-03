@@ -6,6 +6,37 @@ exists and must not be removed again.
 
 ---
 
+## Merchant deferred-verification + merchant/rewards visuals (BUILD-4 start) — 2026-08-03
+
+### Done
+- **§1 — merchant KYB deferred to payout time.** Removed the KYB (KYC-L3) hard
+  gate from `MerchantService::apply()` — a user now becomes a merchant on
+  eligibility alone (spend / paid enrollment / referrals), no identity check up
+  front. `BecomeMerchant` + view dropped the blocking "Verify identity" stage
+  (now Unlock → Apply) and show a "you'll verify when you first cash out" note.
+  Verification is enforced at payout: `MerchantWithdrawalService` already requires
+  a verified (KYC-L2) payout account, and now optionally requires **business KYB
+  (L3) for a single payout above an admin threshold**. That rule ships **OFF**
+  (`merchants.kyb_over_threshold_enabled=false`, threshold `merchants.kyb_threshold_usd=$500`),
+  both editable on Admin → Merchants — the mechanism is ready but dormant until
+  Frank sets the compliance stance. **Open product decision:** the threshold
+  value / whether to enable it.
+  - Tests updated to the new flow (an eligible, unverified user can apply) + two
+    new payout tests (large payout clears with the rule off; blocked without KYB
+    when on). Full suite green (1018).
+- **Merchant/rewards/referral Lottie visuals.** Five dotLottie exports wired
+  through the existing `lottie-web` pipeline (V2 badge's bundled PNGs inlined as
+  data-URIs): refer-earn hero, merchant premium hero + V1/V2 tier badge chip
+  (contained so the medal can't overflow), rewards confetti on check-in.
+
+### Not yet built (BUILD-4 remaining, in order)
+- §2 globalize merchant country + registration type (+ a global KYB provider);
+  §3 visible V1/V2 pricing + referral-margin lock-in; §4 promotion tools; §5
+  payout-gate UI; §6 messaging entry points; §7 WhatsApp Autopilot; §8 payout
+  ranking; §9 App Builder compile backend; §10 preloader; §11 welcome screen.
+
+---
+
 ## eSIM region/country navigation + Control Center (BUILD-8) — 2026-08-03
 
 Executed against Frank's 22 real Airalo reference screenshots (not a placeholder

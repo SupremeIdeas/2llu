@@ -32,6 +32,11 @@ class Merchants extends Component
 
     public $upgradePrice = 125;
 
+    // Deferred-verification payout rule (BUILD-4 §1.3) — mechanism ships off.
+    public $kybThreshold = 500;
+
+    public bool $kybOverThreshold = false;
+
     public ?string $saved = null;
 
     public function mount(): void
@@ -43,6 +48,8 @@ class Merchants extends Component
         $this->enrollmentFee = MerchantSettings::enrollmentFeeUsd();
         $this->minReferrals = MerchantSettings::minReferrals();
         $this->upgradePrice = MerchantSettings::upgradePriceUsd();
+        $this->kybThreshold = MerchantSettings::kybThresholdUsd();
+        $this->kybOverThreshold = MerchantSettings::kybOverThresholdEnabled();
     }
 
     public function save(): void
@@ -54,6 +61,7 @@ class Merchants extends Component
             'enrollmentFee' => 'required|numeric|min:0|max:1000000',
             'minReferrals' => 'required|integer|min:0|max:10000000',
             'upgradePrice' => 'required|numeric|min:0|max:100000',
+            'kybThreshold' => 'required|numeric|min:0|max:10000000',
         ]);
 
         Setting::setValue(MerchantSettings::FLAG, $this->enabled, 'merchants');
@@ -62,6 +70,8 @@ class Merchants extends Component
         Setting::setValue(MerchantSettings::ENROLLMENT_FEE, (float) $this->enrollmentFee, 'merchants');
         Setting::setValue(MerchantSettings::MIN_REFERRALS, (int) $this->minReferrals, 'merchants');
         Setting::setValue(MerchantSettings::UPGRADE_PRICE, (float) $this->upgradePrice, 'merchants');
+        Setting::setValue(MerchantSettings::KYB_THRESHOLD, (float) $this->kybThreshold, 'merchants');
+        Setting::setValue(MerchantSettings::KYB_OVER_THRESHOLD, $this->kybOverThreshold, 'merchants');
         Auditor::log('merchants.settings_updated', null, null, [
             'enabled' => $this->enabled, 'margin' => $this->resellerMargin,
             'min_spend' => $this->minSpend, 'enrollment_fee' => $this->enrollmentFee, 'min_referrals' => $this->minReferrals,

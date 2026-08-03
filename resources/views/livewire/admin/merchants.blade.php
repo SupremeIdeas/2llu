@@ -59,6 +59,23 @@
                 </div>
             </div>
             <p class="mt-2 text-[11px] text-slate-400">A user unlocks the programme by hitting the spend threshold, paying the one-time fast-route fee from their wallet, or reaching the referral target.</p>
+
+            {{-- Deferred-verification payout rule (BUILD-4 §1). Identity is verified
+                 at payout time, not at signup. This optional rule additionally
+                 requires business KYB for large single payouts — ships OFF. --}}
+            <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-[#2D4060] dark:bg-[#152238]">
+                <label class="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                    <input type="checkbox" wire:model="kybOverThreshold" class="h-5 w-9 cursor-pointer rounded-full">
+                    Require business KYB for large payouts
+                </label>
+                <p class="mt-1 text-[11px] text-slate-400">Merchants verify identity when they first cash out (a verified bank account = KYC L2). With this on, any single payout <strong>over the amount below</strong> also needs full business (KYB) verification. Leave off until your compliance stance is set.</p>
+                <div class="mt-3 max-w-xs">
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">KYB threshold — single payout (USD)</label>
+                    <input type="number" step="1" min="0" wire:model="kybThreshold"
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @error('kybThreshold') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+            </div>
         </div>
 
         <button type="button" wire:click="save" wire:loading.attr="disabled" wire:target="save"

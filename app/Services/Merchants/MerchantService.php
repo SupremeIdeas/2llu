@@ -82,9 +82,16 @@ class MerchantService
     }
 
     /**
-     * Apply to become a merchant. Requires the programme on, KYB (L3)
-     * verification, AND that the user has unlocked eligibility (spend / paid
-     * enrollment / referrals). Returns an existing application if one is in flight.
+     * Apply to become a merchant. Requires the programme on AND that the user has
+     * unlocked eligibility (spend / paid enrollment / referrals). Returns an
+     * existing application if one is in flight.
+     *
+     * BUILD-4 §1: KYB (L3) is deliberately NO LONGER a gate here — identity
+     * verification is deferred to payout time (a merchant verifies when they first
+     * cash out, reusing the existing KYC-L2 payout-account gate, plus optional
+     * business KYB above an admin threshold). Do not re-add a KYB check at the
+     * application step: the whole point of this flow is to let a user set up a
+     * storefront and start earning first, verifying only when money leaves.
      *
      * @param  array{business_name: string, brand_color?: string|null}  $data
      *
@@ -94,9 +101,6 @@ class MerchantService
     {
         if (! MerchantSettings::enabled()) {
             throw new MerchantException('The merchant programme is not open right now.');
-        }
-        if (! $this->kyc->hasLevel($user, KycVerification::L3)) {
-            throw new MerchantException('Complete business (KYB) verification first.');
         }
         if (! $this->eligibility($user)['eligible']) {
             throw new MerchantException('Unlock membership first: spend the minimum, pay the one-time enrollment, or reach the referral target.');
