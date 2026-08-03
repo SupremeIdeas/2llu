@@ -81,8 +81,10 @@ class CatalogueSyncService
             $this->pricing->recompute($plan);
         }
 
-        // The country picker's per-country tallies just changed.
+        // The country picker's per-country tallies and the §3 navigation grid
+        // both derive from esim_plans, which just changed.
         CountryPickerSources::flush();
+        \App\Support\EsimCatalogue::flush();
 
         return count($rows);
     }
