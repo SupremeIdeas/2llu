@@ -222,6 +222,34 @@ class MerchantEarningsTest extends TestCase
 
     // ── Deferred verification: payout-size KYB threshold (BUILD-4 §1.3) ────────
 
+    public function test_referral_margin_locks_at_signup_and_survives_later_changes(): void
+    {
+        // §3.3: a merchant-referred user is pinned to the margin-at-signup for the
+        // life of the account, even if the merchant later changes it.
+        $m = Merchant::create([
+            'owner_user_id' => User::factory()->create(['is_active' => true])->id,
+            'business_name' => 'Lock Co', 'slug' => 'lock', 'status' => Merchant::ACTIVE,
+            'reseller_margin_pct' => 10.0,
+        ]);
+        $plan = $this->plan(); // retail 13.00
+
+        // Join via the invite → margin snapshotted at 10%.
+        \App\Support\MerchantBranding::captureInvite($m->slug);
+        $user = User::factory()->create(['is_active' => true]);
+        \App\Support\MerchantBranding::consumeInviteFor($user);
+        $this->assertSame('10.000', (string) $user->fresh()->merchant_margin_pct);
+
+        // Merchant later raises its margin to 30%.
+        $m->forceFill(['reseller_margin_pct' => 30.0])->save();
+
+        $engine = app(\App\Services\Pricing\PricingEngine::class);
+        $locked = $engine->merchantEsimPrice($plan, $m->fresh(), false, (float) $user->fresh()->merchant_margin_pct);
+        $live = $engine->merchantEsimPrice($plan, $m->fresh(), false); // 30% now
+
+        $this->assertSame(14.30, $locked);       // 13.00 × 1.10 — locked at signup
+        $this->assertLessThan($live, $locked);    // cheaper than the merchant's new 30%
+    }
+
     public function test_a_large_payout_clears_without_kyb_when_the_rule_is_off(): void
     {
         // The KYB-above-threshold rule ships OFF: a $600 payout (over the $500

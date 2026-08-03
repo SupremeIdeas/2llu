@@ -229,10 +229,12 @@ class PricingEngine
      * or the global setting); a merchant never sets their own. MarginGuard still
      * floors it — a merchant price can never dip below cost + minimum profit.
      */
-    public function merchantEsimPrice(EsimPlan $plan, ?\App\Models\Merchant $merchant = null, bool $log = true): float
+    public function merchantEsimPrice(EsimPlan $plan, ?\App\Models\Merchant $merchant = null, bool $log = true, ?float $lockedMarginPct = null): float
     {
         $retail = $this->calculateRetail($plan, false);
-        $margin = $this->resellerMargin($merchant);
+        // §3.3 lock-in: a referral customer's margin-at-signup wins over the
+        // merchant's current margin. Null → fall back to the live margin.
+        $margin = $lockedMarginPct ?? $this->resellerMargin($merchant);
         $computed = round($retail * (1 + $margin / 100), 2);
 
         $cost = (float) $plan->cost_price_usd;
@@ -258,10 +260,10 @@ class PricingEngine
      * Merchant (reseller) price (USD) for a per-number / OTP charge — retail plus
      * the reseller margin, MarginGuard-floored. Mirrors merchantEsimPrice.
      */
-    public function merchantSmsPrice(float $cost, string $provider, ?\App\Models\Merchant $merchant = null, bool $log = true): float
+    public function merchantSmsPrice(float $cost, string $provider, ?\App\Models\Merchant $merchant = null, bool $log = true, ?float $lockedMarginPct = null): float
     {
         $retail = $this->calculateSmsRetail($cost, $provider);
-        $margin = $this->resellerMargin($merchant);
+        $margin = $lockedMarginPct ?? $this->resellerMargin($merchant); // §3.3 lock-in
         $computed = round($retail * (1 + $margin / 100), 4);
 
         $minProfit = (float) Setting::getValue('pricing.sms_min_profit', 0.01);

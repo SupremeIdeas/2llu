@@ -141,7 +141,11 @@ class Checkout extends Component
             // Compute the plain retail through the engine (never the possibly-
             // stale generated column) so the accrual floor is exact.
             $plainRetail = $pricing->calculateRetail($this->plan, log: false);
-            $retail = $pricing->merchantEsimPrice($this->plan, $merchant);
+            // §3.3: the customer's locked margin-at-signup (if any) wins over the
+            // merchant's current margin — a merchant-referred user's price never
+            // changes when the merchant's margin later does.
+            $retail = $pricing->merchantEsimPrice($this->plan, $merchant, true,
+                $user->merchant_margin_pct !== null ? (float) $user->merchant_margin_pct : null);
         } else {
             $plainRetail = (float) $this->plan->final_retail_usd;
             $retail = $plainRetail;

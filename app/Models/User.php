@@ -76,6 +76,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'deletion_requested_at' => 'datetime',
             'deletion_approved_at' => 'datetime',
             'merchant_enrollment_paid_at' => 'datetime',
+            'merchant_margin_pct' => 'decimal:3', // referral-margin lock (§3.3)
         ];
     }
 

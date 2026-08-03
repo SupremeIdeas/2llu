@@ -6,6 +6,36 @@
         never pay for refills: NaaraSim fulfils every order, you're the storefront.
     </p>
 
+    {{-- V1 vs V2 plan comparison (BUILD-4 §3.1), live from MerchantSettings so a
+         prospective merchant sees what each tier unlocks and its price up front. --}}
+    <div class="mt-6 grid gap-3 sm:grid-cols-2">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <div class="flex items-center justify-between">
+                <p class="font-bold text-slate-900 dark:text-slate-100">Merchant V1</p>
+                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-300">Standard</span>
+            </div>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Your own co-branded storefront. Earn a <strong>{{ rtrim(rtrim(number_format($pricing['margin'], 2), '0'), '.') }}%</strong> reseller margin on every sale, settled to your bank.</p>
+            <ul class="mt-3 space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
+                <li class="flex items-center gap-2"><x-icon name="check" class="h-4 w-4 text-primary" /> Co-branded storefront + invite link</li>
+                <li class="flex items-center gap-2"><x-icon name="check" class="h-4 w-4 text-primary" /> Earnings on every referred sale</li>
+                <li class="flex items-center gap-2"><x-icon name="check" class="h-4 w-4 text-primary" /> Unlock free (spend/referrals) or fast-route fee</li>
+            </ul>
+        </div>
+        <div class="rounded-2xl border border-primary/30 bg-primary/[0.04] p-5 shadow-sm dark:border-primary/40 dark:bg-primary/10">
+            <div class="flex items-center justify-between">
+                <p class="font-bold text-slate-900 dark:text-slate-100">Merchant V2</p>
+                <span class="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary dark:text-teal-300">${{ rtrim(rtrim(number_format($pricing['upgradePrice'], 2), '0'), '.') }} one-time</span>
+            </div>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Everything in V1, plus manage eSIMs & numbers for clients who never sign in — and first-class API access.</p>
+            <ul class="mt-3 space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
+                <li class="flex items-center gap-2"><x-icon name="check" class="h-4 w-4 text-primary" /> Everything in V1</li>
+                <li class="flex items-center gap-2"><x-icon name="users" class="h-4 w-4 text-primary" /> Client management (no-login customers)</li>
+                <li class="flex items-center gap-2"><x-icon name="key" class="h-4 w-4 text-primary" /> Developer portal &amp; API keys</li>
+            </ul>
+            <p class="mt-3 text-xs text-slate-400">Upgrade any time from your Merchant dashboard once you're V1.</p>
+        </div>
+    </div>
+
     @unless ($programmeOpen)
         <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
             The merchant programme isn't open yet. Please check back soon.

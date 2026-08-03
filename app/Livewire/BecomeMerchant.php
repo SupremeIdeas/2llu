@@ -127,6 +127,11 @@ class BecomeMerchant extends Component
             // Global, data-driven business-registration catalogue (§2.1).
             'countries' => BusinessRegistration::countries(),
             'regTypes' => BusinessRegistration::typesFor($this->country),
+            // Live V1/V2 plan comparison figures (§3.1) — pulled from settings.
+            'pricing' => [
+                'margin' => MerchantSettings::resellerMarginPct(),
+                'upgradePrice' => MerchantSettings::upgradePriceUsd(),
+            ],
         ]);
     }
 }

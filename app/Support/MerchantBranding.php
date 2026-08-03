@@ -49,7 +49,18 @@ class MerchantBranding
     {
         $merchant = self::inviteMerchant();
         if ($merchant !== null && $user->merchant_id === null) {
-            $user->forceFill(['merchant_id' => $merchant->id])->save();
+            // Referral-margin lock-in (BUILD-4 §3.3): snapshot the merchant's
+            // reseller margin AT SIGNUP. This user then pays wholesale + this
+            // exact margin for the life of the account, regardless of later margin
+            // changes — unless an admin deliberately overrides merchant_margin_pct.
+            $lockedMargin = $merchant->reseller_margin_pct !== null
+                ? (float) $merchant->reseller_margin_pct
+                : \App\Support\MerchantSettings::resellerMarginPct();
+
+            $user->forceFill([
+                'merchant_id' => $merchant->id,
+                'merchant_margin_pct' => $lockedMargin,
+            ])->save();
         }
         session()->forget(self::SESSION_KEY);
     }
