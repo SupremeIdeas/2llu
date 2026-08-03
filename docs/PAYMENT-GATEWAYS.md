@@ -91,13 +91,14 @@ top-ups with a Refund action, handled by `RefundService`:
   refunds at most once).
 - Never a silent loss: a refund is **refused** if the user already spent the
   funds (resolve manually) rather than pushing the wallet negative.
-- The gateway call is behind a `RefundableGateway` contract. **Paystack** is
-  wired (`POST /refund` by reference). The other card gateways are added by
-  implementing the same contract — Stripe `POST /v1/refunds` (payment_intent /
-  charge, partial via `amount`), Flutterwave `POST /v3/transactions/{id}/refund`
-  (needs the numeric txn id captured at webhook time), PayPal
-  `/v2/payments/captures/{id}/refund`. Crypto rails are irreversible → recorded
-  as a **manual** task + admin alert, never auto-moved.
+- The gateway call is behind a `RefundableGateway` contract, wired for
+  **Paystack** (`POST /refund` by reference), **Stripe** (`POST /v1/refunds` on
+  the payment_intent), **Flutterwave** (`POST /v3/transactions/{id}/refund`), and
+  **PayPal** (`POST /v2/payments/captures/{id}/refund`). Stripe/Flutterwave/PayPal
+  need the provider's own charge id, which our NAARA reference doesn't carry — so
+  it's captured at webhook time into `payment_charges` (payment_intent / txn id /
+  capture id) and handed to the refund call. Crypto rails are irreversible →
+  recorded as a **manual** task + admin alert, never auto-moved.
 
 **Disputes / chargebacks — built.** The same signed webhook endpoint handles
 dispute events (`DisputeService`):
@@ -107,11 +108,15 @@ dispute events (`DisputeService`):
   charged back). Idempotent per `(gateway, provider_dispute_id)`.
 - The wallet earmark is USD-only, so non-USD disputes are recorded + alerted for
   manual handling rather than pretending to freeze.
-- **Paystack** is wired (`charge.dispute.create` / `charge.dispute.resolve`;
-  `resolution=merchant-accepted` or a `refund_amount` ⇒ lost). Stripe
-  (`charge.dispute.created` / `charge.dispute.closed`), Flutterwave and PayPal
-  dispute webhooks are added by implementing `DisputeAwareGateway::parseDispute`
-  for each (their payloads differ; verify each before wiring).
+- Wired for **Paystack** (`charge.dispute.create` / `.resolve`;
+  `resolution=merchant-accepted` or a `refund_amount` ⇒ lost), **Stripe**
+  (`charge.dispute.created` / `charge.dispute.closed`, `status` won/lost), and
+  **PayPal** (`CUSTOMER.DISPUTE.CREATED` / `.RESOLVED`,
+  `dispute_outcome.outcome_code`). Stripe/PayPal disputes cite the provider
+  charge id (payment_intent / capture id), mapped back to our reference + user
+  via `payment_charges`. **Flutterwave** chargeback webhooks are an on-request,
+  variable-payload feature — left for a verified follow-up rather than shipped on
+  a fund-freezing path unverified (the `DisputeAwareGateway` seam is ready).
 
 Per-gateway terms to capture when adding each: partial-refund support,
 dispute-response window, dispute-loss fee.

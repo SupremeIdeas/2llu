@@ -15,11 +15,75 @@ use Illuminate\Support\Str;
  * signature (money-safety rule 9) — never trusted before that returns SUCCESS.
  * When unconfigured every method degrades safely so the platform runs without it.
  */
-class PaypalGateway implements PaymentGatewayInterface
+class PaypalGateway implements DisputeAwareGateway, PaymentGatewayInterface, RefundableGateway
 {
     public function name(): string
     {
         return 'paypal';
+    }
+
+    /**
+     * Refund via POST /v2/payments/captures/{capture_id}/refund (BUILD-2 §7.1).
+     * Needs the capture id captured at webhook time. Amount in major units.
+     */
+    public function refund(string $reference, float $amount, string $currency, array $context = []): RefundResult
+    {
+        if (! $this->configured()) {
+            return RefundResult::fail('PayPal is not configured.');
+        }
+        $captureId = (string) ($context['provider_charge_id'] ?? '');
+        if ($captureId === '') {
+            return RefundResult::fail('No PayPal capture id on file to refund.');
+        }
+
+        try {
+            $res = Http::withToken($this->token())->acceptJson()->timeout(15)->connectTimeout(3)
+                ->post($this->base()."/v2/payments/captures/{$captureId}/refund", [
+                    'amount' => ['value' => number_format($amount, 2, '.', ''), 'currency_code' => strtoupper($currency)],
+                ]);
+        } catch (\Throwable $e) {
+            return RefundResult::fail('Could not reach PayPal to refund.');
+        }
+
+        if (! $res->successful()) {
+            return RefundResult::fail((string) (data_get($res->json(), 'message') ?: 'PayPal refused the refund.'));
+        }
+
+        return in_array(data_get($res->json(), 'status'), ['COMPLETED', 'PENDING'], true)
+            ? RefundResult::ok((string) data_get($res->json(), 'id'))
+            : RefundResult::fail('PayPal refund status: '.(string) data_get($res->json(), 'status'));
+    }
+
+    /**
+     * Dispute events (BUILD-2 §7.2). CUSTOMER.DISPUTE.CREATED opens;
+     * CUSTOMER.DISPUTE.RESOLVED carries dispute_outcome.outcome_code
+     * (RESOLVED_SELLER_FAVOUR = won, else lost). The disputed capture id maps
+     * back to our reference via the captured charge.
+     */
+    public function parseDispute(Request $request): ?DisputeEvent
+    {
+        $type = (string) $request->input('event_type');
+        if (! in_array($type, ['CUSTOMER.DISPUTE.CREATED', 'CUSTOMER.DISPUTE.RESOLVED'], true)) {
+            return null;
+        }
+
+        $resource = $request->input('resource', []);
+        $status = DisputeEvent::OPEN;
+        if ($type === 'CUSTOMER.DISPUTE.RESOLVED') {
+            $status = data_get($resource, 'dispute_outcome.outcome_code') === 'RESOLVED_SELLER_FAVOUR'
+                ? DisputeEvent::WON : DisputeEvent::LOST;
+        }
+
+        return new DisputeEvent(
+            gateway: $this->name(),
+            providerDisputeId: (string) data_get($resource, 'dispute_id', ''),
+            reference: null, // resolved from the capture id below
+            amount: (float) data_get($resource, 'dispute_amount.value', 0),
+            currency: strtoupper((string) data_get($resource, 'dispute_amount.currency_code', 'USD')),
+            status: $status,
+            raw: $request->all(),
+            providerChargeId: (string) data_get($resource, 'disputed_transactions.0.seller_transaction_id', ''),
+        );
     }
 
     private function configured(): bool
@@ -129,6 +193,9 @@ class PaypalGateway implements PaymentGatewayInterface
             currency: $currency,
             status: $success ? 'success' : 'failed',
             raw: $request->all(),
+            // The capture id — what a refund/dispute cites (PAYMENT.CAPTURE.* resource.id).
+            providerChargeId: (string) (data_get($resource, 'id')
+                ?? data_get($resource, 'purchase_units.0.payments.captures.0.id', '')),
         );
     }
 }

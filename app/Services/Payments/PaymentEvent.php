@@ -18,6 +18,9 @@ class PaymentEvent
         public readonly string $currency,
         public readonly string $status,   // success | failed | pending
         public readonly array $raw = [],
+        // The provider's own charge id (Stripe payment_intent, PayPal capture id,
+        // Flutterwave txn id) captured for later refunds/disputes; '' when N/A.
+        public readonly string $providerChargeId = '',
     ) {}
 
     public function isSuccessful(): bool

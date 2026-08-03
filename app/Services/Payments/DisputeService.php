@@ -3,6 +3,7 @@
 namespace App\Services\Payments;
 
 use App\Jobs\AlertAdminJob;
+use App\Models\PaymentCharge;
 use App\Models\PaymentDispute;
 use App\Models\User;
 use App\Models\WalletTransaction;
@@ -53,7 +54,8 @@ class DisputeService
             return $existing; // idempotent
         }
 
-        $user = $this->userFromReference($event);
+        $reference = $this->resolveReference($event);
+        $user = $this->userFromReference($event->gateway, $reference);
 
         // Freeze what we can. Only USD has a wallet earmark; freeze up to the
         // user's spendable balance (money already spent can't be frozen — that
@@ -71,7 +73,7 @@ class DisputeService
             'user_id' => $user?->id,
             'gateway' => $event->gateway,
             'provider_dispute_id' => $event->providerDisputeId,
-            'reference' => $event->reference,
+            'reference' => $reference,
             'amount' => $event->amount,
             'currency' => $event->currency,
             'status' => PaymentDispute::STATUS_OPEN,
@@ -140,12 +142,29 @@ class DisputeService
         return $dispute;
     }
 
-    private function userFromReference(DisputeEvent $event): ?User
+    /**
+     * Our NAARA reference for a dispute: the one the gateway gave us directly
+     * (Paystack) or, failing that, mapped from the provider charge id it cited
+     * (Stripe payment_intent / PayPal capture id) via the captured charge.
+     */
+    private function resolveReference(DisputeEvent $event): ?string
     {
-        if (! $event->reference) {
+        if ($event->reference) {
+            return $event->reference;
+        }
+        if ($event->providerChargeId !== '') {
+            return PaymentCharge::referenceForChargeId($event->gateway, $event->providerChargeId);
+        }
+
+        return null;
+    }
+
+    private function userFromReference(string $gateway, ?string $reference): ?User
+    {
+        if (! $reference) {
             return null;
         }
-        $txn = WalletTransaction::where('reference', "topup:{$event->gateway}:{$event->reference}")
+        $txn = WalletTransaction::where('reference', "topup:{$gateway}:{$reference}")
             ->where('type', 'credit')->first();
 
         return $txn ? ($txn->user ?? User::find($txn->user_id)) : null;

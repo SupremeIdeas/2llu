@@ -3,6 +3,7 @@
 namespace App\Services\Payments;
 
 use App\Jobs\AlertAdminJob;
+use App\Models\PaymentCharge;
 use App\Models\PaymentRefund;
 use App\Models\User;
 use App\Models\WalletTransaction;
@@ -70,7 +71,14 @@ class RefundService
         }
 
         // Provider first: only reverse the wallet if the money actually goes back.
-        $result = $svc->refund($ref, $amount, $currency, is_array($topup->meta ?? null) ? $topup->meta : []);
+        // Hand the gateway the provider charge id captured at webhook time
+        // (Stripe payment_intent, PayPal capture id, Flutterwave txn id).
+        $charge = PaymentCharge::where('gateway', $gateway)->where('reference', $ref)->first();
+        $context = [
+            'provider_charge_id' => $charge?->provider_charge_id,
+            'meta' => $charge?->meta ?? [],
+        ];
+        $result = $svc->refund($ref, $amount, $currency, $context);
         if (! $result->ok) {
             $this->record($gateway, $ref, $user, $amount, $currency, $reason, $admin, PaymentRefund::STATUS_FAILED, null);
             throw new RefundException(ucfirst($gateway).' declined the refund: '.($result->error ?? 'unknown error').'.');

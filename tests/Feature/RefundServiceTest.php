@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\AlertAdminJob;
+use App\Models\PaymentCharge;
 use App\Models\PaymentRefund;
 use App\Models\User;
 use App\Services\Payments\RefundException;
@@ -99,6 +100,73 @@ class RefundServiceTest extends TestCase
 
         $this->assertSame('40.0000', (string) $user->wallet->fresh()->usd_balance); // unchanged
         $this->assertSame(PaymentRefund::STATUS_FAILED, PaymentRefund::first()->status);
+    }
+
+    private function chargeId(string $gateway, string $ref, string $providerChargeId): void
+    {
+        PaymentCharge::create([
+            'gateway' => $gateway, 'reference' => $ref, 'provider_charge_id' => $providerChargeId,
+            'amount' => 0, 'currency' => 'USD',
+        ]);
+    }
+
+    public function test_stripe_refund_uses_the_captured_payment_intent(): void
+    {
+        config(['services.stripe.secret_key' => 'sk_test_x', 'services.stripe.base_url' => 'https://api.stripe.com/v1']);
+        Http::fake(['api.stripe.com/v1/refunds' => Http::response(['id' => 're_1', 'status' => 'succeeded'])]);
+        $user = User::factory()->create();
+        $topup = $this->topUp($user, 'stripe', 'ST-1', 30.0);
+        $this->chargeId('stripe', 'ST-1', 'pi_123');
+
+        $refund = app(RefundService::class)->refund($topup, null, 'x');
+
+        $this->assertSame(PaymentRefund::STATUS_DONE, $refund->status);
+        $this->assertSame('re_1', $refund->provider_refund_ref);
+        $this->assertSame('0.0000', (string) $user->wallet->fresh()->usd_balance);
+        Http::assertSent(fn ($req) => str_contains($req->url(), '/refunds') && $req['payment_intent'] === 'pi_123');
+    }
+
+    public function test_flutterwave_refund_uses_the_captured_transaction_id(): void
+    {
+        config(['services.flutterwave.secret_key' => 'flw_sk', 'services.flutterwave.base_url' => 'https://api.flutterwave.com/v3']);
+        Http::fake(['api.flutterwave.com/v3/transactions/999/refund' => Http::response(['status' => 'success', 'data' => ['id' => 'rf_9']])]);
+        $user = User::factory()->create();
+        $topup = $this->topUp($user, 'flutterwave', 'FLW-1', 12.0);
+        $this->chargeId('flutterwave', 'FLW-1', '999');
+
+        $refund = app(RefundService::class)->refund($topup, null, 'x');
+
+        $this->assertSame(PaymentRefund::STATUS_DONE, $refund->status);
+        $this->assertSame('0.0000', (string) $user->wallet->fresh()->usd_balance);
+    }
+
+    public function test_paypal_refund_uses_the_captured_capture_id(): void
+    {
+        config(['services.paypal.client_id' => 'cid', 'services.paypal.client_secret' => 'sec', 'services.paypal.base_url' => 'https://api-m.paypal.com']);
+        Http::fake([
+            'api-m.paypal.com/v1/oauth2/token' => Http::response(['access_token' => 'tok']),
+            'api-m.paypal.com/v2/payments/captures/CAP1/refund' => Http::response(['id' => 'RF_PP', 'status' => 'COMPLETED']),
+        ]);
+        $user = User::factory()->create();
+        $topup = $this->topUp($user, 'paypal', 'PP-1', 18.0);
+        $this->chargeId('paypal', 'PP-1', 'CAP1');
+
+        $refund = app(RefundService::class)->refund($topup, null, 'x');
+
+        $this->assertSame(PaymentRefund::STATUS_DONE, $refund->status);
+        $this->assertSame('RF_PP', $refund->provider_refund_ref);
+        $this->assertSame('0.0000', (string) $user->wallet->fresh()->usd_balance);
+    }
+
+    public function test_a_card_refund_without_a_captured_charge_id_is_refused(): void
+    {
+        // No PaymentCharge row → the gateway has nothing to refund against.
+        config(['services.stripe.secret_key' => 'sk_test_x']);
+        $user = User::factory()->create();
+        $topup = $this->topUp($user, 'stripe', 'ST-NOID', 10.0);
+
+        $this->expectException(RefundException::class);
+        app(RefundService::class)->refund($topup, null, 'x');
     }
 
     public function test_a_crypto_top_up_is_flagged_for_a_manual_refund_and_alerts(): void

@@ -13,13 +13,78 @@ use Illuminate\Support\Str;
  * HMAC-SHA256 of "<ts>.<raw body>" with the endpoint's webhook secret, checked
  * constant-time within a timestamp tolerance. Amounts are in minor units.
  */
-class StripeGateway implements PaymentGatewayInterface
+class StripeGateway implements DisputeAwareGateway, PaymentGatewayInterface, RefundableGateway
 {
     private const TOLERANCE_SECONDS = 300;
 
     public function name(): string
     {
         return 'stripe';
+    }
+
+    /**
+     * Refund via POST /v1/refunds on the PaymentIntent captured at webhook time
+     * (BUILD-2 §7.1). Amount in minor units. Bounded timeout. Accepts a
+     * succeeded/pending refund; anything else is a safe failure.
+     */
+    public function refund(string $reference, float $amount, string $currency, array $context = []): RefundResult
+    {
+        $secret = (string) config('services.stripe.secret_key');
+        if ($secret === '') {
+            return RefundResult::fail('Stripe is not configured.');
+        }
+        $pi = (string) ($context['provider_charge_id'] ?? '');
+        if ($pi === '') {
+            return RefundResult::fail('No Stripe payment reference on file to refund.');
+        }
+
+        try {
+            $res = Http::withToken($secret)->asForm()->timeout(15)->connectTimeout(3)
+                ->post(rtrim((string) config('services.stripe.base_url'), '/').'/refunds', [
+                    'payment_intent' => $pi,
+                    'amount' => (int) round($amount * 100),
+                ]);
+        } catch (\Throwable $e) {
+            return RefundResult::fail('Could not reach Stripe to refund.');
+        }
+
+        if (! $res->successful()) {
+            return RefundResult::fail((string) (data_get($res->json(), 'error.message') ?: 'Stripe refused the refund.'));
+        }
+
+        return in_array(data_get($res->json(), 'status'), ['succeeded', 'pending'], true)
+            ? RefundResult::ok((string) data_get($res->json(), 'id'))
+            : RefundResult::fail('Stripe refund status: '.(string) data_get($res->json(), 'status'));
+    }
+
+    /**
+     * Dispute events (BUILD-2 §7.2). charge.dispute.created opens; charge.dispute
+     * .closed resolves with data.object.status = won | lost. The dispute cites a
+     * payment_intent, mapped back to our reference via the captured charge.
+     */
+    public function parseDispute(Request $request): ?DisputeEvent
+    {
+        $type = (string) $request->input('type');
+        if (! in_array($type, ['charge.dispute.created', 'charge.dispute.closed'], true)) {
+            return null;
+        }
+
+        $object = $request->input('data.object', []);
+        $status = DisputeEvent::OPEN;
+        if ($type === 'charge.dispute.closed') {
+            $status = data_get($object, 'status') === 'won' ? DisputeEvent::WON : DisputeEvent::LOST;
+        }
+
+        return new DisputeEvent(
+            gateway: $this->name(),
+            providerDisputeId: (string) data_get($object, 'id', ''),
+            reference: null, // resolved from the payment_intent below
+            amount: (float) data_get($object, 'amount', 0) / 100,
+            currency: strtoupper((string) data_get($object, 'currency', 'usd')),
+            status: $status,
+            raw: $request->all(),
+            providerChargeId: (string) data_get($object, 'payment_intent', ''),
+        );
     }
 
     public function initialize(User $user, float $amount, string $currency, array $meta = []): array
@@ -96,6 +161,8 @@ class StripeGateway implements PaymentGatewayInterface
             currency: strtoupper((string) data_get($object, 'currency', 'usd')),
             status: $success ? 'success' : 'failed',
             raw: $request->all(),
+            // The PaymentIntent is what a refund/dispute cites.
+            providerChargeId: (string) (data_get($object, 'payment_intent') ?? data_get($object, 'id', '')),
         );
     }
 }

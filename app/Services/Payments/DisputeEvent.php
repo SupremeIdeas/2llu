@@ -26,5 +26,9 @@ class DisputeEvent
         public readonly string $currency,
         public readonly string $status,
         public readonly array $raw = [],
+        // The provider's charge id cited by the dispute (Stripe payment_intent,
+        // PayPal capture id, …) — used to map back to our reference when the
+        // dispute payload doesn't carry it directly.
+        public readonly string $providerChargeId = '',
     ) {}
 }

@@ -52,10 +52,21 @@ Frank: verify both on the live host.
   The USD reserve is the only wallet earmark, so non-USD disputes are recorded +
   alerted for manual handling.
 
+### Card-gateway refunds/disputes extended — 2026-08-02
+- **Refunds** now wired for **Stripe** (`/v1/refunds` on the payment_intent),
+  **Flutterwave** (`/v3/transactions/{id}/refund`), and **PayPal**
+  (`/v2/payments/captures/{id}/refund`) — alongside Paystack. Each needs the
+  provider's own charge id, so it's captured at webhook time into a new
+  `payment_charges` table and handed to the refund call.
+- **Disputes** now wired for **Stripe** (`charge.dispute.created/closed`) and
+  **PayPal** (`CUSTOMER.DISPUTE.CREATED/RESOLVED`), which cite the provider charge
+  id — mapped back to our reference + user via `payment_charges`. Freeze/claw-back
+  reuses the same money-safe `DisputeService`.
+
 ### Still flagged (the remaining payments follow-up — money-moving, do with care)
-- **Refund/dispute wiring for the other card gateways** (Stripe, Flutterwave,
-  PayPal) — the contracts + services exist; each gateway's refund call and
-  dispute payload need implementing + verifying against current docs.
+- **Flutterwave chargeback webhooks** — an on-request, variable-payload feature;
+  the `DisputeAwareGateway` seam is ready but the payload must be verified against
+  a real event before wiring it onto the fund-freezing path.
 - **Full per-gateway admin schema** (§3): explicit sandbox/live toggle that swaps
   key set + base URL, webhook/callback URL copy buttons, and a "test connection"
   button. Today keys live in Provider Keys and test mode is *detected*, not

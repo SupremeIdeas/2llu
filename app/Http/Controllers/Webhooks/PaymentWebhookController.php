@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\CreditWalletJob;
+use App\Models\PaymentCharge;
 use App\Models\TopUpIntent;
 use App\Models\WebhookLog;
 use App\Services\Payments\DisputeAwareGateway;
@@ -78,6 +79,15 @@ class PaymentWebhookController extends Controller
                 : [$event->amount, $event->currency];
 
             CreditWalletJob::dispatch($event->gateway, $event->reference, $event->userId, $amount, $currency);
+
+            // Record the provider's charge id (payment_intent / capture id / txn id)
+            // so a later refund or dispute can cite it (BUILD-2 §7). Idempotent.
+            if ($event->reference !== '') {
+                PaymentCharge::updateOrCreate(
+                    ['gateway' => $event->gateway, 'reference' => $event->reference],
+                    ['provider_charge_id' => $event->providerChargeId ?: null, 'amount' => $amount, 'currency' => $currency],
+                );
+            }
 
             if ($intent && $intent->status !== 'credited') {
                 $intent->update(['status' => 'credited', 'credited_at' => now()]);
