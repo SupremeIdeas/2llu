@@ -10,17 +10,21 @@
                 <span class="flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-bold uppercase text-white" style="background-color: {{ $merchant->brand_color ?: '#0A6E6E' }};">{{ \Illuminate\Support\Str::of($merchant->business_name)->trim()->substr(0, 2) }}</span>
             @endif
             <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="truncate text-2xl font-bold text-slate-900 dark:text-slate-100">{{ $merchant->business_name }}</h1>
-                    {{-- Tier premium badge (animated). --}}
-                    <x-lottie name="{{ $merchant->isV2() ? 'merchant-v2-badge' : 'merchant-v1-badge' }}"
-                              label="{{ $merchant->isV2() ? 'Merchant V2' : 'Merchant V1' }} premium badge"
-                              class="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
+                <h1 class="truncate text-2xl font-bold text-slate-900 dark:text-slate-100">{{ $merchant->business_name }}</h1>
+                <div class="mt-1.5 flex flex-wrap items-center gap-2">
+                    {{-- ONE tier badge, fully contained in a fixed, clipped box so
+                         the medal artwork can't overflow into the copy (which read
+                         as a duplicate before). Same chip for V1 and V2. --}}
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/70 py-1 pl-1 pr-2.5 text-xs font-bold text-primary shadow-sm ring-1 ring-primary/15 dark:bg-white/10 dark:text-teal-300 dark:ring-white/10">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                            <x-lottie name="{{ $merchant->isV2() ? 'merchant-v2-badge' : 'merchant-v1-badge' }}"
+                                      label="{{ $merchant->isV2() ? 'Merchant V2' : 'Merchant V1' }} badge"
+                                      class="h-7 w-7" />
+                        </span>
+                        {{ $merchant->isV2() ? 'Merchant V2' : 'Merchant V1' }}
+                    </span>
+                    <span class="text-sm text-slate-500 dark:text-slate-400">Your NaaraSim reseller storefront</span>
                 </div>
-                <p class="text-sm text-slate-500 dark:text-slate-400">
-                    Your NaaraSim reseller storefront ·
-                    <span class="font-semibold text-primary dark:text-teal-300">{{ $merchant->isV2() ? 'Merchant V2' : 'Merchant V1' }}</span>
-                </p>
             </div>
             {{-- Merchant illustration — hidden on the smallest screens so the copy
                  never gets crushed. --}}
