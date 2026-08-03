@@ -262,8 +262,11 @@ class Catalogue extends Component
         // 5) The default grid for the active segment (Popular/Local/Regional/Global).
         $plans = null;
         if ($view === 'popular') {
-            $plans = $this->lineQuery($hasVoice)->where('is_featured', true)
-                ->orderBy('name')->paginate(12);
+            $featured = $this->lineQuery($hasVoice)->where('is_featured', true);
+            // Until an admin curates the Popular tab, fall back to every plan on
+            // the line so the default landing view is never empty.
+            $base = (clone $featured)->doesntExist() ? $this->lineQuery($hasVoice) : $featured;
+            $plans = $base->orderByDesc('is_featured')->orderBy('name')->paginate(12);
         }
 
         return view('livewire.catalogue', array_merge($data, [

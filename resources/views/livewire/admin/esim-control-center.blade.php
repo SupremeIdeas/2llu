@@ -126,12 +126,12 @@
                                         <input type="number" step="0.1" min="0" wire:model="marginValue" placeholder="global"
                                                class="w-20 rounded border border-slate-300 px-2 py-1 text-xs dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
                                         <button wire:click="saveMargin({{ $plan->id }})" class="rounded bg-primary px-2 py-1 text-xs font-semibold text-white">Save</button>
-                                        <button wire:click="cancelMargin" class="text-xs text-slate-400">✕</button>
+                                        <button wire:click="cancelMargin" aria-label="Cancel" class="text-slate-400"><x-icon name="x" class="h-3.5 w-3.5" /></button>
                                     </div>
                                     @error('marginValue') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                 @else
-                                    <button wire:click="editMargin({{ $plan->id }})" class="rounded border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50 dark:border-[#2D4060] dark:hover:bg-[#243352]">
-                                        {{ $plan->override_markup_pct !== null ? $plan->override_markup_pct.'%' : 'global' }} ✎
+                                    <button wire:click="editMargin({{ $plan->id }})" class="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50 dark:border-[#2D4060] dark:hover:bg-[#243352]">
+                                        {{ $plan->override_markup_pct !== null ? $plan->override_markup_pct.'%' : 'global' }} <x-icon name="settings" class="h-3 w-3" />
                                     </button>
                                 @endif
                                 @if ($aiEnabled)
