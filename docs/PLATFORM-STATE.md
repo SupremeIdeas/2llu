@@ -24,14 +24,28 @@ exists and must not be removed again.
   - Tests updated to the new flow (an eligible, unverified user can apply) + two
     new payout tests (large payout clears with the rule off; blocked without KYB
     when on). Full suite green (1018).
+- **§2.1 — global, data-driven merchant business-registration form.** New
+  `BusinessRegistration` catalogue: full ISO country list (names via intl) +
+  per-country registration-identifier types (US EIN, UK Companies House CRN,
+  BR CNPJ, AU ABN, NG CAC/RC, …) with a generic fallback. Replaced the hardcoded
+  4-country / CAC-TIN merchant KYB picker; business verification is now an
+  OPTIONAL step (not a gate, per §1) with country-scoped reg-type selects.
+- **§2.2 — global KYB provider: RESEARCHED, integration pending Frank's choice.**
+  `docs/KYC-GLOBAL-PROVIDER.md` documents current (2026) coverage and recommends
+  **Sumsub** (220+ country KYB registry, single KYC+KYB vendor) with **Persona**
+  as the flexible alternative, keeping Dojah/Smile ID for African markets. The
+  integration seam (a `KycProviderInterface` impl + country routing in
+  `KycService`, mirroring `PayoutAccountService`) is documented and ready; it
+  needs a vendor pick + API keys before coding. Per §12, research-only is an
+  accepted completion for this pass.
 - **Merchant/rewards/referral Lottie visuals.** Five dotLottie exports wired
   through the existing `lottie-web` pipeline (V2 badge's bundled PNGs inlined as
   data-URIs): refer-earn hero, merchant premium hero + V1/V2 tier badge chip
   (contained so the medal can't overflow), rewards confetti on check-in.
 
 ### Not yet built (BUILD-4 remaining, in order)
-- §2 globalize merchant country + registration type (+ a global KYB provider);
-  §3 visible V1/V2 pricing + referral-margin lock-in; §4 promotion tools; §5
+- §2.2 global KYB provider integration (blocked on vendor pick + keys); §3
+  visible V1/V2 pricing + referral-margin lock-in; §4 promotion tools; §5
   payout-gate UI; §6 messaging entry points; §7 WhatsApp Autopilot; §8 payout
   ranking; §9 App Builder compile backend; §10 preloader; §11 welcome screen.
 
