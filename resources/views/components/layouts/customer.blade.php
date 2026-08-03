@@ -87,9 +87,11 @@
              mobile header and desktop top strip each get their own Livewire id. --}}
         <x-slot:headerActions>
             <livewire:notification-center :key="'nc-mobile'" />
+            <x-global-sidebar />
         </x-slot:headerActions>
         <x-slot:headerActionsDesktop>
             <livewire:notification-center :key="'nc-desktop'" />
+            <x-global-sidebar />
         </x-slot:headerActionsDesktop>
 
         {{ $slot }}

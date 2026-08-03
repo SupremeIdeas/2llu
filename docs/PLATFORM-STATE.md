@@ -33,12 +33,39 @@ exists and must not be removed again.
   ±8ms jitter, occasional punctuation pause), queuing replies so none is dropped.
   `streamMessageId` marks which bubble to animate.
 
-### Still to build (BUILD-3)
-- §6 mobile UX fixes (notification bottom-sheet, Catalogue `$search`, hero row,
-  wizard list-view, More-menu scroll + glass, grid/list toggle, referral icon,
-  sprite gradient, rewards layout, bento badges), §7 global glass sidebar CMS,
-  §8 homepage video section, §9 homepage story section, §10 logo management,
-  §11 real social-login provider icons.
+### §6 mobile UX — Done
+- §6.1 notification panel is a viewport bottom-sheet on mobile (dropdown from
+  sm up); §6.5 More sheet is height-bounded + scrolls; §6.7 grid/list toggle
+  persisted (`nx_more_layout`); §6.8 distinct `users` referral icon; §6.3 hero
+  buttons own full-width row on mobile; §6.10 rewards title/desc beside the
+  Lottie; §6.11 bento badges get distinct per-meaning/per-card gradients.
+- Already satisfied in prior code (verified): §6.2 Catalogue `$search`; §6.4
+  wizard picker (NumberCatalogue lists already `Cache::rememberForever`, rows
+  render content directly, search bound to `x-model`); §6.6 More rows already
+  opaque (no glass); §6.9 single `nx-grad-icon` gradient definition.
+
+### §7 Global glass sidebar — Done
+- `<x-global-sidebar>` slide-out beside the bell + theme toggle, premium
+  glassmorphism. Contents are server-rendered (cached via `SidebarMenu`), so the
+  legal/compliance pages are reachable with no live network path — works offline
+  for app-store review. Always shows the legal docs (from `LegalContent`), social
+  handles (`SocialLinks`), and a fast, prominent **Delete my account**. Admin CMS
+  (Admin → Sidebar menu) adds custom links, a reviews URL, list/grid display
+  mode, and a live blog widget.
+
+### §8 Homepage video — Done (see "Homepage media" build below)
+### §9 Homepage story — Done (see below)
+
+### §10 Logo management — already built (verified)
+- `<x-brand-logo>` variants: `family` (Naara, header → dashboard), `product`
+  (NaaraSim, eSIM/Number sections), `gift` (Naara Gift, gift section). All admin-
+  managed via Admin → Branding; the header mark routes to the dashboard.
+
+### §11 Social-login icons — already built (verified)
+- Real bundled brand glyphs exist for all six providers (`svc-google/facebook/
+  apple/x/microsoft/discord`), rendered by `<x-service-icon>`, and every icon is
+  admin-overridable via Admin → Service icons (reusing the MediaStorage upload
+  path). No generic placeholders remain.
 
 ---
 
