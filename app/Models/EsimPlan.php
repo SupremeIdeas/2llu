@@ -9,11 +9,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EsimPlan extends Model
 {
+    /** Coverage axis for the customer-facing Local/Regional/Global tabs (§3). */
+    public const COVERAGE_LOCAL = 'local';
+
+    public const COVERAGE_REGIONAL = 'regional';
+
+    public const COVERAGE_GLOBAL = 'global';
+
+    /** @var list<string> */
+    public const COVERAGE_TYPES = [self::COVERAGE_LOCAL, self::COVERAGE_REGIONAL, self::COVERAGE_GLOBAL];
+
     protected $fillable = [
         'provider',
         'provider_plan_id',
         'name',
         'type',
+        'coverage_type', // local | regional | global (BUILD-8 §2.1)
+        'region_slug',   // e.g. europe, caribbean, world; null for a single-country local plan
         'has_voice',
         'data_mb',
         'countries',
