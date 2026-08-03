@@ -3,7 +3,17 @@
      usable with no LLM. Money actions disable while in flight (wire:loading). --}}
 {{-- Sits above the mobile bottom nav (bottom-24) and drops to the corner on
      desktop (lg:bottom-6) where there is no bottom bar. --}}
-<div class="fixed bottom-24 right-4 z-50 print:hidden lg:bottom-6" wire:key="naara-wizard"
+@php
+    // BUILD-3 §4: section-aware floating behaviour (CSS/Alpine only, no AI).
+    // eSIM / Number → swell into "Confused? Use The Wizard" with an electric
+    // edge; Gift → fade out; Home / More / anywhere else → resting state.
+    $wizSection = (request()->routeIs('catalogue') || request()->routeIs('esim.*')) ? 'esim'
+        : ((request()->routeIs('numbers') || request()->routeIs('numbers.*')) ? 'number'
+        : ((request()->routeIs('gift-cards') || request()->routeIs('gift-cards.*')) ? 'gift' : 'other'));
+    $wizAttention = in_array($wizSection, ['esim', 'number'], true);
+@endphp
+<div class="fixed bottom-24 right-4 z-50 transition-opacity duration-500 print:hidden lg:bottom-6 {{ $wizSection === 'gift' ? 'pointer-events-none opacity-0' : 'opacity-100' }}"
+     wire:key="naara-wizard"
      @if ($this->otpPending) wire:poll.4s @endif>
 
     @if (! $open)
@@ -21,8 +31,8 @@
              feel) instead of a generic icon. --}}
         @php $naaraAvatar = \App\Support\SupportSettings::avatar(); @endphp
         <button type="button" wire:click="toggle"
-                aria-label="Open the NaaraSim helper"
-                class="group relative rounded-full p-px shadow-lg shadow-primary/15 transition hover:shadow-primary/25">
+                aria-label="{{ $wizAttention ? 'Confused? Use The Wizard' : 'Open the NaaraSim helper' }}"
+                class="group relative rounded-full p-px shadow-lg shadow-primary/15 transition hover:shadow-primary/25 {{ $wizAttention ? 'nx-wiz-swell nx-wiz-electric' : '' }}">
             {{-- A fine gradient edge + a restrained, soft halo (professional, not
                  heavy). Most of the pill is a clean solid surface. --}}
             <span class="absolute inset-0 rounded-full bg-gradient-to-r from-primary/70 via-accent/70 to-primary/70" aria-hidden="true"></span>
@@ -35,7 +45,11 @@
                         <x-icon name="message-circle" class="h-4 w-4 text-primary" />
                     @endif
                 </span>
-                <span class="hidden pr-1 text-sm font-semibold text-slate-800 sm:inline dark:text-white">Ask NaaraSim</span>
+                @if ($wizAttention)
+                    <span class="pr-1 text-sm font-semibold text-slate-800 dark:text-white">Confused? Use The Wizard</span>
+                @else
+                    <span class="hidden pr-1 text-sm font-semibold text-slate-800 sm:inline dark:text-white">Ask NaaraSim</span>
+                @endif
             </span>
             @if ($otp)
                 <span class="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5">
