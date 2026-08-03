@@ -146,6 +146,41 @@ class MerchantTest extends TestCase
         $this->assertDatabaseHas('merchants', ['owner_user_id' => $eligible->id, 'business_name' => 'Unlocked Co']);
     }
 
+    public function test_business_verification_is_global_and_data_driven(): void
+    {
+        // §2.1: the catalogue is worldwide with per-country registration types,
+        // not the old hardcoded 4 countries / CAC-TIN.
+        $countries = \App\Support\BusinessRegistration::countries();
+        $this->assertArrayHasKey('US', $countries);
+        $this->assertArrayHasKey('GB', $countries);
+        $this->assertSame('EIN', \App\Support\BusinessRegistration::typesFor('US')[0]['code']);
+        $this->assertSame('CAC', \App\Support\BusinessRegistration::typesFor('NG')[0]['code']);
+        // Unmapped country → generic fallback, never empty.
+        $this->assertSame(\App\Support\BusinessRegistration::DEFAULT_TYPES, \App\Support\BusinessRegistration::typesFor('ZZ'));
+
+        // The page renders the global picker (a non-African country is present).
+        Livewire::actingAs(User::factory()->create(['is_active' => true]))
+            ->test(BecomeMerchant::class)
+            ->assertSee('United States')
+            ->assertSee('Business verification');
+    }
+
+    public function test_submitting_kyb_stores_the_selected_country_and_type(): void
+    {
+        // §2.1: verifying with a global country (US/EIN) submits an L3 check
+        // carrying that country + registration type — optional, not a gate.
+        $user = User::factory()->create(['is_active' => true]);
+        Livewire::actingAs($user)->test(BecomeMerchant::class)
+            ->set('country', 'US')
+            ->set('regType', 'EIN')
+            ->set('regNumber', '12-3456789')
+            ->call('submitKyb');
+
+        $this->assertDatabaseHas('kyc_verifications', [
+            'user_id' => $user->id, 'level' => 3, 'status' => 'pending',
+        ]);
+    }
+
     public function test_a_kyb_user_who_is_not_eligible_cannot_apply(): void
     {
         $this->expectException(MerchantException::class);

@@ -7,6 +7,7 @@ use App\Models\Merchant;
 use App\Services\Kyc\KycService;
 use App\Services\Merchants\MerchantException;
 use App\Services\Merchants\MerchantService;
+use App\Support\BusinessRegistration;
 use App\Support\MerchantSettings;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -22,7 +23,7 @@ use Livewire\Component;
 #[Layout('components.layouts.customer')]
 class BecomeMerchant extends Component
 {
-    // KYB form.
+    // Optional business-verification (KYB) form — data-driven, global (§2.1).
     public string $country = 'NG';
 
     public string $regType = 'CAC';
@@ -36,6 +37,19 @@ class BecomeMerchant extends Component
 
     public ?string $error = null;
 
+    public function mount(): void
+    {
+        // Default the registration type to the selected country's first option.
+        $this->regType = BusinessRegistration::typesFor($this->country)[0]['code'];
+    }
+
+    /** When the country changes, reset the reg-type to that country's first
+     *  option so the two selects never get out of sync (§2.1). */
+    public function updatedCountry(string $value): void
+    {
+        $this->regType = BusinessRegistration::typesFor($value)[0]['code'];
+    }
+
     public function submitKyb(KycService $kyc): void
     {
         $this->validate([
@@ -43,10 +57,17 @@ class BecomeMerchant extends Component
             'regType' => 'required|string|max:40',
             'regNumber' => 'required|string|max:64',
         ]);
+        // The reg-type must be one this country actually uses (defensive; the
+        // select is already scoped, but never trust the client).
+        if (! BusinessRegistration::isValidType($this->country, $this->regType)) {
+            $this->addError('regType', 'Choose a registration type for the selected country.');
+
+            return;
+        }
 
         $kyc->submit(Auth::user(), KycVerification::L3, [
             'country' => strtoupper($this->country),
-            'id_type' => $this->regType,
+            'id_type' => strtoupper($this->regType),
             'id_number' => $this->regNumber,
         ]);
 
@@ -98,10 +119,14 @@ class BecomeMerchant extends Component
         return view('livewire.become-merchant', [
             'programmeOpen' => MerchantSettings::enabled(),
             'kybVerified' => $kybVerified,
+            'kybAttempt' => $kyc->latest($user, KycVerification::L3),
             // Eligibility is computed independently of KYB now (§1) — a user can
             // unlock and apply without any identity verification up front.
             'eligibility' => $merchants->eligibility($user),
             'merchant' => Merchant::where('owner_user_id', $user->id)->latest('id')->first(),
+            // Global, data-driven business-registration catalogue (§2.1).
+            'countries' => BusinessRegistration::countries(),
+            'regTypes' => BusinessRegistration::typesFor($this->country),
         ]);
     }
 }
