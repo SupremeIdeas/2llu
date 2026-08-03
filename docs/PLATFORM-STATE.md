@@ -6,6 +6,42 @@ exists and must not be removed again.
 
 ---
 
+## Chat / mobile / branding (BUILD-3) — 2026-08-03
+
+### Done so far
+- **§2 Wizard no longer overlaps Nia.** The global buttons-only Wizard is not
+  mounted on the `support` route, so it never floats over the AI conversation.
+- **§3 Unified chat input + real in-browser voice recording.** The NaaraCare
+  composer is one rounded container (text + attach + mic) plus send. The mic now
+  records in-page via `getUserMedia`/`MediaRecorder` (`resources/js/support-voice.js`,
+  an Alpine data component) instead of opening the native file picker. It
+  **explains first** — a branded "needs mic access" panel before the OS prompt —
+  and handles granted / denied / unsupported explicitly, then hands the blob to
+  the existing `voiceNote`/`sendVoice` pipeline via `$wire.upload`. This
+  explain-first pattern is the template for any future camera/mic/location ask.
+- **§4 Section-aware Wizard float.** On eSIM/Number it swells into "Confused?
+  Use The Wizard" with a thin electric edge; in Gift it fades out; on Home/else
+  it rests as "Ask NaaraSim". Transform/opacity only, reduced-motion-safe.
+- **§5 Nia glow + 3-phase paced reveal (SupportChat only, no new component).**
+  Brand glow (`resources/css/nia-glow.css`, colours Deep Teal `#0A6E6E` / Warm
+  Gold `#D4A017` / Bright Teal `#2dd4bf`) via `<x-nia-glow-wrapper>` — wraps ONLY
+  the Nia input and AI/typing bubbles, on for focus/input/typing, off 300ms
+  after, paused off-screen. The reply is still persisted synchronously by the
+  server (history/tests unaffected); the client (`resources/js/nia-chat.js`, an
+  Alpine store) reveals the newest reply with Reading delay (4s+rand) → Typing
+  indicator (1.2s+rand) → human char-by-char stream (~200 WPM, clamped 2–5s,
+  ±8ms jitter, occasional punctuation pause), queuing replies so none is dropped.
+  `streamMessageId` marks which bubble to animate.
+
+### Still to build (BUILD-3)
+- §6 mobile UX fixes (notification bottom-sheet, Catalogue `$search`, hero row,
+  wizard list-view, More-menu scroll + glass, grid/list toggle, referral icon,
+  sprite gradient, rewards layout, bento badges), §7 global glass sidebar CMS,
+  §8 homepage video section, §9 homepage story section, §10 logo management,
+  §11 real social-login provider icons.
+
+---
+
 ## Dashboard home hero (BUILD-13) — 2026-08-03
 
 ### Done

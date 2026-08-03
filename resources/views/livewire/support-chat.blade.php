@@ -34,12 +34,21 @@
                     </div>
                 </div>
             @else
-                <div class="flex flex-col items-start gap-1">
+                @php $isStream = $m['role'] === 'assistant' && $m['id'] === ($streamMessageId ?? null); @endphp
+                {{-- BUILD-3 §5: the freshly-arrived Nia reply is hidden while the
+                     reading/typing phases run, then revealed char-by-char. --}}
+                <div class="flex flex-col items-start gap-1"
+                     @if ($isStream) x-show="!($store.nia.phase === 'reading' || $store.nia.phase === 'typing')" x-cloak @endif>
                     @if ($m['role'] === 'staff')
                         <span class="ml-1 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-primary"><x-icon name="id-card" class="h-3 w-3" /> Human agent</span>
                     @endif
-                    <div class="max-w-[85%] whitespace-pre-line rounded-2xl rounded-bl-sm px-4 py-2 text-sm {{ $m['role'] === 'staff' ? 'bg-primary/10 text-slate-800 dark:bg-primary/20 dark:text-slate-100' : 'bg-slate-100 text-slate-800 dark:bg-[#243352] dark:text-slate-100' }}">
-                        {{ $m['body'] }}
+                    <div @if ($m['role'] === 'assistant') x-data="niaBubble" data-full="{{ $m['body'] }}" data-stream="{{ $isStream ? '1' : '0' }}" data-id="{{ $m['id'] }}" :class="{ 'nia-glow--on': streaming }" @endif
+                         class="max-w-[85%] whitespace-pre-line rounded-2xl rounded-bl-sm px-4 py-2 text-sm {{ $m['role'] === 'staff' ? 'bg-primary/10 text-slate-800 dark:bg-primary/20 dark:text-slate-100' : 'nia-glow bg-slate-100 text-slate-800 dark:bg-[#243352] dark:text-slate-100' }}">
+                        @if ($m['role'] === 'assistant')
+                            <span x-text="shown">{{ $m['body'] }}</span>
+                        @else
+                            {{ $m['body'] }}
+                        @endif
                         @if ($m['voice'])
                             <audio controls preload="none" src="{{ $m['voice'] }}" class="mt-2 w-full"></audio>
                         @elseif ($m['voice_pending'])
@@ -60,13 +69,26 @@
             </div>
         @endforelse
 
-        <div wire:loading wire:target="send" class="flex items-center gap-2 text-sm text-slate-400">
+        {{-- Network wait while the reply is fetched (before the paced reveal). --}}
+        <div wire:loading wire:target="send,sendVoice" class="flex items-center gap-2 text-sm text-slate-400">
             <span class="flex gap-1">
                 <span class="h-2 w-2 animate-bounce rounded-full bg-slate-300 [animation-delay:-0.3s]"></span>
                 <span class="h-2 w-2 animate-bounce rounded-full bg-slate-300 [animation-delay:-0.15s]"></span>
                 <span class="h-2 w-2 animate-bounce rounded-full bg-slate-300"></span>
             </span>
-            {{ $agentName }} is typing…
+            {{ $agentName }} is reading…
+        </div>
+
+        {{-- BUILD-3 §5 Phase 2: Nia's typing indicator — a glowing bubble with
+             three bouncing dots, shown only during the typing phase. --}}
+        <div x-show="$store.nia.phase === 'typing'" x-cloak class="flex justify-start">
+            <x-nia-glow-wrapper typing="$store.nia.phase === 'typing'" class="rounded-2xl rounded-bl-sm">
+                <div class="flex items-center gap-1.5 rounded-2xl rounded-bl-sm bg-slate-100 px-4 py-3 dark:bg-[#243352]">
+                    <span class="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]"></span>
+                    <span class="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]"></span>
+                    <span class="h-2 w-2 animate-bounce rounded-full bg-slate-400"></span>
+                </div>
+            </x-nia-glow-wrapper>
         </div>
     </div>
 
@@ -123,7 +145,8 @@
 
         <form wire:submit="send" class="flex items-center gap-2"
               x-on:message-added.window="$nextTick(() => { const i = $el.querySelector('input[type=text]'); i && i.focus(); })">
-            <div class="flex flex-1 items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-1 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352]">
+            <x-nia-glow-wrapper interactive class="flex-1 rounded-full">
+            <div class="flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-1 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352]">
 
                 {{-- Normal controls (hidden while recording). --}}
                 <input type="text" wire:model="draft" autocomplete="off" placeholder="Type your message…"
@@ -161,6 +184,7 @@
                     </button>
                 </div>
             </div>
+            </x-nia-glow-wrapper>
 
             <button type="submit" wire:loading.attr="disabled" wire:target="send"
                     x-bind:disabled="state === 'recording' || state === 'uploading' || state === 'requesting'"

@@ -2,6 +2,7 @@ import './bootstrap';
 import './lottie';
 import { initImageCompression } from './image-compress';
 import { registerVoiceRecorder } from './support-voice';
+import { registerNiaChat } from './nia-chat';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -13,6 +14,9 @@ initImageCompression();
 
 // Real in-browser voice-note recording for NaaraCare chat (BUILD-3 §3).
 registerVoiceRecorder();
+
+// Nia 3-phase human-conversation pacing for NaaraCare chat (BUILD-3 §5).
+registerNiaChat();
 
 // Alpine is provided by Livewire 3's bundled build (do not start a second
 // Alpine instance here — Livewire injects and starts it globally).

@@ -8,6 +8,7 @@ use App\Services\Support\Contracts\VoiceSynthesizer;
 use App\Services\Support\NaaraCareAgent;
 use App\Services\Support\SupportReply;
 use App\Support\MediaStorage;
+use App\Support\SupportAttachment;
 use App\Support\SupportSettings;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -38,6 +39,20 @@ class SupportChat extends Component
 
     /** @var array<int, array<string, mixed>> */
     public array $messages = [];
+
+    // Nia 3-phase human-conversation pacing (BUILD-3 §5). The reply is persisted
+    // synchronously by the server; the CLIENT reveals the newest one (id in
+    // $streamMessageId) with a reading delay → typing indicator → char-by-char
+    // stream, and queues any that pile up. These properties back that behaviour.
+    public bool $isNiaTyping = false;
+
+    /** @var array<int, mixed> */
+    public array $messageQueue = [];
+
+    public string $displayedText = '';
+
+    /** The newest assistant message the client should animate in (null = none). */
+    public ?int $streamMessageId = null;
 
     public function mount(): void
     {
@@ -92,7 +107,7 @@ class SupportChat extends Component
                 'voice_pending' => $m->voice_status === 'pending',
                 'attachment' => $m->attachment_path ? route('support.attachment', $m->id) : null,
                 'attachment_name' => $m->attachment_name,
-                'attachment_image' => \App\Support\SupportAttachment::isImage($m->attachment_mime),
+                'attachment_image' => SupportAttachment::isImage($m->attachment_mime),
             ])->all();
     }
 
@@ -113,7 +128,7 @@ class SupportChat extends Component
             return;
         }
         if ($hasEvidence) {
-            $this->validate(['evidence' => \App\Support\SupportAttachment::uploadRules()]);
+            $this->validate(['evidence' => SupportAttachment::uploadRules()]);
         }
         if (! $this->throttleOk()) {
             return;
@@ -134,7 +149,7 @@ class SupportChat extends Component
                 'attachment_name' => Str::limit($this->evidence->getClientOriginalName(), 120, ''),
             ];
             // Build the content block for the model to SEE the evidence this turn.
-            $attachmentBlock = \App\Support\SupportAttachment::toContentBlock($bytes, $mime);
+            $attachmentBlock = SupportAttachment::toContentBlock($bytes, $mime);
         }
 
         $this->conversation->messages()->create($attributes);
@@ -188,10 +203,11 @@ class SupportChat extends Component
         }
 
         if (! $agent->available()) {
-            $this->conversation->messages()->create([
+            $msg = $this->conversation->messages()->create([
                 'role' => 'assistant',
                 'body' => 'Our AI assistant is not available right now. You can reach us on WhatsApp or by email from the Help menu, and a human will get back to you.',
             ]);
+            $this->streamMessageId = $msg->id;
             $this->loadMessages();
 
             return;
@@ -199,18 +215,20 @@ class SupportChat extends Component
 
         try {
             $result = $agent->respond(Auth::user(), $this->conversation->fresh(), $text, $attachment);
-            app(SupportReply::class)->deliver(
+            $msg = app(SupportReply::class)->deliver(
                 $this->conversation->fresh(),
                 'assistant',
                 $result['reply'],
                 $result['nav'] ? ['nav' => $result['nav']] : null,
             );
+            $this->streamMessageId = $msg->id;
         } catch (\Throwable $e) {
             report($e);
-            $this->conversation->messages()->create([
+            $msg = $this->conversation->messages()->create([
                 'role' => 'assistant',
                 'body' => "Sorry — I hit a snag answering that. If it's urgent, reach us on WhatsApp or email from the Help menu and a human will help.",
             ]);
+            $this->streamMessageId = $msg->id;
         }
 
         $this->loadMessages();
