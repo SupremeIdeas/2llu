@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
 use App\Models\User;
 use App\Providers\AppServiceProvider;
 use App\Support\MediaStorage;
@@ -33,6 +34,43 @@ class MediaStorageTest extends TestCase
 
         $this->assertTrue(MediaStorage::wasabiConfigured());
         $this->assertSame('wasabi', MediaStorage::disk());
+    }
+
+    private function configureR2(?string $publicUrl = 'https://cdn.naara.test'): void
+    {
+        config([
+            'filesystems.disks.r2.key' => 'k', 'filesystems.disks.r2.secret' => 's',
+            'filesystems.disks.r2.bucket' => 'b', 'filesystems.disks.r2.endpoint' => 'https://acc.r2.cloudflarestorage.com',
+            'filesystems.disks.r2.url' => $publicUrl,
+        ]);
+    }
+
+    public function test_r2_wins_over_wasabi_and_local_by_default(): void
+    {
+        $this->configureR2();
+        config(['filesystems.disks.wasabi.key' => 'k', 'filesystems.disks.wasabi.secret' => 's', 'filesystems.disks.wasabi.bucket' => 'b']);
+
+        $this->assertTrue(MediaStorage::r2Configured());
+        $this->assertSame('r2', MediaStorage::disk());       // public
+        $this->assertSame('r2', MediaStorage::privateDisk()); // private
+    }
+
+    public function test_admin_can_force_wasabi_even_when_r2_is_configured(): void
+    {
+        $this->configureR2();
+        config(['filesystems.disks.wasabi.key' => 'k', 'filesystems.disks.wasabi.secret' => 's', 'filesystems.disks.wasabi.bucket' => 'b']);
+        Setting::setValue('media.primary_disk', 'wasabi');
+
+        $this->assertSame('wasabi', MediaStorage::disk());
+    }
+
+    public function test_r2_without_a_public_url_cannot_serve_public_media_but_can_hold_private(): void
+    {
+        $this->configureR2(publicUrl: null); // no public serving domain
+        config(['filesystems.disks.wasabi.key' => null]);
+
+        $this->assertSame('public', MediaStorage::disk());     // public falls through
+        $this->assertSame('r2', MediaStorage::privateDisk());  // private is fine on R2
     }
 
     public function test_livewire_temp_upload_disk_follows_the_wasabi_or_local_resolution(): void

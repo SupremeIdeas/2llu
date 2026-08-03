@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Setting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -41,20 +42,73 @@ class MediaStorage
             && filled(config('filesystems.disks.wasabi.bucket'));
     }
 
-    /** Disk to store public media on: Wasabi if configured, else server disk. */
-    public static function disk(): string
+    /** True once R2 has creds + endpoint (BUILD-11 §4). */
+    public static function r2Configured(): bool
     {
-        return self::wasabiConfigured() ? 'wasabi' : 'public';
+        return filled(config('filesystems.disks.r2.key'))
+            && filled(config('filesystems.disks.r2.secret'))
+            && filled(config('filesystems.disks.r2.bucket'))
+            && filled(config('filesystems.disks.r2.endpoint'));
     }
 
     /**
-     * Disk for PRIVATE files (e.g. GDPR data exports): Wasabi (private) if
-     * configured, otherwise the local disk — never web-accessible. Reached only
-     * through an owner-authenticated download route.
+     * Admin's chosen primary object store: 'r2' | 'wasabi' | 'public' | 'auto'.
+     * 'auto' (the default) prefers R2, then Wasabi, then local — matching the
+     * stated preference order. Never a hard dependency: an explicit choice that
+     * isn't actually configured falls through to auto.
+     */
+    public static function primaryPreference(): string
+    {
+        try {
+            $v = (string) Setting::getValue('media.primary_disk', 'auto');
+        } catch (\Throwable) {
+            return 'auto';
+        }
+
+        return in_array($v, ['r2', 'wasabi', 'public', 'auto'], true) ? $v : 'auto';
+    }
+
+    /** Disk to store PUBLIC media on: R2 → Wasabi → local public (per config). */
+    public static function disk(): string
+    {
+        return self::resolveDisk(publicContext: true);
+    }
+
+    /**
+     * Disk for PRIVATE files (e.g. GDPR data exports): R2 → Wasabi → local disk —
+     * never web-accessible directly. Reached only through an owner-authenticated
+     * download route (object stores serve these via short-lived signed URLs).
      */
     public static function privateDisk(): string
     {
-        return self::wasabiConfigured() ? 'wasabi' : 'local';
+        return self::resolveDisk(publicContext: false);
+    }
+
+    /**
+     * Resolve the active disk at runtime from what's actually configured (BUILD-11
+     * §4) — identical logic on cPanel and VPS, nothing environment-specific. A
+     * public context needs R2's public serving URL before R2 can win.
+     */
+    private static function resolveDisk(bool $publicContext): string
+    {
+        $pref = self::primaryPreference();
+        $r2 = self::r2Configured() && (! $publicContext || filled(config('filesystems.disks.r2.url')));
+        $wasabi = self::wasabiConfigured();
+        $localFallback = $publicContext ? 'public' : 'local';
+
+        // An explicit, actually-configured admin choice wins.
+        if ($pref === 'r2' && $r2) {
+            return 'r2';
+        }
+        if ($pref === 'wasabi' && $wasabi) {
+            return 'wasabi';
+        }
+        if ($pref === 'public') {
+            return $localFallback;
+        }
+
+        // auto (or the chosen store isn't configured): R2 → Wasabi → local.
+        return $r2 ? 'r2' : ($wasabi ? 'wasabi' : $localFallback);
     }
 
     /** Livewire/validator rule for an uploaded image or SVG. */

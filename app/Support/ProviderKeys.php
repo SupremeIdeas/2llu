@@ -3,7 +3,9 @@
 namespace App\Support;
 
 use App\Models\Setting;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Admin-managed API credentials (blueprint Sections 15 & 17.4, money-safety
@@ -138,6 +140,16 @@ class ProviderKeys
                     'elevenlabs_model' => ['label' => 'ElevenLabs — Model', 'config' => 'services.elevenlabs.model', 'env' => 'ELEVENLABS_MODEL', 'secret' => false, 'hint' => 'Use eleven_v3 for the most expressive, human delivery (supports [laughs], [exhales] tags). Leave as eleven_v3 if unsure.'],
                 ],
             ],
+            'storage' => [
+                'label' => 'Media storage — Cloudflare R2 (optional)',
+                'fields' => [
+                    'r2_access_key_id' => ['label' => 'R2 — Access Key ID', 'config' => 'filesystems.disks.r2.key', 'env' => 'R2_ACCESS_KEY_ID', 'secret' => false, 'hint' => 'dash.cloudflare.com → R2 → Manage R2 API Tokens → Create. Leave every R2 field blank to keep using Wasabi / the server disk.'],
+                    'r2_secret_access_key' => ['label' => 'R2 — Secret Access Key', 'config' => 'filesystems.disks.r2.secret', 'env' => 'R2_SECRET_ACCESS_KEY', 'secret' => true, 'hint' => 'Shown once when the R2 API token is created.'],
+                    'r2_bucket' => ['label' => 'R2 — Bucket name', 'config' => 'filesystems.disks.r2.bucket', 'env' => 'R2_BUCKET', 'secret' => false, 'hint' => 'R2 → the bucket that will hold uploads.'],
+                    'r2_endpoint' => ['label' => 'R2 — S3 API endpoint', 'config' => 'filesystems.disks.r2.endpoint', 'env' => 'R2_ENDPOINT', 'secret' => false, 'hint' => 'https://<ACCOUNT_ID>.r2.cloudflarestorage.com — the account ID is on the R2 overview page.'],
+                    'r2_public_url' => ['label' => 'R2 — Public URL', 'config' => 'filesystems.disks.r2.url', 'env' => 'R2_PUBLIC_URL', 'secret' => false, 'hint' => 'The bucket public r2.dev URL or your custom domain used to SERVE files. Required before R2 can hold PUBLIC media (the S3 endpoint above needs auth).'],
+                ],
+            ],
             'turnstile' => [
                 'label' => 'Bot protection (Cloudflare Turnstile)',
                 'fields' => [
@@ -236,9 +248,9 @@ class ProviderKeys
         // Signal all workers to gracefully restart so they re-boot with the new
         // credentials. Applied centrally here, once, for EVERY credential group.
         try {
-            \Illuminate\Support\Facades\Artisan::call('queue:restart');
+            Artisan::call('queue:restart');
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('[providers] queue:restart after key save failed: '.$e->getMessage());
+            Log::warning('[providers] queue:restart after key save failed: '.$e->getMessage());
         }
     }
 

@@ -5,10 +5,14 @@ namespace Tests\Feature;
 use App\Livewire\Admin\ProviderKeys as ProviderKeysComponent;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\MediaStorage;
 use App\Support\ProviderKeys;
 use App\Support\ProviderStatus;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -65,7 +69,7 @@ class ProviderKeysTest extends TestCase
 
         // The raw settings row (bypassing the Eloquent cast) must not contain
         // the plaintext secret — it is encrypted at rest.
-        $raw = \Illuminate\Support\Facades\DB::table('settings')
+        $raw = DB::table('settings')
             ->where('key', ProviderKeys::SETTING_KEY)
             ->value('value');
         $this->assertStringNotContainsString('sk_live_topsecret_value', (string) $raw);
@@ -102,9 +106,9 @@ class ProviderKeysTest extends TestCase
             'services.esimgo.api_key' => 'OLD-KEY',
             'services.esimgo.base_url' => 'https://api.esim-go.com/v2.5',
         ]);
-        \Illuminate\Support\Facades\Cache::forget('illuminate:queue:restart');
-        \Illuminate\Support\Facades\Http::fake([
-            'api.esim-go.com/*' => \Illuminate\Support\Facades\Http::response(['bundles' => []]),
+        Cache::forget('illuminate:queue:restart');
+        Http::fake([
+            'api.esim-go.com/*' => Http::response(['bundles' => []]),
         ]);
 
         // Admin pastes a new key. save() overlays config in-process AND signals
@@ -117,12 +121,44 @@ class ProviderKeysTest extends TestCase
 
         // A catalogue fetch now authenticates with the NEW key, not the stale one.
         app('esim.esimgo')->getCatalogue();
-        \Illuminate\Support\Facades\Http::assertSent(
+        Http::assertSent(
             fn ($r) => $r->hasHeader('X-API-Key', 'NEW-LIVE-KEY'),
         );
 
         // And long-running workers were signalled to restart.
-        $this->assertNotNull(\Illuminate\Support\Facades\Cache::get('illuminate:queue:restart'));
+        $this->assertNotNull(Cache::get('illuminate:queue:restart'));
+    }
+
+    public function test_r2_credentials_pasted_in_the_admin_configure_the_r2_disk(): void
+    {
+        // No R2 anywhere yet.
+        config(['filesystems.disks.r2.key' => null, 'filesystems.disks.r2.secret' => null, 'filesystems.disks.r2.bucket' => null, 'filesystems.disks.r2.endpoint' => null]);
+        $this->assertFalse(MediaStorage::r2Configured());
+
+        Livewire::actingAs($this->superAdmin())->test(ProviderKeysComponent::class)
+            ->set('inputs.r2_access_key_id', 'r2-key')
+            ->set('inputs.r2_secret_access_key', 'r2-secret')
+            ->set('inputs.r2_bucket', 'naara-media')
+            ->set('inputs.r2_endpoint', 'https://acc.r2.cloudflarestorage.com')
+            ->set('inputs.r2_public_url', 'https://cdn.naara.test')
+            ->call('save')
+            ->assertSet('inputs.r2_secret_access_key', ''); // never echoed back
+
+        ProviderKeys::applyToConfig();
+        $this->assertTrue(MediaStorage::r2Configured());
+        $this->assertSame('naara-media', config('filesystems.disks.r2.bucket'));
+        $this->assertSame('r2', MediaStorage::disk()); // now serves public media
+    }
+
+    public function test_admin_can_pin_the_primary_media_store(): void
+    {
+        Livewire::actingAs($this->superAdmin())->test(ProviderKeysComponent::class)
+            ->set('primaryDisk', 'wasabi')
+            ->call('savePrimaryDisk');
+
+        $this->assertSame('wasabi', Setting::getValue('media.primary_disk'));
+        $this->assertSame('wasabi', MediaStorage::primaryPreference());
+        $this->assertDatabaseHas('audit_logs', ['action' => 'media.primary_disk_updated']);
     }
 
     public function test_a_non_super_admin_cannot_reach_the_api_keys_page(): void

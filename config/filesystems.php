@@ -76,6 +76,24 @@ return [
             'report' => false,
         ],
 
+        // Cloudflare R2 (BUILD-11 §4) — S3-compatible object storage. Endpoint is
+        // https://<ACCOUNT_ID>.r2.cloudflarestorage.com, region is always "auto".
+        // R2 buckets are not web-public by default, so `url` points at the bucket's
+        // public r2.dev / custom domain used to SERVE files (the S3 endpoint needs
+        // auth). Same s3 driver — works identically on cPanel and VPS.
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'url' => env('R2_PUBLIC_URL'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => true,
+            'report' => false,
+        ],
+
     ],
 
     /*

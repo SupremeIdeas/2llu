@@ -6,6 +6,31 @@ exists and must not be removed again.
 
 ---
 
+## Media pipeline build (BUILD-11) — 2026-08-03
+
+### §4 Cloudflare R2 as a third storage option — Done
+- **R2 disk added** (`config/filesystems.php`) — same `s3` driver, `region: auto`,
+  endpoint `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`. The bucket's S3
+  endpoint needs auth, so a separate public URL (`R2_PUBLIC_URL` → disk `url`)
+  is what SERVES files; R2 can hold PRIVATE files (signed URLs) with no public
+  URL at all.
+- **Runtime disk resolution** (`MediaStorage::resolveDisk()`) — one code path on
+  cPanel and VPS, nothing environment-specific. Priority is **R2 → Wasabi →
+  server** ("auto"), or an explicit admin choice via the `media.primary_disk`
+  Setting. A public context requires R2's public URL before R2 can win; a chosen
+  store that isn't actually configured safely falls through to auto, so uploads
+  can never break. `disk()` (public) and `privateDisk()` both route through it.
+- **Admin, no file editing** — R2 credentials are pasted in Admin → API keys →
+  *Media storage* (encrypted at rest, overlaid onto `filesystems.disks.r2.*` at
+  boot via `ProviderKeys::applyToConfig()`), and a *Primary media store* chooser
+  writes the `media.primary_disk` Setting. The panel shows what media actually
+  resolves to right now ("Serving from: …").
+- Tests: `MediaStorageTest` (R2 wins by default, admin can pin Wasabi, R2 with no
+  public URL serves private-only) + `ProviderKeysTest` (pasted R2 creds configure
+  the disk without echoing the secret; primary-store pin is audited).
+
+---
+
 ## Payments build (BUILD-2) — 2026-08-02
 
 ### Done
