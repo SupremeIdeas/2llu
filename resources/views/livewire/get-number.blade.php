@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-3xl">
-    {{-- NaaraSim owns the connectivity surfaces (eSIM + Numbers). --}}
-    <x-brand-logo variant="product" class="mb-3 h-7 max-w-[150px]" fallback-icon="signal" label="NaaraSim" />
+    {{-- NaaraSim mark now lives in the header (App\Support\BrandContext) — this
+         is a NaaraSim number surface, so the header already wears it. --}}
 
     {{-- Premium 4-image interchanging-reveal hero (Numbers V6 §0). --}}
     @include('partials.numbers-hero')

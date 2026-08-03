@@ -9,7 +9,7 @@
 
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <x-brand-logo variant="product" class="mb-2 h-7 max-w-[150px]" fallback-icon="signal" label="NaaraSim" />
+            {{-- NaaraSim mark now lives in the header (App\Support\BrandContext). --}}
             <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">eSIM Data Plans</h1>
             <p class="text-sm text-slate-500 dark:text-slate-400">190+ countries. Stay connected. No borders. No swaps.</p>
         </div>

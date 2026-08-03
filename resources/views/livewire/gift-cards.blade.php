@@ -15,11 +15,10 @@
         </div>
     @endif
 
-    {{-- Header — the Naara Gift storefront wears its own admin-set logo
-         (falls back to the gift icon + wordmark when none is uploaded). --}}
+    {{-- The Naara Gift mark now lives in the header (App\Support\BrandContext) —
+         this is the gift surface, so the header already wears it. --}}
     <div class="mb-5">
-        <x-brand-logo variant="gift" label="Naara Gift" fallbackIcon="gift" class="h-9" />
-        <p class="mt-1.5 text-sm text-slate-500 dark:text-slate-400">Gift cards for the brands you love — delivered instantly.</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Gift cards for the brands you love — delivered instantly.</p>
     </div>
 
     @if (! $live)
