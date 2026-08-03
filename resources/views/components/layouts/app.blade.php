@@ -37,19 +37,29 @@
     <link rel="preload" href="/fonts/didact-gothic.woff2" as="font" type="font/woff2" crossorigin>
 
     {{-- Pre-paint theme script: sets the `dark` class BEFORE first paint so
-         there is no flash of the wrong theme (blueprint Section 4.2 / 24.3). --}}
+         there is no flash of the wrong theme (blueprint Section 4.2 / 24.3).
+         The user's choice lives in localStorage and MUST outlive navigation:
+         Livewire `wire:navigate` morphs a fresh, server-rendered <html> (which
+         has no `dark` class) into the page, so we re-apply the stored theme on
+         every `livewire:navigated` too — otherwise dark mode would silently drop
+         back to light the moment you open another page. --}}
     <script>
         (function () {
             // Reveal-on-scroll styles only apply when JS runs (no-JS visitors
             // and crawlers see everything immediately — Module 27).
             document.documentElement.classList.add('js-enabled');
-            try {
-                var stored = localStorage.getItem('theme');
-                var wantsDark = stored
-                    ? stored === 'dark'
-                    : window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.documentElement.classList.toggle('dark', wantsDark);
-            } catch (e) { /* localStorage unavailable — default to light */ }
+            window.applyStoredTheme = function () {
+                try {
+                    var stored = localStorage.getItem('theme');
+                    var wantsDark = stored
+                        ? stored === 'dark'
+                        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    document.documentElement.classList.toggle('dark', wantsDark);
+                } catch (e) { /* localStorage unavailable — default to light */ }
+            };
+            window.applyStoredTheme();
+            // Re-assert the choice after each SPA navigation (see comment above).
+            document.addEventListener('livewire:navigated', window.applyStoredTheme);
         })();
     </script>
 

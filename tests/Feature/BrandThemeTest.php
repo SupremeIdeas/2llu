@@ -65,6 +65,17 @@ class BrandThemeTest extends TestCase
         $this->get('/login')->assertOk()->assertSee('--brand-primary: 17 34 51', false);
     }
 
+    public function test_the_chosen_theme_survives_spa_navigation(): void
+    {
+        // The user's dark/light choice must outlive wire:navigate — the incoming
+        // server-rendered <html> has no `dark` class, so the layout must re-apply
+        // the stored theme on every livewire:navigated, not only on full load.
+        $html = $this->get('/login')->assertOk()->getContent();
+
+        $this->assertStringContainsString('window.applyStoredTheme', $html);
+        $this->assertStringContainsString("addEventListener('livewire:navigated', window.applyStoredTheme)", $html);
+    }
+
     public function test_invalid_hex_is_rejected(): void
     {
         $admin = User::factory()->create()->fresh();
