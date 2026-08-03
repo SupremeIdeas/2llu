@@ -9,6 +9,39 @@
 
 ## DONE
 
+### 📦 BUILD-11 + BUILD-13 + BUILD-3 (the three priority build files) — 2026-08-03
+Delivered Frank's three "most important first" build files, committed per numbered
+section, full suite **1011 green**. Detail lives in `docs/PLATFORM-STATE.md`.
+
+- **BUILD-11 — dual-compression image pipeline + Cloudflare R2.**
+  - §4 R2 as a third media store: `r2` disk + `MediaStorage::resolveDisk()`
+    (R2 → Wasabi → server, or an admin-pinned `media.primary_disk`); identical on
+    cPanel/VPS. R2 creds + primary-store chooser live in Admin → API keys.
+  - §3 server-side WebP: queued `CompressImageJob` (raw GD, no new dep) →
+    ~80KB target, quality floor 40, per-context max dimensions, overwrites in
+    place so saved URLs stay valid, failure-safe, KYC/GIF excluded.
+  - §2 browser-side: one document capture-phase listener compresses images
+    before Livewire uploads them, on every surface; degrades gracefully.
+- **BUILD-13 — dashboard home hero.** `HeroBackground` art now a real `<img>`
+  (2:1 band, capped) under the title + a new admin description line; `Buy eSIM`/
+  `Get number` in a strict `grid-cols-2`; viewport-fit at 375×667; clean
+  degradation with no image.
+- **BUILD-3 — chat / mobile / branding (all 11 sections).**
+  - §2 Wizard not mounted on the support route. §3 unified chat input with real
+    in-browser mic recording (getUserMedia/MediaRecorder + explain-first
+    permission priming). §4 section-aware Wizard float ("Confused? Use The
+    Wizard" swell + electric edge on eSIM/Number, fade on Gift). §5 Nia brand
+    glow + 3-phase paced reveal (reading → typing → char stream) with a queue,
+    on SupportChat only, no new component.
+  - §6 mobile UX: notification bottom-sheet, More-sheet scroll + grid/list
+    toggle, referral icon, hero button row, rewards layout, bento badge
+    gradients (§6.2/6.4/6.6/6.9 were already satisfied — verified).
+  - §7 global glass sidebar CMS (offline-safe legal/compliance + social +
+    prominent account deletion; admin custom links, reviews URL, display mode,
+    blog widget). §8 homepage video section (YouTube/upload, lazy modal player).
+    §9 scroll-revealed story section. §10 logo management + §11 real social-login
+    glyphs were already built in prior work — verified.
+
 ### 🎨 Brand logo set — Naara / NaaraSim / Naara Gift wired per surface — 2026-07-28
 Installed the real brand marks (light + dark PNGs, transparent, 24–42 KB each)
 and mapped each to the surface it owns, all admin-overridable in Admin →
