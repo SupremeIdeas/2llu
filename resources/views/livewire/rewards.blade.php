@@ -1,4 +1,23 @@
 <div class="mx-auto max-w-3xl">
+    {{-- One-shot celebratory confetti, fired by the `reward-claimed` event on a
+         successful check-in. The node stays mounted (so lottie.js hydrates it);
+         we just restart + reveal it briefly. Respects reduced-motion. --}}
+    <div x-data="{
+             show: false,
+             fire() {
+                 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                 const a = $refs.confetti && $refs.confetti.__lottie;
+                 if (!a) return;
+                 this.show = true; a.goToAndPlay(0, true);
+                 clearTimeout(this._t); this._t = setTimeout(() => (this.show = false), 2800);
+             }
+         }"
+         @reward-claimed.window="fire()"
+         x-show="show" x-cloak x-transition.opacity
+         class="pointer-events-none fixed inset-0 z-[80] flex items-start justify-center" style="display:none;">
+        <x-lottie name="rewards-confetti" :loop="false" :autoplay="false" x-ref="confetti" class="h-full w-full max-w-2xl" />
+    </div>
+
     {{-- BUILD-3 §6.10: title + description sit BESIDE the Lottie, not stacked
          over it. The text column flexes while the animation stays a fixed,
          smaller size on mobile so the copy is never crushed. --}}

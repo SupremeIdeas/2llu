@@ -1,13 +1,30 @@
 <div class="mx-auto max-w-3xl">
-    <div class="mb-6 flex items-center gap-3">
-        @if ($merchant->logo_url)
-            <img src="{{ $merchant->logo_url }}" alt="{{ $merchant->business_name }}" class="h-12 w-12 rounded-xl object-contain ring-1 ring-black/5 dark:ring-white/10">
-        @else
-            <span class="flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold uppercase text-white" style="background-color: {{ $merchant->brand_color ?: '#0A6E6E' }};">{{ \Illuminate\Support\Str::of($merchant->business_name)->trim()->substr(0, 2) }}</span>
-        @endif
-        <div>
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ $merchant->business_name }}</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Your NaaraSim reseller storefront.</p>
+    {{-- Merchant hero — a distinct, premium banner that visibly sets a merchant
+         account apart from a normal user dashboard (self-hosted Lottie). It also
+         carries the V1/V2 premium badge for the merchant's current tier. --}}
+    <div class="mb-6 overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/[0.10] via-primary/[0.05] to-accent/[0.06] p-5 dark:border-primary/30 dark:from-primary/20 dark:via-primary/10 dark:to-accent/10">
+        <div class="flex items-center gap-4">
+            @if ($merchant->logo_url)
+                <img src="{{ $merchant->logo_url }}" alt="{{ $merchant->business_name }}" class="h-14 w-14 rounded-2xl object-contain ring-1 ring-black/5 dark:ring-white/10">
+            @else
+                <span class="flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-bold uppercase text-white" style="background-color: {{ $merchant->brand_color ?: '#0A6E6E' }};">{{ \Illuminate\Support\Str::of($merchant->business_name)->trim()->substr(0, 2) }}</span>
+            @endif
+            <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                    <h1 class="truncate text-2xl font-bold text-slate-900 dark:text-slate-100">{{ $merchant->business_name }}</h1>
+                    {{-- Tier premium badge (animated). --}}
+                    <x-lottie name="{{ $merchant->isV2() ? 'merchant-v2-badge' : 'merchant-v1-badge' }}"
+                              label="{{ $merchant->isV2() ? 'Merchant V2' : 'Merchant V1' }} premium badge"
+                              class="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
+                </div>
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                    Your NaaraSim reseller storefront ·
+                    <span class="font-semibold text-primary dark:text-teal-300">{{ $merchant->isV2() ? 'Merchant V2' : 'Merchant V1' }}</span>
+                </p>
+            </div>
+            {{-- Merchant illustration — hidden on the smallest screens so the copy
+                 never gets crushed. --}}
+            <x-lottie name="merchant-hero" label="Merchant" class="hidden h-24 w-24 shrink-0 sm:block sm:h-28 sm:w-28" />
         </div>
     </div>
 

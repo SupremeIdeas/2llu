@@ -2193,7 +2193,7 @@
     "src": "node_modules/flag-icons/flags/4x3/zw.svg"
   },
   "resources/css/app.css": {
-    "file": "assets/app-BtPB-fO7.css",
+    "file": "assets/app-DD-8oJrK.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -2203,20 +2203,55 @@
     "src": "resources/js/animations/gift-preloader.json",
     "isDynamicEntry": true
   },
+  "resources/js/animations/merchant-hero.json": {
+    "file": "assets/merchant-hero-MsenZFyY.js",
+    "name": "merchant-hero",
+    "src": "resources/js/animations/merchant-hero.json",
+    "isDynamicEntry": true
+  },
+  "resources/js/animations/merchant-v1-badge.json": {
+    "file": "assets/merchant-v1-badge-TJwQ2mmG.js",
+    "name": "merchant-v1-badge",
+    "src": "resources/js/animations/merchant-v1-badge.json",
+    "isDynamicEntry": true
+  },
+  "resources/js/animations/merchant-v2-badge.json": {
+    "file": "assets/merchant-v2-badge-MybErbOn.js",
+    "name": "merchant-v2-badge",
+    "src": "resources/js/animations/merchant-v2-badge.json",
+    "isDynamicEntry": true
+  },
+  "resources/js/animations/refer-earn.json": {
+    "file": "assets/refer-earn-BWqMGQ27.js",
+    "name": "refer-earn",
+    "src": "resources/js/animations/refer-earn.json",
+    "isDynamicEntry": true
+  },
   "resources/js/animations/reward.json": {
     "file": "assets/reward-BKLkSPTy.js",
     "name": "reward",
     "src": "resources/js/animations/reward.json",
     "isDynamicEntry": true
   },
+  "resources/js/animations/rewards-confetti.json": {
+    "file": "assets/rewards-confetti-orkJM4FW.js",
+    "name": "rewards-confetti",
+    "src": "resources/js/animations/rewards-confetti.json",
+    "isDynamicEntry": true
+  },
   "resources/js/app.js": {
-    "file": "assets/app-CvQVLMR9.js",
+    "file": "assets/app-B-yI0v9X.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "dynamicImports": [
       "resources/js/animations/gift-preloader.json",
       "resources/js/animations/reward.json",
+      "resources/js/animations/refer-earn.json",
+      "resources/js/animations/rewards-confetti.json",
+      "resources/js/animations/merchant-v1-badge.json",
+      "resources/js/animations/merchant-v2-badge.json",
+      "resources/js/animations/merchant-hero.json",
       "_lottie-DG5NakNH.js",
       "resources/js/webgl/login-scene.js",
       "resources/js/webgl/hero-scene.js",
@@ -2224,7 +2259,7 @@
     ]
   },
   "resources/js/dialer.js": {
-    "file": "assets/dialer-xN72oEUc.js",
+    "file": "assets/dialer-CcQaaJRN.js",
     "name": "dialer",
     "src": "resources/js/dialer.js",
     "isDynamicEntry": true,

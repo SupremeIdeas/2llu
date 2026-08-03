@@ -9,6 +9,12 @@
 const REGISTRY = {
     'gift-preloader': () => import('./animations/gift-preloader.json'),
     reward: () => import('./animations/reward.json'),
+    // BUILD-4 merchant/rewards/referral visuals (self-hosted dotLottie exports).
+    'refer-earn': () => import('./animations/refer-earn.json'),
+    'rewards-confetti': () => import('./animations/rewards-confetti.json'),
+    'merchant-v1-badge': () => import('./animations/merchant-v1-badge.json'),
+    'merchant-v2-badge': () => import('./animations/merchant-v2-badge.json'),
+    'merchant-hero': () => import('./animations/merchant-hero.json'),
 };
 
 function mount(lottie, el) {

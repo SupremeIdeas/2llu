@@ -31,6 +31,8 @@ class Rewards extends Component
             $this->dispatch('nx-toast', variant: 'hero', type: 'success',
                 title: 'Reward earned',
                 message: "+{$earned} NaaraCredits added to your balance. Come back tomorrow for more!");
+            // Celebratory confetti (self-hosted Lottie), only on a real earn.
+            $this->dispatch('reward-claimed');
         } else {
             $this->flash = 'You’ve already checked in — come back later for your next reward.';
             $this->dispatch('nx-toast', type: 'info', message: $this->flash);

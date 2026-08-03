@@ -1,6 +1,13 @@
 <div class="mx-auto max-w-2xl" x-data="{ copied: false }">
-    <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Refer &amp; earn</h1>
-    <p class="mb-6 text-sm text-slate-500 dark:text-slate-400">Share NaaraSim. When a friend makes their first purchase, you earn store credit — a share of the profit.</p>
+    {{-- Hero: refer-and-earn illustration beside the copy (self-hosted Lottie,
+         reduced-motion aware). Text flexes; the animation stays a fixed size. --}}
+    <div class="mb-6 flex items-center gap-4">
+        <div class="min-w-0 flex-1">
+            <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Refer &amp; earn</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Share NaaraSim. When a friend makes their first purchase, you earn store credit — a share of the profit.</p>
+        </div>
+        <x-lottie name="refer-earn" label="Refer and earn" class="h-24 w-24 shrink-0 sm:h-36 sm:w-36" />
+    </div>
 
     <div class="rounded-2xl border border-slate-200 nx-glass-tile p-6 shadow-sm dark:border-[#2D4060]">
         <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Your referral link</label>
