@@ -125,6 +125,8 @@
     {{-- Withdraw earnings --}}
     <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
         <h2 class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"><x-icon name="wallet" class="h-4 w-4" /> Withdraw earnings</h2>
+        {{-- §5.1: explain the identity gate up front, before they hit it. --}}
+        <x-kyc-gate-notice :level="2" action="withdraw your earnings" class="mb-3" />
         @if (! $payoutsEnabled)
             <p class="text-sm text-slate-500 dark:text-slate-400">Withdrawals aren’t open yet — your earnings keep accruing safely.</p>
         @elseif ($accounts->isEmpty())

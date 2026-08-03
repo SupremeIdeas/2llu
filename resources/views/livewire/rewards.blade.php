@@ -58,6 +58,12 @@
             </div>
         </div>
 
+        {{-- §5.1: if there's cash to withdraw but the identity gate isn't met,
+             explain it inline (self-hides once verified). --}}
+        @if ($withdrawableUsd > 0)
+            <x-kyc-gate-notice :level="2" action="cash out your credits" class="mt-4" />
+        @endif
+
         @if ($flash)
             <div class="mb-6 flex items-center gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary-dark dark:bg-primary/20 dark:text-primary">
                 <x-icon name="badge-check" class="h-4 w-4 shrink-0" /> {{ $flash }}
