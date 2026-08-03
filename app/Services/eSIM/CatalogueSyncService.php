@@ -5,6 +5,7 @@ namespace App\Services\eSIM;
 use App\Models\EsimPlan;
 use App\Services\Pricing\PricingEngine;
 use App\Support\CountryPickerSources;
+use App\Support\EsimRegions;
 use App\Support\SupplierScrub;
 use App\Support\SyncStatus;
 use Illuminate\Support\Arr;
@@ -60,6 +61,11 @@ class CatalogueSyncService
                     // so provider identity can never leak to users (rule 1.2).
                     'name' => SupplierScrub::name((string) $row['name']),
                     'type' => $row['type'] ?? null,
+                    // Region/coverage categorisation (BUILD-8 §2.1). Derived from
+                    // each provider's real signal at map time; both may be null on
+                    // a provider that supplies neither (expected, not a gap).
+                    'coverage_type' => $row['coverage_type'] ?? null,
+                    'region_slug' => $row['region_slug'] ?? null,
                     'has_voice' => $row['has_voice'] ?? false, // Naara Connect (Zendit) only
                     'data_mb' => $row['data_mb'] ?? null,
                     'validity_days' => $row['validity_days'] ?? null,
@@ -86,15 +92,21 @@ class CatalogueSyncService
     {
         $bundles = $raw['bundles'] ?? $raw;
 
-        return collect($bundles)->map(fn ($b) => [
-            'provider_plan_id' => $b['name'] ?? $b['bundle_name'] ?? null,
-            'name' => $b['description'] ?? $b['name'] ?? 'eSIM bundle',
-            'type' => $b['type'] ?? null,
-            'data_mb' => $this->intOrNull($b['dataAmount'] ?? $b['data'] ?? null),
-            'validity_days' => $this->intOrNull($b['duration'] ?? null),
-            'countries' => $this->isoList($b['countries'] ?? []),
-            'cost_price_usd' => (float) ($b['price'] ?? 0),
-        ])->filter(fn ($r) => $r['provider_plan_id'] !== null)->values()->all();
+        return collect($bundles)->map(function ($b) {
+            $countries = $this->isoList($b['countries'] ?? []);
+
+            // eSIM Go exposes a real, distinct `region` filter (e.g. "Europe") —
+            // confirmed in §1 — so that's the region signal here.
+            return array_merge([
+                'provider_plan_id' => $b['name'] ?? $b['bundle_name'] ?? null,
+                'name' => $b['description'] ?? $b['name'] ?? 'eSIM bundle',
+                'type' => $b['type'] ?? null,
+                'data_mb' => $this->intOrNull($b['dataAmount'] ?? $b['data'] ?? null),
+                'validity_days' => $this->intOrNull($b['duration'] ?? null),
+                'countries' => $countries,
+                'cost_price_usd' => (float) ($b['price'] ?? 0),
+            ], $this->deriveCoverage($countries, $b['region'] ?? null));
+        })->filter(fn ($r) => $r['provider_plan_id'] !== null)->values()->all();
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -105,13 +117,23 @@ class CatalogueSyncService
         foreach ($data as $group) {
             foreach (Arr::get($group, 'operators', []) as $operator) {
                 $countries = collect(Arr::get($operator, 'countries', []))
-                    ->pluck('country_code')->filter()->values()->all();
+                    ->pluck('country_code')->filter()
+                    ->map(fn ($c) => strtoupper((string) $c))->values()->all();
+
+                // Airalo (confirmed §1): the operator `type` distinguishes local
+                // from global; regional/global operators carry a `slug` such as
+                // "europe" or "world". Those are the real region signals — the
+                // group title is a last-resort human label for the same grouping.
+                $regionRaw = Arr::get($operator, 'slug')
+                    ?? Arr::get($group, 'slug')
+                    ?? Arr::get($group, 'title');
+                $coverage = $this->deriveCoverage($countries, $regionRaw, Arr::get($operator, 'type'));
 
                 foreach (Arr::get($operator, 'packages', []) as $pkg) {
                     if (! isset($pkg['id'])) {
                         continue;
                     }
-                    $rows[] = [
+                    $rows[] = array_merge([
                         'provider_plan_id' => (string) $pkg['id'],
                         'name' => $pkg['title'] ?? $pkg['id'],
                         'type' => $pkg['type'] ?? 'sim',
@@ -123,7 +145,7 @@ class CatalogueSyncService
                         'airalo_min_price' => isset($pkg['minimum_selling_price'])
                             ? (float) $pkg['minimum_selling_price']
                             : null,
-                    ];
+                    ], $coverage);
                 }
             }
         }
@@ -136,15 +158,22 @@ class CatalogueSyncService
     {
         $plans = $raw['data'] ?? $raw['plans'] ?? $raw;
 
-        return collect($plans)->map(fn ($p) => [
-            'provider_plan_id' => isset($p['id']) ? (string) $p['id'] : null,
-            'name' => $p['name'] ?? 'eSIM plan',
-            'type' => $p['type'] ?? null,
-            'data_mb' => $this->intOrNull($p['data_mb'] ?? null),
-            'validity_days' => $this->intOrNull($p['validity_days'] ?? null),
-            'countries' => $this->isoList($p['countries'] ?? []),
-            'cost_price_usd' => (float) ($p['price'] ?? 0),
-        ])->filter(fn ($r) => $r['provider_plan_id'] !== null)->values()->all();
+        return collect($plans)->map(function ($p) {
+            $countries = $this->isoList($p['countries'] ?? []);
+
+            // Quibity's marketing confirms a real regional-vs-country choice (§1);
+            // read a `region` field when the authenticated response supplies one,
+            // otherwise coverage falls back to the country count.
+            return array_merge([
+                'provider_plan_id' => isset($p['id']) ? (string) $p['id'] : null,
+                'name' => $p['name'] ?? 'eSIM plan',
+                'type' => $p['type'] ?? null,
+                'data_mb' => $this->intOrNull($p['data_mb'] ?? null),
+                'validity_days' => $this->intOrNull($p['validity_days'] ?? null),
+                'countries' => $countries,
+                'cost_price_usd' => (float) ($p['price'] ?? 0),
+            ], $this->deriveCoverage($countries, $p['region'] ?? null));
+        })->filter(fn ($r) => $r['provider_plan_id'] !== null)->values()->all();
     }
 
     /**
@@ -171,7 +200,16 @@ class CatalogueSyncService
                 $dataGb = (float) ($o['dataGB'] ?? 0);
                 $hasVoice = (bool) ($o['voiceUnlimited'] ?? false) || (int) ($o['voiceMinutes'] ?? 0) > 0;
 
-                return [
+                $countries = $this->isoList(array_merge(
+                    array_filter([$o['country'] ?? null]),
+                    $o['regions'] ?? [],
+                ));
+
+                // Zendit is categorised by country AND region (§1). Its `region`
+                // (or the first entry of a `regions` array) is the region signal.
+                $regionRaw = $o['region'] ?? (is_array($o['regions'] ?? null) ? ($o['regions'][0] ?? null) : ($o['regions'] ?? null));
+
+                return array_merge([
                     'provider_plan_id' => (string) $o['offerId'],
                     'name' => $this->zenditName($o),
                     'type' => $hasVoice ? 'Voice + Data' : 'Data',
@@ -179,12 +217,9 @@ class CatalogueSyncService
                     // dataGB is in GB; store MB. Unlimited => null (matches the model).
                     'data_mb' => $unlimitedData ? null : ($dataGb > 0 ? (int) round($dataGb * 1024) : null),
                     'validity_days' => $this->intOrNull($o['durationDays'] ?? null),
-                    'countries' => $this->isoList(array_merge(
-                        array_filter([$o['country'] ?? null]),
-                        $o['regions'] ?? [],
-                    )),
+                    'countries' => $countries,
                     'cost_price_usd' => (float) ($cost['fixed'] ?? 0) / $divisor,
-                ];
+                ], $this->deriveCoverage($countries, is_string($regionRaw) ? $regionRaw : null));
             })
             ->filter(fn ($r) => $r['provider_plan_id'] !== '')
             ->values()
@@ -231,16 +266,24 @@ class CatalogueSyncService
                     }
                 }
 
-                return [
+                $countries = $this->isoList($p['countries'] ?? $p['regions'] ?? array_filter([$p['country'] ?? null]));
+
+                // 1GLOBAL has named regional + global tiers (§1); Monty Mobile
+                // answers country-or-region queries; Gigs may expose no region
+                // taxonomy at all — in which case region_slug simply stays null and
+                // coverage falls back to the country count (expected, not a gap).
+                $regionRaw = $p['region'] ?? (is_array($p['regions'] ?? null) ? ($p['regions'][0] ?? null) : null);
+
+                return array_merge([
                     'provider_plan_id' => (string) $id,
                     'name' => $p['name'] ?? $p['title'] ?? $p['description'] ?? ucfirst($provider).' Full eSIM',
                     'type' => 'Voice + Data',
                     'has_voice' => true, // MVNO providers — always a Full eSIM
                     'data_mb' => $dataMb,
                     'validity_days' => $this->intOrNull($p['durationDays'] ?? $p['validity_days'] ?? $p['days'] ?? null),
-                    'countries' => $this->isoList($p['countries'] ?? $p['regions'] ?? array_filter([$p['country'] ?? null])),
+                    'countries' => $countries,
                     'cost_price_usd' => (float) $cost,
-                ];
+                ], $this->deriveCoverage($countries, is_string($regionRaw) ? $regionRaw : null));
             })
             ->filter(fn ($r) => $r !== null && $r['provider_plan_id'] !== '')
             ->values()
@@ -269,6 +312,55 @@ class CatalogueSyncService
         }
 
         return trim($brand).' — '.implode(' + ', $parts);
+    }
+
+    /**
+     * A plan covering at least this many countries with NO explicit region name
+     * is treated as global (the honest fallback for a genuine worldwide bundle a
+     * provider didn't label). Below it, a multi-country plan is regional.
+     */
+    private const GLOBAL_COUNTRY_THRESHOLD = 100;
+
+    /**
+     * Derive coverage_type + region_slug from a provider's REAL signals only
+     * (BUILD-8 §1/§2.1) — never invented:
+     *   - $explicitType: a provider's own local/global marker (Airalo's operator
+     *     `type`), when it has one.
+     *   - $regionRaw: a provider's own region name/slug (eSIM Go `region`, Airalo
+     *     `slug`, Zendit `region`, …), normalised to a canonical Naara slug.
+     * With no region name at all, coverage_type falls back to the country count
+     * (1 = local; ≥threshold = global; otherwise regional) and region_slug stays
+     * null rather than guessing a grouping.
+     *
+     * @param  array<int, string>  $countries
+     * @return array{coverage_type: string, region_slug: ?string}
+     */
+    private function deriveCoverage(array $countries, ?string $regionRaw = null, ?string $explicitType = null): array
+    {
+        $slug = EsimRegions::normalize($regionRaw);
+        $count = count(array_filter($countries, fn ($c) => strlen((string) $c) === 2));
+
+        // A provider's explicit "local" marker is authoritative.
+        if ($explicitType !== null && strtolower($explicitType) === 'local') {
+            return ['coverage_type' => EsimPlan::COVERAGE_LOCAL, 'region_slug' => null];
+        }
+
+        if ($slug === EsimRegions::WORLD) {
+            return ['coverage_type' => EsimPlan::COVERAGE_GLOBAL, 'region_slug' => EsimRegions::WORLD];
+        }
+        if ($slug !== null) {
+            return ['coverage_type' => EsimPlan::COVERAGE_REGIONAL, 'region_slug' => $slug];
+        }
+
+        // No real region name — fall back to the country count (§2.1).
+        if ($count <= 1) {
+            return ['coverage_type' => EsimPlan::COVERAGE_LOCAL, 'region_slug' => null];
+        }
+        if ($count >= self::GLOBAL_COUNTRY_THRESHOLD) {
+            return ['coverage_type' => EsimPlan::COVERAGE_GLOBAL, 'region_slug' => null];
+        }
+
+        return ['coverage_type' => EsimPlan::COVERAGE_REGIONAL, 'region_slug' => null];
     }
 
     private function intOrNull(mixed $value): ?int
