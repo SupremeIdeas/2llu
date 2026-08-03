@@ -1,9 +1,15 @@
 <div class="mx-auto max-w-3xl">
-    <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Rewards</h1>
-    <p class="mb-2 text-sm text-slate-500 dark:text-slate-400">Earn <span class="font-semibold text-primary dark:text-teal-300">NaaraCredits</span> and spend them like cash on eSIMs and numbers. {{ $perUsd }} credits = $1.</p>
-
-    {{-- Hero illustration (self-hosted Lottie, reduced-motion aware). --}}
-    <x-lottie name="reward" label="Rewards" class="mx-auto -mt-2 mb-4 h-48 w-48 sm:h-56 sm:w-56" />
+    {{-- BUILD-3 §6.10: title + description sit BESIDE the Lottie, not stacked
+         over it. The text column flexes while the animation stays a fixed,
+         smaller size on mobile so the copy is never crushed. --}}
+    <div class="mb-4 flex items-center gap-4">
+        <div class="min-w-0 flex-1">
+            <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Rewards</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Earn <span class="font-semibold text-primary dark:text-teal-300">NaaraCredits</span> and spend them like cash on eSIMs and numbers. {{ $perUsd }} credits = $1.</p>
+        </div>
+        {{-- Hero illustration (self-hosted Lottie, reduced-motion aware). --}}
+        <x-lottie name="reward" label="Rewards" class="h-24 w-24 shrink-0 sm:h-40 sm:w-40" />
+    </div>
 
     @unless ($enabled)
         <div class="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-400 dark:border-[#2D4060] dark:text-slate-500">

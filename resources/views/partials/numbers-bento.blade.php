@@ -30,9 +30,16 @@
             {{-- Ambient brand glow (intensifies on hover) --}}
             <div class="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/5 blur-3xl transition-opacity duration-300 group-hover:bg-primary/15 dark:bg-teal-500/10 dark:group-hover:bg-teal-500/20"></div>
 
-            {{-- Badge — compact (no icon, tighter) so it never crowds the title. --}}
+            {{-- Badge — only rendered when the admin set one (BUILD-3 §6.11: show
+                 only where meaningful). Each card/category gets a DISTINCT
+                 gradient: by badge meaning where recognised, else a stable
+                 per-card colour so no two adjacent cards look identical. --}}
             @if ($card['badge_label'])
-                <span class="nx-badge absolute right-2.5 top-2.5 z-20 !px-1.5 !py-0.5 !text-[8px] !tracking-normal">{{ $card['badge_label'] }}</span>
+                @php($__bl = strtolower(trim($card['badge_label'])))
+                @php($__byMeaning = ['new' => 'from-emerald-500 to-teal-500', 'popular' => 'from-amber-500 to-orange-500', 'hot' => 'from-rose-500 to-red-500', 'soon' => 'from-slate-500 to-slate-600', 'save' => 'from-primary to-teal-500'])
+                @php($__fallback = ['from-primary to-accent', 'from-fuchsia-500 to-purple-500', 'from-sky-500 to-indigo-500', 'from-cyan-500 to-blue-500'])
+                @php($__grad = $__byMeaning[$__bl] ?? $__fallback[crc32($card['key']) % count($__fallback)])
+                <span class="absolute right-2.5 top-2.5 z-20 rounded-full bg-gradient-to-r px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-normal text-white shadow-sm {{ $__grad }}">{{ $card['badge_label'] }}</span>
             @endif
 
             <div class="relative z-10 flex h-full w-full gap-3 {{ $wide ? 'items-center' : 'flex-col' }}">

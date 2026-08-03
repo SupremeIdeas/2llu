@@ -2,22 +2,24 @@
     {{-- Premium 4-image interchanging-reveal hero (esim_upgrade Part 2). --}}
     @include('partials.esim-hero')
 
-    <div class="mb-6 flex items-center justify-between gap-4">
+    {{-- BUILD-3 §6.3: on mobile the buttons drop to their own full-width row
+         below the heading (flex-col), instead of being squeezed beside it. --}}
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             {{-- NaaraSim owns the connectivity surfaces (eSIM + Numbers). --}}
             <x-brand-logo variant="product" class="mb-2 h-7 max-w-[150px]" fallback-icon="signal" label="NaaraSim" />
             <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">eSIM Data Plans</h1>
             <p class="text-sm text-slate-500 dark:text-slate-400">190+ countries. Stay connected. No borders. No swaps.</p>
         </div>
-        <div class="flex shrink-0 items-center gap-2">
+        <div class="flex w-full items-center gap-2 sm:w-auto sm:shrink-0">
             {{-- Browse by country via the ONE shared country picker (S31). --}}
             <button type="button" wire:click="browseCountries"
-                    class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-200 dark:hover:bg-[#243352]">
+                    class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:flex-none dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-200 dark:hover:bg-[#243352]">
                 <x-icon name="globe" class="h-4 w-4" gradient /> Browse by country
             </button>
             {{-- Check compatibility BEFORE buying (esim_upgrade Part 2). --}}
             <button type="button" @click="$dispatch('open-compatibility')"
-                    class="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 dark:border-primary/40 dark:text-teal-300">
+                    class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 sm:flex-none dark:border-primary/40 dark:text-teal-300">
                 <x-icon name="signal" class="h-4 w-4" /> Check compatibility
             </button>
         </div>
