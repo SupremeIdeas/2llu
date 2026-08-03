@@ -108,7 +108,20 @@
         <p class="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">
             We reserve your funded minutes before dialling and refund whatever you don't use.
         </p>
+
+        {{-- BUILD-4 §6.1: text the same number without saving a contact first. The
+             modal handles the "need an SMS-capable Line" gate itself (§6.2). --}}
+        <div class="mt-4 flex justify-center">
+            <button type="button" x-bind:disabled="! valid"
+                    x-on:click="$dispatch('open-send-message', { to: ($wire.destination || '').trim(), name: '' })"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-40 dark:border-primary/40 dark:text-teal-300">
+                <x-icon name="message-circle" class="h-4 w-4" /> Text this number instead
+            </button>
+        </div>
     </div>
+
+    {{-- One send-message modal host for the dialer (catches open-send-message). --}}
+    @livewire('send-message')
 
     {{-- Contacts quick-pick (Part C) — tap a saved name to fill the field. --}}
     @if ($contacts->isNotEmpty())

@@ -32,16 +32,25 @@
                         </a>
                     </div>
                 @else
-                    {{-- To --}}
-                    <div class="mb-3 flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 dark:bg-white/5">
-                        <span class="text-xs font-medium uppercase tracking-wide text-slate-400">To</span>
-                        <div class="min-w-0">
-                            @if ($peerName !== '')
+                    {{-- To — fixed when opened for a known recipient (a contact /
+                         a dialed number), or an editable field when opened blank
+                         from a Line, so messaging works without a saved contact
+                         first (BUILD-4 §6.1). --}}
+                    @if ($to !== '' && $peerName !== '')
+                        <div class="mb-3 flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 dark:bg-white/5">
+                            <span class="text-xs font-medium uppercase tracking-wide text-slate-400">To</span>
+                            <div class="min-w-0">
                                 <p class="truncate text-sm font-semibold text-slate-900 dark:text-white">{{ $peerName }}</p>
-                            @endif
-                            <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $to }}</p>
+                                <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $to }}</p>
+                            </div>
                         </div>
-                    </div>
+                    @else
+                        <div class="mb-3">
+                            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400">To</label>
+                            <input type="tel" inputmode="tel" wire:model="to" placeholder="+1 555 123 4567"
+                                   class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
+                        </div>
+                    @endif
 
                     {{-- From (Line picker only when the user owns more than one) --}}
                     <div class="mb-3">
@@ -92,6 +101,11 @@
                             @endif
                             @error('attachment') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
+                    @else
+                        {{-- §6.3: explain the MMS scope rather than silently hiding it. --}}
+                        <p class="mt-3 flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <x-icon name="image" class="h-3.5 w-3.5" /> Photo attachments (MMS) are available on US &amp; Canada numbers.
+                        </p>
                     @endif
 
                     @if ($error)

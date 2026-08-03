@@ -29,8 +29,13 @@
                     @endif
                 </div>
             </div>
-            <div class="mt-4 flex gap-2">
+            <div class="mt-4 flex flex-wrap gap-2">
                 <button type="button" wire:click="reset_" wire:loading.attr="disabled" wire:target="reset_" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">Done</button>
+                {{-- §6.1: send an SMS from this line without needing a saved contact. --}}
+                <button type="button" @click="$dispatch('open-send-message', { to: '', name: '' })"
+                        class="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 dark:border-primary/40 dark:text-teal-300">
+                    <x-icon name="message-circle" class="h-4 w-4" /> Send an SMS
+                </button>
                 <a href="{{ route('dashboard') }}" wire:navigate class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark">View on dashboard</a>
             </div>
         </div>
@@ -40,6 +45,8 @@
     @include('partials.numbers-modals')
     <livewire:country-picker />
     <livewire:service-picker />
+    {{-- Send-message modal host (§6.1) — reachable from the active-line card. --}}
+    @livewire('send-message')
 
 
 </div>
