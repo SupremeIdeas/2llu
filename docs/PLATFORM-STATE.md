@@ -8,6 +8,22 @@ exists and must not be removed again.
 
 ## Media pipeline build (BUILD-11) — 2026-08-03
 
+### §2 Browser-side compression — Done
+- **One document-level interceptor, every upload surface** (`resources/js/
+  image-compress.js`). A capture-phase `change` listener preempts Livewire's own
+  handler on any file `<input>`, resizes the image on-device (longest edge →
+  2000px) and re-encodes at the SAME mime type/filename, then hands the smaller
+  files to Livewire via a fresh `change` event. Because the hook is global, it
+  covers every `WithFileUploads` surface with no per-form wiring — nothing can be
+  missed the way editing 30 templates could.
+- **Bandwidth optimisation only, not authoritative.** Keeps the original mime so
+  server validation and the §3 WebP pass are unaffected; only replaces the file
+  when the re-encode is actually smaller.
+- **Graceful degradation (§2.3).** If the browser lacks `createImageBitmap`,
+  `canvas.toBlob`, or `DataTransfer` (old browsers / in-app webviews) the listener
+  doesn't intercept at all — Livewire uploads the original and the server-side
+  pass is the safety net. SVG/GIF/non-images pass straight through.
+
 ### §3 Server-side WebP compression — Done
 - **`CompressImageJob` (queued, never inline).** `MediaStorage::storePublic()`
   stores the original and returns its URL immediately, then dispatches the job —
