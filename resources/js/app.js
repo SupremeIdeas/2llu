@@ -1,6 +1,7 @@
 import './bootstrap';
 import './lottie';
 import { initImageCompression } from './image-compress';
+import { registerVoiceRecorder } from './support-voice';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -9,6 +10,9 @@ gsap.registerPlugin(ScrollTrigger);
 // Browser-side image compression on every upload surface (BUILD-11 §2). Bound
 // once at document level, so it survives SPA navigation without re-binding.
 initImageCompression();
+
+// Real in-browser voice-note recording for NaaraCare chat (BUILD-3 §3).
+registerVoiceRecorder();
 
 // Alpine is provided by Livewire 3's bundled build (do not start a second
 // Alpine instance here — Livewire injects and starts it globally).

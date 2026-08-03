@@ -85,6 +85,19 @@ class SupportEvidenceTest extends TestCase
         $this->actingAs(User::factory()->create()->fresh())->get(route('support.attachment', $msg->id))->assertForbidden();
     }
 
+    public function test_the_composer_uses_the_in_page_recorder_not_a_native_audio_picker(): void
+    {
+        // BUILD-3 §3: the mic records in-page (getUserMedia/MediaRecorder) and
+        // explains itself before the OS prompt — it is no longer a hidden
+        // <input type=file accept="audio/*"> that opens the device picker.
+        $html = Livewire::actingAs(User::factory()->create())->test(SupportChat::class)
+            ->html();
+
+        $this->assertStringContainsString('voiceRecorder()', $html);
+        $this->assertStringContainsString('needs microphone access', $html);
+        $this->assertStringNotContainsString('accept="audio/*"', $html);
+    }
+
     public function test_content_block_builder_only_accepts_images_and_pdfs(): void
     {
         $this->assertSame('image', SupportAttachment::toContentBlock('bytes', 'image/png')['type']);
