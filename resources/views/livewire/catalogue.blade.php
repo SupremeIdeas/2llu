@@ -100,25 +100,26 @@
 
     {{-- ============================ ALL OTHER SCREENS ============================ --}}
     @else
-        {{-- Popular / Local / Regional / Global segmented control (§3.1). --}}
-        <div class="mb-5 flex flex-wrap gap-2">
-            @foreach (['popular' => 'Popular', 'local' => 'Local', 'regional' => 'Regional', 'global' => 'Global'] as $key => $label)
+        {{-- Popular / Countries / Regions / Global segmented control (§3.1),
+             matching the reference's pill tabs. --}}
+        <div class="mb-4 inline-flex w-full max-w-xl rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            @foreach (['popular' => 'Popular', 'local' => 'Countries', 'regional' => 'Regions', 'global' => 'Global'] as $key => $label)
                 <button wire:click="setView('{{ $key }}')"
-                        class="rounded-full border px-4 py-1.5 text-sm font-semibold transition {{ $view === $key ? 'border-primary bg-primary text-white shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-300' }}">
+                        class="flex-1 rounded-full px-3 py-1.5 text-sm font-semibold transition {{ $view === $key ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400' }}">
                     {{ $label }}
                 </button>
             @endforeach
         </div>
 
         {{-- Live search across country, region and plan names (§3.1). --}}
-        <div class="relative mb-6 max-w-md">
-            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+        <div class="relative mb-6">
+            <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                 <x-icon name="search" class="h-4 w-4" />
             </span>
             <input type="text" wire:model.live.debounce.400ms="search"
-                   placeholder="Search country, region, or eSIM"
-                   class="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-9 text-sm text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-100">
-            <span wire:loading wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2 text-primary">
+                   placeholder="Where are you travelling to?"
+                   class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-100">
+            <span wire:loading wire:target="search" class="absolute right-4 top-1/2 -translate-y-1/2 text-primary">
                 <x-ui.spinner class="h-4 w-4" />
             </span>
         </div>
@@ -134,16 +135,16 @@
         {{-- -------------------------------- SEARCH -------------------------------- --}}
         @if ($screen === 'search')
             @if (count($countryHits) || count($regionHits))
-                <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                <div class="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-2">
                     @foreach ($countryHits as $t)
-                        @include('livewire.catalogue._tile', ['click' => "openCountry('{$t['code']}')", 'title' => $t['name'], 'img' => $t['icon'] ?? null, 'flag' => $t['code'], 'fromUsd' => $t['from_usd'], 'count' => $t['count'], 'fmt' => $fmt])
+                        @include('livewire.catalogue._country-row', ['t' => $t, 'fmt' => $fmt])
                     @endforeach
                     @foreach ($regionHits as $t)
-                        @include('livewire.catalogue._tile', ['click' => "openRegion('{$t['slug']}')", 'title' => $t['label'], 'img' => $t['icon'] ?? null, 'flag' => null, 'fromUsd' => $t['from_usd'], 'count' => $t['count'], 'fmt' => $fmt])
+                        @include('livewire.catalogue._region-row', ['t' => $t, 'fmt' => $fmt])
                     @endforeach
                 </div>
             @endif
-            @include('livewire.catalogue._plan-grid', ['plans' => $plans, 'fmt' => $fmt])
+            @include('livewire.catalogue._plan-list', ['plans' => $plans, 'fmt' => $fmt])
 
         {{-- ---------------------- SELECTED COUNTRY / REGION ----------------------- --}}
         @elseif ($screen === 'country' || $screen === 'region')
@@ -152,40 +153,51 @@
                 <x-icon name="chevron-right" class="h-4 w-4 rotate-180" /> Back
             </button>
 
-            <div class="mb-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-[#2D4060]">
+            {{-- Compact header card (reference "Valid in this…" style). Uses the
+                 admin banner as a slim strip when set, else a clean flag/icon card. --}}
+            <div class="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
                 @if ($banner)
-                    <div class="relative h-32 w-full overflow-hidden sm:h-44">
+                    <div class="relative h-28 w-full overflow-hidden sm:h-36">
                         <img src="{{ $banner }}" alt="{{ $selName }}" class="h-full w-full object-cover">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                         <div class="absolute bottom-3 left-4 flex items-center gap-2 text-white">
                             @if ($screen === 'country')<x-country-flag :country="$selCode" class="h-6 w-9 rounded shadow" />@endif
                             <h2 class="text-lg font-bold drop-shadow">{{ $selName }}</h2>
                         </div>
                     </div>
                 @else
-                    <div class="flex items-center gap-3 bg-gradient-to-br from-primary/10 to-primary/5 p-5 dark:from-primary/20 dark:to-transparent">
-                        @if ($screen === 'country')
-                            <x-country-flag :country="$selCode" class="h-8 w-12 rounded shadow-sm" />
-                        @else
-                            <x-icon name="globe" class="h-8 w-8 text-primary" gradient />
-                        @endif
-                        <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ $selName }}</h2>
+                    <div class="flex items-center gap-3 p-4">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 dark:bg-[#152238]">
+                            @if ($screen === 'country')
+                                <x-country-flag :country="$selCode" class="h-7 w-10 rounded shadow-sm" />
+                            @else
+                                <x-icon name="globe" class="h-7 w-7 text-primary" gradient />
+                            @endif
+                        </span>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ $selName }}</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ $screen === 'country' ? 'Plans valid in this country' : 'Multi-country plans in this region' }}</p>
+                        </div>
                     </div>
                 @endif
             </div>
 
-            @include('livewire.catalogue._plan-grid', ['plans' => $plans, 'fmt' => $fmt])
+            @include('livewire.catalogue._plan-list', ['plans' => $plans, 'fmt' => $fmt])
 
         {{-- --------------------------------- GRID -------------------------------- --}}
         @else
             @if ($view === 'popular')
-                @include('livewire.catalogue._plan-grid', ['plans' => $plans, 'fmt' => $fmt])
+                @include('livewire.catalogue._plan-list', ['plans' => $plans, 'fmt' => $fmt])
 
             @elseif ($view === 'local')
                 @if (count($grid['local']))
-                    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    <div class="mb-2 flex items-baseline justify-between">
+                        <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Choose a country</p>
+                        <p class="text-xs text-slate-400">{{ count($grid['local']) }} {{ \Illuminate\Support\Str::plural('country', count($grid['local'])) }}</p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
                         @foreach ($grid['local'] as $t)
-                            @include('livewire.catalogue._tile', ['click' => "openCountry('{$t['code']}')", 'title' => $t['name'], 'img' => $t['icon'] ?? null, 'flag' => $t['code'], 'fromUsd' => $t['from_usd'], 'count' => $t['count'], 'fmt' => $fmt])
+                            @include('livewire.catalogue._country-row', ['t' => $t, 'fmt' => $fmt])
                         @endforeach
                     </div>
                 @else
@@ -194,9 +206,10 @@
 
             @elseif ($view === 'regional')
                 @if (count($grid['regions']))
-                    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    <p class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Pick a region</p>
+                    <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
                         @foreach ($grid['regions'] as $t)
-                            @include('livewire.catalogue._tile', ['click' => "openRegion('{$t['slug']}')", 'title' => $t['label'], 'img' => $t['icon'] ?? null, 'flag' => null, 'fromUsd' => $t['from_usd'], 'count' => $t['count'], 'fmt' => $fmt])
+                            @include('livewire.catalogue._region-row', ['t' => $t, 'fmt' => $fmt])
                         @endforeach
                     </div>
                 @else
@@ -204,10 +217,19 @@
                 @endif
 
             @else {{-- global --}}
-                @if ($grid['global'])
-                    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                        @include('livewire.catalogue._tile', ['click' => 'openGlobal', 'title' => 'Global', 'img' => $grid['global']['icon'] ?? null, 'flag' => null, 'fromUsd' => $grid['global']['from_usd'], 'count' => $grid['global']['count'], 'fmt' => $fmt])
+                @if ($globalCount > 0)
+                    {{-- One-plan-everywhere banner (reference Global layout). --}}
+                    <div class="relative mb-5 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-5 dark:border-primary/30 dark:from-primary/20 dark:to-transparent">
+                        @if ($globalBanner)
+                            <img src="{{ $globalBanner }}" alt="Global" class="pointer-events-none absolute -right-6 -top-2 h-32 w-40 object-contain opacity-70">
+                        @else
+                            <x-icon name="globe" class="pointer-events-none absolute -right-2 top-2 h-28 w-28 text-primary/25" gradient />
+                        @endif
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-primary dark:text-teal-300">One plan, everywhere</p>
+                        <h2 class="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Global eSIM</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Stay connected across 190+ countries on a single eSIM.</p>
                     </div>
+                    @include('livewire.catalogue._plan-list', ['plans' => $plans, 'fmt' => $fmt])
                 @else
                     <x-esim.empty-nav />
                 @endif

@@ -261,18 +261,27 @@ class Catalogue extends Component
 
         // 5) The default grid for the active segment (Popular/Local/Regional/Global).
         $plans = null;
+        $globalBanner = null;
         if ($view === 'popular') {
             $featured = $this->lineQuery($hasVoice)->where('is_featured', true);
             // Until an admin curates the Popular tab, fall back to every plan on
             // the line so the default landing view is never empty.
             $base = (clone $featured)->doesntExist() ? $this->lineQuery($hasVoice) : $featured;
             $plans = $base->orderByDesc('is_featured')->orderBy('name')->paginate(12);
+        } elseif ($view === 'global') {
+            // Global goes straight to its banner + plan list (reference layout) —
+            // there is only ever the one worldwide grouping, so no tile step.
+            $plans = $this->lineQuery($hasVoice)->where('coverage_type', EsimPlan::COVERAGE_GLOBAL)
+                ->orderByDesc('is_featured')->orderBy('final_retail_usd')->paginate(12);
+            $globalBanner = EsimCatalogue::regionBanner(EsimRegions::WORLD);
         }
 
         return view('livewire.catalogue', array_merge($data, [
             'screen' => 'grid',
             'grid' => $grid,
             'plans' => $plans,
+            'globalBanner' => $globalBanner,
+            'globalCount' => $grid['global']['count'] ?? 0,
         ]));
     }
 
