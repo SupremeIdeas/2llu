@@ -8,6 +8,33 @@ exists and must not be removed again.
 
 ## Media pipeline build (BUILD-11) — 2026-08-03
 
+### §3 Server-side WebP compression — Done
+- **`CompressImageJob` (queued, never inline).** `MediaStorage::storePublic()`
+  stores the original and returns its URL immediately, then dispatches the job —
+  zero added latency on the upload response. The job converts to WebP with raw
+  **GD** (`imagewebp`), no new Composer dependency: GD-with-WebP is universal on
+  cPanel, and shelling out to a binary (which the spec warned against) is avoided.
+- **~80KB target, quality floor 40.** Steps WebP quality 82 → 40; stops the
+  moment it lands at/under 80KB, and accepts a slightly larger file at the floor
+  rather than compressing a complex image into mush. Resizes to the upload
+  context's real display cap FIRST (avatars/logos 512px, brand/splash 1024px,
+  heroes/banners/covers 1600px) — no 4000px avatars.
+- **Overwrites in place → the saved URL stays valid.** WebP bytes replace the
+  same path, so none of the ~30 `storePublic` callers that persist the URL need
+  to change. Cloud disks get an explicit `image/webp` content-type; on the local
+  disk `<img>` decodes by bytes, so the `.png`/`.jpg` extension is harmless. Only
+  overwrites when the WebP is actually smaller — a rare image WebP can't beat
+  keeps its original.
+- **Failure-safe (§3.4).** No GD/WebP, an unreadable file, or a decode error →
+  the job logs and returns, leaving the original upload exactly as it was. Proven
+  by a test that feeds it non-image bytes and asserts they're untouched.
+- **KYC/quality-sensitive contexts excluded** (`documents`/`identity`/`kyc`/
+  `exports`) and **GIFs skipped** (GD would flatten animation). KYC docs don't
+  currently flow through `storePublic` at all — the exclusion is belt-and-braces.
+- Applies uniformly to every existing image upload surface (heroes, banners,
+  avatars, gift-card logos, blog covers, chat/MMS attachments, …) because the
+  hook lives in `storePublic`, not in each caller.
+
 ### §4 Cloudflare R2 as a third storage option — Done
 - **R2 disk added** (`config/filesystems.php`) — same `s3` driver, `region: auto`,
   endpoint `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`. The bucket's S3

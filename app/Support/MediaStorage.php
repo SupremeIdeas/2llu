@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Jobs\CompressImageJob;
 use App\Models\Setting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -111,6 +112,42 @@ class MediaStorage
         return $r2 ? 'r2' : ($wasabi ? 'wasabi' : $localFallback);
     }
 
+    /** Raster formats the server-side WebP pass can safely process. GIF is
+     *  excluded on purpose — GD flattens animation to a single frame. */
+    public const COMPRESSIBLE_TYPES = ['png', 'jpg', 'jpeg', 'webp'];
+
+    /**
+     * Upload contexts (the storePublic $dir) that must NOT be aggressively
+     * compressed — legibility/originals matter more than bytes (BUILD-11 §3.3).
+     * KYC/identity documents don't currently flow through storePublic at all,
+     * but this keeps them excluded by design if that ever changes.
+     *
+     * @var list<string>
+     */
+    public const NO_COMPRESS_CONTEXTS = ['kyc', 'documents', 'identity', 'exports'];
+
+    /**
+     * The longest-edge cap (px) for a given upload context (BUILD-11 §3.1) — no
+     * reason to keep 4000px for an avatar that renders at 200px. Heroes/banners/
+     * covers stay large enough to look crisp; avatars/logos/icons shrink hard.
+     * Anything unmapped falls back to a sensible general photo size.
+     */
+    public static function contextMaxDimension(string $context): int
+    {
+        return match ($context) {
+            'avatars', 'support', 'merchant-logos', 'service-icons', 'giftcards' => 512,
+            'brand', 'splash', 'app-export', 'numbers-bento' => 1024,
+            default => 1600, // heroes, banners, blog covers, page/site images, chat photos
+        };
+    }
+
+    /** Whether the server-side WebP pass should run for this file + context. */
+    public static function shouldCompress(string $ext, string $context): bool
+    {
+        return in_array(strtolower($ext), self::COMPRESSIBLE_TYPES, true)
+            && ! in_array($context, self::NO_COMPRESS_CONTEXTS, true);
+    }
+
     /** Livewire/validator rule for an uploaded image or SVG. */
     public static function uploadRules(): array
     {
@@ -148,6 +185,16 @@ class MediaStorage
             Storage::disk($disk)->put($path, self::sanitizeSvg((string) file_get_contents($file->getRealPath())), 'public');
         } else {
             Storage::disk($disk)->putFileAs($dir, $file, $name, 'public');
+
+            // Authoritative server-side WebP pass (BUILD-11 §3): queued, never
+            // inline, so it adds zero latency here. It overwrites this same path
+            // on success — the URL we return stays valid — and leaves the
+            // original untouched if it fails. KYC/quality-sensitive contexts and
+            // GIFs are skipped by shouldCompress().
+            $context = trim($dir, '/');
+            if (self::shouldCompress($ext, $context)) {
+                CompressImageJob::dispatch($disk, $path, $context);
+            }
         }
 
         return Storage::disk($disk)->url($path);
