@@ -28,6 +28,11 @@ return [
             "style-src 'self' 'unsafe-inline'",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
             "connect-src 'self'",
+            // Homepage video section (BUILD-3 §8): self-hosted clips on the cloud
+            // disk (https) or a local blob, and the privacy-friendly YouTube
+            // embed. Turnstile appends its own origin to this frame-src at runtime.
+            "media-src 'self' https: blob:",
+            "frame-src 'self' https://www.youtube-nocookie.com",
         ])),
     ],
 

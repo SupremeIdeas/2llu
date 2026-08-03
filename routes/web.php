@@ -210,6 +210,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/dashboard-theme', \App\Livewire\Admin\PlatformThemePage::class)->name('dashboard-theme');
             Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');
             Route::get('/site', \App\Livewire\Admin\SiteEditor::class)->name('site');
+            Route::get('/home-media', \App\Livewire\Admin\HomeMedia::class)->name('home-media');
             Route::get('/chrome', \App\Livewire\Admin\SiteChromePage::class)->name('chrome');
             Route::get('/legal', \App\Livewire\Admin\LegalEditor::class)->name('legal');
             Route::get('/blog', \App\Livewire\Admin\Posts::class)->name('blog');
