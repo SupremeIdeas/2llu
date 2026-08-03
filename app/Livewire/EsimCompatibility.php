@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\EsimCompatibleDevice;
+use App\Support\Niche\DeviceCompat;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -23,6 +24,12 @@ class EsimCompatibility extends Component
 
     public string $search = '';
 
+    /** Best-effort auto-detect (BUILD-8 §6.2) — advisory only, never a gate. */
+    public string $detectedName = '';
+
+    /** '' | yes | no | unknown | ios (iOS reveals no specific model). */
+    public string $detectedResult = '';
+
     #[On('open-compatibility')]
     public function openModal(): void
     {
@@ -33,6 +40,43 @@ class EsimCompatibility extends Component
     {
         $this->open = false;
         $this->search = '';
+        $this->detectedName = '';
+        $this->detectedResult = '';
+    }
+
+    /**
+     * Receive the browser's best-effort device guess (User-Agent / Client Hints,
+     * computed client-side) and pre-select it in the SAME list the user can still
+     * browse freely (§6.3). This never unlocks a purchase — the authoritative
+     * DeviceCompat::check() gate at checkout is unchanged (§6.4); here it only
+     * decides which advisory banner to show.
+     */
+    public function detected(string $os, string $name = ''): void
+    {
+        if (in_array($os, ['apple', 'android', 'others'], true)) {
+            $this->os = $os;
+        }
+
+        $name = trim($name);
+
+        // iOS Safari's UA only ever says "iPhone" — no specific model (§6.2).
+        // Be honest about that instead of faking a model result.
+        if ($name === '' || strcasecmp($name, 'iphone') === 0) {
+            if ($os === 'apple') {
+                $this->detectedResult = 'ios';
+                $this->detectedName = 'iPhone';
+            }
+
+            return;
+        }
+
+        $this->detectedName = $name;
+        $this->search = $name; // pre-filter the list to the detected device
+        $this->detectedResult = match (DeviceCompat::check($name)) {
+            true => 'yes',
+            false => 'no',
+            default => 'unknown',
+        };
     }
 
     public function setOs(string $os): void

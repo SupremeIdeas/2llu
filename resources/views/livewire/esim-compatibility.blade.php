@@ -1,6 +1,49 @@
 <div>
     @if ($open)
-        <div class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" x-data
+        {{-- Best-effort client-side device detection (BUILD-8 §6.2). Self-contained
+             Alpine object (no external script) so it's CSP-safe. Reads only what
+             the browser honestly exposes: OS from UA/Client Hints always; an
+             Android model code (mapped to a marketing name) when available; iOS
+             stays generic because Safari's UA never reveals the iPhone model. --}}
+        <div class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+             x-data="{
+                 ran: false,
+                 samsung: {
+                     'SM-S911B':'Galaxy S23','SM-S911U':'Galaxy S23','SM-S916B':'Galaxy S23+','SM-S918B':'Galaxy S23 Ultra',
+                     'SM-S921B':'Galaxy S24','SM-S926B':'Galaxy S24+','SM-S928B':'Galaxy S24 Ultra',
+                     'SM-S901B':'Galaxy S22','SM-S906B':'Galaxy S22+','SM-S908B':'Galaxy S22 Ultra',
+                     'SM-G991B':'Galaxy S21','SM-G998B':'Galaxy S21 Ultra','SM-G981B':'Galaxy S20',
+                     'SM-F946B':'Galaxy Z Fold5','SM-F731B':'Galaxy Z Flip5'
+                 },
+                 norm(code) {
+                     if (!code) return '';
+                     if (this.samsung[code]) return this.samsung[code];
+                     if (/^pixel/i.test(code)) return code;
+                     if (/^sm-/i.test(code)) return '';
+                     return code;
+                 },
+                 fromUa(ua) { const m = ua.match(/android[\s\d.]+;\s([^;)]+?)(?:\sbuild\/|\))/i); return m ? m[1].trim() : ''; },
+                 run() {
+                     if (this.ran) return; this.ran = true;
+                     try {
+                         const ua = navigator.userAgent || '';
+                         const uad = navigator.userAgentData || null;
+                         const plat = uad && uad.platform ? uad.platform.toLowerCase() : '';
+                         let os = 'others';
+                         if (/iphone|ipad|ipod/i.test(ua) || plat === 'ios') os = 'apple';
+                         else if (/android/i.test(ua) || plat === 'android') os = 'android';
+                         if (os === 'apple') { $wire.detected('apple', ''); return; }
+                         if (os !== 'android') { $wire.detected(os, ''); return; }
+                         if (uad && uad.getHighEntropyValues) {
+                             uad.getHighEntropyValues(['model'])
+                                 .then(v => $wire.detected('android', this.norm((v && v.model) || this.fromUa(ua))))
+                                 .catch(() => $wire.detected('android', this.norm(this.fromUa(ua))));
+                         } else {
+                             $wire.detected('android', this.norm(this.fromUa(ua)));
+                         }
+                     } catch (e) {}
+                 }
+             }" x-init="run()"
              @keydown.escape.window="$wire.close()">
             <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" wire:click="close"></div>
 
@@ -18,6 +61,30 @@
                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">The definitive check</p>
                     <p class="mt-0.5 text-xs text-slate-600 dark:text-slate-300">Dial <span class="rounded bg-white px-1.5 py-0.5 font-mono font-bold text-primary dark:bg-[#1B2A44] dark:text-teal-300">*#06#</span> on your device — if an <strong>EID</strong> number appears, your device supports eSIM.</p>
                 </div>
+
+                {{-- Best-effort auto-detect result (BUILD-8 §6). Advisory only —
+                     the full list below stays fully interactive regardless. --}}
+                @if ($detectedResult === 'yes')
+                    <div class="mx-5 mt-3 flex items-start gap-2 rounded-xl border border-green-300 bg-green-50 p-3 dark:border-green-500/30 dark:bg-green-500/10">
+                        <x-icon name="badge-check" class="mt-0.5 h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
+                        <p class="text-xs text-slate-700 dark:text-slate-200">We detected <strong>{{ $detectedName }}</strong> — this device supports eSIM. Not your device? Search below to confirm.</p>
+                    </div>
+                @elseif ($detectedResult === 'no')
+                    <div class="mx-5 mt-3 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-500/30 dark:bg-red-500/10">
+                        <x-icon name="x" class="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                        <p class="text-xs text-slate-700 dark:text-slate-200">We detected <strong>{{ $detectedName }}</strong>, which doesn’t support eSIM. Search below if this isn’t your device.</p>
+                    </div>
+                @elseif ($detectedResult === 'ios')
+                    <div class="mx-5 mt-3 flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/5 p-3 dark:border-primary/30 dark:bg-primary/10">
+                        <x-icon name="info" class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <p class="text-xs text-slate-700 dark:text-slate-200">Looks like an <strong>iPhone</strong>. Most iPhones from XR/XS onward support eSIM — search your exact model below to confirm.</p>
+                    </div>
+                @elseif ($detectedResult === 'unknown')
+                    <div class="mx-5 mt-3 flex items-start gap-2 rounded-xl border border-slate-300 bg-slate-50 p-3 dark:border-[#2D4060] dark:bg-[#152238]">
+                        <x-icon name="help-circle" class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                        <p class="text-xs text-slate-700 dark:text-slate-200">We detected <strong>{{ $detectedName }}</strong> but couldn’t confirm it. Use the <span class="font-mono">*#06#</span> check above, or search below.</p>
+                    </div>
+                @endif
 
                 {{-- Search --}}
                 <div class="px-5 pt-4">
