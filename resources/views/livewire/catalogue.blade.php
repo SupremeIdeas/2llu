@@ -75,9 +75,9 @@
                 </div>
 
                 {{-- AI tooltip (§5) as the primary "what am I buying" copy, when present. --}}
-                @if ($plan->ai_tooltip)
+                @if ($plan->display_tooltip)
                     <p class="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-600 dark:bg-[#152238] dark:text-slate-300">
-                        {{ $plan->ai_tooltip }}
+                        {{ $plan->display_tooltip }}
                     </p>
                 @endif
 

@@ -38,6 +38,9 @@ class EsimPlan extends Model
         'manual_retail_usd',
         'is_active',
         'is_featured',
+        'ai_tooltip',            // generated customer description (§5)
+        'ai_tooltip_override',   // manual admin description — always wins (§4.6)
+        'ai_tooltip_generated_at',
         'synced_at',
         // NOTE: final_retail_usd is a generated column and is intentionally NOT
         // fillable — the database computes COALESCE(manual, computed).
@@ -71,7 +74,21 @@ class EsimPlan extends Model
             'is_featured' => 'boolean',
             'has_voice' => 'boolean',
             'synced_at' => 'datetime',
+            'ai_tooltip_generated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The tooltip copy actually shown to customers (§4.6): the manual admin
+     * override always wins over the generated text; null when neither exists.
+     *
+     * @return Attribute<?string, never>
+     */
+    protected function displayTooltip(): Attribute
+    {
+        return Attribute::get(fn () => filled($this->ai_tooltip_override)
+            ? $this->ai_tooltip_override
+            : $this->ai_tooltip);
     }
 
     public function orders(): HasMany

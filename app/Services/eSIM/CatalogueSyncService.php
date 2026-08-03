@@ -53,6 +53,10 @@ class CatalogueSyncService
             default => throw new \InvalidArgumentException("Unknown eSIM provider [$provider]."),
         };
 
+        // Plans whose tooltip-relevant fields changed this sync — only these get
+        // a (queued) tooltip regeneration afterwards, to control cost (§5.1).
+        $tooltipDirty = [];
+
         foreach ($rows as $row) {
             $plan = EsimPlan::updateOrCreate(
                 ['provider' => $provider, 'provider_plan_id' => $row['provider_plan_id']],
@@ -77,6 +81,13 @@ class CatalogueSyncService
                 ],
             );
 
+            // Capture "content changed" BEFORE recompute() saves the plan again
+            // (recompute only touches price columns, which don't affect a tooltip).
+            if ($plan->wasRecentlyCreated
+                || $plan->wasChanged(['name', 'data_mb', 'validity_days', 'countries', 'coverage_type', 'region_slug', 'has_voice'])) {
+                $tooltipDirty[] = $plan->id;
+            }
+
             // Recompute retail through the single pricing owner (Part 13).
             $this->pricing->recompute($plan);
         }
@@ -85,6 +96,12 @@ class CatalogueSyncService
         // both derive from esim_plans, which just changed.
         CountryPickerSources::flush();
         \App\Support\EsimCatalogue::flush();
+
+        // Queue AI tooltips for the changed plans only (§5) — never synchronous,
+        // and a no-op when no Anthropic key is configured.
+        if ($tooltipDirty !== [] && app(\App\Services\eSIM\EsimTooltipService::class)->enabled()) {
+            \App\Jobs\GenerateEsimTooltipsJob::dispatch($tooltipDirty);
+        }
 
         return count($rows);
     }

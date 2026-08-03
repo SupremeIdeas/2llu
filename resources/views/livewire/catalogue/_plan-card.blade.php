@@ -10,7 +10,7 @@
             {{ $plan->type ?? 'Data' }}
         </span>
         <div class="flex items-center gap-2">
-            @if ($plan->ai_tooltip)
+            @if ($plan->display_tooltip)
                 <div x-data="{ open: false }" class="relative" @click.stop>
                     <button type="button" @click="open = !open" @click.outside="open = false"
                             aria-label="What is this plan?"
@@ -19,7 +19,7 @@
                     </button>
                     <div x-show="open" x-cloak x-transition
                          class="absolute right-0 top-7 z-10 w-56 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-relaxed text-slate-600 shadow-lg dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-300">
-                        {{ $plan->ai_tooltip }}
+                        {{ $plan->display_tooltip }}
                     </div>
                 </div>
             @endif
