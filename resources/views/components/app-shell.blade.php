@@ -18,8 +18,9 @@
         moreOpen: false,
         navCollapsed: localStorage.getItem('nx_nav_collapsed') === '1',
         navFloating: localStorage.getItem('nx_nav_floating') !== '0',
+        moreLayout: localStorage.getItem('nx_more_layout') === 'list' ? 'list' : 'grid',
      }"
-     x-effect="localStorage.setItem('nx_nav_collapsed', navCollapsed ? '1' : '0'); localStorage.setItem('nx_nav_floating', navFloating ? '1' : '0')"
+     x-effect="localStorage.setItem('nx_nav_collapsed', navCollapsed ? '1' : '0'); localStorage.setItem('nx_nav_floating', navFloating ? '1' : '0'); localStorage.setItem('nx_more_layout', moreLayout)"
      @nx-nav-style.window="navFloating = $event.detail.floating"
      class="min-h-screen">
     {{-- ============ DESKTOP: Apple-inspired floating side menu ============
@@ -143,12 +144,23 @@
         <div x-show="moreOpen"
              x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-y-full" x-transition:enter-end="translate-y-0"
              x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-y-0" x-transition:leave-end="translate-y-full"
-             class="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-slate-200/70 bg-white p-5 pb-9 shadow-2xl dark:border-white/10 dark:bg-[#0D1B2A]"
-             style="padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem);">
+             class="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-slate-200/70 bg-white p-5 pb-9 shadow-2xl dark:border-white/10 dark:bg-[#0D1B2A]"
+             style="padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem); -webkit-overflow-scrolling: touch;">
             <div class="mx-auto mb-4 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-white/20"></div>
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">More</h2>
-                <button type="button" @click="moreOpen = false" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"><x-icon name="x" class="h-5 w-5" /></button>
+                <div class="flex items-center gap-1">
+                    {{-- Grid / list display toggle, persisted per-user (BUILD-3 §6.7). --}}
+                    <div class="mr-1 flex items-center gap-0.5 rounded-lg bg-slate-100 p-0.5 dark:bg-white/5">
+                        <button type="button" @click="moreLayout = 'grid'" aria-label="Grid view"
+                                :class="moreLayout === 'grid' ? 'bg-white text-primary shadow-sm dark:bg-white/15' : 'text-slate-400'"
+                                class="rounded-md p-1.5 transition"><x-icon name="grid" class="h-4 w-4" /></button>
+                        <button type="button" @click="moreLayout = 'list'" aria-label="List view"
+                                :class="moreLayout === 'list' ? 'bg-white text-primary shadow-sm dark:bg-white/15' : 'text-slate-400'"
+                                class="rounded-md p-1.5 transition"><x-icon name="list" class="h-4 w-4" /></button>
+                    </div>
+                    <button type="button" @click="moreOpen = false" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"><x-icon name="x" class="h-5 w-5" /></button>
+                </div>
             </div>
 
             @if ($promo)
@@ -171,17 +183,20 @@
                 @endif
             @endif
 
-            <div class="grid grid-cols-4 gap-3">
+            {{-- Grid (4-col cards) or list (stacked rows), per the §6.7 toggle. --}}
+            <div :class="moreLayout === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-4 gap-3'">
                 @foreach ($more as $item)
                     @continue(! empty($item['heading'])) {{-- headings are desktop-sidebar only --}}
                     <a href="{{ route($item['route']) }}" wire:navigate @click="moreOpen = false"
+                       :class="moreLayout === 'list' ? 'flex-row items-center gap-3 p-3 text-left' : 'flex-col items-center gap-1.5 p-3 text-center'"
                        @class([
-                           'flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition',
+                           'flex rounded-2xl border transition',
                            'border-primary/30 bg-primary/10 dark:border-primary/40 dark:bg-primary/20' => $isActive($item['route']),
                            'border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10' => ! $isActive($item['route']),
                        ])>
-                        <x-icon :name="$item['icon']" class="h-6 w-6 text-primary" />
-                        <span class="text-[11px] font-medium leading-tight text-slate-600 dark:text-slate-300">{{ $item['label'] }}</span>
+                        <x-icon :name="$item['icon']" class="h-6 w-6 shrink-0 text-primary" />
+                        <span class="font-medium leading-tight text-slate-600 dark:text-slate-300"
+                              :class="moreLayout === 'list' ? 'text-sm' : 'text-[11px]'">{{ $item['label'] }}</span>
                     </a>
                 @endforeach
             </div>

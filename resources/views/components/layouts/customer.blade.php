@@ -26,7 +26,7 @@
         ['route' => 'numbers.contacts', 'label' => 'Contacts', 'icon' => 'users'],
         ['route' => 'support', 'label' => 'Help & Support', 'icon' => 'message-circle'],
         ['route' => 'rewards', 'label' => 'Rewards', 'icon' => 'gift'],
-        ['route' => 'referrals', 'label' => 'Referrals', 'icon' => 'gift'],
+        ['route' => 'referrals', 'label' => 'Referrals', 'icon' => 'users'],
         ['route' => 'data-estimator', 'label' => 'Estimator', 'icon' => 'signal'],
         ['route' => 'profile', 'label' => 'Profile', 'icon' => 'id-card'],
         ['route' => 'account', 'label' => 'Account', 'icon' => 'settings'],
