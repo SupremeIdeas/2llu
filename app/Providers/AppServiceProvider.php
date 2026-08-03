@@ -71,6 +71,7 @@ use App\Support\MediaStorage;
 use App\Support\NumberCatalogue;
 use App\Support\NumbersBento;
 use App\Support\NumbersHeroContent;
+use App\Support\PaymentGatewayConfig;
 use App\Support\ProviderKeys;
 use App\Support\SecuritySettings;
 use App\Support\ServiceIcons;
@@ -278,6 +279,11 @@ class AppServiceProvider extends ServiceProvider
         // flip Active the moment a key is saved (blueprint Section 17.4, money
         // rule 10). Runs every request/job; degrades to .env pre-install.
         ProviderKeys::applyToConfig();
+
+        // Per-gateway sandbox/live mode (BUILD-2 §3): swap the base URL for the
+        // gateways whose sandbox and live API are on different hosts (PayPal,
+        // NOWPayments). Runs after ProviderKeys so the mode host is authoritative.
+        PaymentGatewayConfig::applyToConfig();
 
         // Same overlay for admin-managed outgoing-mail config (Module 22): the
         // operator sets the mailer + SMTP creds + "from" identity in the panel,

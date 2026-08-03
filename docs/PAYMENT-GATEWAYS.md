@@ -18,6 +18,18 @@ credit is a `wallet_transactions` ledger row via `WalletService::credit()`
 
 ---
 
+## Admin → Payments → Gateways (BUILD-2 §3)
+
+A per-gateway operations screen: a **sandbox/live mode toggle** (swaps the API
+base URL for gateways whose sandbox and live hosts differ — PayPal, NOWPayments;
+informational for the key-prefix gateways, where the live detector reads the
+`sk_test_` etc. key), the read-only **webhook URL** and **callback/return URL**
+each with a copy button, and a live **Test connection** button (a bounded,
+read-only API ping with the current keys — Paystack/Stripe/Flutterwave balance,
+PayPal OAuth, NOWPayments balance; the signed-request gateways say "verify with a
+small live payment"). API keys stay on Admin → Provider Keys (one credential
+system, not duplicated).
+
 ## Setup checklist (per gateway, in Admin → Provider Keys)
 
 1. Enter the **secret/API key** (and any merchant id / IPN secret / webhook

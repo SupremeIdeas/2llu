@@ -67,10 +67,14 @@ Frank: verify both on the live host.
 - **Flutterwave chargeback webhooks** — an on-request, variable-payload feature;
   the `DisputeAwareGateway` seam is ready but the payload must be verified against
   a real event before wiring it onto the fund-freezing path.
-- **Full per-gateway admin schema** (§3): explicit sandbox/live toggle that swaps
-  key set + base URL, webhook/callback URL copy buttons, and a "test connection"
-  button. Today keys live in Provider Keys and test mode is *detected*, not
-  toggled.
+- **Per-gateway admin schema (§3) — DONE 2026-08-02.** Admin → Payments →
+  Gateways: sandbox/live mode toggle (swaps the base URL for PayPal/NOWPayments;
+  informational + key-prefix detection for the rest), read-only webhook + callback
+  URLs with copy buttons, and a live test-connection ping per gateway. Keys stay
+  on Provider Keys (not duplicated). Remaining nicety (not built): storing
+  separate sandbox AND live key sets simultaneously so the toggle swaps keys too —
+  today the operator pastes the matching key. `PaymentGatewayConfig::applyToConfig`
+  swaps hosts at boot.
 - **Inline/embedded checkout** where supported (Paystack Inline, Stripe Payment
   Element, Flutterwave modal). Everything is redirect/hosted today.
 These are grouped so they get one careful, reviewed pass rather than being rushed
