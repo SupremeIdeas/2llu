@@ -6,7 +6,7 @@
          adding no extra height; otherwise the default gradient card shows. --}}
     @php($heroLight = \App\Support\HeroBackground::light())
     @php($heroDark = \App\Support\HeroBackground::dark())
-    @php($hasHero = \App\Support\HeroBackground::isSet())
+    @php($hasHero = \App\Support\HeroBackground::showsOnDashboard())
     @php($heroDesc = \App\Support\HeroBackground::description())
     @php($gAvatar = \App\Support\SupportSettings::avatar())
     @php($gName = \App\Support\SupportSettings::name())

@@ -80,12 +80,19 @@
              dark art behind the dashboard greeting, under a gradient overlay.
              Leave blank to keep the default heading. --}}
         <div class="rounded-xl border border-slate-200 p-4 dark:border-[#2D4060]">
-            <div class="mb-1 flex items-center justify-between">
+            <div class="mb-1 flex items-center justify-between gap-3">
                 <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Dashboard home hero <span class="font-normal text-slate-400">(optional)</span></p>
-                @if (\App\Support\HeroBackground::isSet())
-                    <button type="button" wire:click="removeHero" wire:confirm="Remove the hero images and return to the title-only heading?"
-                            class="text-xs font-medium text-red-600 hover:underline">Remove image</button>
-                @endif
+                <div class="flex items-center gap-3">
+                    {{-- On/off switch: hide the hero image without deleting the
+                         uploaded art (owner request). --}}
+                    <label class="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                        <x-ui.switch wire:model="hero_enabled" label="Show hero image on dashboard" /> Show
+                    </label>
+                    @if (\App\Support\HeroBackground::isSet())
+                        <button type="button" wire:click="removeHero" wire:confirm="Remove the hero images and return to the title-only heading?"
+                                class="text-xs font-medium text-red-600 hover:underline">Remove image</button>
+                    @endif
+                </div>
             </div>
             <p class="mb-3 text-[11px] text-slate-400">Shown as a <strong>real image</strong> under the “My Connectivity” title on the customer dashboard home, above the Buy&nbsp;eSIM / Get&nbsp;number buttons. <strong>WebP or JPG, 1600×800px recommended (2:1) — will crop to fit</strong>, under 600&nbsp;KB. Switches automatically with the user’s light/dark theme. Leave blank for a clean title-only header.</p>
 

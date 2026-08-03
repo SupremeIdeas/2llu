@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Cache;
  */
 class HeroBackground
 {
-    private const CACHE_KEY = 'dashboard.hero.v2';
+    private const CACHE_KEY = 'dashboard.hero.v3';
 
     public const LIGHT_KEY = 'dashboard.hero.image_light';
 
@@ -27,9 +27,12 @@ class HeroBackground
     /** Short line under the "My Connectivity" title (BUILD-13 §3). */
     public const DESC_KEY = 'dashboard.hero.description';
 
+    /** Admin on/off switch for the dashboard hero image (owner request). */
+    public const ENABLED_KEY = 'dashboard.hero.enabled';
+
     public const DEFAULT_DESCRIPTION = 'Your eSIMs, numbers, and wallet — all in one place.';
 
-    /** @return array{light: ?string, dark: ?string, description: string} */
+    /** @return array{light: ?string, dark: ?string, description: string, enabled: bool} */
     public static function current(): array
     {
         return Cache::rememberForever(self::CACHE_KEY, function () {
@@ -40,9 +43,12 @@ class HeroBackground
                     'light' => Setting::getValue(self::LIGHT_KEY) ?: null,
                     'dark' => Setting::getValue(self::DARK_KEY) ?: null,
                     'description' => $desc !== '' ? $desc : self::DEFAULT_DESCRIPTION,
+                    // Default ON so existing installs are unchanged; the admin can
+                    // turn the hero image off without removing the uploaded art.
+                    'enabled' => (bool) Setting::getValue(self::ENABLED_KEY, true),
                 ];
             } catch (\Throwable) {
-                return ['light' => null, 'dark' => null, 'description' => self::DEFAULT_DESCRIPTION];
+                return ['light' => null, 'dark' => null, 'description' => self::DEFAULT_DESCRIPTION, 'enabled' => true];
             }
         });
     }
@@ -63,12 +69,25 @@ class HeroBackground
         return self::current()['description'];
     }
 
-    /** Whether at least one hero image is set (so the band should render). */
+    /** Admin toggle: is the dashboard hero image switched on? (Default true.) */
+    public static function enabled(): bool
+    {
+        return self::current()['enabled'];
+    }
+
+    /** Whether at least one hero image is uploaded. */
     public static function isSet(): bool
     {
         $c = self::current();
 
         return filled($c['light']) || filled($c['dark']);
+    }
+
+    /** Whether the dashboard should actually SHOW the hero image right now:
+     *  an image is uploaded AND the admin switch is on. */
+    public static function showsOnDashboard(): bool
+    {
+        return self::isSet() && self::enabled();
     }
 
     public static function flush(): void
@@ -78,6 +97,6 @@ class HeroBackground
 
     public static function isHeroKey(string $key): bool
     {
-        return $key === self::LIGHT_KEY || $key === self::DARK_KEY || $key === self::DESC_KEY;
+        return in_array($key, [self::LIGHT_KEY, self::DARK_KEY, self::DESC_KEY, self::ENABLED_KEY], true);
     }
 }

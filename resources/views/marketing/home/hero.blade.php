@@ -42,9 +42,28 @@
            class="mx-auto mt-5 max-w-2xl text-lg leading-relaxed {{ empty($s['image']) ? 'text-slate-600 dark:text-slate-300' : 'text-slate-200' }}">
             {{ $s['subheadline'] }}
         </p>
-        <div data-reveal style="--reveal-delay:.24s" class="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a href="{{ auth()->check() ? route('catalogue') : route('register') }}" class="nx-btn nx-btn--primary !px-8 !py-3 !text-base">{{ $s['cta_primary'] }}</a>
-            <a href="{{ route('how-it-works') }}" class="nx-btn nx-btn--ghost !px-8 !py-3 !text-base">{{ $s['cta_secondary'] }}</a>
+
+        {{-- BUILD-13 (marketing): a real, visible showcase image (product /
+             device mockup) directly under the description and above the CTAs.
+             Distinct from the full-bleed `image` backdrop — a discrete, centered
+             graphic with a capped height so it never pushes the CTAs + stat grid
+             below the fold. Optional; the hero renders cleanly without it. --}}
+        @php
+            $showcase = \App\Support\SiteContent::imageUrl($s['showcase_image'] ?? '');
+        @endphp
+        @if ($showcase)
+            <div data-reveal style="--reveal-delay:.20s" class="mx-auto mt-8 max-w-3xl">
+                <img src="{{ $showcase }}" alt="{{ $s['headline'] }}" loading="lazy" decoding="async"
+                     class="mx-auto max-h-[300px] w-auto max-w-full object-contain sm:max-h-[360px]">
+            </div>
+        @endif
+
+        {{-- CTA row locked to two columns — never stacks (BUILD-13 §2.5).
+             Compact padding/text at the smallest width so both buttons genuinely
+             fit side by side at 375px, stepping up from sm:. --}}
+        <div data-reveal style="--reveal-delay:.24s" class="mx-auto mt-8 grid max-w-md grid-cols-2 items-center gap-3">
+            <a href="{{ auth()->check() ? route('catalogue') : route('register') }}" class="nx-btn nx-btn--primary w-full justify-center !px-4 !py-3 !text-sm sm:!px-8 sm:!text-base">{{ $s['cta_primary'] }}</a>
+            <a href="{{ route('how-it-works') }}" class="nx-btn nx-btn--ghost w-full justify-center !px-4 !py-3 !text-sm sm:!px-8 sm:!text-base">{{ $s['cta_secondary'] }}</a>
         </div>
         <p data-reveal style="--reveal-delay:.32s" class="mt-6 text-xs {{ empty($s['image']) ? 'text-slate-400' : 'text-slate-300' }}">{{ $s['social_proof'] }}</p>
 

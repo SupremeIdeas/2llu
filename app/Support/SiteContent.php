@@ -37,6 +37,10 @@ class SiteContent
                     'cta_primary' => 'Get Your eSIM Now',
                     'cta_secondary' => 'See How It Works',
                     'social_proof' => 'Trusted by travelers from Lagos, Accra, Nairobi and beyond · 190+ countries covered · Activates in under 3 minutes',
+                    // BUILD-13 (marketing): a real, visible product/device-mockup
+                    // shown BELOW the description and ABOVE the CTA row — separate
+                    // from the full-bleed backdrop `image` field. Empty by default.
+                    'showcase_image' => '',
                     'stat_1' => '190+ Countries', 'stat_2' => '3 Min Setup', 'stat_3' => '0 Physical SIM', 'stat_4' => '24/7 Support',
                 ],
                 'how' => [

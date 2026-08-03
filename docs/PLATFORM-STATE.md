@@ -69,6 +69,34 @@ exists and must not be removed again.
 
 ---
 
+## Marketing homepage hero — showcase image (BUILD-13, corrected target) — 2026-08-03
+
+### Done
+- The earlier "Build 13" draft targeted the logged-in dashboard (see the section
+  below — still valid and shipped). This corrected build targets the **logged-out
+  marketing hero** (`marketing/home/hero.blade.php`).
+- New **`showcase_image`** field on the `home.hero` CMS section — independent of
+  the existing full-bleed `image` backdrop. Renders as a real, centered `<img>`
+  (capped `max-h`, `data-reveal` at `.20s`) directly below the subheadline and
+  above the CTA row; optional, and all four backdrop/showcase combinations render
+  cleanly. It plugs into the existing `*_image` upload path in the Site editor
+  (auto-surfaced control + a clarifying "shown below the description, not as a
+  background" hint), routed through `MediaStorage` (so BUILD-11 compression
+  applies).
+- **CTA row locked to two columns** (`grid grid-cols-2`, `max-w-md`) so it can
+  never stack; compact `!px-4 !text-sm` on mobile → `sm:!px-8 !text-base`, so both
+  buttons fit at 375px without overflow.
+
+### Dashboard hero — admin on/off toggle (owner request) — Done
+- `HeroBackground` gains an `enabled` flag (`dashboard.hero.enabled`, default ON
+  so existing installs are unchanged) + `enabled()` / `showsOnDashboard()`. The
+  dashboard image now shows only when an image is uploaded AND the switch is on;
+  the title/description/buttons are untouched. A "Show hero image on dashboard"
+  switch sits in Admin → Branding beside the hero uploader — turning it off hides
+  the image WITHOUT deleting the uploaded art (cache bumped to `v3`).
+
+---
+
 ## Dashboard home hero (BUILD-13) — 2026-08-03
 
 ### Done

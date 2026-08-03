@@ -73,6 +73,9 @@
                                     <button type="button" wire:click="$set('imageSection', '{{ $key }}'); $set('imageField', '{{ $field }}')" class="text-xs font-medium text-primary hover:underline">Replace</button>
                                     <button type="button" wire:click="removeFieldImage('{{ $key }}', '{{ $field }}')" class="text-xs font-medium text-slate-400 hover:text-red-600 hover:underline">Reset to default</button>
                                 @endif
+                                @if ($field === 'showcase_image')
+                                    <p class="w-full text-[11px] leading-relaxed text-slate-400">Shown below the description, <span class="font-medium">not as a background</span>. A landscape or device-mockup image works best (e.g. ~1200×800). It displays at a capped height, so an oversized upload scales down cleanly.</p>
+                                @endif
                             </div>
                         @else
                             <div wire:key="f-{{ $page }}-{{ $key }}-{{ $field }}">

@@ -95,6 +95,29 @@ class HeroBackgroundTest extends TestCase
             ->assertSee('https://cdn/aurora.webp', false);
     }
 
+    public function test_admin_can_toggle_the_dashboard_hero_image_off_without_deleting_it(): void
+    {
+        $user = User::factory()->create();
+        Setting::setValue(HeroBackground::LIGHT_KEY, 'https://cdn/aurora.webp', 'brand');
+        HeroBackground::flush();
+
+        // On by default → image shows.
+        $this->assertTrue(HeroBackground::showsOnDashboard());
+        Livewire::actingAs($user)->test(Dashboard::class)->assertSee('https://cdn/aurora.webp', false);
+
+        // Admin flips it off via Branding — the image is hidden but not removed.
+        Livewire::actingAs($this->admin())->test(Branding::class)
+            ->set('brand_name', 'NaaraSim')
+            ->set('hero_enabled', false)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertFalse(HeroBackground::enabled());
+        $this->assertFalse(HeroBackground::showsOnDashboard());
+        $this->assertTrue(HeroBackground::isSet()); // still uploaded
+        Livewire::actingAs($user)->test(Dashboard::class)->assertDontSee('https://cdn/aurora.webp', false);
+    }
+
     public function test_the_dashboard_shows_the_description_default_then_the_admin_override(): void
     {
         $user = User::factory()->create();

@@ -70,6 +70,9 @@ class Branding extends Component
     // Dashboard-home description line under "My Connectivity" (BUILD-13 §3).
     public string $hero_description = '';
 
+    // Admin on/off switch for the dashboard hero image (owner request).
+    public bool $hero_enabled = true;
+
     public ?string $saved = null;
 
     /** field => setting key. */
@@ -98,6 +101,7 @@ class Branding extends Component
         $this->preloader_enabled = BrandSettings::preloaderEnabled();
         $this->preloader_style = BrandSettings::preloaderStyle();
         $this->hero_description = HeroBackground::description();
+        $this->hero_enabled = HeroBackground::enabled();
     }
 
     /** Save the brand theme (colours, roundness, preloader). Takes effect live. */
@@ -191,6 +195,9 @@ class Branding extends Component
         // Dashboard-home description (BUILD-13 §3). Blank clears back to the
         // sensible default (HeroBackground::description() never returns empty).
         Setting::setValue(HeroBackground::DESC_KEY, trim($this->hero_description), 'brand');
+
+        // On/off switch for the dashboard hero image (owner request).
+        Setting::setValue(HeroBackground::ENABLED_KEY, $this->hero_enabled, 'brand');
 
         BrandSettings::flush();
         HeroBackground::flush();
