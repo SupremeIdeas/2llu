@@ -9,6 +9,30 @@
 
 ## DONE
 
+### 📦 BUILD-8 — eSIM region/country navigation + Admin Control Center — 2026-08-03
+The eSIM section, upgraded against Frank's 22 real Airalo reference screenshots.
+The premium eSIM hero slider was left untouched by explicit instruction; all
+work is nested beneath it. Committed per numbered section. Detail lives in
+`docs/PLATFORM-STATE.md`.
+
+- **§2 schema:** `coverage_type` + `region_slug` + AI-tooltip columns on
+  `esim_plans`; `esim_country_images` / `esim_region_images` tables.
+- **§1/§2 sync:** research-aware coverage/region derivation per provider (real
+  signals only, `EsimRegions` normalisation, count fallback, never invented).
+- **§3 customer nav:** search + Popular/Local/Regional/Global inside the existing
+  data/full lines, image tiles + "from $X" teasers, banner + plan list, plan
+  detail — all cache-only via `EsimCatalogue`, zero live provider calls.
+- **§4 admin Control Center** at `/adminmaster/esim` behind the new `esim.manage`
+  scope: sync status/trigger, Popular toggle, per-plan + bulk margins, Claude
+  margin suggestions (suggestion-only), tooltip + image management.
+- **§5 AI tooltips:** queued after sync for changed plans only; manual override
+  wins; fails safe.
+- **§6 device auto-detect** layered onto the existing brand-grouped modal;
+  honest iOS gap; `DeviceCompat::check()` gate unchanged.
+- **§7:** 118 country + 9 region seed images shipped + `EsimImageSeeder`.
+- **Note:** deps couldn't `composer install` in-sandbox (proxy), so the suite
+  wasn't run here; all new files pass `php -l` and follow tested patterns.
+
 ### 📦 BUILD-11 + BUILD-13 + BUILD-3 (the three priority build files) — 2026-08-03
 Delivered Frank's three "most important first" build files, committed per numbered
 section, full suite **1011 green**. Detail lives in `docs/PLATFORM-STATE.md`.

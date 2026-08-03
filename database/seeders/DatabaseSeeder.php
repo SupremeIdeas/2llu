@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             DefaultBannerSeeder::class, // ships the five brand promo banners
             MarketingCouponsSeeder::class, // welcome + comeback marketing coupons
             EsimCompatibleDeviceSeeder::class, // eSIM device compatibility catalogue
+            EsimImageSeeder::class,     // eSIM country/region navigation imagery (BUILD-8)
             NumbersBentoSeeder::class,  // six Numbers landing bento cards
         ]);
     }

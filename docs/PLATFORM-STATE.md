@@ -6,6 +6,81 @@ exists and must not be removed again.
 
 ---
 
+## eSIM region/country navigation + Control Center (BUILD-8) — 2026-08-03
+
+Executed against Frank's 22 real Airalo reference screenshots (not a placeholder
+design). The premium 4-image eSIM hero slider was left **exactly as-is** by
+explicit instruction — this build only adds *beneath* it.
+
+### Done
+- **§2 Schema.** `esim_plans` gained `coverage_type` (local|regional|global) +
+  `region_slug` (both nullable, indexed) and `ai_tooltip` / `ai_tooltip_override`
+  / `ai_tooltip_generated_at`. New `esim_country_images` (ISO2) and
+  `esim_region_images` (region slug) tables, icon + detail banner both nullable
+  → clean flag/glyph/gradient fallback when unset. All backward-compatible.
+- **§1/§2 Sync — research-aware coverage derivation.** `CatalogueSyncService`
+  now derives coverage_type + region_slug in each mapper from that provider's
+  REAL signal only, normalised through `EsimRegions` to one canonical slug set;
+  it never invents a region a provider doesn't supply. Fallback when no region
+  name exists: country count (1 = local; ≥100 = global; else regional), with
+  region_slug left null.
+- **§3 Customer navigation.** Search + Popular/Local/Regional/Global segmented
+  control nested INSIDE the existing data/full lines (never mixed). Country/
+  region/global tiles (image or fallback + name + live "from $X.XX" teaser +
+  count) → selected banner + plan list → dedicated plan-detail view with honest
+  facts + AI tooltip. All served by the new cache-only `EsimCatalogue` — **zero
+  live provider calls in the browsing path** (busted on sync / image change).
+- **§4 Admin eSIM Control Center** at `/adminmaster/esim`, gated by the new
+  `esim.manage` staff scope (admin/super_admin bypass): per-provider sync status
+  + trigger, Popular curation toggle, per-plan + bulk margin editing
+  (`override_markup_pct` → PricingEngine, MarginGuard still floors), Claude
+  margin *suggestions* (suggestion-only, audit-logged, never auto-applied),
+  AI-tooltip view/regenerate/override, and country/region image management via
+  `MediaStorage`.
+- **§5 AI tooltips.** Queued `GenerateEsimTooltipsJob` fires after a sync for
+  only the plans whose data/validity/coverage changed (cost control). Masking
+  discipline holds — no price/cost/provider in the prompt. Manual override always
+  wins via the `display_tooltip` accessor. Fails safe to null.
+- **§6 Device auto-detect.** The existing brand-grouped, DB-backed compatibility
+  modal (already built in "esim_upgrade Part 2") gained best-effort client-side
+  detection (UA / Client Hints, Android model-code → marketing-name map),
+  pre-selecting the device and showing a supported/unsupported/likely banner. The
+  list stays fully interactive; the authoritative `DeviceCompat::check()` gate is
+  unchanged. iOS stays generic — Safari never reveals the iPhone model.
+- **§7 Seed imagery.** 118 country cutouts + 9 region maps shipped under
+  `public/images/esim/…`, wired by `EsimImageSeeder` (idempotent; never clobbers
+  an admin upload).
+
+### Provider research findings (region / image / feature fields)
+Concept of Local/Regional/Global was pre-confirmed for 6 of 7 providers; this
+build confirms the mapping approach and documents what is/isn't available:
+- **Airalo (live provider):** operator `type` = local|global and a `slug`
+  (europe/world) are the real signals — used directly. Regional/global packages
+  carry the slug, locals carry `country_code`.
+- **eSIM Go:** real distinct `region` filter — mapped from `region`.
+- **Zendit:** categorised by country AND region — mapped from `region`/`regions`.
+- **Quibity / Monty Mobile / 1GLOBAL:** regional/global concept confirmed;
+  exact field names are partner-gated, so the mapper reads a `region` field
+  defensively and otherwise falls back to the country count. Confirm the precise
+  field names against each authenticated partner response before relying on them.
+- **Gigs:** MVNO-in-a-box — may expose no browsable region taxonomy at all. The
+  mapper degrades cleanly to the count-based fallback (region_slug null); this is
+  expected, not a gap.
+- **Feature badges (5G / hotspot / top-up):** NOT surfaced. None of the current
+  providers' confirmed responses expose these fields, so the plan-detail view
+  shows only honest, derivable facts (data, validity, voice, coverage) rather
+  than a fabricated feature list. Add per-provider once a real field is confirmed.
+
+### Not runnable here
+`composer install` could not complete in this sandbox (proxy timeouts cloning
+aws-sdk-php), so the full test suite / `migrate` could not be exercised — every
+new PHP file passes `php -l`, and the code follows the existing, tested patterns
+(updateOrCreate sync, PricingEngine.recompute, MediaStorage uploads, cached
+catalogue lists, queued AI jobs). Run `php artisan migrate` + `db:seed` +
+`php artisan test` once dependencies install to confirm end-to-end.
+
+---
+
 ## Chat / mobile / branding (BUILD-3) — 2026-08-03
 
 ### Done so far
