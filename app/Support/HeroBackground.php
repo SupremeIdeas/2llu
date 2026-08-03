@@ -18,23 +18,31 @@ use Illuminate\Support\Facades\Cache;
  */
 class HeroBackground
 {
-    private const CACHE_KEY = 'dashboard.hero.v1';
+    private const CACHE_KEY = 'dashboard.hero.v2';
 
     public const LIGHT_KEY = 'dashboard.hero.image_light';
 
     public const DARK_KEY = 'dashboard.hero.image_dark';
 
-    /** @return array{light: ?string, dark: ?string} */
+    /** Short line under the "My Connectivity" title (BUILD-13 §3). */
+    public const DESC_KEY = 'dashboard.hero.description';
+
+    public const DEFAULT_DESCRIPTION = 'Your eSIMs, numbers, and wallet — all in one place.';
+
+    /** @return array{light: ?string, dark: ?string, description: string} */
     public static function current(): array
     {
         return Cache::rememberForever(self::CACHE_KEY, function () {
             try {
+                $desc = trim((string) Setting::getValue(self::DESC_KEY, ''));
+
                 return [
                     'light' => Setting::getValue(self::LIGHT_KEY) ?: null,
                     'dark' => Setting::getValue(self::DARK_KEY) ?: null,
+                    'description' => $desc !== '' ? $desc : self::DEFAULT_DESCRIPTION,
                 ];
             } catch (\Throwable) {
-                return ['light' => null, 'dark' => null];
+                return ['light' => null, 'dark' => null, 'description' => self::DEFAULT_DESCRIPTION];
             }
         });
     }
@@ -47,6 +55,12 @@ class HeroBackground
     public static function dark(): ?string
     {
         return self::current()['dark'];
+    }
+
+    /** The dashboard-home description line — never empty (falls back to default). */
+    public static function description(): string
+    {
+        return self::current()['description'];
     }
 
     /** Whether at least one hero image is set (so the band should render). */
@@ -64,6 +78,6 @@ class HeroBackground
 
     public static function isHeroKey(string $key): bool
     {
-        return $key === self::LIGHT_KEY || $key === self::DARK_KEY;
+        return $key === self::LIGHT_KEY || $key === self::DARK_KEY || $key === self::DESC_KEY;
     }
 }

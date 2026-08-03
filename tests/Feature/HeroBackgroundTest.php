@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\Branding;
+use App\Livewire\Dashboard;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\HeroBackground;
@@ -84,13 +85,56 @@ class HeroBackgroundTest extends TestCase
         $user = User::factory()->create();
 
         // Default: no hero image element.
-        Livewire::actingAs($user)->test(\App\Livewire\Dashboard::class)
+        Livewire::actingAs($user)->test(Dashboard::class)
             ->assertDontSee('object-cover object-center', false);
 
         Setting::setValue(HeroBackground::LIGHT_KEY, 'https://cdn/aurora.webp', 'brand');
         HeroBackground::flush();
 
-        Livewire::actingAs($user)->test(\App\Livewire\Dashboard::class)
+        Livewire::actingAs($user)->test(Dashboard::class)
             ->assertSee('https://cdn/aurora.webp', false);
+    }
+
+    public function test_the_dashboard_shows_the_description_default_then_the_admin_override(): void
+    {
+        $user = User::factory()->create();
+
+        // Never empty — the sensible default shows out of the box (BUILD-13 §3.1).
+        $this->assertSame(HeroBackground::DEFAULT_DESCRIPTION, HeroBackground::description());
+        Livewire::actingAs($user)->test(Dashboard::class)
+            ->assertSee(HeroBackground::DEFAULT_DESCRIPTION);
+
+        Setting::setValue(HeroBackground::DESC_KEY, 'Data and numbers, anywhere.', 'brand');
+        HeroBackground::flush();
+
+        Livewire::actingAs($user)->test(Dashboard::class)
+            ->assertSee('Data and numbers, anywhere.')
+            ->assertDontSee(HeroBackground::DEFAULT_DESCRIPTION);
+    }
+
+    public function test_admin_can_edit_the_dashboard_description(): void
+    {
+        Storage::fake('public');
+        Livewire::actingAs($this->admin())->test(Branding::class)
+            ->set('brand_name', 'NaaraSim')
+            ->set('hero_description', '  Stay connected, no swaps.  ')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Stay connected, no swaps.', HeroBackground::description());
+    }
+
+    public function test_the_hero_block_degrades_cleanly_with_no_image(): void
+    {
+        // No hero image set: title, description and BOTH CTAs still render, in the
+        // strict two-column grid that never collapses (BUILD-13 §1.4, §3.4).
+        $this->assertFalse(HeroBackground::isSet());
+
+        Livewire::actingAs(User::factory()->create())->test(Dashboard::class)
+            ->assertSee('My Connectivity')
+            ->assertSee(HeroBackground::DEFAULT_DESCRIPTION)
+            ->assertSee('Buy eSIM')
+            ->assertSee('Get number')
+            ->assertSee('grid-cols-2', false); // buttons stay side-by-side at every width
     }
 }

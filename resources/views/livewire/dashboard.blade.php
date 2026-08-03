@@ -7,10 +7,48 @@
     @php($heroLight = \App\Support\HeroBackground::light())
     @php($heroDark = \App\Support\HeroBackground::dark())
     @php($hasHero = \App\Support\HeroBackground::isSet())
+    @php($heroDesc = \App\Support\HeroBackground::description())
     @php($gAvatar = \App\Support\SupportSettings::avatar())
     @php($gName = \App\Support\SupportSettings::name())
     @php($greetingOn = \App\Support\SupportSettings::greetingEnabled())
     @php($greetingMode = \App\Support\SupportSettings::greetingMode())
+
+    {{-- Dashboard home hero (BUILD-13): title, a short description, a REAL visible
+         image (not a faded background), then the two primary CTAs in a strict
+         two-column grid that never collapses to one column at any width. The
+         whole block is kept compact — title/description one line each, the image
+         capped to a short 2:1 band — so it all fits a 375×667 phone viewport on
+         first paint. When no hero image is set it degrades cleanly to title +
+         description + buttons in the same layout, no empty gap. --}}
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">My Connectivity</h1>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ $heroDesc }}</p>
+
+        @if ($hasHero)
+            {{-- Fixed 2:1 aspect + max-height cap: any uploaded image renders as a
+                 short, predictable band regardless of its natural proportions,
+                 leaving room for the buttons within the first viewport. --}}
+            <div class="mt-3 aspect-[2/1] max-h-52 w-full overflow-hidden rounded-2xl border border-slate-200/70 dark:border-white/10 sm:max-h-64">
+                <img src="{{ $heroLight ?: $heroDark }}" alt="" loading="lazy" decoding="async"
+                     class="h-full w-full object-cover object-center {{ $heroDark ? 'dark:hidden' : '' }}">
+                @if ($heroDark)
+                    <img src="{{ $heroDark }}" alt="" loading="lazy" decoding="async"
+                         class="hidden h-full w-full object-cover object-center dark:block">
+                @endif
+            </div>
+        @endif
+
+        {{-- Strict two-column grid — Buy eSIM / Get number sit side by side at
+             EVERY screen width and never stack. --}}
+        <div class="mt-4 grid grid-cols-2 gap-3">
+            <a href="{{ route('catalogue') }}" class="nx-btn nx-btn--primary w-full justify-center !py-2.5">
+                <x-icon name="globe" class="h-4 w-4" /> Buy eSIM
+            </a>
+            <a href="{{ route('numbers') }}" class="nx-btn nx-btn--ghost w-full justify-center !py-2.5">
+                <x-icon name="hash" class="h-4 w-4" /> Get number
+            </a>
+        </div>
+    </div>
 
     @if ($greetingOn)
         {{-- The greeting reads as a chat message from the assistant. A per-day
@@ -29,22 +67,13 @@
                 </div>
             </div>
         @else
+            {{-- Greeting is now a plain gradient card. The hero art it used to
+                 carry as a faded background moved up into the real image block
+                 above (BUILD-13), so it isn't rendered twice. --}}
             <div x-data="{ show: true }"
                  x-init="$nextTick(() => { show = localStorage.getItem('{{ $greetKey }}') !== '1'; })"
                  x-show="show" x-cloak
-                 class="relative mb-6 overflow-hidden rounded-2xl border p-5 {{ $hasHero ? 'border-slate-200/60 dark:border-white/10' : 'border-primary/15 bg-gradient-to-br from-primary/[0.07] via-transparent to-accent/[0.06] dark:border-primary/25 dark:from-primary/15 dark:to-accent/10' }}">
-                @if ($hasHero)
-                    {{-- Background art layer (light + dark; one falls back to the other). --}}
-                    <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-                        <img src="{{ $heroLight ?: $heroDark }}" alt="" loading="lazy" decoding="async"
-                             class="absolute inset-0 h-full w-full object-cover object-center {{ $heroDark ? 'dark:hidden' : '' }}">
-                        @if ($heroDark)
-                            <img src="{{ $heroDark }}" alt="" loading="lazy" decoding="async"
-                                 class="absolute inset-0 hidden h-full w-full object-cover object-center dark:block">
-                        @endif
-                        <div class="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-white/40 dark:from-[#0D1B2A] dark:via-[#0D1B2A]/85 dark:to-[#0D1B2A]/40"></div>
-                    </div>
-                @endif
+                 class="relative mb-6 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.07] via-transparent to-accent/[0.06] p-5 dark:border-primary/25 dark:from-primary/15 dark:to-accent/10">
                 @include('partials.greeting-bubble', ['onDismiss' => "@click=\"show = false; localStorage.setItem('{$greetKey}', '1')\""])
             </div>
         @endif
@@ -71,18 +100,6 @@
             </div>
         </div>
     @endif
-
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">My Connectivity</h1>
-        <div class="flex gap-2">
-            <a href="{{ route('catalogue') }}" class="nx-btn nx-btn--primary !px-4 !py-2">
-                <x-icon name="globe" class="h-4 w-4" /> Buy eSIM
-            </a>
-            <a href="{{ route('numbers') }}" class="nx-btn nx-btn--ghost !px-4 !py-2">
-                <x-icon name="hash" class="h-4 w-4" /> Get number
-            </a>
-        </div>
-    </div>
 
     {{-- Promo banners (Module 31): admin-managed carousel, coupon chips included. --}}
     <x-banner-zone placement="dashboard_home" class="mb-8" />

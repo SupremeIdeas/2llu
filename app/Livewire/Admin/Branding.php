@@ -67,6 +67,9 @@ class Branding extends Component
 
     public $hero_dark = null;
 
+    // Dashboard-home description line under "My Connectivity" (BUILD-13 §3).
+    public string $hero_description = '';
+
     public ?string $saved = null;
 
     /** field => setting key. */
@@ -94,6 +97,7 @@ class Branding extends Component
         $this->radius = BrandSettings::radius();
         $this->preloader_enabled = BrandSettings::preloaderEnabled();
         $this->preloader_style = BrandSettings::preloaderStyle();
+        $this->hero_description = HeroBackground::description();
     }
 
     /** Save the brand theme (colours, roundness, preloader). Takes effect live. */
@@ -165,11 +169,13 @@ class Branding extends Component
             // Hero art: WebP or JPG only, kept small for fast in-app loading.
             'hero_light' => 'nullable|mimes:webp,jpg,jpeg|max:600',
             'hero_dark' => 'nullable|mimes:webp,jpg,jpeg|max:600',
+            'hero_description' => 'nullable|string|max:120',
         ], [
             'hero_light.mimes' => 'The hero image must be a WebP or JPG.',
             'hero_dark.mimes' => 'The hero image must be a WebP or JPG.',
             'hero_light.max' => 'Keep the hero image under 600 KB for fast loading.',
             'hero_dark.max' => 'Keep the hero image under 600 KB for fast loading.',
+            'hero_description.max' => 'Keep the dashboard description to one short line (120 characters).',
         ]);
 
         Setting::setValue('brand.name', trim($this->brand_name), 'brand');
@@ -182,8 +188,13 @@ class Branding extends Component
             }
         }
 
+        // Dashboard-home description (BUILD-13 §3). Blank clears back to the
+        // sensible default (HeroBackground::description() never returns empty).
+        Setting::setValue(HeroBackground::DESC_KEY, trim($this->hero_description), 'brand');
+
         BrandSettings::flush();
         HeroBackground::flush();
+        $this->hero_description = HeroBackground::description(); // reflect resolved default if blank
         Auditor::log('brand.updated');
         $this->saved = 'Branding saved. Your logo and name now show across the platform.';
         $this->dispatch('nx-toast', type: 'success', message: 'Branding saved — live everywhere.');

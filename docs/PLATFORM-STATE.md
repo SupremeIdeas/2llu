@@ -6,6 +6,31 @@ exists and must not be removed again.
 
 ---
 
+## Dashboard home hero (BUILD-13) — 2026-08-03
+
+### Done
+- **Real visible image, not a faded background.** The customer dashboard home
+  (`livewire/dashboard.blade.php`) now renders `HeroBackground` art as a genuine
+  `<img>` in normal flow — a fixed **2:1** band with a `max-h` cap — directly
+  under the "My Connectivity" title, instead of the old `absolute inset-0`
+  gradient-faded layer behind the greeting. The greeting bubble kept its own
+  logic but dropped that background art so the image never renders twice.
+- **New admin-editable description line** under the title, extending
+  `HeroBackground` (new `DESC_KEY` + `description()`, `DEFAULT_DESCRIPTION` =
+  "Your eSIMs, numbers, and wallet — all in one place."). Never empty — a blank
+  admin value falls back to the default. Edited on Admin → Branding, saved as a
+  `brand`-group Setting, cache-busted on save (hero cache bumped to `v2`).
+- **Strict two-column CTAs.** `Buy eSIM` / `Get number` moved directly below the
+  image into `grid grid-cols-2` — side by side at EVERY width, never collapsing
+  to one column.
+- **Viewport-fit + clean degradation.** Title/description one line each, image
+  capped to a short band, compact buttons → the whole block fits a 375×667 phone
+  on first paint. With no image set it degrades to title + description + the same
+  two-column buttons, no empty gap. Admin preview switched to a 2:1 block with a
+  "1600×800px recommended, will crop to fit" hint so it matches what renders.
+
+---
+
 ## Media pipeline build (BUILD-11) — 2026-08-03
 
 ### §2 Browser-side compression — Done

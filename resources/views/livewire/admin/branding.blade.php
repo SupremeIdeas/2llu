@@ -81,25 +81,37 @@
              Leave blank to keep the default heading. --}}
         <div class="rounded-xl border border-slate-200 p-4 dark:border-[#2D4060]">
             <div class="mb-1 flex items-center justify-between">
-                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Dashboard hero background <span class="font-normal text-slate-400">(optional)</span></p>
+                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Dashboard home hero <span class="font-normal text-slate-400">(optional)</span></p>
                 @if (\App\Support\HeroBackground::isSet())
-                    <button type="button" wire:click="removeHero" wire:confirm="Remove the hero backgrounds and return to the default heading?"
-                            class="text-xs font-medium text-red-600 hover:underline">Remove</button>
+                    <button type="button" wire:click="removeHero" wire:confirm="Remove the hero images and return to the title-only heading?"
+                            class="text-xs font-medium text-red-600 hover:underline">Remove image</button>
                 @endif
             </div>
-            <p class="mb-3 text-[11px] text-slate-400">Aurora/wave art behind the dashboard greeting. <strong>WebP or JPG, 1600×500px (16:5), under 600&nbsp;KB.</strong> The image sits under a gradient so text stays readable, and adds no extra height. Switches automatically with the user’s light/dark theme.</p>
+            <p class="mb-3 text-[11px] text-slate-400">Shown as a <strong>real image</strong> under the “My Connectivity” title on the customer dashboard home, above the Buy&nbsp;eSIM / Get&nbsp;number buttons. <strong>WebP or JPG, 1600×800px recommended (2:1) — will crop to fit</strong>, under 600&nbsp;KB. Switches automatically with the user’s light/dark theme. Leave blank for a clean title-only header.</p>
+
+            {{-- Description line under the title (BUILD-13 §3). --}}
+            <div class="mb-4">
+                <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Description line under the title</label>
+                <input type="text" wire:model="hero_description" maxlength="120"
+                       placeholder="{{ \App\Support\HeroBackground::DEFAULT_DESCRIPTION }}"
+                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-primary dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                <p class="mt-1 text-[11px] text-slate-400">One short sentence. Leave blank to use the default.</p>
+                @error('hero_description') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 @foreach ([['hero_light', 'Light mode', \App\Support\HeroBackground::light()], ['hero_dark', 'Dark mode', \App\Support\HeroBackground::dark()]] as [$field, $label, $current])
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{{ $label }}</label>
-                        <div class="mb-2 flex aspect-[16/5] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-[#2D4060] dark:bg-[#243352]">
+                        {{-- Preview mirrors the dashboard's real-image treatment: a genuine
+                             2:1 image block, not a faded background layer. --}}
+                        <div class="mb-2 flex aspect-[2/1] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-[#2D4060] dark:bg-[#243352]">
                             @if ($this->{$field} && $this->{$field}->isPreviewable())
                                 <img src="{{ $this->{$field}->temporaryUrl() }}" class="h-full w-full object-cover">
                             @elseif ($current)
                                 <img src="{{ $current }}" class="h-full w-full object-cover">
                             @else
-                                <span class="text-[11px] text-slate-400">No image — default heading</span>
+                                <span class="text-[11px] text-slate-400">No image — title-only header</span>
                             @endif
                         </div>
                         <input type="file" wire:model="{{ $field }}" accept="image/webp,image/jpeg"
