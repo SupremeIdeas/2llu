@@ -6,10 +6,12 @@ use App\Events\PayoutReversed;
 use App\Events\PayoutSettled;
 use App\Jobs\AlertAdminJob;
 use App\Jobs\SendPayoutJob;
+use App\Models\PaymentCharge;
 use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
 use App\Models\User;
 use App\Support\Auditor;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -45,6 +47,69 @@ class PayoutService
         }
 
         return null;
+    }
+
+    private const RANK_CACHE = 'payouts.gateway_ranking.v1';
+
+    /** Names of currently-available payout-capable gateways. */
+    public function payoutCapableNames(): array
+    {
+        return array_values(array_map(
+            fn (PayoutGatewayInterface $g) => $g->name(),
+            array_filter($this->gateways, fn (PayoutGatewayInterface $g) => $g->available()),
+        ));
+    }
+
+    /**
+     * Payout-capable gateways ranked by the platform's REAL recent inbound volume
+     * (BUILD-4 §8) — don't push disbursements through a rail nobody pays in
+     * through, since it won't hold reliable float. Inbound volume is read per
+     * gateway from payment_charges (the gateway-attributed inbound record).
+     * Cached (daily via payouts:rank) so it's never recomputed per page load.
+     *
+     * @return array<string, float> gateway => inbound volume, highest first
+     */
+    public function rankedGateways(int $days = 90): array
+    {
+        $volume = Cache::remember(self::RANK_CACHE, now()->addDay(),
+            fn () => PaymentCharge::query()
+                ->where('created_at', '>=', now()->subDays($days))
+                ->selectRaw('gateway, SUM(amount) as vol')
+                ->groupBy('gateway')
+                ->pluck('vol', 'gateway')
+                ->map(fn ($v) => (float) $v)
+                ->all());
+
+        $ranked = [];
+        foreach ($this->payoutCapableNames() as $name) {
+            $ranked[$name] = (float) ($volume[$name] ?? 0);
+        }
+        arsort($ranked);
+
+        return $ranked;
+    }
+
+    /**
+     * The single "Recommended — fast payout" gateway: the highest-inbound-volume
+     * payout-capable gateway, or null when none has any real inbound volume yet
+     * (so we never badge a rail we can't back). Other rails still show — the UI
+     * only highlights, never hides (§8.3).
+     */
+    public function recommendedGateway(int $days = 90): ?string
+    {
+        foreach ($this->rankedGateways($days) as $name => $vol) {
+            if ($vol > 0) {
+                return $name;
+            }
+        }
+
+        return null;
+    }
+
+    /** Drop the cached ranking (called by the daily payouts:rank command). */
+    public function flushRanking(): void
+    {
+        Cache::forget(self::RANK_CACHE);
     }
 
     /**

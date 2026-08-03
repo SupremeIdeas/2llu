@@ -26,6 +26,10 @@
                     <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {{ $acct->account_name }}
                         @if ($acct->is_default) <span class="ml-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary dark:bg-primary/20 dark:text-teal-300">Default</span> @endif
+                        {{-- §8: highlight the highest-inbound-volume rail (never hides others). --}}
+                        @if ($recommendedGateway && $acct->provider === $recommendedGateway)
+                            <span class="ml-1 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-500/15 dark:text-green-300"><x-icon name="zap" class="h-3 w-3" /> Recommended — fast payout</span>
+                        @endif
                     </p>
                     <p class="text-xs text-slate-500 dark:text-slate-400">{{ $acct->bank_name }} · {{ $acct->masked_number }} · {{ $acct->currency }}</p>
                 </div>

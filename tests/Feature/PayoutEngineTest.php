@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Events\PayoutReversed;
 use App\Events\PayoutSettled;
+use App\Models\PaymentCharge;
 use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
 use App\Models\User;
@@ -262,5 +263,67 @@ class PayoutEngineTest extends TestCase
         $this->call('POST', '/webhooks/payouts/paystack', [], [], [],
             ['HTTP_X-PAYSTACK-SIGNATURE' => 'wrong', 'CONTENT_TYPE' => 'application/json'], $body)
             ->assertStatus(401);
+    }
+
+    /**
+     * §8: the "Recommended — fast payout" rail is the payout-capable gateway with
+     * the highest REAL recent inbound volume (payment_charges). Rails with no
+     * inbound volume are never recommended, and the ranking never invents a gateway
+     * that isn't payout-capable.
+     */
+    public function test_recommended_gateway_is_the_highest_inbound_volume_rail(): void
+    {
+        $paystack = $this->gateway();                 // name() === 'paystack'
+        $flutterwave = new class implements PayoutGatewayInterface
+        {
+            public function name(): string
+            {
+                return 'flutterwave';
+            }
+
+            public function available(): bool
+            {
+                return true;
+            }
+
+            public function createRecipient(PayoutAccount $account): string
+            {
+                return 'RCP';
+            }
+
+            public function sendTransfer(PayoutRequest $request, PayoutAccount $account): PayoutTransferResult
+            {
+                return new PayoutTransferResult(status: 'processing', providerRef: 'X');
+            }
+
+            public function verifyWebhook(Request $request): bool
+            {
+                return true;
+            }
+
+            public function parseWebhook(Request $request): ?PayoutEvent
+            {
+                return null;
+            }
+        };
+        $svc = new PayoutService([$paystack, $flutterwave]);
+
+        // Flutterwave takes more inbound volume; a non-payout rail (stripe) is noise.
+        PaymentCharge::create(['gateway' => 'paystack', 'reference' => 'c1', 'amount' => 100, 'currency' => 'NGN']);
+        PaymentCharge::create(['gateway' => 'flutterwave', 'reference' => 'c2', 'amount' => 900, 'currency' => 'NGN']);
+        PaymentCharge::create(['gateway' => 'stripe', 'reference' => 'c3', 'amount' => 5000, 'currency' => 'USD']);
+        $svc->flushRanking();
+
+        $ranked = $svc->rankedGateways();
+        $this->assertSame(['flutterwave', 'paystack'], array_keys($ranked)); // sorted desc, payout-capable only
+        $this->assertSame('flutterwave', $svc->recommendedGateway());
+    }
+
+    public function test_no_gateway_is_recommended_without_inbound_volume(): void
+    {
+        $svc = new PayoutService([$this->gateway()]);
+        $svc->flushRanking();
+
+        $this->assertNull($svc->recommendedGateway()); // never badge a rail we can't back
     }
 }

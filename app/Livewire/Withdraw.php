@@ -7,6 +7,7 @@ use App\Services\Credits\CreditService;
 use App\Services\Payouts\AccountResolutionException;
 use App\Services\Payouts\PayoutAccountService;
 use App\Services\Payouts\PayoutException;
+use App\Services\Payouts\PayoutService;
 use App\Services\Payouts\WithdrawalService;
 use App\Support\CreditSettings;
 use App\Support\PayoutSettings;
@@ -133,7 +134,7 @@ class Withdraw extends Component
         return ['NG' => 'NGN', 'GH' => 'GHS', 'KE' => 'KES', 'ZA' => 'ZAR'][strtoupper($country)] ?? 'USD';
     }
 
-    public function render(WithdrawalService $withdrawals, CreditService $credits)
+    public function render(WithdrawalService $withdrawals, CreditService $credits, PayoutService $payouts)
     {
         $user = Auth::user();
 
@@ -143,6 +144,8 @@ class Withdraw extends Component
             'withdrawableCredits' => $credits->withdrawableBalance($user),
             'minWithdrawal' => PayoutSettings::minWithdrawal(),
             'enabled' => PayoutSettings::enabled(),
+            // §8: the volume-recommended payout rail (or null). Other rails still show.
+            'recommendedGateway' => $payouts->recommendedGateway(),
         ]);
     }
 }

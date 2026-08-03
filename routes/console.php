@@ -50,6 +50,9 @@ Schedule::command('backup:clean')->dailyAt('02:30')->withoutOverlapping();
 // (BUILD-4 §4.3; the default is the manual "Ready to promote" queue).
 Schedule::command('merchants:auto-promote')->dailyAt('05:00')->withoutOverlapping();
 
+// Recompute the volume-based payout-gateway ranking (BUILD-4 §8) — cached daily.
+Schedule::command('payouts:rank')->dailyAt('05:30')->withoutOverlapping();
+
 // Refresh live currency-display FX rates (localized pricing) — display only.
 Schedule::command('fx:sync')->dailyAt('05:00')->withoutOverlapping();
 Schedule::command('backup:run --only-db')->dailyAt('02:45')->withoutOverlapping();
