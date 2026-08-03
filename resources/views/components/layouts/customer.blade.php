@@ -106,8 +106,12 @@
     @endif
 
     {{-- NaaraSim Wizard — guided, buttons-only purchase widget (roadmap §3/§11).
-         Only rendered for verified end-users (this layout is behind auth). --}}
-    @livewire('wizard')
+         Only rendered for verified end-users (this layout is behind auth).
+         NOT on the NaaraCare/support-chat route (BUILD-3 §2): the floating widget
+         would overlap the Nia conversation — two chat-like UIs on one screen. --}}
+    @unless (request()->routeIs('support'))
+        @livewire('wizard')
+    @endunless
 
     {{-- Self-hosted web-push opt-in (owner request) — closed-tab notifications. --}}
     @include('partials.push-optin')
