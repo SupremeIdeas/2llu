@@ -250,6 +250,12 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/tickets', \App\Livewire\Admin\SupportQueue::class)->name('tickets');
         });
 
+        // eSIM Control Center (BUILD-8 §4) — staff with the esim.manage scope,
+        // plus admin/super_admin. One section for sync, margins, tooltips, images.
+        Route::middleware('permission:esim.manage')->group(function () {
+            Route::get('/esim', \App\Livewire\Admin\EsimControlCenter::class)->name('esim');
+        });
+
         // Staff, backups + maintenance loop — super_admin only (Sections 27–29).
         Route::middleware('role:super_admin')->group(function () {
             Route::get('/staff', \App\Livewire\Admin\Staff::class)->name('staff');

@@ -23,6 +23,7 @@
 
         // Store & pricing.
         $more[] = ['heading' => 'Store & pricing'];
+        $more[] = ['route' => 'admin.esim', 'label' => 'eSIM Control Center', 'icon' => 'signal'];
         $more[] = ['route' => 'admin.pricing-architect', 'label' => 'Price with Claude', 'icon' => 'zap'];
         $more[] = ['route' => 'admin.coupons', 'label' => 'Coupons', 'icon' => 'gift'];
         $more[] = ['route' => 'admin.announcements', 'label' => 'Announcements', 'icon' => 'bell'];
@@ -76,6 +77,12 @@
     }
     if ($isPrivileged || $u->can('tickets.manage')) {
         $support[] = ['route' => 'admin.tickets', 'label' => 'Tickets', 'icon' => 'message-circle'];
+    }
+    // Delegated eSIM managers (esim.manage scope) who aren't full admins still
+    // reach the Control Center (BUILD-8 §4.7).
+    if (! $isPrivileged && $u->can('esim.manage')) {
+        $more[] = ['heading' => 'Store & pricing'];
+        $more[] = ['route' => 'admin.esim', 'label' => 'eSIM Control Center', 'icon' => 'signal'];
     }
     if ($support) {
         $more[] = ['heading' => 'People & support'];

@@ -20,6 +20,7 @@ class StaffScopes
         'orders.assist' => 'Assist with orders',
         'content.manage' => 'Manage content & pages',
         'providers.view' => 'View provider status & balances',
+        'esim.manage' => 'Manage eSIM catalogue, margins & images',
     ];
 
     /** @return list<string> */

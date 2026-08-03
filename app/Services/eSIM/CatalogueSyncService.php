@@ -24,6 +24,17 @@ use Illuminate\Support\Facades\Log;
  */
 class CatalogueSyncService
 {
+    /** provider key => display label (single source for the CLI + admin UI). */
+    public const PROVIDERS = [
+        'esimgo' => 'eSIM Go',
+        'airalo' => 'Airalo',
+        'quibity' => 'Quibity',
+        'zendit' => 'Zendit',
+        'oneglobal' => '1GLOBAL',
+        'montymobile' => 'Monty Mobile',
+        'gigs' => 'Gigs',
+    ];
+
     public function __construct(private readonly PricingEngine $pricing) {}
 
     /** Sync one provider; returns the number of plans upserted. Records the
