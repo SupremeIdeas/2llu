@@ -33,12 +33,17 @@
 
     {{-- Add a partner --}}
     <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1B2A44]">
-        <h2 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">Add a partner</h2>
+        <h2 class="mb-1 text-sm font-bold text-slate-900 dark:text-white">Add a partner</h2>
+        <p class="mb-3 text-xs text-slate-400">Existing user? Just enter their email. New person? Add a name too and we'll create the account with a one-time password — they land on /partner at first login.</p>
         <div class="flex flex-wrap items-end gap-3">
             <div class="min-w-[16rem] flex-1">
-                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">User email</label>
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Email</label>
                 <input type="email" wire:model="newEmail" placeholder="person@example.com" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
                 @error('newEmail') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+            </div>
+            <div class="min-w-[10rem] flex-1">
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Name <span class="text-slate-400">(new account)</span></label>
+                <input type="text" wire:model="newName" placeholder="Optional" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
             </div>
             <div class="w-28">
                 <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Share %</label>
@@ -47,6 +52,14 @@
             </div>
             <button type="button" wire:click="addPartner" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark">Add partner</button>
         </div>
+        @if ($newTempPassword)
+            <div class="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm dark:border-primary/40" x-data="{ copied: false }">
+                <span class="text-slate-600 dark:text-slate-300">New account created. Temporary password:</span>
+                <code class="rounded bg-white px-2 py-1 font-mono font-semibold text-primary dark:bg-[#243352] dark:text-teal-300">{{ $newTempPassword }}</code>
+                <button type="button" @click="navigator.clipboard.writeText('{{ $newTempPassword }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                        class="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-white"><x-icon name="copy" class="h-3.5 w-3.5" /> <span x-text="copied ? 'Copied' : 'Copy'"></span></button>
+            </div>
+        @endif
     </div>
 
     {{-- Partner list --}}

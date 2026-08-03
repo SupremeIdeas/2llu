@@ -127,6 +127,58 @@ class MerchantService
         });
     }
 
+    /**
+     * Admin one-click promotion (BUILD-4 §4.2). Turns any user into an ACTIVE
+     * merchant at the given tier with no application or fee — reusing the same
+     * Merchant model + role grant as the normal path (never a second status
+     * system). Idempotent-ish: an existing merchant is activated and its tier
+     * raised. Fires a celebratory notification the UI can react to, and audits
+     * who/when/why.
+     *
+     * @param  'v1'|'v2'  $tier
+     */
+    public function promote(User $user, string $tier, User $admin, ?string $reason = null): Merchant
+    {
+        abort_unless($admin->hasAnyRole(['super_admin', 'admin']), 403);
+        $tier = $tier === Merchant::TIER_V2 ? Merchant::TIER_V2 : 'v1';
+
+        return DB::transaction(function () use ($user, $tier, $admin, $reason) {
+            $merchant = Merchant::query()->where('owner_user_id', $user->id)->latest('id')->first();
+
+            if ($merchant === null) {
+                $merchant = Merchant::create([
+                    'owner_user_id' => $user->id,
+                    'business_name' => $user->name ?: 'My storefront',
+                    'slug' => $this->uniqueSlug($user->name ?: 'merchant'),
+                    'status' => Merchant::ACTIVE,
+                    'tier' => $tier,
+                    'reviewed_by' => $admin->id,
+                    'reviewed_at' => now(),
+                    'reason' => $reason,
+                ]);
+            } else {
+                $merchant->forceFill([
+                    'status' => Merchant::ACTIVE,
+                    'tier' => $tier === Merchant::TIER_V2 ? Merchant::TIER_V2 : $merchant->tier,
+                    'reviewed_by' => $admin->id,
+                    'reviewed_at' => now(),
+                    'reason' => $reason,
+                ])->save();
+            }
+
+            $user->assignRole('merchant');
+            if ($tier === Merchant::TIER_V2) {
+                $merchant->forceFill(['upgraded_at' => $merchant->upgraded_at ?? now()])->save();
+            }
+
+            Auditor::log('merchant.promoted', 'Merchant', $merchant->id, [
+                'by' => $admin->id, 'user_id' => $user->id, 'tier' => $tier, 'reason' => $reason,
+            ]);
+
+            return $merchant;
+        });
+    }
+
     /** Admin approves an application — activates it and grants the merchant role. */
     public function approve(Merchant $merchant, User $admin): Merchant
     {

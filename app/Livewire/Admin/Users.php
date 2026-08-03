@@ -4,7 +4,10 @@ namespace App\Livewire\Admin;
 
 use App\Models\User;
 use App\Services\Account\AccountService;
+use App\Services\Merchants\MerchantService;
 use App\Support\Auditor;
+use App\Support\EngagementScore;
+use App\Support\MerchantSettings;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
@@ -249,9 +252,33 @@ class Users extends Component
         $this->dispatch('nx-toast', type: 'success', message: $msg);
     }
 
+    /**
+     * One-click promote a user to Merchant V1/V2 (BUILD-4 §4.2) — free,
+     * admin-initiated, no application. Fires a celebratory confetti event + a
+     * toast; the promotion service handles the role + audit.
+     *
+     * @param  'v1'|'v2'  $tier
+     */
+    public function promote(int $id, string $tier, MerchantService $merchants): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+        $user = User::findOrFail($id);
+        $merchants->promote($user, $tier === 'v2' ? 'v2' : 'v1', Auth::user(), 'Admin promotion');
+
+        $this->dispatch('reward-claimed'); // reuse the confetti celebration
+        $this->dispatch('nx-toast', variant: 'hero', type: 'success',
+            title: 'Merchant promoted',
+            message: $user->name.' is now a Merchant '.strtoupper($tier).'.');
+    }
+
     public function render()
     {
+        $minSpend = MerchantSettings::minSpendUsd();
+        $minReferrals = MerchantSettings::minReferrals();
+
         $users = User::query()
+            ->with('wallet')
+            ->withCount(['referralsMade', 'referralsMade as verified_referrals_count' => fn ($q) => $q->whereHas('referred.wallet', fn ($w) => $w->where('total_spent', '>', 0))])
             ->when($this->search !== '', function ($q) {
                 $t = '%'.$this->search.'%';
                 $q->where(fn ($w) => $w->where('name', 'like', $t)->orWhere('email', 'like', $t));
@@ -261,8 +288,22 @@ class Users extends Component
             ->when($this->filter === 'merchants', fn ($q) => $q->whereNotNull('merchant_id')
                 ->orWhereHas('merchantAccount'))
             ->when($this->filter === 'staff', fn ($q) => $q->whereHas('roles', fn ($r) => $r->whereIn('name', ['staff', 'admin', 'super_admin'])))
+            // "Ready to promote" (§4.3): not already an active merchant, and meeting
+            // any eligibility path (spend / referrals / paid enrollment).
+            ->when($this->filter === 'ready', fn ($q) => $q
+                ->whereDoesntHave('merchantAccount', fn ($m) => $m->where('status', 'active'))
+                ->where(fn ($w) => $w
+                    ->whereNotNull('merchant_enrollment_paid_at')
+                    ->orWhereHas('wallet', fn ($wl) => $wl->where('total_spent', '>=', $minSpend))
+                    ->orHas('referralsMade', '>=', $minReferrals)))
             ->latest('id')
             ->paginate(15);
+
+        // Engagement score per listed user (§4.1), computed from the loaded fields.
+        $scores = [];
+        foreach ($users as $u) {
+            $scores[$u->id] = EngagementScore::for($u);
+        }
 
         $viewing = $this->viewingId ? User::with('wallet')->find($this->viewingId) : null;
 
@@ -284,6 +325,7 @@ class Users extends Component
 
         return view('livewire.admin.users', [
             'users' => $users,
+            'scores' => $scores,
             'viewing' => $viewing,
             'sessions' => $sessions,
             'totals' => [

@@ -46,6 +46,12 @@ class Partners extends Component
 
     public string $editMode = 'manual';
 
+    /** Optional name for a brand-new partner account created here. */
+    public string $newName = '';
+
+    /** A generated temp password, shown to the admin once after creating an account. */
+    public ?string $newTempPassword = null;
+
     public ?string $saved = null;
 
     public function booted(): void
@@ -78,18 +84,36 @@ class Partners extends Component
     {
         $this->validate([
             'newEmail' => 'required|email',
+            'newName' => 'nullable|string|max:120',
             'newShare' => 'required|numeric|min:0|max:100',
         ]);
-        $user = User::where('email', trim($this->newEmail))->first();
-        if ($user === null) {
-            $this->addError('newEmail', 'No user with that email.');
+        $this->newTempPassword = null;
 
-            return;
+        $email = trim($this->newEmail);
+        $user = User::where('email', $email)->first();
+
+        // BUILD-4 §4.4: admin can CREATE a new partner account directly (no
+        // self-signup). Reuse the standard user creation; generate a temp
+        // password the admin copies to the partner. First login lands on /partner.
+        if ($user === null) {
+            $temp = \Illuminate\Support\Str::password(12);
+            $user = User::create([
+                'name' => trim($this->newName) ?: \Illuminate\Support\Str::before($email, '@'),
+                'email' => $email,
+                'password' => \Illuminate\Support\Facades\Hash::make($temp),
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]);
+            $this->newTempPassword = $temp;
+            \App\Support\Auditor::log('partner.account_created', 'User', $user->id, ['by' => Auth::id()]);
         }
+
         $service->create($user, (float) $this->newShare);
-        $this->reset('newEmail', 'newShare');
+        \App\Support\Auditor::log('partner.added', 'User', $user->id, ['by' => Auth::id(), 'share' => (float) $this->newShare]);
+        $this->reset('newEmail', 'newName', 'newShare');
         $this->newShare = 5;
-        $this->dispatch('nx-toast', type: 'success', message: 'Partner added.');
+        $this->dispatch('nx-toast', type: 'success',
+            message: $this->newTempPassword ? 'Partner account created — copy the temporary password.' : 'Partner added.');
     }
 
     public function edit(int $id): void

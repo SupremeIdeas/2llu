@@ -34,6 +34,10 @@ class MerchantSettings
 
     public const KYB_OVER_THRESHOLD = 'merchants.kyb_over_threshold_enabled';
 
+    /** Auto-promote eligible users to Merchant V1 (BUILD-4 §4.3). Default: OFF —
+     *  the recommended flow is the admin "Ready to promote" queue, one click each. */
+    public const AUTO_PROMOTE = 'merchants.auto_promote_enabled';
+
     public static function enabled(): bool
     {
         return (bool) Setting::getValue(self::FLAG, false);
@@ -78,5 +82,11 @@ class MerchantSettings
     public static function kybOverThresholdEnabled(): bool
     {
         return (bool) Setting::getValue(self::KYB_OVER_THRESHOLD, false);
+    }
+
+    /** Whether eligible users are auto-promoted to Merchant V1 (off by default). */
+    public static function autoPromoteEnabled(): bool
+    {
+        return (bool) Setting::getValue(self::AUTO_PROMOTE, false);
     }
 }

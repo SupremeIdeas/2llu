@@ -21,6 +21,7 @@
             <option value="deactivated">Deactivated</option>
             <option value="staff">Staff & admins</option>
             <option value="merchants">Merchants</option>
+            <option value="ready">Ready to promote</option>
         </select>
     </div>
 
@@ -35,6 +36,7 @@
                 <tr>
                     <th class="px-4 py-3">User</th>
                     <th class="px-4 py-3">Joined</th>
+                    <th class="px-4 py-3">Engagement</th>
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3 text-right">Actions</th>
                 </tr>
@@ -56,6 +58,15 @@
                         </td>
                         <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ $u->created_at?->format('d M Y') }}</td>
                         <td class="px-4 py-3">
+                            @php($sc = $scores[$u->id] ?? null)
+                            @if ($sc)
+                                <span title="{{ $sc['referrals'] }} referrals · {{ $sc['verified_referrals'] }} verified · ${{ number_format($sc['spend'], 0) }} spent{{ $sc['verified'] ? ' · ID verified' : '' }}"
+                                      class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold {{ $sc['score'] >= 40 ? 'bg-primary/10 text-primary-dark dark:bg-primary/20 dark:text-teal-300' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400' }}">
+                                    <x-icon name="zap" class="h-3 w-3" /> {{ $sc['score'] }}
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
                             @if ($u->isDeactivated())
                                 <span class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950/40 dark:text-red-300"><x-icon name="pause" class="h-3 w-3" /> Paused</span>
                             @else
@@ -64,6 +75,19 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex items-center justify-end gap-2">
+                                {{-- One-click promote to Merchant V1/V2 (§4.2). --}}
+                                <div x-data="{ open: false }" class="relative">
+                                    <button type="button" @click="open = !open" @click.outside="open = false"
+                                            class="inline-flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 dark:border-primary/40 dark:text-teal-300">
+                                        <x-icon name="zap" class="h-3.5 w-3.5" /> Promote
+                                    </button>
+                                    <div x-show="open" x-cloak x-transition class="absolute right-0 top-8 z-10 w-40 overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-lg dark:border-[#2D4060] dark:bg-[#1A2840]">
+                                        <button wire:click="promote({{ $u->id }}, 'v1')" @click="open = false" wire:confirm="Promote {{ $u->name }} to Merchant V1 (free, no application)?"
+                                                class="block w-full px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-[#243352]">Merchant V1</button>
+                                        <button wire:click="promote({{ $u->id }}, 'v2')" @click="open = false" wire:confirm="Promote {{ $u->name }} to Merchant V2 (client management)?"
+                                                class="block w-full px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-[#243352]">Merchant V2</button>
+                                    </div>
+                                </div>
                                 <button type="button" wire:click="view({{ $u->id }})" class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
                                     {{ $viewing?->id === $u->id ? 'Hide' : 'View' }}
                                 </button>
@@ -77,7 +101,7 @@
                     </tr>
                     @if ($viewing?->id === $u->id)
                         <tr wire:key="view-{{ $u->id }}" class="bg-slate-50 dark:bg-[#141F33]">
-                            <td colspan="4" class="px-4 py-4">
+                            <td colspan="5" class="px-4 py-4">
                                 <div class="grid gap-4 sm:grid-cols-4">
                                     <div><p class="text-xs text-slate-400">USD wallet</p><p class="font-semibold text-slate-800 dark:text-slate-100">${{ number_format((float) ($viewing->wallet->usd_balance ?? 0), 2) }}</p></div>
                                     <div><p class="text-xs text-slate-400">NGN wallet</p><p class="font-semibold text-slate-800 dark:text-slate-100">₦{{ number_format((float) ($viewing->wallet->ngn_balance ?? 0), 0) }}</p></div>
@@ -141,7 +165,7 @@
                         </tr>
                     @endif
                 @empty
-                    <tr><td colspan="4" class="px-4 py-8 text-center text-sm text-slate-400">No users match your search.</td></tr>
+                    <tr><td colspan="5" class="px-4 py-8 text-center text-sm text-slate-400">No users match your search.</td></tr>
                 @endforelse
             </tbody>
         </table>

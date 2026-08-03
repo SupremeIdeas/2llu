@@ -228,6 +228,30 @@ class MerchantTest extends TestCase
         $this->assertTrue($this->service()->eligibility($user->fresh())['eligible']);
     }
 
+    public function test_admin_one_click_promotes_a_user_to_a_merchant(): void
+    {
+        // §4.2: promoting a plain user creates an ACTIVE merchant + grants the role,
+        // with no application or fee.
+        $user = User::factory()->create(['is_active' => true, 'name' => 'Promo User']);
+        $merchant = $this->service()->promote($user, 'v2', $this->admin());
+
+        $this->assertSame(Merchant::ACTIVE, $merchant->status);
+        $this->assertTrue($merchant->isV2());
+        $this->assertTrue($user->fresh()->hasRole('merchant'));
+    }
+
+    public function test_the_ready_to_promote_filter_surfaces_eligible_users(): void
+    {
+        // §4.3: an eligible non-merchant appears in the "ready" queue.
+        $ready = User::factory()->create(['is_active' => true]);
+        $ready->forceFill(['merchant_enrollment_paid_at' => now()])->save(); // eligible
+        User::factory()->create(['is_active' => true]); // not eligible
+
+        Livewire::actingAs($this->admin())->test(\App\Livewire\Admin\Users::class)
+            ->set('filter', 'ready')
+            ->assertSee($ready->email);
+    }
+
     public function test_admin_merchants_page_is_admin_only_and_approves(): void
     {
         Livewire::actingAs(User::factory()->create())->test(AdminMerchants::class)->assertForbidden();

@@ -37,6 +37,9 @@ class Merchants extends Component
 
     public bool $kybOverThreshold = false;
 
+    // Auto-promote eligible users to V1 (BUILD-4 §4.3) — off by default.
+    public bool $autoPromote = false;
+
     public ?string $saved = null;
 
     public function mount(): void
@@ -50,6 +53,7 @@ class Merchants extends Component
         $this->upgradePrice = MerchantSettings::upgradePriceUsd();
         $this->kybThreshold = MerchantSettings::kybThresholdUsd();
         $this->kybOverThreshold = MerchantSettings::kybOverThresholdEnabled();
+        $this->autoPromote = MerchantSettings::autoPromoteEnabled();
     }
 
     public function save(): void
@@ -72,6 +76,7 @@ class Merchants extends Component
         Setting::setValue(MerchantSettings::UPGRADE_PRICE, (float) $this->upgradePrice, 'merchants');
         Setting::setValue(MerchantSettings::KYB_THRESHOLD, (float) $this->kybThreshold, 'merchants');
         Setting::setValue(MerchantSettings::KYB_OVER_THRESHOLD, $this->kybOverThreshold, 'merchants');
+        Setting::setValue(MerchantSettings::AUTO_PROMOTE, $this->autoPromote, 'merchants');
         Auditor::log('merchants.settings_updated', null, null, [
             'enabled' => $this->enabled, 'margin' => $this->resellerMargin,
             'min_spend' => $this->minSpend, 'enrollment_fee' => $this->enrollmentFee, 'min_referrals' => $this->minReferrals,

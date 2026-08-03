@@ -60,6 +60,14 @@
             </div>
             <p class="mt-2 text-[11px] text-slate-400">A user unlocks the programme by hitting the spend threshold, paying the one-time fast-route fee from their wallet, or reaching the referral target.</p>
 
+            {{-- Auto-promotion (BUILD-4 §4.3) — off by default; the recommended
+                 flow is the "Ready to promote" queue on the Users page. --}}
+            <label class="mt-3 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                <input type="checkbox" wire:model="autoPromote" class="h-5 w-9 cursor-pointer rounded-full">
+                Auto-promote eligible users to Merchant V1
+            </label>
+            <p class="mt-1 text-[11px] text-slate-400">When on, a daily job promotes every user who meets an eligibility path. Off by default — most admins prefer the one-click "Ready to promote" queue on the Users page.</p>
+
             {{-- Deferred-verification payout rule (BUILD-4 §1). Identity is verified
                  at payout time, not at signup. This optional rule additionally
                  requires business KYB for large single payouts — ships OFF. --}}
