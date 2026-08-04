@@ -44,6 +44,7 @@
         $more[] = ['route' => 'admin.refunds', 'label' => 'Refunds & Disputes', 'icon' => 'refresh'];
         $more[] = ['route' => 'admin.reconciliation', 'label' => 'Reconciliation', 'icon' => 'wallet'];
         $more[] = ['route' => 'admin.exchange-rates', 'label' => 'Exchange rate (NGN)', 'icon' => 'refresh'];
+        $more[] = ['route' => 'admin.tax-rates', 'label' => 'Tax / VAT rates', 'icon' => 'wallet'];
         $more[] = ['route' => 'admin.gateways', 'label' => 'Payment Gateways', 'icon' => 'credit-card'];
         $more[] = ['route' => 'admin.kyc', 'label' => 'Identity (KYC)', 'icon' => 'shield'];
         $more[] = ['route' => 'admin.merchants', 'label' => 'Merchants', 'icon' => 'id-card'];
