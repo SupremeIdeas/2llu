@@ -91,6 +91,21 @@ class SiteContent
                     'p4_text' => 'Send digital gift cards for 1,000+ brands — shopping, airtime, streaming and games — to anyone, anywhere, delivered instantly by email or WhatsApp. The newest way Naara keeps you close to the people who matter.',
                     'p4_cta' => 'Browse Naara Gift',
                 ],
+                // "Who Naara is for" audience tabs (BUILD-12). Section header text
+                // is admin-editable here; the six panels' approved copy lives in
+                // the partial (finished copy). The six *_image fields are
+                // admin-swappable via the SiteEditor inline-artwork uploader.
+                'audiences' => [
+                    'eyebrow' => 'Made for the way you move',
+                    'headline' => 'Who Naara Is For',
+                    'subtext' => 'One connectivity family, built for every kind of border-crosser. Find yourself below.',
+                    'travelers_image' => '/images/audiences/naara-leisure-traveler.webp',
+                    'business_image' => '/images/audiences/naara-business-professionals.webp',
+                    'entrepreneurs_image' => '/images/audiences/naara-software-engineer.webp',
+                    'creators_image' => '/images/audiences/naara-travel-creator.webp',
+                    'privacy_image' => '/images/audiences/naara-secure-professional.webp',
+                    'families_image' => '/images/audiences/naara-staying-connected.webp',
+                ],
                 'coverage' => [
                     'eyebrow' => "Wherever You're Going",
                     'headline' => '190+ Countries. One eSIM.',

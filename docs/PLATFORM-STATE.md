@@ -578,3 +578,17 @@ Two guards now close that gap:
       installer ZIP afterwards (§7, §8).
 - [ ] Re-confirm **Apple 3.1.1/3.1.3** wording and apply the iOS payment carve-out
       before submitting to the App Store (§6).
+
+---
+
+## BUILD-12 — homepage "Who Naara Is For" audience tabs
+Registered `audiences` as a real, admin-orderable homepage section (SiteContent),
+defaulted right after `products`. Six tabs auto-advance at a flat 12s with a
+brand-gradient progress bar; manual selection overrides + restarts the timer;
+pauses on hover/focus/touch and resumes where it left off; keyboard-navigable
+(arrow keys, focus rings); honours `prefers-reduced-motion` (solid active
+indicator, no auto-advance). Mobile uses a horizontally-scrollable tab strip.
+Panel copy is the approved verbatim text; the six images are admin-swappable
+`*_image` fields (SiteEditor inline upload → MediaStorage), shipped under
+`public/images/audiences/`. **Spare image `naara-business-traveler.webp` is
+shipped and available in admin for a future swap** (unused by the six panels).
