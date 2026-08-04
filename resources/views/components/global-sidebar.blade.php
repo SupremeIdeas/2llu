@@ -11,6 +11,10 @@
     $social = \App\Support\SocialLinks::all();
     $posts = \App\Support\SidebarMenu::blogPosts();
     $linkGridClass = $mode === 'grid' ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-1.5';
+    // Wear the same contextual brand mark as the top-bar/side-rail header (chrome
+    // wears the product's mark on its own surface, the umbrella mark elsewhere —
+    // App\Support\BrandContext) so the whole chrome stays consistent.
+    $headerBrand = \App\Support\BrandContext::headerLogo();
 @endphp
 
 <div x-data="{ open: false }" @keydown.escape.window="open = false" @open-global-sidebar.window="open = true">
@@ -49,7 +53,7 @@
 
         {{-- Header: brand mark + close. --}}
         <div class="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-white/10">
-            <x-brand-logo variant="family" size="md" />
+            <x-brand-logo :variant="$headerBrand['variant']" :label="$headerBrand['label']" size="md" />
             <button type="button" @click="open = false" aria-label="Close menu"
                     class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-slate-200">
                 <x-icon name="x" class="h-5 w-5" />
