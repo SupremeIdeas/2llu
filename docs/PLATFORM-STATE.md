@@ -592,3 +592,29 @@ Panel copy is the approved verbatim text; the six images are admin-swappable
 `*_image` fields (SiteEditor inline upload → MediaStorage), shipped under
 `public/images/audiences/`. **Spare image `naara-business-traveler.webp` is
 shipped and available in admin for a future swap** (unused by the six panels).
+
+---
+
+## Aug-4 live-incident hotfix
+
+### Unifying root cause (so it's never re-diagnosed from scratch)
+Two symptoms — Paystack wallet not crediting after a live transaction, and the
+provider-health widget empty in admin — both depend on the **live cPanel cron
+(`* * * * * php artisan schedule:run`) actually firing and the queue draining**.
+Both code paths are correct. If the cron is missing/stopped, both symptoms
+appear together. **Admin → System Health** now shows each scheduled task's
+last run + an overdue flag, the queue connection, and the backlog — check it
+first; if a task is overdue the fix is the cPanel cron, not code.
+Also operational: register the Paystack webhook URL
+(`/webhooks/payments/paystack`) on the live Paystack dashboard (§3).
+
+### Fixes shipped
+- **§2** System Health panel (`SchedulerHealth` + `ScheduledTaskFinished` listener).
+- **§4** Dual sandbox/live keys per card gateway (`GatewayCredentials`) — the
+  Sandbox/Live toggle now selects the active set; legacy single key auto-migrates
+  into the detected slot; **public_key** added for Paystack/Flutterwave/Stripe
+  (config + admin) to unblock inline/embedded checkout. Additive — the old key
+  path keeps working until the operator populates the new fields.
+- **§5/§6/§7** Glass legibility without blur, removed animated backdrop-blur
+  artifacts, marketing mobile menu now scrolls instead of clipping.
+- **§8** Consistent brand-logo sizing via a named `size` prop.

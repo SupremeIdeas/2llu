@@ -3,7 +3,8 @@
         <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Payment gateways</h1>
         <p class="text-sm text-slate-500 dark:text-slate-400">
             Sandbox/live mode, the URLs to register on each provider's dashboard, and a live connection test.
-            Enter the API keys on <a href="{{ route('admin.api-keys') }}" class="text-primary underline" wire:navigate>Provider Keys</a>.
+            Card gateways (Paystack, Flutterwave, Stripe) store separate sandbox + live keys below; other gateways' keys live on
+            <a href="{{ route('admin.api-keys') }}" class="text-primary underline" wire:navigate>Provider Keys</a>.
         </p>
     </div>
 
@@ -80,5 +81,45 @@
                 </div>
             </div>
         @endforeach
+    </div>
+
+    {{-- HOTFIX §4: dual sandbox/live keys for the card gateways. The active set
+         follows each gateway's Sandbox/Live toggle above. Secrets are never
+         echoed back — a blank field leaves the stored key unchanged. --}}
+    <div class="mt-8">
+        <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Sandbox &amp; live keys</h2>
+        <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">Store both key sets once; the Sandbox/Live toggle above picks which one is live. A blank field leaves the saved key unchanged.</p>
+
+        <div class="space-y-4">
+            @foreach ($credGateways as $cg)
+                <div wire:key="cred-{{ $cg['key'] }}" class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                    <div class="mb-3 flex items-center justify-between">
+                        <span class="font-semibold text-slate-900 dark:text-slate-100">{{ $cg['label'] }}</span>
+                        <span @class([
+                            'rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                            'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' => $cg['mode'] === 'sandbox',
+                            'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' => $cg['mode'] === 'live',
+                        ])>Active: {{ ucfirst($cg['mode']) }}</span>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        @foreach (['sandbox' => 'Sandbox', 'live' => 'Live'] as $mode => $modeLabel)
+                            <div class="rounded-xl border border-slate-100 p-3 dark:border-[#243352]">
+                                <p class="mb-2 text-xs font-semibold uppercase tracking-wide {{ $cg['mode'] === $mode ? 'text-primary dark:text-teal-300' : 'text-slate-400' }}">{{ $modeLabel }}{{ $cg['mode'] === $mode ? ' · active' : '' }}</p>
+                                @foreach ($cg['types'] as $type)
+                                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{{ $type === 'secret_key' ? 'Secret key' : 'Public key' }}</label>
+                                    <input type="password" autocomplete="off" wire:model="creds.{{ $cg['key'] }}.{{ $mode }}.{{ $type }}"
+                                           placeholder="{{ $cg['previews'][$mode][$type] ?? 'Not set' }}"
+                                           class="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                @endforeach
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-4 flex justify-end">
+            <x-ui.btn variant="primary" type="button" wire:click="saveCredentials" target="saveCredentials" icon="badge-check">Save keys</x-ui.btn>
+        </div>
     </div>
 </div>

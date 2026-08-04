@@ -60,6 +60,7 @@ use App\Support\CreditSettings;
 use App\Support\EnvironmentGuard;
 use App\Support\EsimHeroContent;
 use App\Support\FeatureFlags;
+use App\Support\GatewayCredentials;
 use App\Support\Geo\CloudflareGeoResolver;
 use App\Support\Geo\GeoResolver;
 use App\Support\HeroBackground;
@@ -294,6 +295,13 @@ class AppServiceProvider extends ServiceProvider
         // gateways whose sandbox and live API are on different hosts (PayPal,
         // NOWPayments). Runs after ProviderKeys so the mode host is authoritative.
         PaymentGatewayConfig::applyToConfig();
+
+        // Dual sandbox/live gateway keys (HOTFIX §4): overlay the mode-appropriate
+        // stored key for the card gateways. Read-only + additive, so an old-style
+        // single key keeps working until the operator populates the new fields.
+        // (The one-time migration from a legacy key runs when the admin opens the
+        // Gateways page — never at boot, which can precede the settings table.)
+        GatewayCredentials::applyToConfig();
 
         // Same overlay for admin-managed outgoing-mail config (Module 22): the
         // operator sets the mailer + SMTP creds + "from" identity in the panel,

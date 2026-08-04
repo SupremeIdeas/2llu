@@ -176,12 +176,14 @@ return [
 
     'flutterwave' => [
         'secret_key' => env('FLUTTERWAVE_SECRET_KEY'),
+        'public_key' => env('FLUTTERWAVE_PUBLIC_KEY'), // client-side (Flutterwave modal)
         'secret_hash' => env('FLUTTERWAVE_SECRET_HASH'), // verif-hash header
         'base_url' => env('FLUTTERWAVE_BASE_URL', 'https://api.flutterwave.com/v3'),
     ],
 
     'paystack' => [
         'secret_key' => env('PAYSTACK_SECRET_KEY'), // also signs webhooks (HMAC-SHA512)
+        'public_key' => env('PAYSTACK_PUBLIC_KEY'), // client-side (Paystack Inline)
         'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
     ],
 
@@ -235,6 +237,7 @@ return [
 
     'stripe' => [
         'secret_key' => env('STRIPE_SECRET_KEY'),
+        'public_key' => env('STRIPE_PUBLIC_KEY'), // publishable key (Stripe Elements)
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
         'base_url' => env('STRIPE_BASE_URL', 'https://api.stripe.com/v1'),
     ],

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Support\Auditor;
+use App\Support\GatewayCredentials;
 use App\Support\PaymentGatewayConfig;
 use App\Support\PaymentSandbox;
 use App\Support\ProviderStatus;
@@ -23,9 +24,31 @@ class Gateways extends Component
     /** Live test-connection results, keyed by gateway. */
     public array $probe = [];
 
+    /** Newly-typed dual keys: creds[gateway][mode][type]. Blank = unchanged. */
+    public array $creds = [];
+
     public function mount(): void
     {
         abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        // One-time: seed the dual store from any legacy single key so it shows in
+        // the right slot and the toggle becomes meaningful. Safe to call always.
+        GatewayCredentials::migrateLegacy();
+    }
+
+    /**
+     * Save the dual sandbox/live keys (HOTFIX §4). Only newly-typed values are
+     * sent (secrets are never round-tripped to the browser); blanks leave the
+     * stored value unchanged.
+     */
+    public function saveCredentials(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        GatewayCredentials::updateFrom($this->creds);
+        $this->creds = [];
+        Auditor::log('payments.credentials_saved');
+        $this->dispatch('nx-toast', type: 'success', message: 'Gateway keys saved. The active set follows each gateway’s Sandbox/Live toggle.');
     }
 
     public function setMode(string $gateway, string $mode): void
@@ -64,6 +87,19 @@ class Gateways extends Component
             'probe' => $this->probe[$gw] ?? null,
         ])->values()->all();
 
-        return view('livewire.admin.gateways', compact('gateways'));
+        // Dual-key card gateways (HOTFIX §4) with masked previews per mode/type.
+        $credGateways = collect(GatewayCredentials::GATEWAYS)->map(fn ($types, $gw) => [
+            'key' => $gw,
+            'label' => PaymentGatewayConfig::GATEWAYS[$gw]['label'] ?? ucfirst($gw),
+            'mode' => PaymentGatewayConfig::mode($gw),
+            'types' => $types,
+            'previews' => collect(GatewayCredentials::MODES)->mapWithKeys(fn ($mode) => [
+                $mode => collect($types)->mapWithKeys(fn ($type) => [
+                    $type => GatewayCredentials::preview($gw, $mode, $type),
+                ])->all(),
+            ])->all(),
+        ])->values()->all();
+
+        return view('livewire.admin.gateways', compact('gateways', 'credGateways'));
     }
 }
