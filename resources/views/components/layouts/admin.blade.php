@@ -40,6 +40,7 @@
         $more[] = ['heading' => 'Money & partners'];
         $more[] = ['route' => 'admin.payouts', 'label' => 'Payouts', 'icon' => 'credit-card'];
         $more[] = ['route' => 'admin.refunds', 'label' => 'Refunds & Disputes', 'icon' => 'refresh'];
+        $more[] = ['route' => 'admin.reconciliation', 'label' => 'Reconciliation', 'icon' => 'wallet'];
         $more[] = ['route' => 'admin.gateways', 'label' => 'Payment Gateways', 'icon' => 'credit-card'];
         $more[] = ['route' => 'admin.kyc', 'label' => 'Identity (KYC)', 'icon' => 'shield'];
         $more[] = ['route' => 'admin.merchants', 'label' => 'Merchants', 'icon' => 'id-card'];
