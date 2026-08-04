@@ -28,6 +28,11 @@ class EsimHero extends Component
 
     public string $description = '';
 
+    // The catalogue section heading + subheading below the hero (admin-editable).
+    public string $section_title = '';
+
+    public string $section_subtitle = '';
+
     /** @var list<string> current image URLs (0–4). */
     public array $images = [];
 
@@ -52,6 +57,8 @@ class EsimHero extends Component
         $c = EsimHeroContent::current();
         $this->title = $c['title'];
         $this->description = $c['description'];
+        $this->section_title = $c['section_title'];
+        $this->section_subtitle = $c['section_subtitle'];
         $this->images = $c['images'];
     }
 
@@ -66,6 +73,8 @@ class EsimHero extends Component
         $this->validate([
             'title' => 'required|string|max:120',
             'description' => 'required|string|max:250',
+            'section_title' => 'required|string|max:60',
+            'section_subtitle' => 'required|string|max:160',
             'slot0' => 'nullable|mimes:webp,jpg,jpeg|max:600',
             'slot1' => 'nullable|mimes:webp,jpg,jpeg|max:600',
             'slot2' => 'nullable|mimes:webp,jpg,jpeg|max:600',
@@ -84,6 +93,8 @@ class EsimHero extends Component
 
         Setting::setValue(EsimHeroContent::TITLE_KEY, trim($this->title), 'esim');
         Setting::setValue(EsimHeroContent::DESC_KEY, trim($this->description), 'esim');
+        Setting::setValue(EsimHeroContent::SECTION_TITLE_KEY, trim($this->section_title), 'esim');
+        Setting::setValue(EsimHeroContent::SECTION_SUBTITLE_KEY, trim($this->section_subtitle), 'esim');
         Setting::setValue(EsimHeroContent::IMAGES_KEY, $images, 'esim');
         EsimHeroContent::flush();
 

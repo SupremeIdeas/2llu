@@ -158,7 +158,7 @@
                         @if ($bicon)
                             <img src="{{ $bicon }}" alt="" aria-hidden="true"
                                  class="nx-card3d__bg pointer-events-none absolute bottom-0 right-0 w-[38%] max-w-[128px] select-none object-contain"
-                                 style="opacity: {{ \App\Support\BentoIcons::opacityFraction($bkey) }};">
+                                 style="opacity: {{ \App\Support\BentoIcons::opacityFraction($bkey) }}; transform: scale({{ \App\Support\BentoIcons::scale($bkey) }}); transform-origin: bottom right;">
                         @endif
                         <h3 class="relative flex items-center gap-2 font-display text-lg font-bold text-slate-900 dark:text-white">{{ $title }}
                             @if ($badge)<span class="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase text-accent-dark dark:text-accent">{{ $badge }}</span>@endif

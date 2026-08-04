@@ -25,6 +25,9 @@ class BentoIcons extends Component
     /** Per-card opacity (percent), keyed by card key. */
     public array $opacity = [];
 
+    /** Per-card size multiplier (0.5–3.0), keyed by card key. */
+    public array $scale = [];
+
     /** New icon uploads, keyed by card key. */
     public array $images = [];
 
@@ -39,6 +42,7 @@ class BentoIcons extends Component
     {
         foreach (BentoIconsSupport::CARDS as $key => $def) {
             $this->opacity[$key] = BentoIconsSupport::opacity($key);
+            $this->scale[$key] = BentoIconsSupport::scale($key);
         }
     }
 
@@ -48,6 +52,7 @@ class BentoIcons extends Component
 
         $this->validate([
             "opacity.{$key}" => 'required|integer|min:20|max:100',
+            "scale.{$key}" => 'required|numeric|min:0.5|max:3',
             "images.{$key}" => 'nullable|image|mimes:webp,png,jpg,jpeg|max:800',
         ], [
             "images.{$key}.max" => 'Keep the icon under 800 KB.',
@@ -61,6 +66,7 @@ class BentoIcons extends Component
         }
 
         Setting::setValue('bento.opacity.'.$key, max(20, min(100, (int) $this->opacity[$key])), 'bento');
+        Setting::setValue('bento.scale.'.$key, round(max(0.5, min(3.0, (float) $this->scale[$key])), 2), 'bento');
 
         BentoIconsSupport::flush();
         Auditor::log('bento.icon_updated', null, null, ['key' => $key]);
@@ -75,9 +81,11 @@ class BentoIcons extends Component
 
         Setting::where('key', 'bento.icon.'.$key)->get()->each->delete();
         Setting::where('key', 'bento.opacity.'.$key)->get()->each->delete();
+        Setting::where('key', 'bento.scale.'.$key)->get()->each->delete();
         BentoIconsSupport::flush();
 
         $this->opacity[$key] = BentoIconsSupport::opacity($key);
+        $this->scale[$key] = BentoIconsSupport::scale($key);
         Auditor::log('bento.icon_reset', null, null, ['key' => $key]);
         $this->saved = $key;
         $this->dispatch('nx-toast', type: 'success', message: 'Reverted to the shipped icon.');

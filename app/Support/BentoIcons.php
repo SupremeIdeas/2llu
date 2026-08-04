@@ -24,19 +24,28 @@ class BentoIcons
 {
     private const CACHE_KEY = 'bento.icons';
 
-    /** The fixed set of cards, in admin display order. */
+    /** Scale clamp (multiplier on the shipped icon size). */
+    private const SCALE_MIN = 0.5;
+
+    private const SCALE_MAX = 3.0;
+
+    /**
+     * The fixed set of cards, in admin display order. `scale` is the shipped
+     * default size multiplier — the action tiles ship BOLD (1.6×) so the 3D
+     * icons read premium out of the box; every card stays admin-adjustable.
+     */
     public const CARDS = [
         // Homepage showcase cards — 3D icon as a background watermark.
-        'esim-data-plans' => ['label' => 'eSIM Data Plans', 'group' => 'showcase', 'file' => 'esim-data-plans.webp', 'opacity' => 80],
-        'naara-connect' => ['label' => 'Naara Connect', 'group' => 'showcase', 'file' => 'naara-connect.webp', 'opacity' => 80],
-        'verification-numbers' => ['label' => 'Verification Numbers', 'group' => 'showcase', 'file' => 'verification-numbers.webp', 'opacity' => 80],
-        'virtual-numbers' => ['label' => 'Virtual Numbers', 'group' => 'showcase', 'file' => 'virtual-numbers.webp', 'opacity' => 80],
-        'naara-gift' => ['label' => 'Naara Gift', 'group' => 'showcase', 'file' => 'naara-gift.webp', 'opacity' => 80],
-        // Action tiles — 3D icon in the foreground of a compact card.
-        'browse-by-country' => ['label' => 'Browse by country', 'group' => 'tile', 'file' => 'browse-by-country.webp', 'opacity' => 100],
-        'check-compatibility' => ['label' => 'Check compatibility', 'group' => 'tile', 'file' => 'check-compatibility.webp', 'opacity' => 100],
-        'buy-esim' => ['label' => 'Buy eSIM', 'group' => 'tile', 'file' => 'buy-esim.webp', 'opacity' => 100],
-        'get-number' => ['label' => 'Get number', 'group' => 'tile', 'file' => 'get-number.webp', 'opacity' => 100],
+        'esim-data-plans' => ['label' => 'eSIM Data Plans', 'group' => 'showcase', 'file' => 'esim-data-plans.webp', 'opacity' => 80, 'scale' => 1.0],
+        'naara-connect' => ['label' => 'Naara Connect', 'group' => 'showcase', 'file' => 'naara-connect.webp', 'opacity' => 80, 'scale' => 1.0],
+        'verification-numbers' => ['label' => 'Verification Numbers', 'group' => 'showcase', 'file' => 'verification-numbers.webp', 'opacity' => 80, 'scale' => 1.0],
+        'virtual-numbers' => ['label' => 'Virtual Numbers', 'group' => 'showcase', 'file' => 'virtual-numbers.webp', 'opacity' => 80, 'scale' => 1.0],
+        'naara-gift' => ['label' => 'Naara Gift', 'group' => 'showcase', 'file' => 'naara-gift.webp', 'opacity' => 80, 'scale' => 1.0],
+        // Action tiles — 3D icon in the foreground of a compact card (ship bold).
+        'browse-by-country' => ['label' => 'Browse by country', 'group' => 'tile', 'file' => 'browse-by-country.webp', 'opacity' => 100, 'scale' => 1.6],
+        'check-compatibility' => ['label' => 'Check compatibility', 'group' => 'tile', 'file' => 'check-compatibility.webp', 'opacity' => 100, 'scale' => 1.6],
+        'buy-esim' => ['label' => 'Buy eSIM', 'group' => 'tile', 'file' => 'buy-esim.webp', 'opacity' => 100, 'scale' => 1.6],
+        'get-number' => ['label' => 'Get number', 'group' => 'tile', 'file' => 'get-number.webp', 'opacity' => 100, 'scale' => 1.6],
     ];
 
     /** The shipped default icon URL for a card key (public/icons/*.webp). */
@@ -61,13 +70,16 @@ class BentoIcons
                 try {
                     $url = (string) Setting::getValue('bento.icon.'.$key, '');
                     $op = Setting::getValue('bento.opacity.'.$key, null);
+                    $sc = Setting::getValue('bento.scale.'.$key, null);
                 } catch (\Throwable) {
                     $url = '';
                     $op = null;
+                    $sc = null;
                 }
                 $out[$key] = [
                     'icon' => $url !== '' ? $url : self::defaultIcon($key),
                     'opacity' => self::clampOpacity($op, $def['opacity']),
+                    'scale' => self::clampScale($sc, $def['scale']),
                 ];
             }
 
@@ -93,6 +105,12 @@ class BentoIcons
         return round(self::opacity($key) / 100, 2);
     }
 
+    /** The card's size multiplier (0.5–3.0; admin override or shipped default). */
+    public static function scale(string $key): float
+    {
+        return self::current()[$key]['scale'] ?? (self::CARDS[$key]['scale'] ?? 1.0);
+    }
+
     public static function group(string $key): string
     {
         return self::CARDS[$key]['group'] ?? 'tile';
@@ -106,6 +124,16 @@ class BentoIcons
         }
 
         return max(20, min(100, (int) round((float) $value)));
+    }
+
+    /** Clamp a stored scale to the 0.5–3.0 range, else the card default. */
+    private static function clampScale(mixed $value, float $default): float
+    {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+
+        return round(max(self::SCALE_MIN, min(self::SCALE_MAX, (float) $value)), 2);
     }
 
     public static function flush(): void

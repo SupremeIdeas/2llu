@@ -12,6 +12,9 @@
 @php
     $icon = \App\Support\BentoIcons::icon($bkey);
     $op = \App\Support\BentoIcons::opacityFraction($bkey);
+    // Admin-tunable size (Admin → Bento icons). Base 44px × scale, so the 3D
+    // icons ship bold (default 1.6× = ~70px) and stay adjustable to taste.
+    $iconPx = (int) round(44 * \App\Support\BentoIcons::scale($bkey));
 
     $base = 'nx-bento-tile group relative flex items-center gap-3 overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 hover:-translate-y-0.5';
     $skin = $variant === 'primary'
@@ -26,10 +29,11 @@
         {{-- Ambient brand glow (matches the numbers-section bento cards). --}}
         <span class="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/5 blur-2xl transition-opacity duration-300 group-hover:bg-primary/15 dark:bg-teal-500/10 dark:group-hover:bg-teal-500/20" aria-hidden="true"></span>
         @if ($icon)
-            {{-- Tightly-cropped transparent 3D icon — no badge container behind it. --}}
+            {{-- Tightly-cropped transparent 3D icon — no badge container behind it.
+                 Size is admin-tunable (base 44px × scale). --}}
             <img src="{{ $icon }}" alt="" aria-hidden="true"
-                 class="relative h-11 w-11 shrink-0 object-contain transition-transform duration-300 group-hover:scale-105"
-                 style="opacity: {{ $op }};">
+                 class="relative shrink-0 object-contain transition-transform duration-300 group-hover:scale-105"
+                 style="width: {{ $iconPx }}px; height: {{ $iconPx }}px; opacity: {{ $op }};">
         @endif
         <span class="relative min-w-0 flex-1 text-sm font-bold leading-tight sm:text-base">{{ $label }}</span>
 @if ($href)

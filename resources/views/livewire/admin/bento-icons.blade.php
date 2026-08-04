@@ -20,17 +20,17 @@
                 @continue($def['group'] !== $group)
                 @php($icon = \App\Support\BentoIcons::icon($key))
                 <div wire:key="bento-{{ $key }}"
-                     x-data="{ op: @entangle('opacity.'.$key).live }"
+                     x-data="{ op: @entangle('opacity.'.$key).live, sc: @entangle('scale.'.$key).live }"
                      class="rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1B2A44]">
                     <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
-                        {{-- Live preview on a card-like surface. --}}
-                        <div class="flex shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-[#f0f7f7] p-4 dark:border-white/10 dark:from-[#1a2840] dark:to-[#10243c]">
+                        {{-- Live preview on a card-like surface (reflects size + opacity). --}}
+                        <div class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-[#f0f7f7] dark:border-white/10 dark:from-[#1a2840] dark:to-[#10243c]">
                             @if ($icon)
                                 <img src="{{ $icon }}" alt="{{ $def['label'] }}"
-                                     class="h-20 w-20 object-contain"
-                                     :style="`opacity: ${op/100}`">
+                                     class="h-14 w-14 object-contain transition-transform"
+                                     :style="`opacity: ${op/100}; transform: scale(${sc})`">
                             @else
-                                <div class="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-100 text-slate-400 dark:bg-white/5">—</div>
+                                <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 text-slate-400 dark:bg-white/5">—</div>
                             @endif
                         </div>
 
@@ -62,6 +62,17 @@
                                        class="mt-1.5 w-full accent-primary">
                             </div>
                             @error('opacity.'.$key) <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+
+                            {{-- Size (boldness) slider --}}
+                            <div class="mt-4">
+                                <div class="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-300">
+                                    <span>Size (boldness)</span>
+                                    <span class="tabular-nums text-primary dark:text-teal-300" x-text="Number(sc).toFixed(2) + '×'"></span>
+                                </div>
+                                <input type="range" min="0.5" max="3" step="0.05" x-model.number="sc"
+                                       class="mt-1.5 w-full accent-primary">
+                            </div>
+                            @error('scale.'.$key) <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
 
                             <div class="mt-4 flex items-center gap-2">
                                 <button type="button" wire:click="save('{{ $key }}')" wire:loading.attr="disabled" wire:target="save('{{ $key }}'),images.{{ $key }}"

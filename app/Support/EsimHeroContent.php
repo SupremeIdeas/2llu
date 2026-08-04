@@ -23,6 +23,17 @@ class EsimHeroContent
 
     public const IMAGES_KEY = 'esim.hero.images';
 
+    // The catalogue section heading + subheading shown below the hero banner
+    // (admin-editable). Kept under the esim.hero.* prefix so the same cache
+    // auto-flush hook applies.
+    public const SECTION_TITLE_KEY = 'esim.hero.section_title';
+
+    public const SECTION_SUBTITLE_KEY = 'esim.hero.section_subtitle';
+
+    public const DEFAULT_SECTION_TITLE = 'eSIM Plans';
+
+    public const DEFAULT_SECTION_SUBTITLE = '190+ countries. Stay connected. No borders. No swaps.';
+
     /** Shipped defaults (extracted seed assets under /public/img/esim). */
     private const DEFAULT_IMAGES = [
         '/img/esim/hero-1.webp',
@@ -41,12 +52,16 @@ class EsimHeroContent
                 return [
                     'title' => Setting::getValue(self::TITLE_KEY) ?: 'Data that follows you. No borders. No swaps.',
                     'description' => Setting::getValue(self::DESC_KEY) ?: 'Instant eSIM data for 190+ countries — installed in minutes, right from your phone.',
+                    'section_title' => Setting::getValue(self::SECTION_TITLE_KEY) ?: self::DEFAULT_SECTION_TITLE,
+                    'section_subtitle' => Setting::getValue(self::SECTION_SUBTITLE_KEY) ?: self::DEFAULT_SECTION_SUBTITLE,
                     'images' => array_slice($images, 0, self::MAX_IMAGES),
                 ];
             } catch (\Throwable) {
                 return [
                     'title' => 'Data that follows you. No borders. No swaps.',
                     'description' => 'Instant eSIM data for 190+ countries — installed in minutes, right from your phone.',
+                    'section_title' => self::DEFAULT_SECTION_TITLE,
+                    'section_subtitle' => self::DEFAULT_SECTION_SUBTITLE,
                     'images' => self::DEFAULT_IMAGES,
                 ];
             }
@@ -61,6 +76,19 @@ class EsimHeroContent
     public static function description(): string
     {
         return self::current()['description'];
+    }
+
+    /** The catalogue section heading (admin-editable; defaults to "eSIM Plans"). */
+    public static function sectionTitle(): string
+    {
+        // Null-coalesce guards a warm cache from before these keys existed.
+        return self::current()['section_title'] ?? self::DEFAULT_SECTION_TITLE;
+    }
+
+    /** The catalogue section subheading (admin-editable). */
+    public static function sectionSubtitle(): string
+    {
+        return self::current()['section_subtitle'] ?? self::DEFAULT_SECTION_SUBTITLE;
     }
 
     /** @return list<string> ordered image URLs (1–4). */

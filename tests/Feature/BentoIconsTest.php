@@ -31,6 +31,22 @@ class BentoIconsTest extends TestCase
         $this->assertSame(0.8, BentoIcons::opacityFraction('esim-data-plans'));
     }
 
+    public function test_tiles_ship_bold_and_scale_is_admin_adjustable_and_clamped(): void
+    {
+        // Action tiles ship bold (1.6×); showcase cards ship at 1.0×.
+        $this->assertSame(1.6, BentoIcons::scale('buy-esim'));
+        $this->assertSame(1.0, BentoIcons::scale('esim-data-plans'));
+
+        Setting::setValue('bento.scale.get-number', 2.25, 'bento');
+        BentoIcons::flush();
+        $this->assertSame(2.25, BentoIcons::scale('get-number'));
+
+        // Clamped to the 0.5–3.0 range.
+        Setting::setValue('bento.scale.get-number', 9, 'bento');
+        BentoIcons::flush();
+        $this->assertSame(3.0, BentoIcons::scale('get-number'));
+    }
+
     public function test_an_admin_upload_and_opacity_override_win(): void
     {
         Setting::setValue('bento.icon.naara-gift', 'https://cdn.example/gift.webp', 'bento');
