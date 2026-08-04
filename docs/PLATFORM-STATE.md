@@ -532,3 +532,28 @@ Two guards now close that gap:
   install --no-dev` → `npm ci && npm run build` → ensure runtime dirs → zip), so
   a working installable package can always be produced from GitHub without a
   third-party tool. Documented in `docs/CPANEL-INSTALL.md`.
+
+---
+
+## Operational hardening (BUILD-5)
+
+### Provider health + alerting (§2, §3)
+- **Health** covers every Active provider in both stacks (`App\Support\ProviderHealth`),
+  not just the three wallet-funded ones. The balance probe doubles as a
+  reachability check — a provider whose API throws shows as `down` and alerts.
+  Admin dashboard "Provider health" widget renders it. Failover in
+  `ProviderRouter` (eSIM) and `SmsNumberRouter` (numbers) is confirmed real
+  (per-provider try/catch, continues down the chain/lane).
+- **Alert delivery** (`AlertAdminJob`) now fans out to every admin via web push
+  (instant) + email (guaranteed once a mailer is configured), throttled per
+  alert code (10-min cooldown) so a flapping alert can't storm admins. The
+  durable `error_logs` row is always written regardless.
+
+### Recommended, not yet enforced — operational items for Frank
+- **Sentry (or equivalent) in production.** `SENTRY_LARAVEL_DSN` exists in
+  `.env.example` but is blank. Configure a real DSN in production so *uncaught*
+  exceptions surface somewhere an admin sees — not only the specific conditions
+  this codebase remembers to `AlertAdminJob`. (BUILD-5 §3.)
+- **Backup test-restore.** `spatie/laravel-backup` is scheduled and working, but
+  a backup nobody has ever restored from is unverified. Someone should perform
+  one real test-restore and record the date here. (BUILD-5 §1.)
