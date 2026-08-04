@@ -33,7 +33,7 @@
         @endphp
         <header x-data="{ open: false }" class="pointer-events-none sticky top-0 z-50 px-3 pt-4 sm:px-4">
             <nav class="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-3 rounded-2xl border border-white/50 bg-white/90 px-2.5 py-2 shadow-xl shadow-slate-900/5 ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-[#0D1B2A]/90 dark:ring-white/10">
-                <a href="{{ route('home') }}" wire:navigate class="shrink-0 pl-1.5"><x-brand-logo variant="family" class="h-8 max-w-[140px]" /></a>
+                <a href="{{ route('home') }}" wire:navigate class="shrink-0 pl-1.5"><x-brand-logo variant="family" size="md" /></a>
 
                 <div class="hidden items-center gap-7 text-sm font-medium text-slate-600 lg:flex dark:text-slate-300">
                     <a href="{{ route('how-it-works') }}" wire:navigate class="transition hover:text-primary">How It Works</a>

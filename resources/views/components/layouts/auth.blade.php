@@ -48,7 +48,7 @@
 
                 <div class="relative flex h-full flex-col justify-between p-8 lg:p-12">
                     <a href="{{ route('home') }}" class="inline-flex">
-                        <x-brand-logo variant="family" theme="dark" class="h-9 max-w-[180px]" fallback-icon="signal" />
+                        <x-brand-logo variant="family" theme="dark" size="lg" fallback-icon="signal" />
                     </a>
                     <div class="hidden lg:block">
                         <h2 class="font-display text-3xl font-bold leading-tight text-white xl:text-4xl">{{ $panel['headline'] }}</h2>
@@ -62,7 +62,7 @@
             <div class="flex flex-1 items-center justify-center bg-[#F8F9FA] px-4 py-10 dark:bg-navy lg:w-1/2">
                 <div class="w-full max-w-sm">
                     <div class="mb-6 flex items-center justify-between lg:hidden">
-                        <a href="{{ route('home') }}"><x-brand-logo variant="family" class="h-8 max-w-[150px]" fallback-icon="signal" /></a>
+                        <a href="{{ route('home') }}"><x-brand-logo variant="family" size="md" fallback-icon="signal" /></a>
                         <x-theme-toggle />
                     </div>
 
