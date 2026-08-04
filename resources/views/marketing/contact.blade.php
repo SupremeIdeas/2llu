@@ -1,4 +1,9 @@
 <x-layouts.marketing :title="\App\Support\BrandSettings::name().' — Contact'">
+    {{-- Section Builder output wins when published; else the existing content (BUILD-6 §B). --}}
+    @php($builtSections = \App\Support\PageSections::live('contact'))
+    @if (! empty($builtSections))
+        @include('partials.sections.render', ['sections' => $builtSections])
+    @else
     @php($hero = $sections['hero'] ?? null)
     @if ($hero)
         <section class="mx-auto max-w-3xl px-4 pb-10 pt-16 text-center">
@@ -48,4 +53,5 @@
         @endif
     </section>
     @include('marketing._reused-sections')
+    @endif
 </x-layouts.marketing>

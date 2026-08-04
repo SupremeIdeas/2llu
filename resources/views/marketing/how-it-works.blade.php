@@ -1,4 +1,9 @@
 <x-layouts.marketing :title="\App\Support\BrandSettings::name().' — How It Works'">
+    {{-- Section Builder output wins when published; else the existing content (BUILD-6 §B). --}}
+    @php($builtSections = \App\Support\PageSections::live('how-it-works'))
+    @if (! empty($builtSections))
+        @include('partials.sections.render', ['sections' => $builtSections])
+    @else
     @php($hero = $sections['hero'] ?? null)
     @if ($hero)
         <section class="relative overflow-hidden">
@@ -71,4 +76,5 @@
         </section>
     @endif
     @include('marketing._reused-sections')
+    @endif
 </x-layouts.marketing>

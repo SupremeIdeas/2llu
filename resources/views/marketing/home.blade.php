@@ -1,4 +1,11 @@
 <x-layouts.marketing>
+    {{-- Section Builder: if an admin has published built sections for this page,
+         render them through the shared renderer. Empty = fall back to the
+         existing content below, so an untouched page is unchanged (BUILD-6 §B). --}}
+    @php($builtSections = \App\Support\PageSections::live('home'))
+    @if (! empty($builtSections))
+        @include('partials.sections.render', ['sections' => $builtSections])
+    @else
     @foreach ($sections as $key => $s)
         {{-- Page-specific partial wins; a portable/reused section falls back to
              the shared `marketing.sections.*` partial so it renders anywhere. --}}
@@ -17,5 +24,6 @@
             @include('marketing.home._wizard')
         @endif
     @endforeach
+    @endif
 
 </x-layouts.marketing>

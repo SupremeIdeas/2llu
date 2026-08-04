@@ -24,24 +24,32 @@ class PageSections
      */
     public static function live(string $page): array
     {
-        return Cache::rememberForever(self::cacheKey($page), function () use ($page) {
-            $version = PageSectionVersion::query()
-                ->where('page_key', $page)
-                ->where('is_live', true)
-                ->latest('id')
-                ->first();
+        // Public pages render this on EVERY request — a DB hiccup or a
+        // not-yet-migrated table must never 500 the page. Catch outside the cache
+        // so a transient error returns "no built version" (→ hardcoded content
+        // shows) without poisoning the cache with an empty result.
+        try {
+            return Cache::rememberForever(self::cacheKey($page), function () use ($page) {
+                $version = PageSectionVersion::query()
+                    ->where('page_key', $page)
+                    ->where('is_live', true)
+                    ->latest('id')
+                    ->first();
 
-            if (! $version) {
-                return [];
-            }
+                if (! $version) {
+                    return [];
+                }
 
-            return collect($version->snapshot)
-                ->filter(fn ($s) => ($s['is_active'] ?? true) && SectionLibrary::has($s['type'] ?? ''))
-                ->sortBy('sort_order')
-                ->map(fn ($s) => ['type' => $s['type'], 'config' => $s['config'] ?? []])
-                ->values()
-                ->all();
-        });
+                return collect($version->snapshot)
+                    ->filter(fn ($s) => ($s['is_active'] ?? true) && SectionLibrary::has($s['type'] ?? ''))
+                    ->sortBy('sort_order')
+                    ->map(fn ($s) => ['type' => $s['type'], 'config' => $s['config'] ?? []])
+                    ->values()
+                    ->all();
+            });
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public static function hasLive(string $page): bool
