@@ -105,6 +105,8 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         // NaaraCredits rewards area (loyalty module) — opt-in earning.
         Route::get('/rewards', \App\Livewire\Rewards::class)->name('rewards');
+        // Brand Partner Hunt (BUILD-6 §C) — follow-to-earn NaaraCredits.
+        Route::get('/rewards/hunt', \App\Livewire\BrandHunt::class)->name('rewards.hunt');
 
         // Partner profit-share earnings (dollars only; 404 for non-partners).
         Route::get('/partner', \App\Livewire\PartnerEarnings::class)->name('partner.earnings');
@@ -231,6 +233,7 @@ Route::middleware(['admin', 'throttle:admin'])
             // Announcements & offers — push to every user's notification bell.
             Route::get('/announcements', \App\Livewire\Admin\Announcements::class)->name('announcements');
             Route::get('/credits', \App\Livewire\Admin\Credits::class)->name('credits');
+            Route::get('/social-hunt', \App\Livewire\Admin\SocialHunt::class)->name('social-hunt');
             Route::get('/gift-cards', \App\Livewire\Admin\GiftCards::class)->name('gift-cards');
             Route::get('/developer-api', \App\Livewire\Admin\DeveloperApi::class)->name('developer-api');
             Route::get('/payouts', \App\Livewire\Admin\Payouts::class)->name('payouts');

@@ -93,6 +93,16 @@
                 <a href="{{ route('referrals') }}" class="nx-btn nx-btn--ghost mt-4 justify-center">Get my link</a>
             </div>
 
+            {{-- Brand Partner Hunt (BUILD-6 §C) — a distinct, teasing CTA (no handles/amounts shown here). --}}
+            <a href="{{ route('rewards.hunt') }}" wire:navigate
+               class="group relative flex flex-col overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-[#085555] p-6 text-white shadow-lg sm:col-span-2">
+                <span class="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-2xl"></span>
+                <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15"><x-icon name="star" class="h-5 w-5" /></span>
+                <h3 class="mt-4 text-lg font-bold">Want more NaaraCredit? Begin the hunt</h3>
+                <p class="mt-1.5 max-w-xl text-sm text-white/80">Follow featured brands and NaaraSim across social — each follow unlocks a surprise credit reward. One tap to start.</p>
+                <span class="mt-4 inline-flex items-center gap-1 text-sm font-semibold">Start the hunt <x-icon name="chevron-right" class="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></span>
+            </a>
+
             {{-- Watch an ad — opt-in, only when a compliant provider is configured --}}
             <div class="nx-card flex flex-col sm:col-span-2">
                 <div class="flex items-start gap-4">
