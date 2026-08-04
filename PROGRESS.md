@@ -9,6 +9,32 @@
 
 ## DONE
 
+### 📦 BUILD-12 — homepage "Who Naara Is For" audience tabs — 2026-08-04
+Real admin-orderable homepage section (SiteContent, defaulted after `products`).
+Six tabs auto-advance 12s with a brand-gradient progress bar; manual override +
+restart; pause on hover/focus/touch (resumes where it left off); keyboard-nav;
+`prefers-reduced-motion` fallback; mobile scrollable strip. Approved verbatim
+copy; six admin-swappable `*_image` fields under `public/images/audiences/`;
+spare `naara-business-traveler.webp` shipped for a future swap. Spec at
+`docs/build-specs/NB12-…`.
+
+### 📦 BUILD-5 — risk / reconciliation / compliance sweep — 2026-08-04
+- **§2 provider health** across the whole eSIM + number stack (`ProviderHealth`);
+  balance probe doubles as reachability (`down` on API error); admin widget;
+  both routers' failover confirmed by tracing.
+- **§3 alert delivery** — `AlertAdminJob` fans out to admins via web push +
+  email, throttled per code; durable `error_logs` always written. Sentry DSN
+  recommended.
+- **§4 financial reconciliation** view at `/adminmaster/reconciliation`
+  (`FinancialReconciliation`) — money in by gateway vs wallet credits (flagged
+  gap) vs paid out vs provider cost vs outstanding liabilities.
+- **§5–§8 docs** — `SCALING-TRIGGERS.md`, `APP-STORE-PAYMENTS-COMPLIANCE.md`
+  (Apple 3.1.1/3.1.3(e) checked live), `REGRESSION-SWEEP-LOG.md` (baseline 1053
+  passing; live-sandbox sweep + baseline-installer awaiting operator), final
+  PLATFORM-STATE pass with open operational items.
+- Build specs now committed under `docs/build-specs/` (NB5/NB6/NB9/NB12 +
+  ElevenLabs) so they survive session compaction.
+
 ### 📦 BUILD-4 — merchants / payouts / autopilot / app-builder (§1–§11) + polish — 2026-08-04
 Worked through BUILD-4 in order, committed per section, full sweep green.
 - **§1–§6** (earlier): merchant KYB deferred to payout time, global merchant
