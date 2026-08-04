@@ -41,7 +41,7 @@ class BrandSettings
     ];
 
     /** Preloader visual styles the admin can pick (blueprint audit §7). */
-    public const PRELOADER_STYLES = ['pulse-logo', 'spinner', 'bars'];
+    public const PRELOADER_STYLES = ['pulse-logo', 'spinner', 'bars', 'progress'];
 
     /** Brand default hex palette (mirrors app.css :root — CLAUDE.md Section 2). */
     public const COLOR_DEFAULTS = [

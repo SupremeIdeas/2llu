@@ -125,4 +125,38 @@ class WelcomeAuroraTest extends TestCase
             ->call('save')
             ->assertHasErrors('form.animation_total_duration');
     }
+
+    public function test_admin_can_choose_the_spotlight_entrance_style(): void
+    {
+        Livewire::actingAs($this->admin())->test(AdminWelcomeSettings::class)
+            ->set('form.style', 'spotlight')
+            ->call('save')
+            ->assertHasNoErrors();
+        $this->assertSame('spotlight', WelcomeSettings::style());
+
+        // An unknown style is rejected by validation.
+        Livewire::actingAs($this->admin())->test(AdminWelcomeSettings::class)
+            ->set('form.style', 'disco')
+            ->call('save')
+            ->assertHasErrors('form.style');
+    }
+
+    public function test_the_welcome_screen_renders_the_selected_style(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+
+        // Default aurora renders the drifting blob ELEMENTS (the gradient classes
+        // appear only on the markup, never in the always-present @once stylesheet).
+        $this->actingAs($user)->withSession(['just_registered' => true])
+            ->get('/welcome')->assertOk()
+            ->assertSee('nx-welcome__blob--1 bg-gradient-to-r', false);
+
+        // Switching to spotlight renders the beam instead of the blob elements.
+        WelcomeSettings::save(['style' => 'spotlight']);
+        $this->actingAs($user)->withSession(['just_registered' => true])
+            ->get('/welcome')->assertOk()
+            ->assertSee('nx-welcome--spotlight', false)
+            ->assertSee('nx-spot__beam', false)
+            ->assertDontSee('nx-welcome__blob--1 bg-gradient-to-r', false);
+    }
 }

@@ -18,6 +18,16 @@
             </span>
         @elseif ($nxPreStyle === 'bars')
             <span class="nx-pre-bars"><i></i><i></i><i></i><i></i></span>
+        @elseif ($nxPreStyle === 'progress')
+            {{-- Determinate-feel progress bar: eases toward 100% while the page
+                 loads, then snaps full on `load` (JS below). Logo mark sits above
+                 it when a favicon exists, so the brand still reads. --}}
+            <span class="nx-pre-progress-wrap">
+                @if ($nxPreFavicon)
+                    <img class="nx-pre-progress-logo" src="{{ $nxPreFavicon }}" alt="" width="56" height="56" draggable="false">
+                @endif
+                <span class="nx-pre-progress"><i></i></span>
+            </span>
         @else
             <span class="nx-pre-spin"></span>
         @endif
@@ -36,9 +46,20 @@
             .nx-pre-bars i:nth-child(2){ animation-delay:.15s } .nx-pre-bars i:nth-child(3){ animation-delay:.3s } .nx-pre-bars i:nth-child(4){ animation-delay:.45s }
             @keyframes nx-pre-bar { 0%,100%{ transform:scaleY(.4); opacity:.6 } 50%{ transform:scaleY(1); opacity:1 } }
 
+            /* Progress bar. */
+            .nx-pre-progress-wrap { display:flex; flex-direction:column; align-items:center; gap:1.25rem; }
+            .nx-pre-progress-logo { border-radius:14px; animation:nx-pre-breathe 1.6s ease-in-out infinite; }
+            .nx-pre-progress { display:block; width:min(60vw,200px); height:4px; border-radius:9999px;
+                background:rgba(255,255,255,.14); overflow:hidden; }
+            .nx-pre-progress i { display:block; height:100%; width:0; border-radius:9999px;
+                background:linear-gradient(90deg, rgb(var(--brand-primary)), rgb(var(--brand-accent)));
+                transition:width .35s ease-out; }
+            @keyframes nx-pre-breathe { 0%,100%{ transform:scale(1); opacity:.9 } 50%{ transform:scale(1.06); opacity:1 } }
+
             #nx-preloader.is-done { opacity:0; pointer-events:none; }
             @media (prefers-reduced-motion: reduce) {
-                #nx-preloader .nx-pre-spin, #nx-preloader .nx-pre-bars i { animation:none; }
+                #nx-preloader .nx-pre-spin, #nx-preloader .nx-pre-bars i,
+                #nx-preloader .nx-pre-progress-logo { animation:none; }
             }
         </style>
     </div>
@@ -50,8 +71,26 @@
                 el.classList.add('is-done');
                 setTimeout(function () { el.remove(); }, 500);
             };
-            window.addEventListener('load', function () { setTimeout(hide, 150); });
-            setTimeout(hide, 4000); // hard fallback — never trap the page
+
+            // Progress style: ease the bar toward ~90% while loading, then snap to
+            // 100% on `load` just before fading out (honest, never stuck at 100).
+            var bar = el.querySelector('.nx-pre-progress i');
+            var timer = null;
+            if (bar) {
+                var pct = 0;
+                timer = setInterval(function () {
+                    pct += Math.max(1, (90 - pct) * 0.12); // decelerating approach
+                    bar.style.width = Math.min(pct, 90) + '%';
+                }, 200);
+            }
+            var finish = function () {
+                if (timer) { clearInterval(timer); timer = null; }
+                if (bar) { bar.style.width = '100%'; }
+                setTimeout(hide, bar ? 250 : 150);
+            };
+
+            window.addEventListener('load', finish);
+            setTimeout(finish, 4000); // hard fallback — never trap the page
         })();
     </script>
 @endif

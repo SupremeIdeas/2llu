@@ -192,6 +192,7 @@
                     <option value="pulse-logo">Pulsing logo (recommended)</option>
                     <option value="spinner">Spinner ring</option>
                     <option value="bars">Bars</option>
+                    <option value="progress">Progress bar</option>
                 </select>
             </div>
         </div>

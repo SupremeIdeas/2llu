@@ -6,6 +6,8 @@
     $aurora = max(3, (int) ($s['aurora_speed'] ?? 8));
     $c1 = $s['brand_color_1'] ?? '#0A6E6E';
     $c2 = $s['brand_color_2'] ?? '#D4A017';
+    // Which entrance style: 'aurora' (drifting blobs) or 'spotlight' (radial beam).
+    $style = in_array(($s['style'] ?? 'aurora'), ['aurora', 'spotlight'], true) ? $s['style'] : 'aurora';
     // Start the blur-out a beat before we redirect (spec: ~200ms before the end).
     $leaveAt = max(600, $total - 300);
 @endphp
@@ -21,14 +23,22 @@
     "
     {{-- Always-dark overlay by design (an aurora only reads on black); the
          explicit dark:bg-black keeps it identical in either theme. --}}
-    class="nx-welcome fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-black dark:bg-black"
+    class="nx-welcome nx-welcome--{{ $style }} fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-black dark:bg-black"
     style="--c1: {{ $c1 }}; --c2: {{ $c2 }}; --aurora-speed: {{ $aurora }}s; --logo-speed: {{ $logoSpeed }}ms; --tagline-delay: {{ $taglineDelay }}ms;"
     role="dialog" aria-label="Welcome"
 >
-    {{-- Aurora blobs — white core blending to brand colours, screen-blended. --}}
-    <div class="nx-welcome__blob nx-welcome__blob--1 bg-gradient-to-r from-white via-[var(--c1)] to-[var(--c2)]" aria-hidden="true"></div>
-    <div class="nx-welcome__blob nx-welcome__blob--2 bg-gradient-to-l from-white via-[var(--c2)] to-[var(--c1)]" aria-hidden="true"></div>
-    <div class="nx-welcome__blob nx-welcome__blob--3 bg-gradient-to-b from-white/30 to-transparent" aria-hidden="true"></div>
+    @if ($style === 'spotlight')
+        {{-- Spotlight entrance: a single brand-tinted radial beam sweeps in behind
+             the mark, with a slow conic shimmer — cleaner and more "premium hero"
+             than the drifting aurora, for brands that want a calmer first login. --}}
+        <div class="nx-spot__beam" aria-hidden="true"></div>
+        <div class="nx-spot__ring" aria-hidden="true"></div>
+    @else
+        {{-- Aurora blobs — white core blending to brand colours, screen-blended. --}}
+        <div class="nx-welcome__blob nx-welcome__blob--1 bg-gradient-to-r from-white via-[var(--c1)] to-[var(--c2)]" aria-hidden="true"></div>
+        <div class="nx-welcome__blob nx-welcome__blob--2 bg-gradient-to-l from-white via-[var(--c2)] to-[var(--c1)]" aria-hidden="true"></div>
+        <div class="nx-welcome__blob nx-welcome__blob--3 bg-gradient-to-b from-white/30 to-transparent" aria-hidden="true"></div>
+    @endif
 
     {{-- Content --}}
     <div class="nx-welcome__content relative z-10 px-6 text-center">
@@ -83,8 +93,39 @@
             @keyframes nxAur2 { 0%,100% { transform: translate(10%,20%) scale(1) rotate(0); } 50% { transform: translate(-10%,-20%) scale(1.1) rotate(-180deg); } }
             @keyframes nxAur3 { 0%,100% { transform: scale(1); } 50% { transform: scale(1.3); } }
 
+            /* ---- Spotlight style (second entrance) ---- */
+            /* A brand-tinted radial beam grows from the centre, with a slow
+               conic-gradient ring shimmer behind the mark. */
+            .nx-spot__beam {
+                position: absolute; inset: 0; pointer-events: none;
+                background: radial-gradient(circle at 50% 46%,
+                    rgba(255,255,255,0.28) 0%,
+                    color-mix(in srgb, var(--c1) 55%, transparent) 22%,
+                    color-mix(in srgb, var(--c2) 30%, transparent) 42%,
+                    transparent 66%);
+                opacity: 0; transform: scale(0.6);
+                animation: nxSpotIn 900ms cubic-bezier(0.2,0.8,0.2,1) 100ms forwards;
+            }
+            .nx-spot__ring {
+                position: absolute; width: 130vmin; height: 130vmin; border-radius: 9999px;
+                pointer-events: none; opacity: 0.22; filter: blur(2px);
+                background: conic-gradient(from 0deg,
+                    transparent 0deg, var(--c1) 90deg, transparent 180deg, var(--c2) 270deg, transparent 360deg);
+                mask: radial-gradient(circle, transparent 54%, #000 55%, #000 60%, transparent 61%);
+                -webkit-mask: radial-gradient(circle, transparent 54%, #000 55%, #000 60%, transparent 61%);
+                animation: nxSpotSpin calc(var(--aurora-speed) * 2) linear infinite;
+            }
+            /* On spotlight the mark glows in brand teal rather than pure white. */
+            .nx-welcome--spotlight .nx-welcome__logo {
+                filter: drop-shadow(0 0 34px color-mix(in srgb, var(--c1) 70%, white));
+            }
+            @keyframes nxSpotIn  { to { opacity: 1; transform: scale(1); } }
+            @keyframes nxSpotSpin { to { transform: rotate(360deg); } }
+
             @media (prefers-reduced-motion: reduce) {
                 .nx-welcome__blob { animation: none !important; }
+                .nx-spot__ring { animation: none !important; }
+                .nx-spot__beam { animation: none !important; opacity: 1; transform: none; }
                 .nx-welcome__logo { animation: none !important; opacity: 1; transform: none; }
                 .nx-welcome__title, .nx-welcome__tagline { animation: none !important; opacity: 1; }
             }

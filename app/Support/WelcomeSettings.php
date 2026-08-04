@@ -15,19 +15,31 @@ class WelcomeSettings
 {
     public const SETTING_KEY = 'welcome.aurora';
 
+    /** First-login entrance styles the admin can pick. */
+    public const STYLES = ['aurora', 'spotlight'];
+
     public static function defaults(): array
     {
         return [
             'enabled' => true,
+            'style' => 'aurora',               // 'aurora' (drifting blobs) | 'spotlight' (radial beam)
             'logo_reveal_speed' => 600,        // ms
             'tagline_reveal_delay' => 800,     // ms
-            'animation_total_duration' => 3000,// ms
+            'animation_total_duration' => 3000, // ms
             'welcome_text' => 'Welcome to',
             'tagline_text' => "Let's get you started",
             'aurora_speed' => 8,               // seconds (blob loop)
             'brand_color_1' => '#0A6E6E',      // Deep Teal
             'brand_color_2' => '#D4A017',      // Warm Gold
         ];
+    }
+
+    /** The validated entrance style (falls back to the default aurora). */
+    public static function style(): string
+    {
+        $v = (string) self::get('style', 'aurora');
+
+        return in_array($v, self::STYLES, true) ? $v : 'aurora';
     }
 
     public static function all(): array

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\BrandSettings;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -150,10 +151,30 @@ class BrandThemeTest extends TestCase
             ->assertHasErrors(['preloader_style']);
     }
 
+    public function test_the_progress_preloader_style_is_selectable_and_renders(): void
+    {
+        $admin = User::factory()->create()->fresh();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(Branding::class)
+            ->set('color_primary', '#0A6E6E')->set('color_accent', '#D4A017')
+            ->set('color_navy', '#0D1B2A')->set('color_action', '#E8412A')->set('radius', '0.5rem')
+            ->set('preloader_enabled', true)
+            ->set('preloader_style', 'progress')
+            ->call('saveTheme')
+            ->assertHasNoErrors();
+        BrandSettings::flush();
+        $this->assertSame('progress', BrandSettings::preloaderStyle());
+
+        // The overlay renders the determinate progress bar (not the spinner).
+        $html = Blade::render('<x-brand-preloader />');
+        $this->assertStringContainsString('nx-pre-progress', $html);
+    }
+
     public function test_the_scoped_action_loader_uses_the_pulse_motif(): void
     {
         // <x-brand-loader> reacts to wire:loading and reuses the shared pulse mark.
-        $html = \Illuminate\Support\Facades\Blade::render('<x-brand-loader target="purchase" :overlay="true" />');
+        $html = Blade::render('<x-brand-loader target="purchase" :overlay="true" />');
         $this->assertStringContainsString('wire:loading', $html);
         $this->assertStringContainsString('wire:target="purchase"', $html);
         $this->assertStringContainsString('nx-pulse', $html);

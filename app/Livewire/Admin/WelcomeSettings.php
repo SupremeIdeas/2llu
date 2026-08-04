@@ -34,6 +34,7 @@ class WelcomeSettings extends Component
 
         $data = $this->validate([
             'form.enabled' => 'boolean',
+            'form.style' => 'required|in:'.implode(',', WelcomeConfig::STYLES),
             'form.logo_reveal_speed' => 'required|integer|min:150|max:5000',
             'form.tagline_reveal_delay' => 'required|integer|min:0|max:8000',
             'form.animation_total_duration' => 'required|integer|min:1200|max:10000',

@@ -18,6 +18,17 @@
             Show the welcome animation after signup
         </label>
 
+        {{-- Entrance style (two presets) --}}
+        <div class="mb-5">
+            <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Entrance style</label>
+            <select wire:model="form.style" class="{{ $inp }}">
+                <option value="aurora">Aurora — drifting brand blobs</option>
+                <option value="spotlight">Spotlight — radial beam + shimmer</option>
+            </select>
+            @error('form.style') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            <p class="mt-1 text-[11px] text-slate-400">Both use your colours below; Spotlight is calmer and more “premium hero”.</p>
+        </div>
+
         {{-- Copy --}}
         <div class="grid gap-4 sm:grid-cols-2">
             <div>
