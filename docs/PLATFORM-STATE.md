@@ -557,3 +557,24 @@ Two guards now close that gap:
 - **Backup test-restore.** `spatie/laravel-backup` is scheduled and working, but
   a backup nobody has ever restored from is unverified. Someone should perform
   one real test-restore and record the date here. (BUILD-5 §1.)
+
+### Reconciliation, scaling, compliance (§4, §5, §6, §7)
+- **Financial reconciliation** view at `/adminmaster/reconciliation`
+  (`App\Support\FinancialReconciliation`): money in by gateway vs. wallet credits
+  (with a flagged gap), payouts, provider costs, outstanding liabilities.
+- **`docs/SCALING-TRIGGERS.md`** — concrete signals for moving to VPS + Redis +
+  Horizon (queue backlog, order latency, WhatsApp volume, …).
+- **`docs/APP-STORE-PAYMENTS-COMPLIANCE.md`** — Apple 3.1.1 / 3.1.3(e) checked
+  live (2026-08-04); per-product-line verdict; iOS-only structural fix
+  (tie top-ups to a service purchase; route Wizard/merchant fees via IAP or hide).
+  **Must be re-confirmed live before the first iOS submission.**
+- **`docs/REGRESSION-SWEEP-LOG.md`** — automated baseline **1053 passing**;
+  live-sandbox sweep checklist awaiting operator execution before go-live.
+
+### Open operational items (not code — for Frank)
+- [ ] Configure a production **Sentry DSN** (§3).
+- [ ] Perform one real **backup test-restore** and log the date (§1).
+- [ ] Run the first **live-sandbox regression sweep** and package the baseline
+      installer ZIP afterwards (§7, §8).
+- [ ] Re-confirm **Apple 3.1.1/3.1.3** wording and apply the iOS payment carve-out
+      before submitting to the App Store (§6).
