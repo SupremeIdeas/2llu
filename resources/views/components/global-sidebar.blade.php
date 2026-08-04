@@ -26,22 +26,29 @@
          which previously confined this panel to the header instead of overlaying
          the whole screen. x-teleport moves it out of that containing block. --}}
     <template x-teleport="body">
-    <div>
-    {{-- Backdrop --}}
-    <div x-show="open" x-cloak x-transition.opacity @click="open = false"
-         class="fixed inset-0 z-[70] bg-black/40"></div>
+    <div x-show="open" x-cloak class="fixed inset-0 z-[70]" style="display:none;">
+        {{-- Backdrop — dims the whole screen, click to close. --}}
+        <div x-show="open" x-transition.opacity @click="open = false" class="absolute inset-0 bg-black/50"></div>
 
-    {{-- Panel — SOLID, professional, Stripe-inspired (owner request). A fully
-         opaque surface with clean list rows, icon chips and clear section
-         labels; no reliance on blur/translucency for legibility. --}}
-    <aside x-show="open" x-cloak
-           x-transition:enter="transition ease-out duration-250" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
-           x-transition:leave="transition ease-in duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
-           class="fixed inset-y-0 right-0 z-[71] flex w-[86vw] max-w-sm flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0D1B2A]"
-           style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);">
+        {{-- Modal container: a bottom sheet on mobile, a centred modal on desktop
+             (ChatGPT-style) — SOLID surface, smooth, easy (owner request). --}}
+        <div class="absolute inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-full sm:translate-y-0 sm:scale-95 sm:opacity-0"
+                 x-transition:enter-end="translate-y-0 sm:scale-100 sm:opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="translate-y-0 sm:scale-100 sm:opacity-100"
+                 x-transition:leave-end="translate-y-full sm:translate-y-0 sm:scale-95 sm:opacity-0"
+                 @click.outside="open = false"
+                 class="relative flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl sm:max-h-[85dvh] sm:max-w-md sm:rounded-3xl dark:border-white/10 dark:bg-[#0D1B2A]"
+                 style="padding-bottom: env(safe-area-inset-bottom);">
+
+        {{-- Grab handle (mobile bottom-sheet affordance). --}}
+        <div class="mx-auto mt-3 h-1.5 w-10 shrink-0 rounded-full bg-slate-300 sm:hidden dark:bg-white/20"></div>
 
         {{-- Header: brand mark + close. --}}
-        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-white/10">
+        <div class="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-white/10">
             <x-brand-logo variant="family" size="md" />
             <button type="button" @click="open = false" aria-label="Close menu"
                     class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-slate-200">
@@ -119,7 +126,8 @@
                 <x-icon name="trash" class="h-4 w-4" /> Delete my account
             </a>
         </div>
-    </aside>
-    </div>
+            </div>{{-- /modal card --}}
+        </div>{{-- /modal container --}}
+    </div>{{-- /fixed overlay --}}
     </template>
 </div>

@@ -129,6 +129,38 @@
             </div>
         </div>
 
+        {{-- Logo sizing — scale each mark to taste (owner request). Live preview
+             follows the slider; the chosen scale applies on Save, everywhere the
+             mark shows. --}}
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Logo sizing</h2>
+            <p class="mb-4 mt-0.5 text-xs text-slate-500 dark:text-slate-400">Scale each logo from 50% to 200%. The preview updates as you drag; the size applies across the platform when you save.</p>
+            <div class="space-y-5">
+                @foreach ([
+                    ['family', 'Naara family', 'family'],
+                    ['product', 'NaaraSim', 'product'],
+                    ['gift', 'Naara Gift', 'gift'],
+                ] as [$var, $label, $model])
+                    @php($previewSrc = \App\Support\BrandSettings::resolvedLogo($var, 'light') ?: '/brand/naara-'.($var === 'product' ? 'family' : $var).'-light.png')
+                    <div x-data="{ s: @entangle('logo_scale_'.$model).live }" class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
+                        <div class="sm:w-40">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ $label }}</span>
+                                <span class="text-xs font-semibold text-primary dark:text-teal-300" x-text="Math.round(s*100)+'%'"></span>
+                            </div>
+                            <input type="range" min="0.5" max="2" step="0.05" x-model.number="s"
+                                   class="mt-1 w-full accent-primary">
+                        </div>
+                        {{-- Live preview box --}}
+                        <div class="flex h-16 flex-1 items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 px-4 dark:border-[#2D4060] dark:bg-[#243352]">
+                            <img src="{{ $previewSrc }}" alt="{{ $label }} preview"
+                                 class="h-9 w-auto object-contain" :style="`transform: scale(${s}); transform-origin: left center`">
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
         <div class="flex justify-end">
             <button type="submit" wire:loading.attr="disabled" wire:target="save"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">

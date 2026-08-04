@@ -95,6 +95,10 @@ class BrandSettings
                     'radius' => (string) Setting::getValue('brand.radius', ''),
                     'preloader_enabled' => (bool) Setting::getValue('brand.preloader_enabled', false),
                     'preloader_style' => (string) Setting::getValue('brand.preloader_style', ''),
+                    // Admin-tunable per-logo scale (multiplier). Default 1 = shipped size.
+                    'logo_scale_family' => (string) Setting::getValue('brand.logo_scale_family', ''),
+                    'logo_scale_product' => (string) Setting::getValue('brand.logo_scale_product', ''),
+                    'logo_scale_gift' => (string) Setting::getValue('brand.logo_scale_gift', ''),
                 ];
             } catch (\Throwable) {
                 return self::defaults();
@@ -135,6 +139,20 @@ class BrandSettings
     public static function preloaderEnabled(): bool
     {
         return (bool) (self::current()['preloader_enabled'] ?? false);
+    }
+
+    /** Admin-tunable size multiplier for a logo variant (0.5–2.0; default 1.0). */
+    public static function logoScale(string $variant): float
+    {
+        // Gift/agency use their own key; product + family have theirs; anything
+        // else falls back to 1.0 (no scaling).
+        $key = in_array($variant, ['family', 'product', 'gift'], true) ? $variant : null;
+        if ($key === null) {
+            return 1.0;
+        }
+        $v = (float) (self::current()['logo_scale_'.$key] ?? 0);
+
+        return $v > 0 ? max(0.5, min(2.0, $v)) : 1.0;
     }
 
     /** The chosen preloader style; defaults to the pulsing logo (audit §7). */

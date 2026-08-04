@@ -35,9 +35,16 @@
     ];
     $map = in_array($variant, ['family', 'gift'], true) ? $tall : $wide;
     $sizeClass = 'w-auto object-contain '.($map[$size] ?? $map['md']);
+
+    // Admin-tunable per-logo scale (Admin → Branding). 1.0 = shipped size; the
+    // transform grows/shrinks the mark to the operator's taste without changing
+    // the surrounding layout. Anchored left for headers; centred for the xl
+    // full-screen entrance.
+    $scale = \App\Support\BrandSettings::logoScale($variant);
+    $scaleStyle = abs($scale - 1.0) < 0.001 ? '' : 'transform: scale('.$scale.'); transform-origin: '.($size === 'xl' ? 'center' : 'left center').';';
 @endphp
 @if ($light || $dark)
-    <span {{ $attributes->only('class')->merge(['class' => 'inline-flex items-center']) }}>
+    <span {{ $attributes->only('class')->merge(['class' => 'inline-flex items-center']) }} @if ($scaleStyle) style="{{ $scaleStyle }}" @endif>
         @if ($theme === 'light')
             <img src="{{ $light }}" alt="{{ $name }}" class="block {{ $sizeClass }}">
         @elseif ($theme === 'dark')

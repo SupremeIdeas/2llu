@@ -62,6 +62,14 @@ class Branding extends Component
 
     public $favicon = null;
 
+    // Admin-tunable per-logo display scale (0.5–2.0; 1.0 = shipped size). Lets
+    // the operator size each mark to taste with no code changes.
+    public float $logo_scale_family = 1.0;
+
+    public float $logo_scale_product = 1.0;
+
+    public float $logo_scale_gift = 1.0;
+
     // Premium dashboard hero backgrounds (owner request) — light + dark, WebP/JPG.
     public $hero_light = null;
 
@@ -102,6 +110,9 @@ class Branding extends Component
         $this->preloader_style = BrandSettings::preloaderStyle();
         $this->hero_description = HeroBackground::description();
         $this->hero_enabled = HeroBackground::enabled();
+        $this->logo_scale_family = BrandSettings::logoScale('family');
+        $this->logo_scale_product = BrandSettings::logoScale('product');
+        $this->logo_scale_gift = BrandSettings::logoScale('gift');
     }
 
     /** Save the brand theme (colours, roundness, preloader). Takes effect live. */
@@ -174,6 +185,9 @@ class Branding extends Component
             'hero_light' => 'nullable|mimes:webp,jpg,jpeg|max:600',
             'hero_dark' => 'nullable|mimes:webp,jpg,jpeg|max:600',
             'hero_description' => 'nullable|string|max:120',
+            'logo_scale_family' => 'numeric|min:0.5|max:2',
+            'logo_scale_product' => 'numeric|min:0.5|max:2',
+            'logo_scale_gift' => 'numeric|min:0.5|max:2',
         ], [
             'hero_light.mimes' => 'The hero image must be a WebP or JPG.',
             'hero_dark.mimes' => 'The hero image must be a WebP or JPG.',
@@ -198,6 +212,11 @@ class Branding extends Component
 
         // On/off switch for the dashboard hero image (owner request).
         Setting::setValue(HeroBackground::ENABLED_KEY, $this->hero_enabled, 'brand');
+
+        // Per-logo display scale (admin taste) — clamped 0.5–2.0.
+        Setting::setValue('brand.logo_scale_family', max(0.5, min(2.0, (float) $this->logo_scale_family)), 'brand');
+        Setting::setValue('brand.logo_scale_product', max(0.5, min(2.0, (float) $this->logo_scale_product)), 'brand');
+        Setting::setValue('brand.logo_scale_gift', max(0.5, min(2.0, (float) $this->logo_scale_gift)), 'brand');
 
         BrandSettings::flush();
         HeroBackground::flush();
