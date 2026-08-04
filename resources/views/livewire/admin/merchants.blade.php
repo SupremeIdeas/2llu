@@ -57,6 +57,12 @@
                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
                     @error('upgradePrice') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Merchant-referral bonus (USD, one-time)</label>
+                    <input type="number" step="0.5" min="0" wire:model="merchantReferralBonus"
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <p class="mt-1 text-[11px] text-slate-400">Flat NaaraCredit bonus when a merchant's invitee becomes a merchant. 0 = off. One-time, single-hop — not a downline.</p>
+                </div>
             </div>
             <p class="mt-2 text-[11px] text-slate-400">A user unlocks the programme by hitting the spend threshold, paying the one-time fast-route fee from their wallet, or reaching the referral target.</p>
 

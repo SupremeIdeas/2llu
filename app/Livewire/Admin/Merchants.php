@@ -32,6 +32,9 @@ class Merchants extends Component
 
     public $upgradePrice = 125;
 
+    // One-time flat merchant-to-merchant referral bonus (BUILD-7 §4) — 0 = off.
+    public $merchantReferralBonus = 0;
+
     // Deferred-verification payout rule (BUILD-4 §1.3) — mechanism ships off.
     public $kybThreshold = 500;
 
@@ -51,6 +54,7 @@ class Merchants extends Component
         $this->enrollmentFee = MerchantSettings::enrollmentFeeUsd();
         $this->minReferrals = MerchantSettings::minReferrals();
         $this->upgradePrice = MerchantSettings::upgradePriceUsd();
+        $this->merchantReferralBonus = MerchantSettings::merchantReferralBonusUsd();
         $this->kybThreshold = MerchantSettings::kybThresholdUsd();
         $this->kybOverThreshold = MerchantSettings::kybOverThresholdEnabled();
         $this->autoPromote = MerchantSettings::autoPromoteEnabled();
@@ -74,6 +78,7 @@ class Merchants extends Component
         Setting::setValue(MerchantSettings::ENROLLMENT_FEE, (float) $this->enrollmentFee, 'merchants');
         Setting::setValue(MerchantSettings::MIN_REFERRALS, (int) $this->minReferrals, 'merchants');
         Setting::setValue(MerchantSettings::UPGRADE_PRICE, (float) $this->upgradePrice, 'merchants');
+        Setting::setValue(MerchantSettings::MERCHANT_REFERRAL_BONUS, max(0, (float) $this->merchantReferralBonus), 'merchants');
         Setting::setValue(MerchantSettings::KYB_THRESHOLD, (float) $this->kybThreshold, 'merchants');
         Setting::setValue(MerchantSettings::KYB_OVER_THRESHOLD, $this->kybOverThreshold, 'merchants');
         Setting::setValue(MerchantSettings::AUTO_PROMOTE, $this->autoPromote, 'merchants');

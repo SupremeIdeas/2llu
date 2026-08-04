@@ -25,6 +25,11 @@ class MerchantSettings
     /** One-time price to self-upgrade to Merchant V2 (client management). */
     public const UPGRADE_PRICE = 'merchants.upgrade_price_usd';
 
+    /** One-time flat bonus paid to a merchant when someone they invited becomes
+     *  a merchant too (BUILD-7 §4). Default 0 = off. Deliberately a single flat
+     *  bonus, NOT a recurring percentage — one hop only, never a downline. */
+    public const MERCHANT_REFERRAL_BONUS = 'merchants.merchant_referral_bonus_usd';
+
     // Deferred-verification payout threshold (BUILD-4 §1.3). KYB is no longer a
     // front-of-funnel gate; instead a merchant verifies at payout time. Payouts
     // at/under KYB_THRESHOLD clear at KYC-L2 (a verified bank account); larger
@@ -68,6 +73,12 @@ class MerchantSettings
     public static function upgradePriceUsd(): float
     {
         return (float) Setting::getValue(self::UPGRADE_PRICE, 125.0);
+    }
+
+    /** One-time flat bonus (USD) for a merchant-to-merchant referral. 0 = off. */
+    public static function merchantReferralBonusUsd(): float
+    {
+        return max(0.0, (float) Setting::getValue(self::MERCHANT_REFERRAL_BONUS, 0.0));
     }
 
     /** Single-payout amount above which business KYB is required (default $500). */

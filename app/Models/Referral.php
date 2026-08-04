@@ -7,9 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Referral extends Model
 {
+    public const TYPE_CUSTOMER = 'customer';
+
+    public const TYPE_MERCHANT = 'merchant';
+
     protected $fillable = [
         'referrer_id',
         'referred_id',
+        'type',
         'reward_pct',
         'rewarded',
         'rewarded_at',

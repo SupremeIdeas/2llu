@@ -174,6 +174,8 @@ class MerchantService
             Auditor::log('merchant.promoted', 'Merchant', $merchant->id, [
                 'by' => $admin->id, 'user_id' => $user->id, 'tier' => $tier, 'reason' => $reason,
             ]);
+            // BUILD-7 §4: pay the inviter's one-time merchant-referral bonus, if any.
+            app(MerchantReferralService::class)->rewardReferrerIfEligible($user);
 
             return $merchant;
         });
@@ -195,6 +197,8 @@ class MerchantService
                 $merchant->owner->assignRole('merchant');
             });
             Auditor::log('merchant.approved', 'Merchant', $merchant->id, ['by' => $admin->id]);
+            // BUILD-7 §4: pay the inviter's one-time merchant-referral bonus, if any.
+            app(MerchantReferralService::class)->rewardReferrerIfEligible($merchant->owner);
         }
 
         return $merchant;

@@ -91,6 +91,22 @@
         </div>
     </div>
 
+    {{-- Invite another merchant (BUILD-7 §4) — a one-time bonus, NOT earn-from-their-sales. --}}
+    @php($merchantInvite = $inviteUrl.(str_contains($inviteUrl, '?') ? '&' : '?').'as=merchant')
+    <div class="mt-4 rounded-2xl border border-accent/30 bg-accent/5 p-5 dark:border-accent/30 dark:bg-accent/10"
+         x-data="{ copied: false, copy() { navigator.clipboard.writeText('{{ $merchantInvite }}').then(() => { this.copied = true; setTimeout(() => this.copied = false, 1500); }); } }">
+        <h2 class="mb-1 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"><x-icon name="users" class="h-4 w-4" /> Invite another merchant</h2>
+        <p class="mb-3 text-xs text-slate-500 dark:text-slate-400">Know a business that should resell on {{ \App\Support\BrandSettings::name() }}? Share this — when they join and become a merchant, you get a <strong>one-time bonus</strong>. (This is a one-off reward, not a cut of their sales.)</p>
+        <div class="flex items-center gap-2">
+            <input type="text" readonly value="{{ $merchantInvite }}"
+                   class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-200">
+            <button type="button" x-on:click="copy()"
+                    class="flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-navy hover:brightness-105">
+                <x-icon name="copy" class="h-4 w-4" /> <span x-text="copied ? 'Copied' : 'Copy'"></span>
+            </button>
+        </div>
+    </div>
+
     {{-- Storefront branding --}}
     <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
         <h2 class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"><x-icon name="image" class="h-4 w-4" /> Storefront</h2>
