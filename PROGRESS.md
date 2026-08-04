@@ -9,6 +9,36 @@
 
 ## DONE
 
+### 📦 BUILD-4 — merchants / payouts / autopilot / app-builder (§1–§11) + polish — 2026-08-04
+Worked through BUILD-4 in order, committed per section, full sweep green.
+- **§1–§6** (earlier): merchant KYB deferred to payout time, global merchant
+  country + registration types, admin promotion tools, KYC-L2 payout gate +
+  payout-rail research, messaging entry points.
+- **§7 WhatsApp Autopilot** — opt-in, gated, template-based lifecycle
+  notifications over the Meta WhatsApp Cloud API. Coming-Soon/Active by real
+  keys; queued send; fail-safe client; signed webhook (handshake + STOP opt-out);
+  Profile opt-in UI; fired at eSIM checkout + number purchase. `docs/WHATSAPP-AUTOPILOT.md`.
+- **§8 payout ranking** — gateways ranked by real recent inbound volume
+  (`payment_charges`), cached daily (`payouts:rank`); "Recommended — fast payout"
+  badge highlights (never hides) the top rail on the Withdraw page.
+- **§9 App Builder compile backend** — VERIFIED complete from the earlier App
+  Export work: HMAC-signed CI dispatch (`TriggerAppBuildJob`), self-hosted-runner
+  fallback, status webhook, `android-build.yml`. No rebuild needed.
+- **§10 progress preloader** — 4th admin-selectable preloader style: a determinate
+  bar that eases to ~90% then snaps to 100% on load (honest), logo breathing above.
+- **§11 spotlight welcome** — 2nd first-login entrance beside Aurora: a brand-tinted
+  radial beam + conic shimmer; admin picks the style in Admin → Welcome animation.
+
+### 🎨 Header branding + dark-mode persistence — 2026-08-04
+- **Conditional header logo** — the umbrella Naara family mark shows everywhere on
+  the dashboard EXCEPT a product's own surface: NaaraSim on the eSIM/number
+  surfaces, Naara Gift on the gift storefront. Marks moved OUT of page bodies into
+  the header chrome (`App\Support\BrandContext`). Sidebar + mobile top bar both read it.
+- **Dark/light persists across SPA nav** — `wire:navigate` morphs a fresh
+  server-rendered `<html>` (no `dark` class), which silently dropped dark mode on
+  the next page. Now re-applied on every `livewire:navigated` (`window.applyStoredTheme`),
+  so the choice holds until the user flips it back.
+
 ### 📦 BUILD-8 — eSIM region/country navigation + Admin Control Center — 2026-08-03
 The eSIM section, upgraded against Frank's 22 real Airalo reference screenshots.
 The premium eSIM hero slider was left untouched by explicit instruction; all
