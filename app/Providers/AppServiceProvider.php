@@ -73,6 +73,7 @@ use App\Support\NumbersBento;
 use App\Support\NumbersHeroContent;
 use App\Support\PaymentGatewayConfig;
 use App\Support\ProviderKeys;
+use App\Support\SchedulerHealth;
 use App\Support\SecuritySettings;
 use App\Support\ServiceIcons;
 use App\Support\SiteChrome;
@@ -81,6 +82,7 @@ use App\Support\SplashSettings;
 use App\Support\SupportAutopilot;
 use App\Support\SupportSettings;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -264,6 +266,14 @@ class AppServiceProvider extends ServiceProvider
             PayoutReversed::class,
             ReturnPartnerEarnings::class,
         );
+
+        // HOTFIX §2: record every scheduled task's last successful run, so the
+        // admin System Health panel can show whether the live cron is actually
+        // firing (the confirmed root cause behind "payment didn't credit" and
+        // "provider health widget is empty").
+        Event::listen(function (ScheduledTaskFinished $event) {
+            SchedulerHealth::record((string) $event->task->command);
+        });
 
         // Extend Socialite with the extra sign-in providers (owner request).
         // Google/Facebook/Twitter are core drivers; Apple/Microsoft/Discord are

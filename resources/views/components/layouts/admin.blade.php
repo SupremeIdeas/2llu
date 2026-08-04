@@ -93,6 +93,7 @@
     // System — super-admin only.
     if ($isSuper) {
         $more[] = ['heading' => 'System'];
+        $more[] = ['route' => 'admin.system-health', 'label' => 'System health', 'icon' => 'signal'];
         $more[] = ['route' => 'admin.api-keys', 'label' => 'API keys', 'icon' => 'key'];
         $more[] = ['route' => 'admin.email', 'label' => 'Email', 'icon' => 'mail'];
         $more[] = ['route' => 'admin.errors', 'label' => 'Error log', 'icon' => 'file-text'];

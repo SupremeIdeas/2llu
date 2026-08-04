@@ -234,6 +234,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/payouts', \App\Livewire\Admin\Payouts::class)->name('payouts');
             Route::get('/refunds', \App\Livewire\Admin\Refunds::class)->name('refunds');
             Route::get('/reconciliation', \App\Livewire\Admin\Reconciliation::class)->name('reconciliation');
+            Route::get('/system-health', \App\Livewire\Admin\SystemHealth::class)->name('system-health');
             Route::get('/gateways', \App\Livewire\Admin\Gateways::class)->name('gateways');
             Route::get('/kyc', \App\Livewire\Admin\KycReview::class)->name('kyc');
             Route::get('/merchants', \App\Livewire\Admin\Merchants::class)->name('merchants');
