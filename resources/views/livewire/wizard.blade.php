@@ -14,10 +14,35 @@
 @endphp
 <div class="fixed bottom-24 right-4 z-50 transition-opacity duration-500 print:hidden lg:bottom-6 {{ $wizSection === 'gift' ? 'pointer-events-none opacity-0' : 'opacity-100' }}"
      wire:key="naara-wizard"
+     x-data="{ wizHidden: localStorage.getItem('nx_wiz_hidden') === '1' }"
+     x-effect="localStorage.setItem('nx_wiz_hidden', wizHidden ? '1' : '0')"
      @if ($this->otpPending) wire:poll.4s @endif>
 
     @if (! $open)
-        {{-- Launcher — with a live-OTP badge when a code is on its way / ready. --}}
+        {{-- Minimised state (owner request): the user can hide the floating helper
+             so it never covers content. It collapses to a tiny restore bubble
+             (persisted for the session), one tap to bring it back. --}}
+        <button type="button" x-show="wizHidden" x-cloak @click="wizHidden = false"
+                aria-label="Show the NaaraSim helper"
+                class="flex h-11 w-11 items-center justify-center rounded-full bg-white p-px shadow-lg shadow-primary/20 ring-1 ring-primary/20 transition hover:shadow-primary/30 dark:bg-[#101d33] dark:ring-primary/30">
+            <span class="flex h-full w-full items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300">
+                <x-icon name="message-circle" class="h-5 w-5" />
+            </span>
+            @if ($this->liveOtp)
+                <span class="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5">
+                    <span class="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 motion-safe:animate-ping"></span>
+                    <span class="relative inline-flex h-3.5 w-3.5 rounded-full bg-accent ring-2 ring-white dark:ring-[#101d33]"></span>
+                </span>
+            @endif
+        </button>
+
+        {{-- Full launcher (hidden while minimised) — with a live-OTP badge when a code is on its way / ready. --}}
+        <div x-show="!wizHidden" class="relative">
+        {{-- Dismiss: hide the helper so it stops covering content (owner request). --}}
+        <button type="button" @click="wizHidden = true" aria-label="Hide the helper"
+                class="absolute -left-1.5 -top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-slate-700/90 text-white shadow ring-1 ring-white/50 transition hover:bg-slate-900 dark:bg-slate-200/90 dark:text-slate-800 dark:hover:bg-white">
+            <x-icon name="x" class="h-3 w-3" />
+        </button>
         @php $otp = $this->liveOtp; @endphp
         @if ($otp && $otp->status === 'completed')
             {{-- "Code ready" pill — the pushed OTP surfacing (roadmap §3.10). --}}
@@ -58,6 +83,7 @@
                 </span>
             @endif
         </button>
+        </div>{{-- /full launcher (x-show !wizHidden) --}}
     @else
         {{-- Panel with an animated glowing brand border (reduced-motion → static). --}}
         <div class="relative w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl p-[2px] shadow-2xl
