@@ -16,14 +16,25 @@
     // fallback; the platform brand name is the default.
     $name = $label ?: \App\Support\BrandSettings::name();
 
-    // Named sizes → a fixed height + max-width pair, chosen once and reused.
-    $sizes = [
-        'sm' => 'h-7 max-w-[140px]',   // onboarding / compact
-        'md' => 'h-8 max-w-[150px]',   // every top nav bar / mobile header
-        'lg' => 'h-9 max-w-[170px]',   // sidebar brand, footer, auth panel
-        'xl' => 'h-20 md:h-28',        // full-screen welcome entrance
+    // Named sizes → height + max-width. The NaaraSim (product) mark is a WIDE
+    // wordmark (~4:1), while the Naara (family) and Naara Gift marks are nearly
+    // square (~1.4:1) — so at the same height the square marks read much smaller.
+    // We give family/gift a taller height per size so every mark reads with the
+    // same visual weight as NaaraSim (owner request).
+    $wide = [
+        'sm' => 'h-7 max-w-[140px]',
+        'md' => 'h-8 max-w-[160px]',
+        'lg' => 'h-9 max-w-[180px]',
+        'xl' => 'h-20 md:h-28',
     ];
-    $sizeClass = 'w-auto object-contain '.($sizes[$size] ?? $sizes['md']);
+    $tall = [
+        'sm' => 'h-10 max-w-[120px]',
+        'md' => 'h-11 max-w-[140px]',
+        'lg' => 'h-12 max-w-[150px]',
+        'xl' => 'h-28 md:h-36',
+    ];
+    $map = in_array($variant, ['family', 'gift'], true) ? $tall : $wide;
+    $sizeClass = 'w-auto object-contain '.($map[$size] ?? $map['md']);
 @endphp
 @if ($light || $dark)
     <span {{ $attributes->only('class')->merge(['class' => 'inline-flex items-center']) }}>
