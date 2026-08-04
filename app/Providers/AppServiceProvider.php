@@ -335,6 +335,9 @@ class AppServiceProvider extends ServiceProvider
             if (BrandSettings::isBrandKey($setting->key)) {
                 BrandSettings::flush();
             }
+            if (\App\Support\BentoIcons::isBentoKey($setting->key)) {
+                \App\Support\BentoIcons::flush();
+            }
             if (HeroBackground::isHeroKey($setting->key)) {
                 HeroBackground::flush();
             }

@@ -38,15 +38,14 @@
             </div>
         @endif
 
-        {{-- Strict two-column grid — Buy eSIM / Get number sit side by side at
-             EVERY screen width and never stack. --}}
+        {{-- Bento action tiles — Buy eSIM / Get number sit side by side at EVERY
+             screen width and never stack. Same bento style as the showcase +
+             number-section cards; navigation targets unchanged. --}}
         <div class="mt-4 grid grid-cols-2 gap-3">
-            <a href="{{ route('catalogue') }}" class="nx-btn nx-btn--primary w-full justify-center !py-2.5">
-                <x-icon name="globe" class="h-4 w-4" /> Buy eSIM
-            </a>
-            <a href="{{ route('numbers') }}" class="nx-btn nx-btn--ghost w-full justify-center !py-2.5">
-                <x-icon name="hash" class="h-4 w-4" /> Get number
-            </a>
+            <x-bento-tile bkey="buy-esim" label="Buy eSIM" variant="primary"
+                          :href="route('catalogue')" wire:navigate />
+            <x-bento-tile bkey="get-number" label="Get number"
+                          :href="route('numbers')" wire:navigate />
         </div>
     </div>
 
@@ -134,26 +133,34 @@
          cards, rebuilt on brand): the three product lines as floating glass
          cards with our SVG feature icons. --}}
     @unless ($hasAny)
+        {{-- Each row carries its admin-managed bento icon key (App\Support\BentoIcons)
+             so the 3D illustration + its opacity are changeable in Admin. --}}
         @php($showcase = [
-            ['globe', 'eSIM Data Plans', 'Local data in 190+ countries — installed before you fly, connected when you land.', route('catalogue'), 'Browse plans', null],
-            ['signal', 'Naara Connect', 'Full eSIM — calls, SMS and data on one eSIM, with its own number.', route('catalogue', ['tab' => 'full']), 'See Full eSIMs', null],
-            ['hash', 'Verification Numbers', 'Receive one-time codes for WhatsApp, Google, Facebook and more — in seconds.', route('numbers'), 'Get a number', null],
-            ['phone', 'Virtual Numbers', 'A permanent second line for calls and SMS, without a second phone.', route('numbers'), 'Explore numbers', null],
+            ['esim-data-plans', 'eSIM Data Plans', 'Local data in 190+ countries — installed before you fly, connected when you land.', route('catalogue'), 'Browse plans', null],
+            ['naara-connect', 'Naara Connect', 'Full eSIM — calls, SMS and data on one eSIM, with its own number.', route('catalogue', ['tab' => 'full']), 'See Full eSIMs', null],
+            ['verification-numbers', 'Verification Numbers', 'Receive one-time codes for WhatsApp, Google, Facebook and more — in seconds.', route('numbers'), 'Get a number', null],
+            ['virtual-numbers', 'Virtual Numbers', 'A permanent second line for calls and SMS, without a second phone.', route('numbers'), 'Explore numbers', null],
         ])
         {{-- Naara Gift entry — flips from "Coming soon" to a live link the moment the API keys are added. --}}
         @if (\App\Support\FeatureFlags::adminEnabled('naara_gift'))
             @php($giftLive = \App\Support\FeatureFlags::configured('naara_gift'))
-            @php($showcase[] = ['gift', 'Naara Gift', 'Send gift cards for 1,000+ brands — delivered instantly by email or WhatsApp.', route('gift-cards'), $giftLive ? 'Browse gifts' : 'Coming soon', $giftLive ? null : 'Soon'])
+            @php($showcase[] = ['naara-gift', 'Naara Gift', 'Send gift cards for 1,000+ brands — delivered instantly by email or WhatsApp.', route('gift-cards'), $giftLive ? 'Browse gifts' : 'Coming soon', $giftLive ? null : 'Soon'])
         @endif
         <div class="mb-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            @foreach ($showcase as [$icon, $title, $text, $url, $cta, $badge])
+            @foreach ($showcase as [$bkey, $title, $text, $url, $cta, $badge])
+                @php($bicon = \App\Support\BentoIcons::icon($bkey))
                 <a href="{{ $url }}" wire:navigate class="nx-card3d group block">
-                    <div class="nx-card3d__body">
+                    <div class="nx-card3d__body nx-card3d__body--bento">
                         <span class="nx-card3d__glass" aria-hidden="true"></span>
-                        <span class="nx-card3d__icon">
-                            <x-icon :name="$icon" class="h-6 w-6" />
-                        </span>
-                        <h3 class="relative mt-5 flex items-center gap-2 font-display text-lg font-bold text-slate-900 dark:text-white">{{ $title }}
+                        {{-- 3D icon as a background watermark, bottom-right, behind the
+                             text. Opacity is admin-tunable; the card clips it to its
+                             rounded corners (overflow-hidden on the body). --}}
+                        @if ($bicon)
+                            <img src="{{ $bicon }}" alt="" aria-hidden="true"
+                                 class="nx-card3d__bg pointer-events-none absolute bottom-0 right-0 w-[38%] max-w-[128px] select-none object-contain"
+                                 style="opacity: {{ \App\Support\BentoIcons::opacityFraction($bkey) }};">
+                        @endif
+                        <h3 class="relative flex items-center gap-2 font-display text-lg font-bold text-slate-900 dark:text-white">{{ $title }}
                             @if ($badge)<span class="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase text-accent-dark dark:text-accent">{{ $badge }}</span>@endif
                         </h3>
                         <p class="relative mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ $text }}</p>

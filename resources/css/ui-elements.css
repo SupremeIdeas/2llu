@@ -1034,6 +1034,26 @@
     .nx-card3d:hover .nx-card3d__body,
     .nx-card3d:hover .nx-card3d__icon { transform: none; }
 }
+/* Bento variant: the 3D icon sits as a background watermark in the bottom-right,
+   clipped to the card's rounded corners, behind fully-opaque text. */
+.nx-card3d__body--bento {
+    overflow: hidden;
+    min-height: 190px;
+}
+.nx-card3d__bg {
+    z-index: 0;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nx-card3d:hover .nx-card3d__bg { transform: scale(1.06); }
+/* Text content always paints above the watermark, unaffected by its fade. */
+.nx-card3d__body--bento > h3,
+.nx-card3d__body--bento > p,
+.nx-card3d__body--bento > span:not(.nx-card3d__glass):not(.nx-card3d__bg) {
+    z-index: 2;
+}
+@media (prefers-reduced-motion: reduce) {
+    .nx-card3d:hover .nx-card3d__bg { transform: none; }
+}
 
 /* --- Floating-light promo card (after ayman-ashine) ------------------------ */
 .nx-float-card {

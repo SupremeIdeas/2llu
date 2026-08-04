@@ -13,15 +13,13 @@
             <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">eSIM Data Plans</h1>
             <p class="text-sm text-slate-500 dark:text-slate-400">190+ countries. Stay connected. No borders. No swaps.</p>
         </div>
-        <div class="flex w-full items-center gap-2 sm:w-auto sm:shrink-0">
-            <button type="button" wire:click="browseCountries"
-                    class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:flex-none dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-200 dark:hover:bg-[#243352]">
-                <x-icon name="globe" class="h-4 w-4" gradient /> Browse by country
-            </button>
-            <button type="button" @click="$dispatch('open-compatibility')"
-                    class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 sm:flex-none dark:border-primary/40 dark:text-teal-300">
-                <x-icon name="signal" class="h-4 w-4" /> Check compatibility
-            </button>
+        {{-- Bento action tiles (side by side at every width) — same style as the
+             number-section bento cards. Click logic is unchanged. --}}
+        <div class="grid w-full grid-cols-2 gap-3 sm:w-auto sm:shrink-0">
+            <x-bento-tile bkey="browse-by-country" label="Browse by country"
+                          wire:click="browseCountries" class="sm:min-w-[180px]" />
+            <x-bento-tile bkey="check-compatibility" label="Check compatibility" variant="primary"
+                          @click="$dispatch('open-compatibility')" class="sm:min-w-[180px]" />
         </div>
     </div>
 
