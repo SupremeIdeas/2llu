@@ -201,15 +201,21 @@
     </div>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {{-- Provider wallet health --}}
+        {{-- Provider health — every eSIM + number provider (BUILD-5 §2), not just
+             the wallet-funded ones. `down` = API unreachable/erroring. --}}
         <section>
             <h2 class="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                <x-icon name="wallet" class="h-4 w-4" /> Provider wallets
+                <x-icon name="signal" class="h-4 w-4" /> Provider health
             </h2>
             <div class="space-y-2">
                 @forelse ($health as $provider => $info)
                     <div wire:key="health-{{ $provider }}" class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-[#2D4060] dark:bg-[#1A2840]">
-                        <span class="font-medium capitalize text-slate-900 dark:text-slate-100">{{ $provider }}</span>
+                        <span class="flex items-center gap-2">
+                            <span class="font-medium capitalize text-slate-900 dark:text-slate-100">{{ $provider }}</span>
+                            @if (($info['stack'] ?? '') !== '')
+                                <span class="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-500 dark:bg-[#243352] dark:text-slate-400">{{ $info['stack'] }}</span>
+                            @endif
+                        </span>
                         <div class="flex items-center gap-3">
                             @if (! is_null($info['balance'] ?? null))
                                 <span class="text-sm text-slate-500 dark:text-slate-400">${{ number_format((float) $info['balance'], 2) }}</span>
@@ -218,7 +224,8 @@
                                 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
                                 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' => ($info['status'] ?? '') === 'ok',
                                 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' => ($info['status'] ?? '') === 'low',
-                                'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' => ($info['status'] ?? '') === 'error',
+                                'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' => in_array($info['status'] ?? '', ['error', 'down'], true),
+                                'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' => ($info['status'] ?? '') === 'configured',
                                 'bg-slate-100 text-slate-600 dark:bg-[#243352] dark:text-slate-400' => ($info['status'] ?? '') === 'coming_soon',
                             ])>{{ ucfirst(str_replace('_', ' ', $info['status'] ?? 'unknown')) }}</span>
                         </div>
