@@ -31,10 +31,12 @@ class SmsNumberRouter
     public function order(NumberRequest $request): SmsOrderResult
     {
         if ($request->type === NumberRequest::TYPE_PERMANENT) {
-            // Permanent numbers (Twilio/Telnyx + monthly billing) are provisioned
-            // by the permanent-number module; the lane is defined + unit-tested
-            // here but ordering is not yet wired.
-            throw new SmsException('Permanent numbers are coming soon.');
+            // Permanent numbers are fully built and provisioned by
+            // PermanentNumberRouter (search → provision → monthly billing); every
+            // real caller (Wizard, GetNumber) uses that router directly, so this
+            // branch is unreachable. It stays as a defensive guard: this SMS lane
+            // handles OTP + rentals only and must never order a permanent number.
+            throw new SmsException('Permanent numbers are handled by the permanent-number module, not this lane.');
         }
 
         try {

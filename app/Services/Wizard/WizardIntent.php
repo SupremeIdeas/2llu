@@ -97,6 +97,7 @@ class WizardIntent
             'naara_rent' => 'a short-term rental phone number',
             'naara_line' => 'a permanent phone number with calls',
             'naara_data' => 'eSIM mobile data',
+            'naara_connect' => 'a full eSIM with both calls and data, not just data',
         ];
         $modelLines = collect($models)
             ->map(fn ($k) => "  - {$k} = ".($descriptions[$k] ?? $k))

@@ -117,6 +117,20 @@ class Wizard extends Component
         'naara_line' => NumberRequest::TYPE_PERMANENT,
     ];
 
+    /**
+     * eSIM Models — routed through the device-compat gate + guided catalogue
+     * hand-off, NEVER the number routers. naara_connect is the voice+data eSIM
+     * (ProviderRouter's $voiceChain); it is an eSIM product, so it MUST follow
+     * the same path as naara_data and never reach SmsNumberRouter (which would
+     * throw "Unknown number type" on its undefined MODEL_TYPE entry).
+     */
+    private const ESIM_MODELS = ['naara_data', 'naara_connect'];
+
+    private function isEsimModel(?string $model): bool
+    {
+        return in_array($model, self::ESIM_MODELS, true);
+    }
+
     public function mount(): void
     {
         $this->restore();
@@ -137,6 +151,7 @@ class Wizard extends Component
             'naara_rent' => 'Rent a number',
             'naara_line' => 'Get a permanent number + calls',
             'naara_data' => 'Get eSIM data',
+            'naara_connect' => 'Get a full eSIM (calls + data)',
         ];
 
         return array_map(fn ($m) => [
@@ -266,7 +281,7 @@ class Wizard extends Component
 
         if (! empty($parsed['country'])) {
             $this->country = $parsed['country'];
-            if ($this->model === 'naara_data') {
+            if ($this->isEsimModel($this->model)) {
                 $this->step = 'device';
             } elseif ($this->model === 'naara_line') {
                 $this->step = 'match';
@@ -304,8 +319,9 @@ class Wizard extends Component
         $this->country = $slug;
         $this->error = null;
 
-        // Branch by the Model's capability.
-        if ($this->model === 'naara_data') {
+        // Branch by the Model's capability. Both eSIM Models (data + full/voice)
+        // go through the device-compat gate, never the number routers.
+        if ($this->isEsimModel($this->model)) {
             $this->step = 'device';
         } elseif ($this->model === 'naara_line') {
             // Naara Line supports number matching (roadmap §5): let the user shape
@@ -358,9 +374,15 @@ class Wizard extends Component
     public function goToEsims()
     {
         $label = $this->catalogueCountries()[$this->country] ?? '';
+        $params = ['q' => $label];
+        // naara_connect is the voice+data eSIM — land the user on the Naara
+        // Connect (Full) tab so they see voice-capable plans, not data-only.
+        if ($this->model === 'naara_connect') {
+            $params['tab'] = 'full';
+        }
         $this->finish();
 
-        return $this->redirect(route('catalogue', ['q' => $label]), navigate: true);
+        return $this->redirect(route('catalogue', $params), navigate: true);
     }
 
     // ---- permanent path -----------------------------------------------------

@@ -193,6 +193,11 @@
                     {{-- 3b) Device check (eSIM) --}}
                     @elseif ($step === 'device')
                         <p class="text-sm text-slate-600 dark:text-slate-300">Let’s make sure your phone supports eSIM.</p>
+                        {{-- Make the pre-purchase protection visible (competitor gap: activation
+                             failing on an unsupported device with no refund). --}}
+                        <p class="flex items-center gap-1.5 text-xs font-medium text-primary dark:text-teal-300">
+                            <x-icon name="shield" class="h-3.5 w-3.5 shrink-0" /> We check this before you pay — no surprises.
+                        </p>
                         <input type="text" wire:model="device" placeholder="e.g. iPhone 14, Galaxy S22"
                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
                         <button type="button" wire:click="checkDevice" wire:loading.attr="disabled"

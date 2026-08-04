@@ -48,6 +48,51 @@ class WizardTest extends TestCase
         \App\Support\ProviderKeys::flush();
     }
 
+    private function configureConnectLane(): void
+    {
+        // Zendit is the primary Naara Connect (voice+data eSIM) provider.
+        config(['services.zendit.api_key' => 'test-key']);
+        \App\Support\ProviderKeys::flush();
+    }
+
+    public function test_naara_connect_is_routed_through_the_esim_path_not_the_number_router(): void
+    {
+        // Regression for BUILD-6 §A.2: once a voice-lane key is configured,
+        // naara_connect appears as a purpose. Selecting it once led into the OTP
+        // 'service' step, which called quote()/SmsNumberRouter with an undefined
+        // MODEL_TYPE and threw "Unknown number type []". It must go to the eSIM
+        // device-check step instead and never reach the number router.
+        $this->configureConnectLane();
+        $user = User::factory()->create();
+        $country = array_key_first(\App\Support\NumberCatalogue::countries());
+
+        $comp = Livewire::actingAs($user)->test(Wizard::class);
+        $this->assertContains('naara_connect', collect($comp->instance()->purposes())->pluck('key')->all());
+
+        $comp->call('choosePurpose', 'naara_connect')
+            ->assertSet('model', 'naara_connect')
+            ->assertSet('step', 'country')
+            ->call('chooseCountry', $country)
+            ->assertSet('step', 'device')   // eSIM path, NOT 'service'
+            ->assertSet('error', null)
+            ->assertHasNoErrors();
+    }
+
+    public function test_naara_connect_hands_off_to_the_full_esim_tab(): void
+    {
+        $this->configureConnectLane();
+        $user = User::factory()->create();
+        $countries = \App\Support\NumberCatalogue::countries();
+        $country = array_key_first($countries);
+
+        Livewire::actingAs($user)->test(Wizard::class)
+            ->set('model', 'naara_connect')
+            ->set('country', $country)
+            ->set('step', 'device')
+            ->call('goToEsims')
+            ->assertRedirect(route('catalogue', ['q' => $countries[$country], 'tab' => 'full']));
+    }
+
     public function test_only_available_models_appear_as_purposes(): void
     {
         // No provider keys at all → no purposes offered (nothing to sell).
