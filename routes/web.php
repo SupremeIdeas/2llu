@@ -104,6 +104,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/referrals', Referrals::class)->name('referrals');
 
         // NaaraCredits rewards area (loyalty module) — opt-in earning.
+        Route::get('/receipts', \App\Livewire\Receipts::class)->name('receipts');
         Route::get('/rewards', \App\Livewire\Rewards::class)->name('rewards');
         // Brand Partner Hunt (BUILD-6 §C) — follow-to-earn NaaraCredits.
         Route::get('/rewards/hunt', \App\Livewire\BrandHunt::class)->name('rewards.hunt');
@@ -130,6 +131,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         // Merchant storefront dashboard (ROADMAP §Layer 3.5) — active merchants
         // only (404 otherwise): storefront, invite link, customers, earnings, payouts.
         Route::get('/merchant', \App\Livewire\MerchantDashboard::class)->name('merchant.dashboard');
+        // Merchant earnings analytics (BUILD-7 §3) — reporting over MerchantEarning.
+        Route::get('/merchant/earnings', \App\Livewire\MerchantEarnings::class)->name('merchant.earnings');
         // Merchant V2 — client management (404s for a non-V2 merchant).
         Route::get('/merchant/clients', \App\Livewire\MerchantClients::class)->name('merchant.clients');
 

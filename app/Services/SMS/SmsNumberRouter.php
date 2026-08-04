@@ -129,6 +129,9 @@ class SmsNumberRouter
                     'ordered_at' => now(),
                 ]);
 
+                // Itemised receipt (BUILD-7 §1) — best-effort, never blocks the order.
+                \App\Support\PurchaseReceipt::send($request->user, ucfirst($request->type).' number', $retail, 'NUM-'.$order->id);
+
                 return SmsOrderResult::success($provider, $order, $buy, $cost, $retail);
             } catch (OutOfStockException|MaintenanceException $e) {
                 $errors[$provider] = $e->getMessage(); // try next in the SAME lane

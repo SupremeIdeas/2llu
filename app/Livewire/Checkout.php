@@ -261,6 +261,8 @@ class Checkout extends Component
                 'wholesale_cost' => $result->cost,
                 'currency' => 'USD',
             ]);
+            // Itemised receipt (BUILD-7 §1) — best-effort, never blocks the order.
+            \App\Support\PurchaseReceipt::send($user, $this->plan->name, (float) $walletCharge, $ref);
         } catch (Throwable $e) {
             // Orphan-charge guard: charged + provider ordered, but we failed to
             // persist. Refund the money AND the redeemed credits, then alert.

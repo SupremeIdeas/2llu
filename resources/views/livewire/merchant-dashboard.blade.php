@@ -42,10 +42,11 @@
             <p class="text-xs text-slate-500 dark:text-slate-400">Available</p>
             <p class="mt-1 text-2xl font-bold text-primary dark:text-teal-300">${{ number_format($balance, 2) }}</p>
         </div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <a href="{{ route('merchant.earnings') }}" wire:navigate class="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-primary/40 hover:shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
             <p class="text-xs text-slate-500 dark:text-slate-400">Lifetime earned</p>
             <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">${{ number_format($lifetime, 2) }}</p>
-        </div>
+            <span class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary dark:text-teal-300">View analytics <x-icon name="chevron-right" class="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" /></span>
+        </a>
     </div>
 
     {{-- Merchant V2 --}}

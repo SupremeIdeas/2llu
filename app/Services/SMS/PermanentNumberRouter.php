@@ -167,7 +167,7 @@ class PermanentNumberRouter
 
         // 3) Persist the subscription. Orphan-charge guard: release + refund on failure.
         try {
-            return VirtualNumber::create([
+            $vnumber = VirtualNumber::create([
                 'user_id' => $user->id,
                 'provider' => $provider,
                 'phone_number' => $bought['number'],
@@ -179,6 +179,10 @@ class PermanentNumberRouter
                 'next_billing_date' => now()->addMonthNoOverflow()->toDateString(),
                 'provisioned_at' => now(),
             ]);
+            // Itemised receipt (BUILD-7 §1) for the first month — best-effort.
+            \App\Support\PurchaseReceipt::send($user, 'Permanent number (first month)', $retail, $ref);
+
+            return $vnumber;
         } catch (Throwable $e) {
             $svc->releaseNumber($bought['provider_ref']);
             $this->wallet->refund($user, $retail, 'USD', ['reference' => "refund:{$ref}", 'description' => 'Number could not be saved']);
