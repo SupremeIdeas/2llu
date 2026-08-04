@@ -70,4 +70,5 @@
             <a data-reveal href="{{ route('contact') }}" class="nx-btn nx-btn--primary mt-8 !px-8 !py-3">Contact Support</a>
         </section>
     @endif
+    @include('marketing._reused-sections')
 </x-layouts.marketing>

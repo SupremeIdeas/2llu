@@ -66,12 +66,17 @@ class SiteEditor extends Component
         $overrides = [];
 
         foreach ($this->sections as $key => $fields) {
+            // A reused/copied portable section has no default on THIS page, so
+            // its full field set is its override; diff against its canonical
+            // portable defaults instead so it still stores minimally.
+            $sectionDefaults = $defaults[$key] ?? (in_array($key, SiteContent::PORTABLE_SECTIONS, true) ? SiteContent::portableDefaults($key) : []);
+
             $sectionOverride = [];
             foreach ($fields as $field => $value) {
-                if (in_array($field, ['visible', 'order', 'image'], true)) {
+                if (in_array($field, ['visible', 'order', 'image', '_copied'], true)) {
                     continue;
                 }
-                if (($defaults[$key][$field] ?? null) !== $value) {
+                if (($sectionDefaults[$field] ?? null) !== $value) {
                     $sectionOverride[$field] = $value;
                 }
             }
@@ -152,15 +157,60 @@ class SiteEditor extends Component
     {
         abort_unless(str_ends_with($field, '_image'), 403);
 
-        // Back to the shipped default artwork rather than a blank slot.
-        $this->sections[$section][$field] = SiteContent::defaults()[$this->page][$section][$field] ?? '';
+        // Back to the shipped default artwork rather than a blank slot. A reused
+        // portable section has no default on this page, so fall back to its
+        // canonical portable default.
+        $this->sections[$section][$field] = SiteContent::defaults()[$this->page][$section][$field]
+            ?? (in_array($section, SiteContent::PORTABLE_SECTIONS, true) ? (SiteContent::portableDefaults($section)[$field] ?? '') : '');
     }
 
     public function resetSection(string $key): void
     {
-        $defaults = SiteContent::defaults()[$this->page][$key] ?? [];
+        $defaults = SiteContent::defaults()[$this->page][$key]
+            ?? (in_array($key, SiteContent::PORTABLE_SECTIONS, true) ? SiteContent::portableDefaults($key) : []);
         $order = $this->sections[$key]['order'] ?? 0;
-        $this->sections[$key] = array_merge($defaults, ['visible' => true, 'order' => $order, 'image' => '']);
+        $copied = $this->sections[$key]['_copied'] ?? false;
+        $this->sections[$key] = array_merge($defaults, array_filter([
+            'visible' => true, 'order' => $order, 'image' => '', '_copied' => $copied ?: null,
+        ], fn ($v) => $v !== null));
+    }
+
+    /**
+     * Copy a portable section from the current page onto another page (reusable
+     * sections). The current (working) field values are snapshotted so any
+     * unsaved edits carry over. Only portable sections offer this action.
+     */
+    public function copyTo(string $key, string $target): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        $fields = $this->sections[$key] ?? [];
+        $ok = SiteContent::copySection($key, $fields, $target, (string) ($fields['image'] ?? ''));
+
+        if ($ok) {
+            Auditor::log('site.section_copied', null, null, ['section' => $key, 'from' => $this->page, 'to' => $target]);
+            $this->dispatch('nx-toast', type: 'success', message: 'Section copied to the '.$target.' page.');
+        } else {
+            $this->dispatch('nx-toast', type: 'error', message: 'That section can’t be reused on another page.');
+        }
+    }
+
+    /**
+     * Remove a reused/copied section from the current page. Native (shipped)
+     * sections are hidden via the visible toggle, not removed — only a copied
+     * instance can be deleted.
+     */
+    public function removeSection(string $key): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        if (! ($this->sections[$key]['_copied'] ?? false)) {
+            return;
+        }
+
+        unset($this->sections[$key]);
+        $this->save();
+        $this->dispatch('nx-toast', type: 'success', message: 'Reused section removed.');
     }
 
     public function render()

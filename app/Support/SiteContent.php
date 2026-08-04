@@ -19,6 +19,36 @@ class SiteContent
     public const PAGES = ['home', 'about', 'how-it-works', 'contact'];
 
     /**
+     * Sections that are self-contained and safe to reuse on ANY marketing page
+     * (BUILD: reusable sections). Each renders through a shared partial —
+     * `resources/views/marketing/sections/{key}.blade.php` — rather than a
+     * page-specific one, so a copy of it renders identically wherever it lands.
+     * Page-bespoke sections (hero copy, the contact form, …) are NOT portable.
+     *
+     * @var list<string>
+     */
+    public const PORTABLE_SECTIONS = ['audiences'];
+
+    /**
+     * The canonical default fields for a portable section, wherever it is
+     * defined in the shipped copy (portable sections live under one home page by
+     * default). Used so a COPIED instance on another page still knows its field
+     * shape — for editing, diffing and reset.
+     *
+     * @return array<string, string>
+     */
+    public static function portableDefaults(string $key): array
+    {
+        foreach (self::defaults() as $sections) {
+            if (isset($sections[$key])) {
+                return $sections[$key];
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * The shipped copy. page => section => [fields]. Reserved keys the editor
      * adds per section: visible (bool), order (int), image (url).
      * List-ish content is kept as numbered fields so the editor stays a flat,
@@ -287,6 +317,26 @@ class SiteContent
             $position++;
         }
 
+        // Copied-in portable sections: a portable section reused on this page
+        // lives only in this page's overrides (it has no default here). Rebuild
+        // it from its canonical portable defaults + the stored override so it
+        // renders and edits like a native section. (Reused sections feature.)
+        foreach ($overrides as $key => $over) {
+            if (isset($sections[$key]) || ! in_array($key, self::PORTABLE_SECTIONS, true)) {
+                continue;
+            }
+            $base = self::portableDefaults($key);
+            if ($base === []) {
+                continue;
+            }
+            $merged = array_merge($base, array_filter($over, fn ($v) => $v !== null && $v !== ''));
+            $merged['visible'] = array_key_exists('visible', $over) ? (bool) $over['visible'] : true;
+            $merged['order'] = array_key_exists('order', $over) ? (int) $over['order'] : $position++;
+            $merged['image'] = $over['image'] ?? '';
+            $merged['_copied'] = true; // marks a reused section for the editor UI
+            $sections[$key] = $merged;
+        }
+
         uasort($sections, fn ($a, $b) => $a['order'] <=> $b['order']);
 
         if (! $includeHidden) {
@@ -315,6 +365,46 @@ class SiteContent
     {
         Setting::setValue('site.page.'.$page, $overrides, 'site', 'Marketing page overrides.');
         self::flush($page);
+    }
+
+    /**
+     * Copy a portable section onto another page (reusable sections feature). The
+     * section's current field values are snapshotted into the target page's
+     * overrides under the same key, made visible, and appended to the end. Only
+     * portable sections can be copied — a page-bespoke section has no shared
+     * partial to render through elsewhere.
+     *
+     * @param  array<string, mixed>  $fields  the section's field values (no reserved keys)
+     */
+    public static function copySection(string $key, array $fields, string $toPage, string $image = ''): bool
+    {
+        if (! in_array($key, self::PORTABLE_SECTIONS, true) || ! in_array($toPage, self::PAGES, true)) {
+            return false;
+        }
+
+        $overrides = self::overrides($toPage);
+
+        // Append after everything currently on the target page.
+        $maxOrder = -1;
+        foreach ($overrides as $o) {
+            $maxOrder = max($maxOrder, (int) ($o['order'] ?? 0));
+        }
+        foreach (self::page($toPage, includeHidden: true) as $s) {
+            $maxOrder = max($maxOrder, (int) ($s['order'] ?? 0));
+        }
+
+        // Strip reserved/marker keys from the snapshot; store just the content.
+        $clean = array_diff_key($fields, array_flip(['visible', 'order', 'image', '_copied']));
+
+        $overrides[$key] = $clean + [
+            'visible' => true,
+            'order' => $maxOrder + 1,
+            'image' => $image,
+        ];
+
+        self::saveOverrides($toPage, $overrides);
+
+        return true;
     }
 
     public static function flush(?string $page = null): void

@@ -1,6 +1,8 @@
 <x-layouts.marketing>
     @foreach ($sections as $key => $s)
-        @includeIf('marketing.home.'.$key, ['s' => $s])
+        {{-- Page-specific partial wins; a portable/reused section falls back to
+             the shared `marketing.sections.*` partial so it renders anywhere. --}}
+        @includeFirst(['marketing.home.'.$key, 'marketing.sections.'.$key], ['s' => $s])
 
         {{-- Decorative, non-CMS sections injected at fixed anchors so the admin's
              section ordering stays intact. --}}

@@ -35,6 +35,9 @@
                         @unless ($fields['visible'] ?? true)
                             <x-ui.tag variant="soon">Hidden</x-ui.tag>
                         @endunless
+                        @if ($fields['_copied'] ?? false)
+                            <span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary dark:bg-primary/20 dark:text-teal-300">Reused</span>
+                        @endif
                     </span>
                     <span class="flex items-center gap-1.5" x-on:click.prevent.stop>
                         <button type="button" wire:click="moveSection('{{ $key }}', -1)" title="Move up"
@@ -53,7 +56,7 @@
 
                 <div class="space-y-3 border-t border-slate-100 p-4 dark:border-[#243352]">
                     @foreach ($fields as $field => $value)
-                        @continue(in_array($field, ['visible', 'order', 'image'], true))
+                        @continue(in_array($field, ['visible', 'order', 'image', '_copied'], true))
                         {{-- Inline artwork fields (e.g. the three step renders) get an
                              image control instead of a text box. --}}
                         @if (str_ends_with($field, '_image'))
@@ -110,8 +113,29 @@
                                 {{ empty($fields['image']) ? 'Add image' : 'Replace image' }}
                             </button>
                         @endif
-                        <button type="button" wire:click="resetSection('{{ $key }}')" wire:confirm="Restore this section to the original brand copy?"
-                                class="ml-auto text-xs font-medium text-slate-400 hover:text-red-600 hover:underline">Reset section</button>
+                        {{-- Reuse on another page (portable sections only). --}}
+                        @if (in_array($key, \App\Support\SiteContent::PORTABLE_SECTIONS, true))
+                            <div class="ml-auto flex items-center gap-2" x-data="{ target: '' }">
+                                <label class="text-xs font-medium text-slate-500 dark:text-slate-400">Copy to</label>
+                                <select x-model="target" class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                    <option value="">Choose a page…</option>
+                                    @foreach ($pages as $p)
+                                        @continue($p === $page)
+                                        <option value="{{ $p }}">{{ ucfirst(str_replace('-', ' ', $p)) }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button"
+                                        x-on:click="if (target) { $wire.copyTo('{{ $key }}', target); target = '' }"
+                                        class="rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/10 dark:border-primary/40 dark:text-teal-300">Copy</button>
+                            </div>
+                        @endif
+                        @if ($fields['_copied'] ?? false)
+                            <button type="button" wire:click="removeSection('{{ $key }}')" wire:confirm="Remove this reused section from this page?"
+                                    class="text-xs font-medium text-slate-400 hover:text-red-600 hover:underline">Remove</button>
+                        @else
+                            <button type="button" wire:click="resetSection('{{ $key }}')" wire:confirm="Restore this section to the original brand copy?"
+                                    class="{{ in_array($key, \App\Support\SiteContent::PORTABLE_SECTIONS, true) ? '' : 'ml-auto' }} text-xs font-medium text-slate-400 hover:text-red-600 hover:underline">Reset section</button>
+                        @endif
                     </div>
                 </div>
             </details>

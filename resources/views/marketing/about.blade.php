@@ -84,4 +84,5 @@
             </div>
         </section>
     @endif
+    @include('marketing._reused-sections')
 </x-layouts.marketing>

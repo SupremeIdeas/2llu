@@ -47,4 +47,5 @@
             </aside>
         @endif
     </section>
+    @include('marketing._reused-sections')
 </x-layouts.marketing>
