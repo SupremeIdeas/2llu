@@ -37,22 +37,47 @@ class CurrencyService
         'INR' => ['₹', 'Indian Rupee', 0, 83.0],
     ];
 
+    /**
+     * The single authoritative USD→NGN rate, used for BOTH display and payouts
+     * (they must never disagree — see rate()). The base is either a manual rate
+     * or Airalo's live mid-rate (the OFFICIAL/interbank rate). Nigerian customers
+     * transact at the higher parallel ("black-market") rate, and no free, reliable,
+     * ToS-clean parallel-rate feed exists — so an admin-set markup (%) lifts the
+     * official base to track that parallel premium. Manual mode + 0% markup = the
+     * exact rate the admin types. Cached 1h; busted on any pricing.* / manual save.
+     */
     public function getUsdToNgn(): float
     {
         return Cache::remember('usd_ngn_rate', 3600, function () {
-            if (Setting::getValue('pricing.ngn_rate_source', 'auto') === 'manual') {
-                return (float) Setting::getValue('pricing.manual_ngn_rate', self::FALLBACK_RATE);
-            }
+            $base = $this->baseUsdToNgn();
+            $markup = (float) Setting::getValue('pricing.ngn_rate_markup_pct', 0);
+            $markup = max(0.0, min(50.0, $markup)); // clamp 0–50%
 
-            try {
-                $rates = app('esim.airalo')->getExchangeRates();
-                $ngn = collect($rates['rates'] ?? [])->firstWhere('to', 'NGN')['mid'] ?? null;
-
-                return $ngn ? (float) $ngn : self::FALLBACK_RATE;
-            } catch (\Throwable $e) {
-                return (float) Setting::getValue('pricing.manual_ngn_rate', self::FALLBACK_RATE);
-            }
+            return round($base * (1 + $markup / 100), 2);
         });
+    }
+
+    /** The base rate before the parallel-market markup: manual, or Airalo's live official mid-rate. */
+    private function baseUsdToNgn(): float
+    {
+        if (Setting::getValue('pricing.ngn_rate_source', 'auto') === 'manual') {
+            return (float) Setting::getValue('pricing.manual_ngn_rate', self::FALLBACK_RATE);
+        }
+
+        try {
+            $rates = app('esim.airalo')->getExchangeRates();
+            $ngn = collect($rates['rates'] ?? [])->firstWhere('to', 'NGN')['mid'] ?? null;
+
+            return $ngn ? (float) $ngn : self::FALLBACK_RATE;
+        } catch (\Throwable $e) {
+            return (float) Setting::getValue('pricing.manual_ngn_rate', self::FALLBACK_RATE);
+        }
+    }
+
+    /** Bust the cached NGN rate so an admin rate/markup change takes effect at once. */
+    public function flushNgnRate(): void
+    {
+        Cache::forget('usd_ngn_rate');
     }
 
     /**

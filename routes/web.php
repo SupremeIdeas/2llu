@@ -198,6 +198,7 @@ Route::middleware(['admin', 'throttle:admin'])
         // Admin configuration — super_admin & admin only (staff excluded).
         Route::middleware('role:super_admin|admin')->group(function () {
             Route::get('/pricing', \App\Livewire\Admin\Pricing::class)->name('pricing');
+            Route::get('/exchange-rates', \App\Livewire\Admin\ExchangeRates::class)->name('exchange-rates');
             Route::get('/pricing/architect', \App\Livewire\Admin\PricingArchitect::class)->name('pricing-architect');
             Route::get('/errors', \App\Livewire\Admin\ErrorLogViewer::class)->name('errors');
             // Feature toggles (owner request) — switch features on/off + setup guides.
