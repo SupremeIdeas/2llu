@@ -144,7 +144,10 @@
 
     {{-- ============ MOBILE: "More" sheet ============ --}}
     <div x-show="moreOpen" x-cloak class="fixed inset-0 z-50 lg:hidden" style="display:none;">
-        <div x-show="moreOpen" x-transition.opacity @click="moreOpen = false" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        {{-- HOTFIX §6: no backdrop-blur here — animating blur alongside the
+             sheet's slide-up transform causes GPU-compositing artifacts on many
+             Android builds. The dim alone is enough; the sheet is already opaque. --}}
+        <div x-show="moreOpen" x-transition.opacity @click="moreOpen = false" class="absolute inset-0 bg-black/40"></div>
         <div x-show="moreOpen"
              x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-y-full" x-transition:enter-end="translate-y-0"
              x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-y-0" x-transition:leave-end="translate-y-full"

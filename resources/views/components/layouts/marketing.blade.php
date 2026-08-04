@@ -32,7 +32,7 @@
             ];
         @endphp
         <header x-data="{ open: false }" class="pointer-events-none sticky top-0 z-50 px-3 pt-4 sm:px-4">
-            <nav class="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-3 rounded-2xl border border-white/50 bg-white/70 px-2.5 py-2 shadow-xl shadow-slate-900/5 ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-[#0D1B2A]/70 dark:ring-white/10">
+            <nav class="pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-3 rounded-2xl border border-white/50 bg-white/90 px-2.5 py-2 shadow-xl shadow-slate-900/5 ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-[#0D1B2A]/90 dark:ring-white/10">
                 <a href="{{ route('home') }}" wire:navigate class="shrink-0 pl-1.5"><x-brand-logo variant="family" class="h-8 max-w-[140px]" /></a>
 
                 <div class="hidden items-center gap-7 text-sm font-medium text-slate-600 lg:flex dark:text-slate-300">
@@ -65,7 +65,10 @@
             {{-- Glass mega-menu panel --}}
             <div x-show="open" x-cloak x-transition.origin.top
                  @click.outside="open = false" @keydown.escape.window="open = false"
-                 class="pointer-events-auto mx-auto mt-2 max-w-5xl overflow-hidden rounded-2xl border border-white/50 bg-white/85 shadow-2xl shadow-slate-900/10 ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-[#0D1B2A]/90 dark:ring-white/10">
+                 {{-- HOTFIX §7: real scroll container (was overflow-hidden with
+                      no max-h → tall content clipped off-viewport on mobile).
+                      §5: raised opacity so it's legible without backdrop-blur. --}}
+                 class="pointer-events-auto mx-auto mt-2 max-h-[calc(100dvh-6rem)] max-w-5xl overflow-y-auto overscroll-contain rounded-2xl border border-white/50 bg-white/95 shadow-2xl shadow-slate-900/10 ring-1 ring-black/5 backdrop-blur-xl [-webkit-overflow-scrolling:touch] dark:border-white/10 dark:bg-[#0D1B2A]/95 dark:ring-white/10">
                 <div class="grid gap-6 p-5 sm:grid-cols-3 sm:p-6">
                     @foreach (['Products' => $navProducts, 'Developers' => $navDevelopers, 'Company' => $navCompany] as $heading => $items)
                         <div>

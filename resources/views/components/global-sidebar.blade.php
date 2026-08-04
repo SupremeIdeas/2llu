@@ -22,13 +22,16 @@
 
     {{-- Backdrop --}}
     <div x-show="open" x-cloak x-transition.opacity @click="open = false"
-         class="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"></div>
+         class="fixed inset-0 z-[70] bg-black/40"></div>
 
     {{-- Panel — glassmorphism. --}}
     <aside x-show="open" x-cloak
            x-transition:enter="transition ease-out duration-250" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
-           class="fixed inset-y-0 right-0 z-[71] flex w-[85vw] max-w-sm flex-col border-l border-white/30 bg-white/75 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-[#0D1B2A]/80"
+           {{-- HOTFIX §5: high baseline opacity so the panel is legible even
+                where backdrop-blur silently fails (some Android). Blur is a
+                nice-to-have layered on top, never the only contrast. --}}
+           class="fixed inset-y-0 right-0 z-[71] flex w-[85vw] max-w-sm flex-col border-l border-white/30 bg-white/95 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-[#0D1B2A]/95"
            style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);">
 
         <div class="flex items-center justify-between border-b border-white/30 px-5 py-4 dark:border-white/10">
