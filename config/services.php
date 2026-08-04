@@ -139,6 +139,21 @@ return [
         'base_url' => env('TELNYX_BASE_URL', 'https://api.telnyx.com/v2'),
     ],
 
+    // WhatsApp Cloud API (Meta) — WhatsApp Autopilot (BUILD-4 §7). Automated,
+    // template-based lifecycle notifications (order delivered, renewal reminder,
+    // …). phone_number_id + access_token are required to be Active; app_secret
+    // verifies inbound webhooks (X-Hub-Signature-256); verify_token answers the
+    // webhook GET handshake. All blank by default → the feature is Coming Soon.
+    'whatsapp' => [
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'access_token' => env('WHATSAPP_ACCESS_TOKEN'),
+        'waba_id' => env('WHATSAPP_WABA_ID'),
+        'app_secret' => env('WHATSAPP_APP_SECRET'),
+        'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
+        'graph_version' => env('WHATSAPP_GRAPH_VERSION', 'v21.0'),
+        'default_lang' => env('WHATSAPP_DEFAULT_LANG', 'en'),
+    ],
+
     'twilio' => [
         'account_sid' => env('TWILIO_ACCOUNT_SID'),
         'auth_token' => env('TWILIO_AUTH_TOKEN'),

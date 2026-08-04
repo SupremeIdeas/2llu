@@ -45,6 +45,28 @@
                     @error('phone') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
             </div>
+
+            {{-- WhatsApp Autopilot opt-in (§7). Only surfaced once the operator
+                 has WhatsApp live; entirely opt-in, and the user can leave any
+                 time (here, or by replying STOP on WhatsApp). --}}
+            @if (\App\Support\ProviderStatus::isActive('whatsapp'))
+                <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-[#2D4060] dark:bg-[#141F33]">
+                    <label class="flex items-start gap-3">
+                        <input type="checkbox" wire:model="whatsappOptIn" class="mt-0.5 rounded border-slate-300 text-primary focus:ring-primary dark:border-[#2D4060]">
+                        <span class="text-sm">
+                            <span class="flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-100">
+                                <x-icon name="message-circle" class="h-4 w-4 text-primary" /> Get updates on WhatsApp
+                            </span>
+                            <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Order confirmations, delivery and renewal reminders. Reply STOP any time to leave.</span>
+                        </span>
+                    </label>
+                    <div class="mt-3" x-data x-show="$wire.whatsappOptIn" x-cloak>
+                        <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">WhatsApp number <span class="font-normal text-slate-400">(optional — defaults to your phone)</span></label>
+                        <input type="tel" wire:model="whatsappNumber" placeholder="+2348012345678" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        @error('whatsappNumber') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+            @endif
             <div class="mt-4">
                 <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Bio <span class="font-normal text-slate-400">(optional)</span></label>
                 <textarea wire:model="bio" rows="3" maxlength="400" placeholder="A little about you…" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100"></textarea>

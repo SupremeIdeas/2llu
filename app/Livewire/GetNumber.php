@@ -6,10 +6,23 @@ use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\SmsException;
 use App\Jobs\PollSmsOtpJob;
 use App\Models\SmsOrder;
+use App\Notifications\OrderPlacedNotification;
+use App\Services\Credits\CreditService;
+use App\Services\Merchants\MerchantEarningsService;
 use App\Services\Pricing\CouponEngine;
+use App\Services\Pricing\PricingEngine;
 use App\Services\SMS\NumberRequest;
+use App\Services\SMS\PermanentNumberRouter;
 use App\Services\SMS\SmsNumberRouter;
 use App\Services\Wallet\WalletService;
+use App\Services\WhatsApp\WhatsAppAutopilot;
+use App\Support\CountryNames;
+use App\Support\CreditSettings;
+use App\Support\Mailer;
+use App\Support\MerchantBranding;
+use App\Support\NumberCatalogue;
+use App\Support\PendingCoupon;
+use App\Support\ProviderStatus;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -61,7 +74,7 @@ class GetNumber extends Component
     {
         // Pre-fill a coupon claimed from an offer (one-tap path); still validated
         // + MarginGuard-clamped when applied.
-        $this->coupon = \App\Support\PendingCoupon::peek() ?? '';
+        $this->coupon = PendingCoupon::peek() ?? '';
 
         // Deep-linked modal (e.g. ?modal=line from "Get a Naara Line"): apply the
         // same request-type default openModal() would, and drop an unknown value.
@@ -202,7 +215,7 @@ class GetNumber extends Component
 
     public ?string $lineDone = null;
 
-    public function searchLine(\App\Services\SMS\PermanentNumberRouter $router): void
+    public function searchLine(PermanentNumberRouter $router): void
     {
         $this->error = null;
         $this->lineDone = null;
@@ -229,7 +242,7 @@ class GetNumber extends Component
         }
     }
 
-    public function getLine(string $number, \App\Services\SMS\PermanentNumberRouter $router): void
+    public function getLine(string $number, PermanentNumberRouter $router): void
     {
         $this->error = null;
         $user = auth()->user();
@@ -269,13 +282,13 @@ class GetNumber extends Component
 
         $this->lineDone = $vnum->phone_number ?? $number;
         $this->lineNumbers = [];
-        \App\Support\Mailer::notify($user, new \App\Notifications\OrderPlacedNotification('number', 'Naara Line', (float) $vnum->monthly_retail, 'USD'));
+        Mailer::notify($user, new OrderPlacedNotification('number', 'Naara Line', (float) $vnum->monthly_retail, 'USD'));
         $this->dispatch('nx-toast', variant: 'hero', type: 'success', title: 'Naara Line active',
             message: 'Your permanent number is ready — set up call forwarding or the dialer from your dashboard.',
             cta: ['label' => 'View my numbers', 'href' => route('dashboard')]);
     }
 
-    public function order(WalletService $wallet, SmsNumberRouter $router, CouponEngine $coupons, \App\Services\Pricing\PricingEngine $pricing, \App\Services\Merchants\MerchantEarningsService $earnings): void
+    public function order(WalletService $wallet, SmsNumberRouter $router, CouponEngine $coupons, PricingEngine $pricing, MerchantEarningsService $earnings): void
     {
         $this->error = null;
         $this->couponNote = null;
@@ -297,7 +310,7 @@ class GetNumber extends Component
             $best = $router->cheapestCountryFor($this->service);
             if ($best !== null) {
                 $this->country = $best;
-                $this->countryName = \App\Support\CountryNames::name($best) ?: ucfirst($best);
+                $this->countryName = CountryNames::name($best) ?: ucfirst($best);
             }
             $operator = null; // best country implies best operator
         }
@@ -315,7 +328,7 @@ class GetNumber extends Component
         // merchant price (retail + admin-set reseller margin); the M−R upcharge is
         // accrued to that merchant after the number is reserved. plainRetail is
         // the accrual floor so the admin's own margin is never given away.
-        $merchant = \App\Support\MerchantBranding::forCustomer($user);
+        $merchant = MerchantBranding::forCustomer($user);
         $plainRetail = (float) $quote['retail'];
         $retail = $merchant !== null
             ? $pricing->merchantSmsPrice((float) $quote['cost'], $quote['provider'], $merchant)
@@ -390,12 +403,17 @@ class GetNumber extends Component
         }
 
         // Order-confirmation email (best-effort; never blocks the money path).
-        \App\Support\Mailer::notify($user, new \App\Notifications\OrderPlacedNotification('number', ucfirst($this->service), $retail, 'USD'));
+        Mailer::notify($user, new OrderPlacedNotification('number', ucfirst($this->service), $retail, 'USD'));
+
+        // WhatsApp Autopilot (§7): mirror to WhatsApp for opted-in users (gated,
+        // best-effort — queues a template or silently no-ops).
+        app(WhatsAppAutopilot::class)
+            ->notify($user, 'number_delivered', [$user->name ?: 'there', ucfirst($this->service)]);
 
         // First-purchase NaaraCredits bonus (loyalty; idempotent, best-effort).
-        app(\App\Services\Credits\CreditService::class)->grantOnce(
+        app(CreditService::class)->grantOnce(
             $user,
-            (float) \App\Support\CreditSettings::get('first_purchase_bonus', 0),
+            (float) CreditSettings::get('first_purchase_bonus', 0),
             'first_purchase',
             'First purchase bonus',
         );
@@ -454,20 +472,20 @@ class GetNumber extends Component
 
         return view('livewire.get-number', [
             'order' => $order,
-            'countries' => \App\Support\NumberCatalogue::countries(),
-            'services' => \App\Support\NumberCatalogue::services(),
+            'countries' => NumberCatalogue::countries(),
+            'services' => NumberCatalogue::services(),
             // "Any service" (full rent) is only offered when a full-rent-capable
             // provider is configured, so there's never a dead option.
-            'fullRentAvailable' => \App\Support\ProviderStatus::isActive('herosms')
-                || \App\Support\ProviderStatus::isActive('virtsms'),
+            'fullRentAvailable' => ProviderStatus::isActive('herosms')
+                || ProviderStatus::isActive('virtsms'),
             'modalPrice' => $modalPrice,
             'operators' => $operators,
             // US rentals (Getatext) can pick a longer duration; elsewhere it's a
             // short-term rental at the provider's fixed period.
             'isUsRental' => $this->isUsRental(),
             'rentalDurations' => NumberRequest::RENTAL_DURATIONS,
-            'permanentAvailable' => \App\Support\ProviderStatus::isActive('twilio')
-                || \App\Support\ProviderStatus::isActive('telnyx'),
+            'permanentAvailable' => ProviderStatus::isActive('twilio')
+                || ProviderStatus::isActive('telnyx'),
         ]);
     }
 }

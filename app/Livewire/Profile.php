@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Services\Pricing\CurrencyService;
+use App\Support\LocaleCurrency;
 use App\Support\MediaStorage;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -23,6 +24,10 @@ class Profile extends Component
     public string $name = '';
 
     public string $phone = '';
+
+    public string $whatsappNumber = '';
+
+    public bool $whatsappOptIn = false;
 
     public string $bio = '';
 
@@ -45,13 +50,15 @@ class Profile extends Component
         $u = Auth::user();
         $this->name = (string) $u->name;
         $this->phone = (string) $u->phone;
+        $this->whatsappNumber = (string) $u->whatsapp_number;
+        $this->whatsappOptIn = (bool) $u->whatsapp_opt_in;
         $this->bio = (string) $u->bio;
         $this->city = (string) $u->city;
         $this->addressLine = (string) $u->address_line;
         $this->postalCode = (string) $u->postal_code;
         $this->countryCode = (string) $u->country_code;
         $this->dateOfBirth = $u->date_of_birth?->format('Y-m-d') ?? '';
-        $this->displayCurrency = \App\Support\LocaleCurrency::resolve($u);
+        $this->displayCurrency = LocaleCurrency::resolve($u);
     }
 
     protected function rules(): array
@@ -59,6 +66,8 @@ class Profile extends Component
         return [
             'name' => ['required', 'string', 'max:120'],
             'phone' => ['nullable', 'string', 'max:32'],
+            'whatsappNumber' => ['nullable', 'string', 'max:32'],
+            'whatsappOptIn' => ['boolean'],
             'bio' => ['nullable', 'string', 'max:400'],
             'city' => ['nullable', 'string', 'max:80'],
             'addressLine' => ['nullable', 'string', 'max:160'],
@@ -75,9 +84,15 @@ class Profile extends Component
         $this->validate();
         $u = Auth::user();
 
+        // Opt-in only counts when we actually have a number to reach them on.
+        $waNumber = $this->whatsappNumber ?: null;
+        $optIn = $this->whatsappOptIn && ($waNumber || $this->phone);
+
         $data = [
             'name' => trim($this->name),
             'phone' => $this->phone ?: null,
+            'whatsapp_number' => $waNumber,
+            'whatsapp_opt_in' => $optIn,
             'bio' => $this->bio ?: null,
             'city' => $this->city ?: null,
             'address_line' => $this->addressLine ?: null,
@@ -91,7 +106,7 @@ class Profile extends Component
         }
 
         $u->forceFill($data)->save();
-        \App\Support\LocaleCurrency::choose($u, $this->displayCurrency);
+        LocaleCurrency::choose($u, $this->displayCurrency);
         $this->reset('avatar');
 
         $this->dispatch('nx-toast', type: 'success', message: 'Profile saved.');

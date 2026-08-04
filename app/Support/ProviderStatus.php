@@ -26,6 +26,7 @@ class ProviderStatus
         'virtsms' => ['services.virtsms.api_key'],
         'twilio' => ['services.twilio.account_sid', 'services.twilio.auth_token'],
         'telnyx' => ['services.telnyx.api_key'],
+        'whatsapp' => ['services.whatsapp.phone_number_id', 'services.whatsapp.access_token'],
         'paystack' => ['services.paystack.secret_key'],
         'flutterwave' => ['services.flutterwave.secret_key'],
         'stripe' => ['services.stripe.secret_key'],

@@ -2,8 +2,14 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -12,7 +18,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
     /**
@@ -26,6 +32,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'avatar',
         'phone',
+        'whatsapp_number',
+        'whatsapp_opt_in',
         'country_code',
         'display_currency',
         'bio',
@@ -71,6 +79,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'security_questions' => 'array',
             'date_of_birth' => 'date',
             'is_active' => 'boolean',
+            'whatsapp_opt_in' => 'boolean',
             'deactivated_at' => 'datetime',
             'data_export_ready_at' => 'datetime',
             'deletion_requested_at' => 'datetime',
@@ -85,13 +94,13 @@ class User extends Authenticatable implements MustVerifyEmail
     /** Use our brand-templated, queued verification email. */
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new \App\Notifications\VerifyEmailNotification);
+        $this->notify(new VerifyEmailNotification);
     }
 
     /** Use our brand-templated, queued password-reset email. */
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     /**
@@ -126,56 +135,56 @@ class User extends Authenticatable implements MustVerifyEmail
 
     // -- Relationships -----------------------------------------------------
 
-    public function wallet(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function wallet(): HasOne
     {
         return $this->hasOne(UserWallet::class);
     }
 
-    public function walletTransactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function walletTransactions(): HasMany
     {
         return $this->hasMany(WalletTransaction::class);
     }
 
-    public function esimOrders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function esimOrders(): HasMany
     {
         return $this->hasMany(EsimOrder::class);
     }
 
-    public function smsOrders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function smsOrders(): HasMany
     {
         return $this->hasMany(SmsOrder::class);
     }
 
-    public function virtualNumbers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function virtualNumbers(): HasMany
     {
         return $this->hasMany(VirtualNumber::class);
     }
 
     /** People this user referred. */
-    public function referralsMade(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function referralsMade(): HasMany
     {
         return $this->hasMany(Referral::class, 'referrer_id');
     }
 
     /** The referral record that brought this user in (if any). */
-    public function referral(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function referral(): HasOne
     {
         return $this->hasOne(Referral::class, 'referred_id');
     }
 
     /** The merchant storefront this user OWNS (if they became a merchant). */
-    public function merchantAccount(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function merchantAccount(): HasOne
     {
         return $this->hasOne(Merchant::class, 'owner_user_id');
     }
 
-    public function partnerAccount(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function partnerAccount(): HasOne
     {
         return $this->hasOne(Partner::class, 'owner_user_id');
     }
 
     /** The merchant this user is a CUSTOMER of (co-branding follows this). */
-    public function merchant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function merchant(): BelongsTo
     {
         return $this->belongsTo(Merchant::class, 'merchant_id');
     }

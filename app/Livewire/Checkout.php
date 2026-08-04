@@ -7,13 +7,21 @@ use App\Exceptions\InsufficientBalanceException;
 use App\Jobs\AlertAdminJob;
 use App\Models\EsimOrder;
 use App\Models\EsimPlan;
+use App\Notifications\OrderPlacedNotification;
 use App\Services\Credits\CreditService;
 use App\Services\Credits\InsufficientCreditsException;
 use App\Services\eSIM\ProviderRouter;
+use App\Services\Merchants\MerchantEarningsService;
 use App\Services\Pricing\CouponEngine;
+use App\Services\Pricing\PricingEngine;
 use App\Services\Wallet\WalletService;
+use App\Services\WhatsApp\WhatsAppAutopilot;
+use App\Support\CreditSettings;
+use App\Support\Mailer;
+use App\Support\MerchantBranding;
 use App\Support\Niche\DeviceCompat;
 use App\Support\Niche\LpaActivation;
+use App\Support\PendingCoupon;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -62,7 +70,7 @@ class Checkout extends Component
         $this->plan = $plan;
         // Pre-fill a coupon the user claimed from an offer (one-tap path). It is
         // still validated + MarginGuard-clamped when applied/charged.
-        $this->coupon = \App\Support\PendingCoupon::peek() ?? '';
+        $this->coupon = PendingCoupon::peek() ?? '';
     }
 
     /** The retail the wallet is charged after a coupon (never below the floor). */
@@ -111,7 +119,7 @@ class Checkout extends Component
         }
     }
 
-    public function purchase(WalletService $wallet, ProviderRouter $router, CouponEngine $coupons, CreditService $credits, \App\Services\Pricing\PricingEngine $pricing, \App\Services\Merchants\MerchantEarningsService $earnings): void
+    public function purchase(WalletService $wallet, ProviderRouter $router, CouponEngine $coupons, CreditService $credits, PricingEngine $pricing, MerchantEarningsService $earnings): void
     {
         $user = auth()->user();
 
@@ -136,7 +144,7 @@ class Checkout extends Component
         // reseller pays the merchant price (retail + admin-set reseller margin);
         // the M−R upcharge is later accrued to that merchant. Everyone else pays
         // plain retail. plainRetail is kept as the accrual floor.
-        $merchant = \App\Support\MerchantBranding::forCustomer($user);
+        $merchant = MerchantBranding::forCustomer($user);
         if ($merchant !== null) {
             // Compute the plain retail through the engine (never the possibly-
             // stale generated column) so the accrual floor is exact.
@@ -289,12 +297,17 @@ class Checkout extends Component
 
         // Order-confirmation email (best-effort; never blocks the money path) —
         // shows the real money charged.
-        \App\Support\Mailer::notify($user, new \App\Notifications\OrderPlacedNotification('esim', $this->plan->name, $walletCharge, 'USD'));
+        Mailer::notify($user, new OrderPlacedNotification('esim', $this->plan->name, $walletCharge, 'USD'));
+
+        // WhatsApp Autopilot (§7): mirror the confirmation to WhatsApp for opted-in
+        // users. Fully gated + best-effort — queues a template or silently no-ops.
+        app(WhatsAppAutopilot::class)
+            ->notify($user, 'esim_delivered', [$user->name ?: 'there', $this->plan->name]);
 
         // First-purchase NaaraCredits bonus (loyalty; idempotent, best-effort).
         $credits->grantOnce(
             $user,
-            (float) \App\Support\CreditSettings::get('first_purchase_bonus', 0),
+            (float) CreditSettings::get('first_purchase_bonus', 0),
             'first_purchase',
             'First purchase bonus',
         );
@@ -330,7 +343,7 @@ class Checkout extends Component
         // Live credit-redemption quote for the UI (margin-capped, never cost).
         $creditBalance = $credits->balance(auth()->user());
         $creditQuote = ['usd' => 0.0, 'credits' => 0.0];
-        if (\App\Support\CreditSettings::enabled() && $creditBalance > 0) {
+        if (CreditSettings::enabled() && $creditBalance > 0) {
             $creditQuote = $credits->quoteRedemption(
                 auth()->user(),
                 $this->effectiveRetail($coupons),
@@ -339,7 +352,7 @@ class Checkout extends Component
         }
 
         return view('livewire.checkout', [
-            'creditsEnabled' => \App\Support\CreditSettings::enabled(),
+            'creditsEnabled' => CreditSettings::enabled(),
             'creditBalance' => $creditBalance,
             'creditQuote' => $creditQuote,
         ]);

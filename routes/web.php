@@ -314,3 +314,8 @@ Route::post('/webhooks/appbuild/{provider}', \App\Http\Controllers\Webhooks\AppB
 // idempotent, fills the three-state receipt so the redemption screen updates.
 Route::post('/webhooks/giftcards/{provider}', \App\Http\Controllers\Webhooks\GiftCardWebhookController::class)
     ->name('webhooks.giftcards');
+
+// WhatsApp Cloud API webhook (WhatsApp Autopilot §7): GET verify handshake +
+// X-Hub-Signature-256-verified POST for delivery status and STOP opt-outs.
+Route::match(['get', 'post'], '/webhooks/whatsapp', \App\Http\Controllers\Webhooks\WhatsAppWebhookController::class)
+    ->name('webhooks.whatsapp');
