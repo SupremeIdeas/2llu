@@ -47,7 +47,7 @@ class ProductLineSettings
                 ],
             ],
             [
-                'slug' => 'naara-connect', 'icon' => 'signal', 'hero_image' => '', 'is_draft' => true,
+                'slug' => 'naara-connect', 'icon' => 'signal', 'hero_image' => '', 'is_draft' => false,
                 'eyebrow' => 'One eSIM, one number, everything included',
                 'title' => 'Naara Connect',
                 'summary' => 'Calls, texts, and data on a single eSIM — with a real number attached. No juggling a data-only plan and a separate number app.',
@@ -73,16 +73,19 @@ class ProductLineSettings
                 ],
             ],
             [
-                'slug' => 'naara-rent', 'icon' => 'refresh', 'hero_image' => '', 'is_draft' => true,
+                'slug' => 'naara-rent', 'icon' => 'refresh', 'hero_image' => '', 'is_draft' => false,
                 'eyebrow' => 'A number for exactly as long as you need it',
                 'title' => 'Naara Rent',
-                'summary' => 'Short-term numbers for a trip, a project, or a verification window that needs to outlast a single code. No monthly commitment.',
+                'summary' => 'Rent a number for a trip, a project, or a verification window that needs to outlast a single code — then let it go. No monthly commitment.',
                 'cta_label' => 'Rent a number', 'cta_route' => 'numbers',
                 'modal_gallery' => [],
                 'modal_blocks' => [
                     ['heading' => 'The old ritual', 'text' => 'A one-time code is too short and a permanent line is too much — when you only need a number for a little while.'],
                     ['heading' => 'What happens now', 'text' => 'Rent a number for exactly the window you need — a trip, a project, a sign-up that has to outlast a single code — then let it go.'],
-                    ['heading' => 'Who it is for', 'text' => 'For the short-term need that does not deserve a monthly bill. (Rental durations are being finalised.)'],
+                    // Durations stated to match what the providers actually support:
+                    // long-term day/period rentals are a US (Getatext) capability; all
+                    // other lanes are short-term at the provider's set period.
+                    ['heading' => 'How long you can keep it', 'text' => 'US numbers rent long-term by the week, month, or quarter (1 week, 1 month or 3 months), with optional auto-renew. Numbers in other countries rent short-term for the provider\'s set period. You only ever pay retail for the window you choose.'],
                 ],
             ],
             [

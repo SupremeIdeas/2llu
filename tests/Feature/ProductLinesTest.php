@@ -27,7 +27,7 @@ class ProductLinesTest extends TestCase
         return $u;
     }
 
-    public function test_defaults_are_the_six_named_products_with_connect_and_rent_marked_draft(): void
+    public function test_defaults_are_the_six_named_products_all_finalized(): void
     {
         $slugs = array_column(ProductLineSettings::products(), 'slug');
         $this->assertSame(
@@ -35,12 +35,27 @@ class ProductLinesTest extends TestCase
             $slugs,
         );
 
+        // Connect + Rent copy has been owner-approved (no longer draft).
         $byslug = collect(ProductLineSettings::products())->keyBy('slug');
-        $this->assertTrue($byslug['naara-connect']['is_draft']);
-        $this->assertTrue($byslug['naara-rent']['is_draft']);
+        $this->assertFalse($byslug['naara-connect']['is_draft']);
+        $this->assertFalse($byslug['naara-rent']['is_draft']);
         $this->assertFalse($byslug['naara-data']['is_draft']);
         // Every product carries the 3-beat arc.
         $this->assertCount(3, $byslug['naara-data']['modal_blocks']);
+    }
+
+    public function test_rent_copy_scopes_day_length_rentals_to_us_numbers(): void
+    {
+        // Money/capability rule: never advertise durations a provider can't fulfil.
+        // Long day/period rentals are US-only (Getatext); other lanes are the
+        // provider's short fixed period. The finalized copy must say so.
+        $rent = collect(ProductLineSettings::products())->firstWhere('slug', 'naara-rent');
+        $durationBlock = collect($rent['modal_blocks'])->firstWhere('heading', 'How long you can keep it');
+
+        $this->assertNotNull($durationBlock);
+        $this->assertStringContainsString('US numbers', $durationBlock['text']);
+        $this->assertStringContainsString('3 months', $durationBlock['text']);       // = 90 days
+        $this->assertStringContainsString("provider's set period", $durationBlock['text']);
     }
 
     public function test_slides_map_products_and_send_guests_to_register(): void
