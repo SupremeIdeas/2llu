@@ -240,6 +240,13 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('super_admin') ? true : null;
         });
 
+        // Preloader Studio (BLUEPRINT-preloader-studio §4): feature modules teach
+        // the domain-agnostic preloader system about their own page types here,
+        // rather than the system hardcoding anything feature-specific. Idempotent
+        // and DB-guarded, so it's a no-op on a not-yet-migrated install.
+        \App\Support\PreloaderSettings::registerPageType('numbers', 'Numbers & Virtual Lines');
+        \App\Support\PreloaderSettings::registerPageType('gifts', 'Naara Gift');
+
         // Self-hosted web-push channel, addressable as 'webpush' in a
         // notification's via() (owner request — closed-tab notifications).
         Notification::extend(

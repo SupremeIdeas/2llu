@@ -34,7 +34,7 @@ use Livewire\Component;
  * by the capability router. Debits the live retail, orders through the lane,
  * then polls for the code. The user never sees a provider name or a cost.
  */
-#[Layout('components.layouts.customer')]
+#[Layout('components.layouts.customer', ['preloaderType' => 'numbers'])]
 class GetNumber extends Component
 {
     public string $country = 'usa';

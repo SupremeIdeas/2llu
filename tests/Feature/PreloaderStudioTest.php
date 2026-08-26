@@ -8,7 +8,9 @@ use App\Support\BrandSettings;
 use App\Support\PreloaderSettings;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Livewire\Admin\PreloaderStudio;
 use Illuminate\Support\Facades\Blade;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class PreloaderStudioTest extends TestCase
@@ -124,5 +126,57 @@ class PreloaderStudioTest extends TestCase
         request()->merge(['preloader_preview' => 'crystals']);
         $html = Blade::render('<x-brand-preloader page-type="dashboard" />');
         $this->assertStringContainsString('nx-pl--crystals', $html);
+    }
+
+    public function test_studio_page_is_admin_only(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $user = User::factory()->create();
+        $user->assignRole('user');
+
+        Livewire::actingAs($user)->test(PreloaderStudio::class)->assertForbidden();
+    }
+
+    public function test_admin_can_assign_and_tune_a_preset(): void
+    {
+        Livewire::actingAs($this->admin())->test(PreloaderStudio::class)
+            ->call('loadType', 'marketing')
+            ->call('selectPreset', 'wifi-rings')
+            ->set('enabled', true)
+            ->set('speed', 1.5)
+            ->set('loadingText', 'Almost there')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertSet('saved', 'marketing');
+
+        $cfg = PreloaderSettings::forPageType('marketing');
+        $this->assertSame('wifi-rings', $cfg['preset']);
+        $this->assertSame(1.5, $cfg['speed']);
+        $this->assertSame('Almost there', $cfg['loading_text']);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'preloader.assignment_updated']);
+    }
+
+    public function test_non_default_type_can_inherit_from_default(): void
+    {
+        Livewire::actingAs($this->admin())->test(PreloaderStudio::class)
+            ->call('loadType', 'checkout')
+            ->set('inherit', true)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        // Default resolves to the legacy safe default; checkout inherits it.
+        $this->assertSame(
+            PreloaderSettings::forPageType('default')['preset'],
+            PreloaderSettings::forPageType('checkout')['preset'],
+        );
+    }
+
+    public function test_loading_text_over_limit_is_rejected(): void
+    {
+        Livewire::actingAs($this->admin())->test(PreloaderStudio::class)
+            ->call('selectPreset', 'progress-text')
+            ->set('loadingText', str_repeat('x', 40))
+            ->call('save')
+            ->assertHasErrors('loadingText');
     }
 }

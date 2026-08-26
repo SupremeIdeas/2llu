@@ -217,6 +217,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/numbers-cards', \App\Livewire\Admin\NumbersBento::class)->name('numbers-cards');
             Route::get('/bento-icons', \App\Livewire\Admin\BentoIcons::class)->name('bento-icons');
             Route::get('/appearance', \App\Livewire\Admin\Splash::class)->name('appearance');
+            Route::get('/preloader-studio', \App\Livewire\Admin\PreloaderStudio::class)->name('preloader-studio');
             Route::get('/dashboard-theme', \App\Livewire\Admin\PlatformThemePage::class)->name('dashboard-theme');
             Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');
             Route::get('/site', \App\Livewire\Admin\SiteEditor::class)->name('site');
