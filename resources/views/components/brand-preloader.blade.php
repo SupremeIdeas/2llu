@@ -9,7 +9,18 @@
      page, and reduced-motion-aware. The background is painted inline before
      Alpine boots, so there is no theme flash. --}}
 @props(['pageType' => 'default'])
-@php($cfg = \App\Support\PreloaderSettings::forPageType($pageType))
+@php
+    $cfg = \App\Support\PreloaderSettings::forPageType($pageType);
+    // Admin-only debug preview (BLUEPRINT §7.2): ?preloader_preview=slug forces a
+    // preset on any page so the port can be verified preset-by-preset. Gated to
+    // privileged users, so it can never be triggered by a public visitor.
+    $nxPreview = request()->query('preloader_preview');
+    if ($nxPreview && ($u = auth()->user()) && $u->hasAnyRole(['super_admin', 'admin'])) {
+        if (\App\Support\PreloaderSettings::isLegacy($nxPreview) || isset(\App\Support\PreloaderSettings::PRESETS[$nxPreview])) {
+            $cfg = array_merge(\App\Support\PreloaderSettings::safeDefault(), ['preset' => $nxPreview, 'enabled' => true]);
+        }
+    }
+@endphp
 @if (! empty($cfg['enabled']))
     @php($isLegacy = \App\Support\PreloaderSettings::isLegacy($cfg['preset']))
     @php($nxPreFavicon = \App\Support\BrandSettings::favicon())
