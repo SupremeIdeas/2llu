@@ -86,6 +86,9 @@ class SocialHunt extends Component
         BrandPartner::create($data['brand'] + [
             'fallback_image' => $image,
             'is_active' => true,
+            // Admin-placed brands are always featured + live, above self-service (BUILD-9 §10.3).
+            'is_featured' => true,
+            'listing_status' => BrandPartner::STATUS_ACTIVE,
             'sort_order' => (int) BrandPartner::max('sort_order') + 1,
         ]);
         $this->reset('brand', 'brandImage');

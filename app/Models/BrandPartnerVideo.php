@@ -22,4 +22,21 @@ class BrandPartnerVideo extends Model
     {
         return $query->orderBy('sort_order')->orderBy('id');
     }
+
+    /** A privacy-friendly embed URL, or null if the id can't be parsed. */
+    public function embedUrl(): ?string
+    {
+        $url = (string) $this->video_url;
+        if ($this->platform === 'youtube') {
+            if (preg_match('#(?:v=|youtu\.be/|/embed/|/shorts/)([A-Za-z0-9_-]{6,})#', $url, $m)) {
+                return 'https://www.youtube-nocookie.com/embed/'.$m[1].'?autoplay=1&rel=0';
+            }
+        } elseif ($this->platform === 'vimeo') {
+            if (preg_match('#vimeo\.com/(?:video/)?(\d+)#', $url, $m)) {
+                return 'https://player.vimeo.com/video/'.$m[1].'?autoplay=1';
+            }
+        }
+
+        return null;
+    }
 }

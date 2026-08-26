@@ -32,7 +32,7 @@ return [
             // disk (https) or a local blob, and the privacy-friendly YouTube
             // embed. Turnstile appends its own origin to this frame-src at runtime.
             "media-src 'self' https: blob:",
-            "frame-src 'self' https://www.youtube-nocookie.com",
+            "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
         ])),
     ],
 
