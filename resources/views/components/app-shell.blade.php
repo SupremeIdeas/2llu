@@ -86,14 +86,22 @@
         </div>
     </aside>
 
-    {{-- ============ MOBILE: top brand bar ============ --}}
-    <header class="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/70 bg-white/80 px-4 py-3 backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/80">
+    {{-- ============ MOBILE: top brand bar ============
+         "Invisible until you need it" (BLUEPRINT-batch1-sections §1): a soft
+         gradient-fade glass header with no hard border, so content scrolls up
+         under it without a visible edge. Logo + actions stay fully opaque and
+         carry a subtle drop-shadow (in .nx-header-fade) so they never lose
+         contrast over busy content underneath. --}}
+    <header class="nx-header-fade sticky top-0 z-30 flex items-center justify-between px-4 py-3 lg:hidden">
         <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex items-center">
             <x-brand-logo :variant="$headerBrand['variant']" :label="$headerBrand['label']" size="md" :fallback-icon="$brandIcon" />
         </a>
         <div class="flex items-center gap-1">
             {{ $headerActions ?? '' }}
-            <x-theme-toggle />
+            {{-- Layouts that supply headerActions (customer) place the toggle
+                 themselves in the bell → toggle → hamburger order; only add one
+                 here for layouts that don't (admin), so it's never doubled. --}}
+            @unless (isset($headerActions))<x-theme-toggle />@endunless
         </div>
     </header>
 
@@ -103,7 +111,7 @@
              top-right of the content, mirroring the mobile header. A SEPARATE
              slot from the mobile one so each Livewire instance has its own id. --}}
         @isset($headerActionsDesktop)
-            <div class="sticky top-0 z-30 hidden items-center justify-end gap-1 border-b border-slate-200/60 bg-white/70 px-8 py-3 backdrop-blur-xl lg:flex dark:border-white/10 dark:bg-[#0D1B2A]/70">
+            <div class="nx-header-fade sticky top-0 z-30 hidden items-center justify-end gap-1 px-8 py-3 lg:flex">
                 {{ $headerActionsDesktop }}
             </div>
         @endisset
