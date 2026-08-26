@@ -718,3 +718,41 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
   until confirmed.
 - The flagged **sun-colour** decision was resolved to the brand's own warm gold
   (`--brand-accent`); change in Branding if a dedicated token is later preferred.
+
+---
+
+## BUILD-11 — Ambient gradient + email verification (403 / soft-gate)
+
+### Marketing ambient gradient (BLUEPRINT-ambient-gradient)
+- **Card border (§2):** `.nx-card::before` was `opacity:0` / hover-only — never seen
+  on touch (the primary device). Now an ambient floor (`0.35`) by default, full on
+  `:hover`/`:focus-within`. Global to every `.nx-card`, both themes.
+- **Light hero (§1):** `.nx-sechero.is-light` was a flat `#F6F8FA`. Added soft
+  low-opacity brand blobs on the near-white base (bright-tuned, not a copy of the
+  dark opacities).
+- **Reusable (§1/§3):** `.nx-ambient` utility + `<x-ambient-glow>` wrapper (light +
+  dark, brand tokens, reduced-motion). Applied to the homepage product-lines section.
+- Opacity values are the blueprint's starting points, pending an eyeball pass on
+  real imagery; the structural fix (floor ≠ 0, light gets the mechanism) is shipped.
+
+### Email verification (NAARA-BUILD-20 §1–2)
+- **403 fix (§1):** `trustProxies(at: '*')` + production `URL::forceScheme('https')`
+  — the shared-cPanel signed-URL scheme mismatch. Live `.env` APP_URL is an operator
+  step to confirm (not changed from here).
+- **Soft gate (§2):** `MailSettings::verificationMode()` (off | soft | **soft-default**
+  | hard). `EnsureVerifiedWhenMailConfigured` only blocks in `hard`; soft nudges with
+  a dismissible banner and never blocks a purchase. Three-way choice in Admin → Email.
+- **⚠ Behaviour change to flag for Frank:** existing installs now default to `soft`
+  (was hard-block once mail configured). Set to `hard` in Admin → Email to restore.
+
+### Still outstanding from this batch (need scope/infra decisions)
+- **Email Studio (NAARA-BUILD-20 §3):** template editor (per-notification override
+  wiring across ~12 notifications) + broadcast/campaign engine (audience segments,
+  batched queue, send history). Large; not started.
+- **Laravel Production-Readiness blueprint:** 14 domains. Several are pure-code and
+  partly already present (Domain 13 webhook HMAC + idempotency — verify() gaps;
+  Domain 10 CI/branch-protection — PR flow already used). Most (edge WAF, DB
+  replicas, session replay, Capacitor mobile security, error budgets) are
+  infrastructure/ops decisions requiring Frank's environment choices. Its two
+  governing rules (confirm-before-build; admin-configurable + self-test) were
+  applied to everything built this session.
