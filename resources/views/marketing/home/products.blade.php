@@ -5,7 +5,7 @@
      product a slide, its floating action button opening a deep 3-beat modal.
      Replaces the old shallow p1..p4 panels. --}}
 @php($productSlides = \App\Support\ProductLineSettings::slides())
-<section class="px-4 py-20" data-bg="light">
+<x-ambient-glow class="px-4 py-20" data-bg="light">
     <div class="mx-auto w-full max-w-5xl">
         <div class="text-center">
             <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $s['eyebrow'] }}</p>
@@ -19,4 +19,4 @@
             <x-storytelling-carousel :slides="$productSlides" section-key="product-lines" height="h-72 sm:h-[26rem]" />
         </div>
     </div>
-</section>
+</x-ambient-glow>

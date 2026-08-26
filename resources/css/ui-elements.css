@@ -648,12 +648,16 @@
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    opacity: 0;
+    /* Ambient by default (BLUEPRINT-ambient-gradient §2). Was opacity:0 / hover-only
+       — but :hover doesn't exist on touch, so on a phone (the primary device) this
+       brand gradient border was never seen, reading as "flat". A subtle floor now,
+       full strength on real interaction. Theme-independent (same cause both modes). */
+    opacity: 0.35;
     transition: opacity 0.35s;
     pointer-events: none;
 }
 .nx-card:hover { transform: translateY(-4px); box-shadow: 0 16px 36px rgb(13 27 42 / 0.14); }
-.nx-card:hover::before { opacity: 1; }
+.nx-card:hover::before, .nx-card:focus-within::before { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
     .nx-card, .nx-card:hover { transform: none; }
 }
