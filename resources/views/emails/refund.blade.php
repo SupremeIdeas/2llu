@@ -1,5 +1,6 @@
 @php($amountStr = ($currency === 'USD' ? '$' : $currency.' ').number_format($amount, 2))
-<x-mail.layout heading="Refunded to your wallet">
+<x-mail.layout template-key="refund" heading="Refunded to your wallet">
+    @if($__intro = \App\Support\MailTemplates::intro('refund'))<p style="margin:0 0 12px;">{{ $__intro }}</p>@endif
     <p style="margin:0 0 12px;font-size:18px;font-weight:700;">Your money is back{{ $name ? ', '.$name : '' }}</p>
     <p style="margin:0 0 4px;">We’ve returned <strong>{{ $amountStr }}</strong> to your {{ config('app.name') }} wallet. Wallet credit is spendable straight away on eSIMs and numbers.</p>
 
@@ -16,6 +17,6 @@
         </tr>
     </table>
 
-    <x-mail.button :url="$url">View my wallet</x-mail.button>
+    <x-mail.button template-key="refund" :url="$url">View my wallet</x-mail.button>
     <p style="margin:0;color:#64748b;font-size:13px;">We only ever charge when we can deliver — if something doesn’t go through, you get your money back automatically. Questions? Just reply.</p>
 </x-mail.layout>

@@ -60,6 +60,8 @@
         $more[] = ['route' => 'admin.app-builder', 'label' => 'App Builder', 'icon' => 'package'];
         $more[] = ['route' => 'admin.site', 'label' => 'Marketing site', 'icon' => 'globe'];
         $more[] = ['route' => 'admin.product-lines', 'label' => 'Product lines', 'icon' => 'package'];
+        $more[] = ['route' => 'admin.email-studio', 'label' => 'Email Studio', 'icon' => 'mail'];
+        $more[] = ['route' => 'admin.email-broadcast', 'label' => 'Email broadcast', 'icon' => 'send'];
         $more[] = ['route' => 'admin.home-media', 'label' => 'Homepage media', 'icon' => 'play'];
         $more[] = ['route' => 'admin.sidebar-menu', 'label' => 'Sidebar menu', 'icon' => 'menu'];
         $more[] = ['route' => 'admin.pages', 'label' => 'Custom pages', 'icon' => 'file-text'];

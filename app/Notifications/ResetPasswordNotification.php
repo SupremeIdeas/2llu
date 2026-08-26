@@ -30,7 +30,7 @@ class ResetPasswordNotification extends ResetPassword implements ShouldQueue
         $expires = Config::get('auth.passwords.'.Config::get('auth.defaults.passwords').'.expire', 60);
 
         return (new MailMessage)
-            ->subject('Reset your password — '.config('app.name'))
+            ->subject(\App\Support\MailTemplates::subject('reset', 'Reset your password — '.config('app.name')))
             ->view('emails.reset', [
                 'url' => $url,
                 'expires' => $expires,

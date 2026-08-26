@@ -2,7 +2,8 @@
     $isEsim = $product === 'esim';
     $amountStr = ($currency === 'USD' ? '$' : $currency.' ').number_format($amount, 2);
 @endphp
-<x-mail.layout :heading="$isEsim ? 'Your eSIM order is confirmed' : 'Your number is on the way'">
+<x-mail.layout template-key="order-placed" :heading="$isEsim ? 'Your eSIM order is confirmed' : 'Your number is on the way'">
+    @if($__intro = \App\Support\MailTemplates::intro('order-placed'))<p style="margin:0 0 12px;">{{ $__intro }}</p>@endif
     <p style="margin:0 0 12px;font-size:18px;font-weight:700;">Thanks{{ $name ? ', '.$name : '' }} — your order is confirmed</p>
     <p style="margin:0 0 4px;">
         @if ($isEsim)
@@ -23,6 +24,6 @@
         </tr>
     </table>
 
-    <x-mail.button :url="$url">View on my dashboard</x-mail.button>
+    <x-mail.button template-key="order-placed" :url="$url">View on my dashboard</x-mail.button>
     <p style="margin:0;color:#64748b;font-size:13px;">Charged securely from your {{ config('app.name') }} wallet. Questions? Just reply to this email.</p>
 </x-mail.layout>

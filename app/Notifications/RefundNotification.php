@@ -45,7 +45,7 @@ class RefundNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Refunded to your wallet — '.config('app.name'))
+            ->subject(\App\Support\MailTemplates::subject('refund', 'Refunded to your wallet — '.config('app.name')))
             ->view('emails.refund', [
                 'name' => $notifiable->name ?? null,
                 'amount' => $this->amount,

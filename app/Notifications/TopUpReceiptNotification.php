@@ -44,7 +44,7 @@ class TopUpReceiptNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Wallet topped up — '.config('app.name'))
+            ->subject(\App\Support\MailTemplates::subject('top-up', 'Wallet topped up — '.config('app.name')))
             ->view('emails.top-up', [
                 'name' => $notifiable->name ?? null,
                 'amount' => $this->amount,

@@ -53,7 +53,7 @@ class OrderPlacedNotification extends Notification implements ShouldQueue
         $subject = $isEsim ? 'Your eSIM order is confirmed' : 'Your number is on the way';
 
         return (new MailMessage)
-            ->subject($subject.' — '.config('app.name'))
+            ->subject(\App\Support\MailTemplates::subject('order-placed', $subject.' — '.config('app.name')))
             ->view('emails.order-placed', [
                 'name' => $notifiable->name ?? null,
                 'product' => $this->product,

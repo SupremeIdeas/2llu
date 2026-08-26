@@ -35,7 +35,7 @@ class WelcomeNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Welcome to '.config('app.name'))
+            ->subject(\App\Support\MailTemplates::subject('welcome', 'Welcome to '.config('app.name')))
             ->view('emails.welcome', [
                 'name' => $notifiable->name ?? null,
                 'url' => url('/dashboard'),

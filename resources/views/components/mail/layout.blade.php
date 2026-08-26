@@ -2,8 +2,9 @@
      clients strip <style>/external CSS and don't support dark: variants, so we
      use a light, high-contrast brand palette that renders everywhere. Brand:
      Deep Teal #0A6E6E, Warm Gold #D4A017, Midnight Navy #0D1B2A. --}}
-@props(['heading' => null])
+@props(['heading' => null, 'accent' => null, 'templateKey' => 'global'])
 @php($appName = config('app.name', 'NaaraSim'))
+@php($accentColor = $accent ?: \App\Support\MailTemplates::accent($templateKey))
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +18,7 @@
             <td align="center">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
                     <tr>
-                        <td style="background-color:#0A6E6E;padding:24px 32px;">
+                        <td style="background-color:{{ $accentColor }};padding:24px 32px;">
                             <p style="margin:0;color:#D4A017;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Supreme Ideas Agency</p>
                             <p style="margin:4px 0 0;color:#ffffff;font-size:22px;font-weight:700;">{{ $appName }}</p>
                         </td>
