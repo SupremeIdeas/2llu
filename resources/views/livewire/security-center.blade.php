@@ -17,14 +17,14 @@
     <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
         <h2 class="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Change password</h2>
         <form wire:submit="updatePassword" class="space-y-3">
-            <input type="password" wire:model="current_password" placeholder="Current password" autocomplete="current-password"
-                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+            <x-ui.password wire:model="current_password" placeholder="Current password" autocomplete="current-password"
+                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100" />
             @error('current_password') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
             <div class="grid gap-3 sm:grid-cols-2">
-                <input type="password" wire:model="password" placeholder="New password" autocomplete="new-password"
-                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
-                <input type="password" wire:model="password_confirmation" placeholder="Confirm new password" autocomplete="new-password"
-                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                <x-ui.password wire:model="password" placeholder="New password" autocomplete="new-password"
+                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100" />
+                <x-ui.password wire:model="password_confirmation" placeholder="Confirm new password" autocomplete="new-password"
+                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100" />
             </div>
             @error('password') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
             <button type="submit" wire:loading.attr="disabled" wire:target="updatePassword"
@@ -97,8 +97,8 @@
             <input type="email" wire:model="new_email" placeholder="you@example.com"
                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
             @error('new_email') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
-            <input type="password" wire:model="email_password" placeholder="Your current password" autocomplete="current-password"
-                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+            <x-ui.password wire:model="email_password" placeholder="Your current password" autocomplete="current-password"
+                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100" />
             @error('email_password') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
             <button type="submit" wire:loading.attr="disabled" wire:target="updateEmail"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
