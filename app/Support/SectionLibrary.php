@@ -77,6 +77,21 @@ class SectionLibrary
                     ],
                 ],
             ],
+            'storytelling' => [
+                'label' => 'Storytelling',
+                'icon' => 'play',
+                'blade' => 'partials.sections.storytelling',
+                'description' => 'Apple-style scroll-through: a fixed image with animated copy, auto-advancing slides, progress dots, and an optional deep modal per slide.',
+                'defaults' => [
+                    'heading' => '',
+                    'subheading' => '',
+                    'tone' => 'auto',   // auto | on-dark (light text for a dark band)
+                    'slides' => [
+                        ['image' => '', 'eyebrow' => '', 'title' => 'A first, evocative slide', 'body' => 'One idea, clearly stated — the reader should feel it, not scan it.', 'cta_label' => '', 'cta_target' => '', 'modal_body' => ''],
+                        ['image' => '', 'eyebrow' => '', 'title' => 'A second slide', 'body' => 'Another beat in the story. Keep each one tight.', 'cta_label' => '', 'cta_target' => '', 'modal_body' => ''],
+                    ],
+                ],
+            ],
             'faq' => [
                 'label' => 'FAQ',
                 'icon' => 'help-circle',
@@ -169,6 +184,7 @@ class SectionLibrary
         return match ($type) {
             'bento' => ['field' => 'cards', 'imageKey' => 'image', 'template' => ['image' => '', 'icon' => 'signal', 'title' => 'New card', 'body' => '', 'cta_label' => '', 'cta_target' => '', 'badge' => '']],
             'carousel' => ['field' => 'cards', 'imageKey' => 'image', 'template' => ['image' => '', 'title' => 'New card', 'subtitle' => '', 'target' => '']],
+            'storytelling' => ['field' => 'slides', 'imageKey' => 'image', 'template' => ['image' => '', 'eyebrow' => '', 'title' => 'New slide', 'body' => '', 'cta_label' => '', 'cta_target' => '', 'modal_body' => '']],
             'faq' => ['field' => 'items', 'imageKey' => null, 'template' => ['q' => '', 'a' => '']],
             'testimonial' => ['field' => 'items', 'imageKey' => 'photo', 'template' => ['name' => '', 'quote' => '', 'photo' => '', 'rating' => 5]],
             'logo_showcase' => ['field' => 'logos', 'imageKey' => 'src', 'template' => ['src' => '', 'alt' => '']],

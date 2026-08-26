@@ -220,6 +220,15 @@ class PageBuilder extends Component
                 'config.image_side' => 'required|in:left,right',
                 'config.bg' => 'required|in:transparent,tint,dark',
             ]);
+        } elseif ($section->type === 'storytelling') {
+            $this->validate([
+                'config.tone' => 'required|in:auto,on-dark',
+                'config.heading' => 'nullable|string|max:120',
+                'config.subheading' => 'nullable|string|max:280',
+                'config.slides.*.title' => 'nullable|string|max:120',
+                'config.slides.*.body' => 'nullable|string|max:600',
+                'config.slides.*.modal_body' => 'nullable|string|max:1200',
+            ]);
         } elseif ($section->type === 'custom_html') {
             $config['html'] = HtmlSanitizer::clean($config['html'] ?? '');
         }
