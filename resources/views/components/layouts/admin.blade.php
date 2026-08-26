@@ -2,6 +2,7 @@
      the customer app — Apple-inspired side menu on desktop, mobile bottom nav —
      but role-scoped: staff see only what they may use; admin config is
      super_admin/admin; staff management is super_admin only. --}}
+@props(['preloaderType' => 'admin'])
 @php
     $u = auth()->user();
     $isPrivileged = $u->hasAnyRole(['super_admin', 'admin']);
@@ -118,7 +119,7 @@
     }
 @endphp
 
-<x-layouts.app :title="($title ?? 'Admin').' — NaaraSim'" :body-class="\App\Support\PlatformTheme::bodyClass()">
+<x-layouts.app :title="($title ?? 'Admin').' — NaaraSim'" :page-type="$preloaderType" :body-class="\App\Support\PlatformTheme::bodyClass()">
     <x-app-shell :primary="$primary" :more="$more" brand-label="NaaraSim Admin" brand-icon="settings" :brand-route="route('admin.dashboard')">
         {{ $slot }}
     </x-app-shell>

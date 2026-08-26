@@ -1,6 +1,7 @@
 {{-- Customer chrome (blueprint Sections 4 & 12): a premium, responsive app
      shell — an Apple-inspired side menu on desktop and a bottom navigation
      with a centre "More" button on mobile. Dark-mode variants throughout. --}}
+@props(['preloaderType' => 'dashboard'])
 @php
     $u = auth()->user();
 
@@ -83,7 +84,7 @@
     array_unshift($more, ['route' => 'dashboard', 'label' => 'Home', 'icon' => 'signal']);
 @endphp
 
-<x-layouts.app :title="$title ?? config('app.name')" :body-class="\App\Support\PlatformTheme::bodyClass()">
+<x-layouts.app :title="$title ?? config('app.name')" :page-type="$preloaderType" :body-class="\App\Support\PlatformTheme::bodyClass()">
     <x-app-shell :primary="$primary" :more="$more" :promo="true" brand-label="NaaraSim" brand-icon="signal" :brand-route="route('dashboard')">
         {{-- In-app notification bell (owner request). Two keyed instances so the
              mobile header and desktop top strip each get their own Livewire id. --}}

@@ -1,4 +1,4 @@
-@props(['title' => null, 'heading' => null, 'subheading' => null])
+@props(['title' => null, 'heading' => null, 'subheading' => null, 'preloaderType' => 'auth'])
 
 {{-- Two-column auth shell (Module 28). Desktop: an admin-set media panel
      (WebP/JPEG image or a short muted video) on the left, the form on the
@@ -9,7 +9,7 @@
 @php($authStyle = $panel['style'] ?? 'auto')
 @php($useMedia = \App\Support\SiteChrome::hasAuthMedia() && $authStyle !== 'webgl')
 @php($useWebgl = $authStyle === 'webgl' || ($authStyle === 'auto' && ! \App\Support\SiteChrome::hasAuthMedia()))
-<x-layouts.app :title="$title ?? \App\Support\BrandSettings::name()">
+<x-layouts.app :title="$title ?? \App\Support\BrandSettings::name()" :page-type="$preloaderType">
     <div class="flex min-h-screen flex-col">
         <div class="flex flex-1 flex-col lg:flex-row">
             {{-- Media panel --}}

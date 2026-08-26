@@ -1,3 +1,4 @@
+@props(['pageType' => 'default'])
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
@@ -81,7 +82,7 @@
 <body class="min-h-screen text-[#0F172A] antialiased dark:text-slate-100 {{ $bodyClass ?? 'bg-[#F8F9FA] dark:bg-navy' }}">
     @include('partials.icon-sprite')
     @include('partials.service-icon-sprite')
-    <x-brand-preloader />
+    <x-brand-preloader :page-type="$pageType" />
     <x-splash />
     <x-ui.toast-stack />
     {{ $slot ?? '' }}

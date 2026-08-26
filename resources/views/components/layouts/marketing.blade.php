@@ -2,8 +2,8 @@
      footer with Supreme Ideas Agency attribution + legal quick-links. Guests
      get Sign in / Get Started; signed-in visitors go straight to their
      dashboard. --}}
-@props(['title' => null, 'description' => null, 'ogImage' => null])
-<x-layouts.app :title="$title ?? \App\Support\BrandSettings::name().' — Stay Connected. No Borders. No Swaps.'" :description="$description" :og-image="$ogImage">
+@props(['title' => null, 'description' => null, 'ogImage' => null, 'preloaderType' => 'marketing'])
+<x-layouts.app :title="$title ?? \App\Support\BrandSettings::name().' — Stay Connected. No Borders. No Swaps.'" :page-type="$preloaderType" :description="$description" :og-image="$ogImage">
     <div class="mkt-bg min-h-screen">
         {{-- Floating, curved, glass header (Webflow-inspired): a contained pill
              that never touches the edges, with a few primary links inline and a

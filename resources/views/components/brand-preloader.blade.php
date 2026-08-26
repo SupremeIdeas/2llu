@@ -1,34 +1,53 @@
-{{-- Brand preloader (Module 26 + audit §7). A full-screen brand-navy overlay
-     shown until the page finishes loading, then faded out in sync. Three admin
-     styles: the default pulsing "impulse" logo mark, a spinner ring, or bars.
-     Admin-toggleable (renders nothing when off), self-removing on `load` with a
-     hard timeout fallback so it can never trap the page, and reduced-motion-aware
-     (static logo / no motion). The navy background is painted inline before
-     Alpine boots, so there is no theme flash. --}}
-@if (\App\Support\BrandSettings::preloaderEnabled())
-    @php($nxPreStyle = \App\Support\BrandSettings::preloaderStyle())
-    @php($nxPreFavicon = \App\Support\BrandSettings::favicon())
-    <div id="nx-preloader" role="status" aria-label="Loading"
-         style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgb(var(--brand-navy));transition:opacity .4s ease;">
+{{-- Brand preloader (Module 26 + Preloader Studio). A full-screen overlay shown
+     until the page finishes loading, then faded out. The visual is resolved
+     per-PAGE-TYPE via PreloaderSettings::forPageType(): until an admin saves an
+     assignment in Preloader Studio, forPageType() returns the exact legacy
+     behaviour (BrandSettings enabled + style), so this is unchanged on every
+     existing install. Configured page types can pick any Studio preset.
 
-        @if ($nxPreStyle === 'pulse-logo' && $nxPreFavicon)
-            {{-- Impulse logo mark (shared .nx-pulse motif, compiled in app.css). --}}
-            <span class="nx-pulse" style="width:72px;height:72px;">
-                <img src="{{ $nxPreFavicon }}" alt="" width="72" height="72" draggable="false">
-            </span>
-        @elseif ($nxPreStyle === 'bars')
-            <span class="nx-pre-bars"><i></i><i></i><i></i><i></i></span>
-        @elseif ($nxPreStyle === 'progress')
-            {{-- Determinate-feel progress bar: eases toward 100% while the page
-                 loads, then snaps full on `load` (JS below). Logo mark sits above
-                 it when a favicon exists, so the brand still reads. --}}
-            <span class="nx-pre-progress-wrap">
-                @if ($nxPreFavicon)
-                    <img class="nx-pre-progress-logo" src="{{ $nxPreFavicon }}" alt="" width="56" height="56" draggable="false">
-                @endif
-                <span class="nx-pre-progress"><i></i></span>
-            </span>
+     Self-removing on `load` with a hard timeout fallback so it can never trap the
+     page, and reduced-motion-aware. The background is painted inline before
+     Alpine boots, so there is no theme flash. --}}
+@props(['pageType' => 'default'])
+@php($cfg = \App\Support\PreloaderSettings::forPageType($pageType))
+@if (! empty($cfg['enabled']))
+    @php($isLegacy = \App\Support\PreloaderSettings::isLegacy($cfg['preset']))
+    @php($nxPreFavicon = \App\Support\BrandSettings::favicon())
+    @php($vars = \App\Support\PreloaderSettings::resolveCssVars($cfg))
+    @php($bgRgb = ! empty($cfg['bg_color']) ? \App\Support\BrandSettings::hexToChannels($cfg['bg_color']) : null)
+    @php($bg = $bgRgb ? 'rgb('.$bgRgb.' / '.($cfg['bg_opacity'] ?? 1).')' : 'rgb(var(--brand-navy))')
+    <div id="nx-preloader" role="status" aria-label="Loading"
+         style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:{{ $bg }};transition:opacity .4s ease;{{ $isLegacy ? '' : $vars.'backdrop-filter:blur(var(--nx-pl-blur,0));-webkit-backdrop-filter:blur(var(--nx-pl-blur,0));' }}">
+
+        @if ($isLegacy)
+            @php($nxPreStyle = $cfg['preset'])
+            @if ($nxPreStyle === 'pulse-logo' && $nxPreFavicon)
+                {{-- Impulse logo mark (shared .nx-pulse motif, compiled in app.css). --}}
+                <span class="nx-pulse" style="width:72px;height:72px;">
+                    <img src="{{ $nxPreFavicon }}" alt="" width="72" height="72" draggable="false">
+                </span>
+            @elseif ($nxPreStyle === 'bars')
+                <span class="nx-pre-bars"><i></i><i></i><i></i><i></i></span>
+            @elseif ($nxPreStyle === 'progress')
+                {{-- Determinate-feel progress bar: eases toward 100% while the page
+                     loads, then snaps full on `load` (JS below). Logo mark sits above
+                     it when a favicon exists, so the brand still reads. --}}
+                <span class="nx-pre-progress-wrap">
+                    @if ($nxPreFavicon)
+                        <img class="nx-pre-progress-logo" src="{{ $nxPreFavicon }}" alt="" width="56" height="56" draggable="false">
+                    @endif
+                    <span class="nx-pre-progress"><i></i></span>
+                </span>
+            @else
+                <span class="nx-pre-spin"></span>
+            @endif
+        @elseif (view()->exists('components.preloaders.'.$cfg['preset']))
+            {{-- Studio preset: markup-only partial, all CSS compiled in preloaders.css. --}}
+            <div class="nx-pl nx-pl--{{ $cfg['preset'] }}" style="opacity:var(--nx-pl-opacity,1);transform:scale(var(--nx-pl-scale,1));">
+                @include('components.preloaders.'.$cfg['preset'], ['cfg' => $cfg])
+            </div>
         @else
+            {{-- Assigned preset partial not present (defensive) — safe spinner. --}}
             <span class="nx-pre-spin"></span>
         @endif
 
