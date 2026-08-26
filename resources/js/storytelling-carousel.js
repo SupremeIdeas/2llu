@@ -20,28 +20,62 @@ export function registerStorytellingCarousel() {
         const Alpine = window.Alpine;
         if (!Alpine) return;
 
-        // One shared store: which section-nav is currently active, driven by a
-        // single reused IntersectionObserver (lightweight — not N observers).
+        // One shared store: which section-nav is active + whether we're near the
+        // page end, driven by a single reused IntersectionObserver (§3/§6).
+        // Coordinates the carousel section navs with the global bottom nav so the
+        // two are mutually exclusive and never block each other.
         if (!Alpine.store('sectionNav')) {
             Alpine.store('sectionNav', {
-                active: null,       // section key whose bottom nav should show
-                atBottom: false,    // near page end (global nav reveal — §6)
+                active: null,           // section key currently ≥50% in view (or null)
+                atBottom: false,        // the near-footer sentinel is in view
+                sectionsPresent: false, // does this page contain any carousel section?
                 _io: null,
+                _visible: new Set(),
+
                 isActive(key) {
                     return this.active === key;
                 },
+
+                // The global bottom nav shows when: there are no carousel sections
+                // on the page (unchanged behaviour), OR we're near the page end and
+                // no section nav is currently in view (mutual exclusion — §6).
+                globalVisible() {
+                    return ! this.sectionsPresent || (this.atBottom && ! this.active);
+                },
+
+                _ensureIO() {
+                    if (this._io) return;
+                    this._io = new IntersectionObserver((entries) => {
+                        entries.forEach((e) => {
+                            if (e.target.__navSentinel) {
+                                this.atBottom = e.isIntersecting;
+                                return;
+                            }
+                            const key = e.target.__navKey;
+                            if (e.isIntersecting && e.intersectionRatio >= 0.5) {
+                                this._visible.add(key);
+                            } else {
+                                this._visible.delete(key);
+                            }
+                        });
+                        this.active = this._visible.size ? [...this._visible].pop() : null;
+                    }, { threshold: [0, 0.5, 1] });
+                },
+
                 observe(el, key) {
                     if (!el) return;
                     el.__navKey = key;
-                    if (!this._io) {
-                        this._io = new IntersectionObserver((entries) => {
-                            entries.forEach((e) => {
-                                if (e.isIntersecting && e.intersectionRatio >= 0.5) {
-                                    this.active = e.target.__navKey;
-                                }
-                            });
-                        }, { threshold: [0.5] });
-                    }
+                    this.sectionsPresent = true;
+                    this._ensureIO();
+                    this._io.observe(el);
+                },
+
+                // A thin element placed just before the footer; reveals the global
+                // nav when it scrolls into view (§6 "reveal only near page end").
+                observeSentinel(el) {
+                    if (!el) return;
+                    el.__navSentinel = true;
+                    this._ensureIO();
                     this._io.observe(el);
                 },
             });

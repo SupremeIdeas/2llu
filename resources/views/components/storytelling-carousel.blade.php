@@ -29,6 +29,7 @@
     // column and centre the text, so the section never shows an empty image well.
     $hasImages = $slides->contains(fn ($s) => filled($s['image'] ?? null));
 
+    $first = $slides->first() ?: [];
     $readSeconds = [];
     $jsSlides = [];
     foreach ($slides as $s) {
@@ -70,14 +71,17 @@
 
             {{-- Text block — single node; JS animates it (slide on gesture, fade on auto). --}}
             <div class="relative @unless ($hasImages) mx-auto max-w-2xl text-center @endunless">
+                {{-- The first slide is rendered server-side so crawlers and no-JS
+                     visitors see real content; Alpine's x-text takes over on load
+                     (same value, no flash) and swaps it as slides change. --}}
                 <div x-ref="text" class="nx-tin-fade">
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] {{ $cEyebrow }}" x-text="cur.eyebrow" x-show="cur.eyebrow"></p>
-                    <h2 class="mt-2 font-display text-3xl font-bold leading-tight {{ $cTitle }}" x-text="cur.title"></h2>
-                    <p class="mt-3 text-base leading-relaxed {{ $cBody }}" x-text="cur.body"></p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] {{ $cEyebrow }}" x-text="cur.eyebrow" x-show="cur.eyebrow">{{ $first['eyebrow'] ?? '' }}</p>
+                    <h2 class="mt-2 font-display text-3xl font-bold leading-tight {{ $cTitle }}" x-text="cur.title">{{ $first['title'] ?? '' }}</h2>
+                    <p class="mt-3 text-base leading-relaxed {{ $cBody }}" x-text="cur.body">{{ $first['body'] ?? '' }}</p>
                     <div class="mt-5 flex flex-wrap items-center gap-3">
-                        <a x-show="cur.ctaUrl" :href="cur.ctaUrl" wire:navigate
+                        <a @if (! empty($first['cta_url'])) href="{{ $first['cta_url'] }}" @endif x-show="cur.ctaUrl" :href="cur.ctaUrl" wire:navigate
                            class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark">
-                            <span x-text="cur.ctaLabel"></span> <x-icon name="chevron-right" class="h-4 w-4" />
+                            <span x-text="cur.ctaLabel">{{ $first['cta_label'] ?? '' }}</span> <x-icon name="chevron-right" class="h-4 w-4" />
                         </a>
                     </div>
                 </div>
@@ -85,7 +89,8 @@
                 {{-- Dedicated bottom nav — sticky within the section (§3.3). Its
                      visibility is coordinated with the global nav in §6; here it
                      is always shown within its own section. --}}
-                <div class="nx-story__nav mt-8 flex items-center gap-4 @unless ($hasImages) justify-center @endunless">
+                <div class="nx-story__nav mt-8 flex items-center gap-4 @unless ($hasImages) justify-center @endunless"
+                     x-show="$store.sectionNav.isActive(key)" x-transition.opacity.duration.300ms>
                     <button type="button" @click="toggle()" :aria-label="playing ? 'Pause' : 'Play'"
                             class="flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition {{ $cBtn }}">
                         <span x-show="playing"><x-icon name="pause" class="h-4 w-4" /></span>

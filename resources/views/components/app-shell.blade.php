@@ -118,6 +118,10 @@
         <main class="mx-auto w-full max-w-6xl px-4 py-6 pb-28 lg:px-8 lg:py-10 lg:pb-10">
             {{ $slot }}
         </main>
+        {{-- Near-footer sentinel (BLUEPRINT-batch1-sections §6): reveals the global
+             bottom nav only when the page end is in view, on pages that contain a
+             storytelling carousel. Pages without one are unaffected. --}}
+        <div x-init="$store.sectionNav.observeSentinel($el)" aria-hidden="true" class="h-px w-full"></div>
     </div>
 
     {{-- ============ MOBILE: bottom navigation (owner request — premium) ============
@@ -126,6 +130,7 @@
          flush to the bottom with only the top corners rounded. The little grab
          handle toggles between them (also settable from account settings). --}}
     <nav class="fixed z-40 border border-slate-200/70 bg-white/90 backdrop-blur-xl transition-all duration-300 lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/90"
+         x-show="$store.sectionNav.globalVisible()" x-transition.opacity.duration.300ms
          :class="navFloating
             ? 'inset-x-3 bottom-3 rounded-[1.75rem] shadow-[0_10px_40px_rgba(13,27,42,0.16)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)]'
             : 'inset-x-0 bottom-0 rounded-t-3xl border-b-0 shadow-[0_-10px_30px_rgba(13,27,42,0.10)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.4)]'"

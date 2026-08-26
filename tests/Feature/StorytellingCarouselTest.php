@@ -103,6 +103,28 @@ class StorytellingCarouselTest extends TestCase
         $this->get('/about')->assertOk()
             ->assertSee('storytellingCarousel(', false)
             ->assertSee("key: 'about-essence'", false)
-            ->assertSee('Naara means dawn'); // Essence slide title (in the payload)
+            ->assertSee('Naara means dawn'); // Essence slide title (server-rendered first slide)
+    }
+
+    public function test_first_slide_is_server_rendered_for_no_js_and_crawlers(): void
+    {
+        $slides = [
+            ['title' => 'Naara Data', 'body' => 'eSIM data plans, 190+ countries.', 'eyebrow' => 'Data'],
+            ['title' => 'Second', 'body' => 'Hidden until JS.'],
+        ];
+        $html = Blade::render('<x-storytelling-carousel :slides="$slides" section-key="p" />', ['slides' => $slides]);
+
+        // The first slide's real text is in the DOM (not only in the x-data payload).
+        $this->assertStringContainsString('>Naara Data</h2>', $html);
+        $this->assertStringContainsString('eSIM data plans, 190+ countries.</p>', $html);
+    }
+
+    public function test_section_nav_is_gated_by_the_shared_store(): void
+    {
+        $slides = [['title' => 'A', 'body' => 'a'], ['title' => 'B', 'body' => 'b']];
+        $html = Blade::render('<x-storytelling-carousel :slides="$slides" section-key="p" />', ['slides' => $slides]);
+
+        // §6 mutual exclusion: the section nav shows only when its section is active.
+        $this->assertStringContainsString('$store.sectionNav.isActive(key)', $html);
     }
 }
