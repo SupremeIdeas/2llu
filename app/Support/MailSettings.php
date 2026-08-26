@@ -24,6 +24,53 @@ class MailSettings
 
     private const CACHE_KEY = 'mail.settings.resolved';
 
+    /** Verification enforcement modes (NAARA-BUILD-20 §2). Default: soft. */
+    public const MODE_OFF = 'off';
+
+    public const MODE_SOFT = 'soft';
+
+    public const MODE_HARD = 'hard';
+
+    public const MODES = [self::MODE_OFF, self::MODE_SOFT, self::MODE_HARD];
+
+    /**
+     * How email verification is enforced:
+     *  - off:  never required or nudged.
+     *  - soft: (default) never blocks — browse/buy freely; a dismissible banner
+     *          nudges the user to confirm for receipts + account security.
+     *  - hard: unverified users are held at the verification notice (the prior
+     *          behaviour whenever mail was configured).
+     */
+    public static function verificationMode(): string
+    {
+        try {
+            $m = (string) Setting::getValue('mail.verification_mode', self::MODE_SOFT);
+
+            return in_array($m, self::MODES, true) ? $m : self::MODE_SOFT;
+        } catch (\Throwable) {
+            return self::MODE_SOFT;
+        }
+    }
+
+    public static function setVerificationMode(string $mode): void
+    {
+        Setting::setValue(
+            'mail.verification_mode',
+            in_array($mode, self::MODES, true) ? $mode : self::MODE_SOFT,
+            'mail',
+            'Email verification enforcement (off | soft | hard).',
+        );
+    }
+
+    /** Should the soft-gate banner nudge this (unverified) user to confirm? */
+    public static function shouldNudge(mixed $user): bool
+    {
+        return self::isConfigured()
+            && self::verificationMode() === self::MODE_SOFT
+            && $user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail
+            && ! $user->hasVerifiedEmail();
+    }
+
     /** field-name => [config path it overlays, is-secret]. */
     private const MAP = [
         'mailer' => ['mail.default', false],

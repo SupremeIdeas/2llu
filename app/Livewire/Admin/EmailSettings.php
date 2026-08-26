@@ -41,6 +41,9 @@ class EmailSettings extends Component
 
     public ?string $testError = null;
 
+    /** Email-verification enforcement (NAARA-BUILD-20 §2): off | soft | hard. */
+    public string $verificationMode = 'soft';
+
     public function mount(): void
     {
         $this->mailer = (string) MailSettings::get('mailer', config('mail.default', 'log'));
@@ -50,6 +53,7 @@ class EmailSettings extends Component
         $this->smtp_scheme = (string) MailSettings::get('smtp_scheme', '');
         $this->from_address = (string) MailSettings::get('from_address', config('mail.from.address', ''));
         $this->from_name = (string) MailSettings::get('from_name', config('mail.from.name', config('app.name')));
+        $this->verificationMode = MailSettings::verificationMode();
         // smtp_password intentionally left blank — never echo the secret.
     }
 
@@ -64,6 +68,7 @@ class EmailSettings extends Component
             'smtp_scheme' => 'nullable|in:,smtps',
             'from_address' => 'required|email',
             'from_name' => 'required|string|max:100',
+            'verificationMode' => 'required|in:off,soft,hard',
         ];
     }
 
@@ -82,6 +87,8 @@ class EmailSettings extends Component
             'from_address' => $this->from_address,
             'from_name' => $this->from_name,
         ]);
+
+        MailSettings::setVerificationMode($this->verificationMode);
 
         $this->smtp_password = '';
         $this->saved = 'Email settings saved. They apply immediately.';

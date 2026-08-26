@@ -23,8 +23,12 @@ class EnsureVerifiedWhenMailConfigured
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! MailSettings::isConfigured()) {
-            return $next($request); // nothing to verify against yet
+        // Only the 'hard' mode ever blocks (NAARA-BUILD-20 §2). 'off' and 'soft'
+        // let unverified users browse, buy, and use every feature; 'soft' nudges
+        // with a dismissible banner instead of a wall. Mail-not-configured is
+        // treated like 'off' — nothing to verify against yet.
+        if (! MailSettings::isConfigured() || MailSettings::verificationMode() !== MailSettings::MODE_HARD) {
+            return $next($request);
         }
 
         $user = $request->user();

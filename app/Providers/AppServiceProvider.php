@@ -216,6 +216,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Force HTTPS URL generation in production (NAARA-BUILD-20 §1). A second,
+        // complementary safeguard to trustProxies for the signed-URL 403 class:
+        // even if forwarded-header detection is incomplete for a given host,
+        // every generated URL (verification, reset) still carries https. Gated to
+        // production so local dev over plain HTTP is unaffected.
+        if (app()->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         // Livewire stores EVERY file upload to a temporary disk before any app
         // code runs, defaulting to filesystems.default. With FILESYSTEM_DISK set
         // to an unconfigured Wasabi, that temp store throws before MediaStorage's

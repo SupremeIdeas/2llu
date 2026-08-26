@@ -149,7 +149,7 @@ class EmailSystemTest extends TestCase
         $this->get('/reset-password/faketoken')->assertOk()->assertSee('Choose a new password');
     }
 
-    public function test_email_verification_is_only_enforced_once_mail_is_configured(): void
+    public function test_soft_gate_never_blocks_and_hard_mode_still_enforces(): void
     {
         // ->fresh() so is_active (DB default true) is hydrated.
         $user = User::factory()->unverified()->create()->fresh();
@@ -157,13 +157,37 @@ class EmailSystemTest extends TestCase
         // Mail NOT configured yet -> users are NOT trapped; they can use the app.
         $this->actingAs($user)->get('/dashboard')->assertOk();
 
-        // Once the operator configures mail, verification becomes mandatory.
+        // Mail configured, default mode is now SOFT (NAARA-BUILD-20 §2) — an
+        // unverified user is nudged, never blocked: money/core routes stay open.
         MailSettings::save(['mailer' => 'smtp', 'from_address' => 'a@b.co', 'from_name' => 'N']);
+        $this->assertSame('soft', MailSettings::verificationMode());
+        $this->actingAs($user)->get('/dashboard')->assertOk();
+        $this->actingAs($user)->get('/wallet')->assertOk();
 
+        // Switching to HARD restores the mandatory wall (the prior behaviour).
+        MailSettings::setVerificationMode('hard');
         $this->actingAs($user)->get('/dashboard')->assertRedirect(route('verification.notice'));
         $this->actingAs($user)->get('/wallet')->assertRedirect(route('verification.notice'));
+        $this->actingAs($user)->get('/account')->assertOk(); // always reachable
 
-        // Account stays reachable either way so they can manage/resend.
-        $this->actingAs($user)->get('/account')->assertOk();
+        // OFF never enforces or nudges even with mail configured.
+        MailSettings::setVerificationMode('off');
+        $this->actingAs($user)->get('/dashboard')->assertOk();
+    }
+
+    public function test_soft_gate_banner_shows_only_for_unverified_in_soft_mode(): void
+    {
+        $user = User::factory()->unverified()->create()->fresh();
+        MailSettings::save(['mailer' => 'smtp', 'from_address' => 'a@b.co', 'from_name' => 'N']);
+
+        // Soft (default) + unverified -> the nudge banner renders.
+        $this->actingAs($user)->get('/dashboard')->assertOk()
+            ->assertSee('Confirm your email', false);
+
+        // Hard mode redirects (no banner needed); a verified user never sees it.
+        MailSettings::setVerificationMode('soft');
+        $verified = User::factory()->create(['email_verified_at' => now()])->fresh();
+        $this->actingAs($verified)->get('/dashboard')->assertOk()
+            ->assertDontSee('Confirm your email to secure', false);
     }
 }

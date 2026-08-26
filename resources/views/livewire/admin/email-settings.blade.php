@@ -104,6 +104,28 @@
             </div>
         </div>
 
+        {{-- Email verification enforcement (NAARA-BUILD-20 §2). --}}
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Email verification</h2>
+            <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">How strongly to enforce confirming an email address. Only applies once a real mailer is configured above.</p>
+            <div class="space-y-2">
+                @foreach ([
+                    'soft' => ['Soft — recommended', 'Never blocks anyone. Unverified users buy and use everything; a dismissible banner nudges them to confirm.'],
+                    'hard' => ['Hard', 'Unverified users are held at the verification screen until they confirm — nothing else opens.'],
+                    'off' => ['Off', 'Verification is never required or nudged, even with mail configured.'],
+                ] as $val => [$label, $desc])
+                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border p-3 {{ $verificationMode === $val ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-200 dark:border-[#2D4060]' }}">
+                        <input type="radio" wire:model.live="verificationMode" value="{{ $val }}" class="mt-1 text-primary focus:ring-primary">
+                        <span>
+                            <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">{{ $label }}</span>
+                            <span class="block text-xs text-slate-500 dark:text-slate-400">{{ $desc }}</span>
+                        </span>
+                    </label>
+                @endforeach
+            </div>
+            @error('verificationMode') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+        </div>
+
         <div class="flex flex-wrap items-center justify-between gap-3">
             <button type="button" wire:click="sendTest" wire:loading.attr="disabled" wire:target="sendTest"
                     class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">

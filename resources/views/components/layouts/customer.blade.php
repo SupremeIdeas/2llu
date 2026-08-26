@@ -102,6 +102,9 @@
             <x-global-sidebar />
         </x-slot:headerActionsDesktop>
 
+        {{-- Soft email-verification nudge (never blocks; only in 'soft' mode). --}}
+        @include('partials.verify-email-banner')
+
         {{ $slot }}
     </x-app-shell>
 

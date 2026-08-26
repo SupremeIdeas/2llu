@@ -15,6 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
         // Sanctum SPA statefulness for first-party requests.
         $middleware->statefulApi();
 
+        // Trust the proxy chain (NAARA-BUILD-20 §1). On shared cPanel the SSL is
+        // terminated by a front proxy that hands Laravel a plain-HTTP internal
+        // request while the real browser connection was HTTPS. Without this,
+        // Laravel builds signed URLs (email verification, password reset) with the
+        // wrong scheme and every click 403s on signature validation. The proxy IP
+        // is not fixed on shared hosting, so trust all and read X-Forwarded-*.
+        $middleware->trustProxies(at: '*');
+
         // Fresh upload with no lock file -> web installer (blueprint S22.1).
         $middleware->web(append: [
             \App\Http\Middleware\RedirectIfNotInstalled::class,
