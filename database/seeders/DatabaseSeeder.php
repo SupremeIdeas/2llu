@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             EsimCompatibleDeviceSeeder::class, // eSIM device compatibility catalogue
             EsimImageSeeder::class,     // eSIM country/region navigation imagery (BUILD-8)
             NumbersBentoSeeder::class,  // six Numbers landing bento cards
+            BrandPlanSeeder::class,     // brand-directory subscription starter plans (BUILD-9)
         ]);
     }
 }
