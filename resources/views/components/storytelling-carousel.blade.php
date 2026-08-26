@@ -2,7 +2,22 @@
     'slides' => [],       // [{image, eyebrow, title, body, cta_label?, cta_url?, read_seconds?, modal_gallery?, modal_blocks?}]
     'sectionKey' => null, // unique per instance (nav registry + modal scoping)
     'height' => 'h-72 sm:h-96', // stage height utility
+    'tone' => 'auto',     // 'auto' (theme-aware) | 'on-dark' (always-light text, for navy sections)
 ])
+
+@php
+    // Text colour set — 'on-dark' forces light text regardless of theme, for
+    // carousels placed on a permanently-dark surface (e.g. the About navy band).
+    $onDark = $tone === 'on-dark';
+    $cEyebrow = $onDark ? 'text-accent' : 'text-accent-dark dark:text-accent';
+    $cTitle = $onDark ? 'text-white' : 'text-slate-900 dark:text-white';
+    $cBody = $onDark ? 'text-slate-200' : 'text-slate-600 dark:text-slate-300';
+    $cDotOn = $onDark ? 'bg-accent' : 'bg-primary dark:bg-teal-300';
+    $cDotOff = $onDark ? 'bg-white/25' : 'bg-slate-300 dark:bg-white/20';
+    $cBtn = $onDark
+        ? 'border-white/20 bg-white/10 text-white hover:bg-white/15'
+        : 'border-slate-200 bg-white text-primary hover:bg-slate-50 dark:border-white/10 dark:bg-[#16233d] dark:text-teal-300';
+@endphp
 
 @php
     // Normalise to a clean list and compute the per-slide read time
@@ -10,6 +25,9 @@
     // admin-overridable via the slide's own read_seconds.
     $slides = collect($slides)->filter(fn ($s) => filled($s['title'] ?? null) || filled($s['image'] ?? null))->values();
     $key = $sectionKey ?: 'story-'.\Illuminate\Support\Str::random(5);
+    // Text-only carousels (e.g. About, before imagery is supplied) drop the image
+    // column and centre the text, so the section never shows an empty image well.
+    $hasImages = $slides->contains(fn ($s) => filled($s['image'] ?? null));
 
     $readSeconds = [];
     $jsSlides = [];
@@ -33,27 +51,29 @@
              @touchstart.passive="onTouchStart($event)" @touchend.passive="onTouchEnd($event)"
              aria-roledescription="carousel">
 
-        <div class="grid items-center gap-6 lg:grid-cols-2">
+        <div class="grid items-center gap-6 @if ($hasImages) lg:grid-cols-2 @endif">
             {{-- Image layer — stays fixed, crossfades on every change. --}}
-            <div class="nx-story__stage {{ $height }}">
-                <div class="nx-story__images h-full">
-                    @foreach ($slides as $i => $s)
-                        @if (! empty($s['image']))
-                            <img src="{{ $s['image'] }}" alt="{{ $s['title'] ?? '' }}"
-                                 @class(['nx-story__img', 'nx-story__img--lead' => $i === 0])
-                                 :class="isActive({{ $i }}) && 'is-active'"
-                                 loading="{{ $i === 0 ? 'eager' : 'lazy' }}" draggable="false">
-                        @endif
-                    @endforeach
+            @if ($hasImages)
+                <div class="nx-story__stage {{ $height }}">
+                    <div class="nx-story__images h-full">
+                        @foreach ($slides as $i => $s)
+                            @if (! empty($s['image']))
+                                <img src="{{ $s['image'] }}" alt="{{ $s['title'] ?? '' }}"
+                                     @class(['nx-story__img', 'nx-story__img--lead' => $i === 0])
+                                     :class="isActive({{ $i }}) && 'is-active'"
+                                     loading="{{ $i === 0 ? 'eager' : 'lazy' }}" draggable="false">
+                            @endif
+                        @endforeach
+                    </div>
                 </div>
-            </div>
+            @endif
 
             {{-- Text block — single node; JS animates it (slide on gesture, fade on auto). --}}
-            <div class="relative">
+            <div class="relative @unless ($hasImages) mx-auto max-w-2xl text-center @endunless">
                 <div x-ref="text" class="nx-tin-fade">
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent-dark dark:text-accent" x-text="cur.eyebrow" x-show="cur.eyebrow"></p>
-                    <h2 class="mt-2 font-display text-3xl font-bold leading-tight text-slate-900 dark:text-white" x-text="cur.title"></h2>
-                    <p class="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300" x-text="cur.body"></p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] {{ $cEyebrow }}" x-text="cur.eyebrow" x-show="cur.eyebrow"></p>
+                    <h2 class="mt-2 font-display text-3xl font-bold leading-tight {{ $cTitle }}" x-text="cur.title"></h2>
+                    <p class="mt-3 text-base leading-relaxed {{ $cBody }}" x-text="cur.body"></p>
                     <div class="mt-5 flex flex-wrap items-center gap-3">
                         <a x-show="cur.ctaUrl" :href="cur.ctaUrl" wire:navigate
                            class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark">
@@ -65,9 +85,9 @@
                 {{-- Dedicated bottom nav — sticky within the section (§3.3). Its
                      visibility is coordinated with the global nav in §6; here it
                      is always shown within its own section. --}}
-                <div class="nx-story__nav mt-8 flex items-center gap-4">
+                <div class="nx-story__nav mt-8 flex items-center gap-4 @unless ($hasImages) justify-center @endunless">
                     <button type="button" @click="toggle()" :aria-label="playing ? 'Pause' : 'Play'"
-                            class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-primary shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-[#16233d] dark:text-teal-300">
+                            class="flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition {{ $cBtn }}">
                         <span x-show="playing"><x-icon name="pause" class="h-4 w-4" /></span>
                         <span x-show="!playing" x-cloak><x-icon name="play" class="h-4 w-4" /></span>
                     </button>
@@ -76,7 +96,7 @@
                             <button type="button" @click="goTo({{ $i }})" wire:key="dot-{{ $key }}-{{ $i }}"
                                     :aria-selected="isActive({{ $i }}).toString()" aria-label="Slide {{ $i + 1 }}"
                                     class="h-2 rounded-full transition-all"
-                                    :class="isActive({{ $i }}) ? 'w-6 bg-primary dark:bg-teal-300' : 'w-2 bg-slate-300 dark:bg-white/20'"></button>
+                                    :class="isActive({{ $i }}) ? 'w-6 {{ $cDotOn }}' : 'w-2 {{ $cDotOff }}'"></button>
                         @endforeach
                     </div>
                 </div>

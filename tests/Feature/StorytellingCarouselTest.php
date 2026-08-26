@@ -82,4 +82,27 @@ class StorytellingCarouselTest extends TestCase
         $html = Blade::render('<x-storytelling-carousel :slides="[]" section-key="x" />');
         $this->assertStringNotContainsString('storytellingCarousel(', $html);
     }
+
+    public function test_text_only_slides_drop_the_image_column(): void
+    {
+        // No slide has an image → no image stage, centred text (About case).
+        $slides = [
+            ['title' => 'Why we exist', 'body' => 'A mission.'],
+            ['title' => 'Where we head', 'body' => 'A vision.'],
+        ];
+        $html = Blade::render('<x-storytelling-carousel :slides="$slides" section-key="about-essence" tone="on-dark" />', ['slides' => $slides]);
+
+        $this->assertStringNotContainsString('nx-story__stage', $html); // no image well
+        $this->assertStringContainsString('text-center', $html);        // centred
+        // on-dark tone forces light text.
+        $this->assertStringContainsString('text-white', $html);
+    }
+
+    public function test_about_page_renders_the_essence_carousel(): void
+    {
+        $this->get('/about')->assertOk()
+            ->assertSee('storytellingCarousel(', false)
+            ->assertSee("key: 'about-essence'", false)
+            ->assertSee('Naara means dawn'); // Essence slide title (in the payload)
+    }
 }

@@ -44,16 +44,25 @@
 
     @php($mission = $sections['mission'] ?? null)
     @if ($mission)
+        {{-- Vision / Mission / Essence via the reusable storytelling carousel
+             (BLUEPRINT-batch1-sections §5). Same component as the product lines —
+             proof it serves a very different content domain unchanged. Copy is
+             the approved SiteContent text verbatim; Essence pairs the "dawn"
+             meaning (the story section's own line) with the belief statement.
+             Images arrive from the owner later and slot into the same slides
+             prop with no markup change. --}}
+        @php($story = $sections['story'] ?? [])
+        @php($essenceBody = trim(($story['p3'] ?? '').' '.($mission['belief'] ?? '')))
+        @php($aboutSlides = [
+            ['eyebrow' => $mission['mission_title'] ?? 'Our Mission', 'title' => 'Why we exist', 'body' => $mission['mission'] ?? '', 'image' => $mission['mission_image'] ?? ''],
+            ['eyebrow' => $mission['vision_title'] ?? 'Our Vision', 'title' => 'Where we are headed', 'body' => $mission['vision'] ?? '', 'image' => $mission['vision_image'] ?? ''],
+            ['eyebrow' => 'Essence', 'title' => 'Naara means dawn', 'body' => $essenceBody, 'image' => $mission['essence_image'] ?? ''],
+        ])
         <section class="bg-navy px-4 py-20 text-slate-100">
             <div class="mx-auto max-w-5xl">
                 <h2 data-reveal class="text-center text-3xl font-bold">{{ $mission['headline'] }}</h2>
-                <div class="mt-10 grid gap-5 md:grid-cols-3">
-                    @foreach ([['mission_title', 'mission'], ['vision_title', 'vision'], ['belief_title', 'belief']] as [$t, $b])
-                        <div data-reveal class="rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur">
-                            <p class="text-xs font-semibold uppercase tracking-widest text-accent">{{ $mission[$t] }}</p>
-                            <p class="mt-3 text-sm leading-relaxed opacity-95">{{ $mission[$b] }}</p>
-                        </div>
-                    @endforeach
+                <div data-reveal class="mt-10">
+                    <x-storytelling-carousel :slides="$aboutSlides" section-key="about-essence" tone="on-dark" />
                 </div>
             </div>
         </section>
