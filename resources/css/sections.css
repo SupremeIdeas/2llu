@@ -194,3 +194,34 @@
 .nx-preview-frame.is-mobile  { max-width: 390px; }
 .nx-preview-frame.is-tablet  { max-width: 768px; }
 .nx-preview-frame.is-desktop { max-width: 100%; }
+
+/* =============================================================================
+ * Storytelling Carousel (BLUEPRINT-batch1-sections §3). Image layer crossfades;
+ * the text block slides in the swipe direction on a gesture, gently fades on
+ * auto-advance. The section's bottom nav is sticky within the section (so it
+ * "disappears when you scroll past" for free — no fixed-position collision with
+ * the global nav). Brand-token colours throughout; reduced-motion safe.
+ * ========================================================================== */
+.nx-story { position: relative; }
+.nx-story__stage { position: relative; overflow: hidden; border-radius: 1.5rem; }
+.nx-story__images { position: relative; }
+.nx-story__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: 0; transition: opacity .6s ease; }
+.nx-story__img.is-active { opacity: 1; }
+.nx-story__img--lead { position: relative; } /* first image sizes the stage */
+
+/* Text-enter animations (JS adds one class per change; reflow re-fires them). */
+.nx-tin-fade  { animation: nx-tin-fade .5s ease both; }
+.nx-tin-right { animation: nx-tin-right .45s cubic-bezier(.2,.7,.2,1) both; }
+.nx-tin-left  { animation: nx-tin-left  .45s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes nx-tin-fade  { from { opacity: 0 } to { opacity: 1 } }
+@keyframes nx-tin-right { from { opacity: 0; transform: translateX(26px) } to { opacity: 1; transform: translateX(0) } }
+@keyframes nx-tin-left  { from { opacity: 0; transform: translateX(-26px) } to { opacity: 1; transform: translateX(0) } }
+
+/* Bottom nav: sticky within the section, not fixed to the viewport. */
+.nx-story__nav { position: sticky; bottom: 1rem; z-index: 10; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-story__img { transition: none; }
+  .nx-tin-fade, .nx-tin-right, .nx-tin-left { animation: none; }
+}

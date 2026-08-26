@@ -3,6 +3,7 @@ import './lottie';
 import { initImageCompression } from './image-compress';
 import { registerVoiceRecorder } from './support-voice';
 import { registerNiaChat } from './nia-chat';
+import { registerStorytellingCarousel } from './storytelling-carousel';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -17,6 +18,10 @@ registerVoiceRecorder();
 
 // Nia 3-phase human-conversation pacing for NaaraCare chat (BUILD-3 §5).
 registerNiaChat();
+
+// Storytelling Carousel (BLUEPRINT-batch1-sections §3) — Alpine component +
+// shared section-nav store, registered on alpine:init before Livewire boots it.
+registerStorytellingCarousel();
 
 // Alpine is provided by Livewire 3's bundled build (do not start a second
 // Alpine instance here — Livewire injects and starts it globally).
