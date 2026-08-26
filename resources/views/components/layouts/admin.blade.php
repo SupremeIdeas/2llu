@@ -59,6 +59,7 @@
         $more[] = ['route' => 'admin.nav', 'label' => 'Floating nav', 'icon' => 'grid'];
         $more[] = ['route' => 'admin.app-builder', 'label' => 'App Builder', 'icon' => 'package'];
         $more[] = ['route' => 'admin.site', 'label' => 'Marketing site', 'icon' => 'globe'];
+        $more[] = ['route' => 'admin.product-lines', 'label' => 'Product lines', 'icon' => 'package'];
         $more[] = ['route' => 'admin.home-media', 'label' => 'Homepage media', 'icon' => 'play'];
         $more[] = ['route' => 'admin.sidebar-menu', 'label' => 'Sidebar menu', 'icon' => 'menu'];
         $more[] = ['route' => 'admin.pages', 'label' => 'Custom pages', 'icon' => 'file-text'];

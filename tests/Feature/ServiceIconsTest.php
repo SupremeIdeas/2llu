@@ -111,12 +111,16 @@ class ServiceIconsTest extends TestCase
             ->assertSee('eSIM Data Plans'); // value showcase for a fresh account
     }
 
-    public function test_landing_page_carries_the_products_pin_and_countups(): void
+    public function test_landing_page_carries_the_product_carousel_and_countups(): void
     {
+        // The products section is now the storytelling carousel driven by
+        // ProductLineSettings (BLUEPRINT-batch1-sections §4), replacing the old
+        // pinned p1..p4 panels.
         $this->get('/')->assertOk()
-            ->assertSee('data-products-pin', false)
-            ->assertSee('What Naara Gives You')
-            ->assertSee('Naara Gift Cards') // the gift-card product now advertised on the front end
+            ->assertSee('storytellingCarousel(', false) // the reusable carousel
+            ->assertSee("key: 'product-lines'", false)
+            ->assertSee('What Naara Gives You')          // admin-editable section header
+            ->assertSee('Naara Gift')                    // a product line advertised on the front end
             ->assertSee('data-countup="190"', false);
     }
 }
