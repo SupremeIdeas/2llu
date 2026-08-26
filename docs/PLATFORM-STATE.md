@@ -665,3 +665,56 @@ Also operational: register the Paystack webhook URL
   said "confirm the real name, don't assume"). Only the brand-billing sweep was added.
 - Reminder for future work: default any new recurring command to `runInBackground()`
   unless it specifically must run inline.
+
+---
+
+## BUILD-10 — Preloader Studio + premium header & storytelling sections
+
+Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expansion.md`).
+
+### Preloader Studio (brand-aware, per-page-type, admin-controlled)
+- `App\Support\PreloaderSettings` resolves a preloader per **page type** on top of
+  the single choke point (`components/layouts/app.blade.php` → `<x-brand-preloader>`).
+  `pageType` threads through app → customer/admin/marketing/auth layouts; specific
+  pages override (e.g. `GetNumber` sets `preloaderType=numbers`).
+- **Zero regression:** until an admin saves an assignment, `forPageType()` returns
+  today's behaviour (BrandSettings enabled + legacy style) bit-for-bit; corrupt/
+  missing rows degrade to a hard safe default.
+- **Portable:** built-in types are domain-agnostic; feature code registers its own
+  (`PreloaderSettings::registerPageType('numbers', …)` in AppServiceProvider boot).
+- 18 presets ported to `resources/css/preloaders.css` (compiled, never inline),
+  every colour a brand-token CSS var (`rgb(var(--nx-pl-cN, var(--brand-*)))`) and
+  every duration `calc(base / var(--nx-pl-speed))`; reduced-motion handled once.
+- Admin **Preloader Studio** (`admin.preloader-studio`): live gallery, per-type
+  assignment + inherit-from-default, brand/manual colours, size/speed/opacity/
+  background/blur, per-preset loading text + neutral toggle, live preview. Debug
+  `?preloader_preview=slug` (admin-gated).
+
+### Header + storytelling sections
+- **Glass header** (`.nx-header-fade`): soft gradient fade, no hard border,
+  theme-aware; action order now **bell → theme toggle → hamburger**. The toggle is
+  the class-scoped **sun/moon switch** (valid rendered twice; brand-tokenised, sun
+  = brand gold), same Alpine contract (localStorage, `theme-changed`, aria).
+- **`<x-storytelling-carousel>`** + **`<x-content-modal>`** (the ONE modal engine):
+  fixed image crossfade, single text block that slides on gesture / fades on auto,
+  per-slide read-time `max(4, ceil(words/3))`, sticky section nav, per-slide FAB
+  modal. `resources/js/storytelling-carousel.js` = Alpine component + one shared
+  `sectionNav` store (single IntersectionObserver). First slide is server-rendered
+  (SEO / no-JS). Supports text-only + `tone="on-dark"`.
+- **Product-line CMS** (`App\Support\ProductLineSettings`, admin `admin.product-lines`):
+  six products (Data, Connect, Verify, Rent, Line, Gift) with a 3-beat modal arc;
+  homepage products section now renders them through the carousel.
+- **About** Vision/Mission/Essence uses the same carousel (verbatim SiteContent copy).
+- **§6 nav coordination:** the global bottom nav (app-shell) is gated by
+  `globalVisible()` — unchanged on pages without a carousel; hidden while a section
+  is in view and revealed near a footer sentinel on pages with one.
+- **§7:** `storytelling` registered as a Section Builder block (`SectionLibrary`)
+  with a `slides` repeater + `_editor-storytelling`, droppable into any custom page.
+
+### Open owner decisions (flagged, not invented)
+- **Naara Connect / Naara Rent** marketing copy ships as **draft** (`is_draft`,
+  badged in the Product-lines admin) pending owner approval.
+- **Naara Rent rental-duration terms** are deliberately left unstated in the draft
+  until confirmed.
+- The flagged **sun-colour** decision was resolved to the brand's own warm gold
+  (`--brand-accent`); change in Branding if a dedicated token is later preferred.
