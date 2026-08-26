@@ -28,7 +28,9 @@ class SecurityHeaders
 
         // CSP + HSTS are admin-toggleable at runtime (config is the default).
         if (\App\Support\SecuritySettings::cspEnabled() && filled(config('security.csp.policy'))) {
-            $headers['Content-Security-Policy'] = $this->policyWithTurnstile((string) config('security.csp.policy'));
+            $policy = $this->policyWithTurnstile((string) config('security.csp.policy'));
+            $policy = $this->policyWithConvai($policy);
+            $headers['Content-Security-Policy'] = $policy;
         }
 
         if (\App\Support\SecuritySettings::hstsEnabled() && $request->secure()) {
@@ -73,6 +75,46 @@ class SecurityHeaders
 
         if (! $sawFrame) {
             $directives[] = "frame-src 'self' ".$origin;
+        }
+
+        return implode('; ', array_filter($directives));
+    }
+
+    /**
+     * When the ElevenLabs Convai widget is active, add exactly the ElevenLabs
+     * origins its embed needs (script/connect/frame/font + a blob worker) and
+     * nowhere else. Gated on ConvaiWidget::active(), so the strict default policy
+     * is untouched until an admin turns the widget on. (Task #17.)
+     */
+    private function policyWithConvai(string $policy): string
+    {
+        if (! \App\Support\ConvaiWidget::active()) {
+            return $policy;
+        }
+
+        $add = \App\Support\ConvaiWidget::CSP;
+        $directives = array_map('trim', explode(';', $policy));
+        $present = [];
+
+        foreach ($directives as $i => $directive) {
+            foreach ($add as $name => $origins) {
+                if (str_starts_with($directive, $name.' ')) {
+                    $present[$name] = true;
+                    foreach ($origins as $origin) {
+                        if (! str_contains($directive, $origin)) {
+                            $directive .= ' '.$origin;
+                        }
+                    }
+                    $directives[$i] = $directive;
+                }
+            }
+        }
+
+        // Directives not already in the policy (e.g. worker-src) are appended.
+        foreach ($add as $name => $origins) {
+            if (empty($present[$name])) {
+                $directives[] = $name.' '.implode(' ', $origins);
+            }
         }
 
         return implode('; ', array_filter($directives));

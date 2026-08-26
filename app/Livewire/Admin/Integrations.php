@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Support\ConvaiWidget;
 use App\Support\SocialAuth;
 use App\Support\SocialLinks;
 use App\Support\Tracking;
@@ -26,6 +27,13 @@ class Integrations extends Component
 
     public string $gaId = '';
 
+    // ElevenLabs Convai voice widget (task #17).
+    public bool $convaiEnabled = false;
+
+    public string $convaiAgentId = '';
+
+    public string $convaiPlacement = 'both';
+
     public ?string $saved = null;
 
     public function mount(): void
@@ -38,6 +46,32 @@ class Integrations extends Component
         }
         $this->pixelId = (string) (Tracking::pixelId() ?? '');
         $this->gaId = (string) (Tracking::gaId() ?? '');
+
+        $convai = ConvaiWidget::current();
+        $this->convaiEnabled = $convai['enabled'];
+        $this->convaiAgentId = $convai['agent_id'];
+        $this->convaiPlacement = $convai['placement'];
+    }
+
+    public function saveConvai(): void
+    {
+        $this->validate([
+            'convaiAgentId' => ['nullable', 'regex:/^[A-Za-z0-9_-]{6,64}$/'],
+            'convaiPlacement' => ['required', 'in:both,customer,marketing'],
+        ], [
+            'convaiAgentId.regex' => 'An agent id is 6–64 letters, numbers, hyphens or underscores (from elevenlabs.io → your agent → Widget).',
+        ]);
+
+        // Guard: can't switch the widget on without an agent id to render.
+        if ($this->convaiEnabled && ConvaiWidget::sanitizeId($this->convaiAgentId) === '') {
+            $this->addError('convaiAgentId', 'Add your Convai agent id before enabling the widget.');
+
+            return;
+        }
+
+        ConvaiWidget::save($this->convaiEnabled, $this->convaiAgentId, $this->convaiPlacement);
+        $this->saved = 'Voice widget saved.';
+        $this->dispatch('nx-toast', type: 'success', message: 'Voice widget saved.');
     }
 
     public function saveSocial(): void
@@ -74,6 +108,7 @@ class Integrations extends Component
         return view('livewire.admin.integrations', [
             'platforms' => SocialLinks::PLATFORMS,
             'providers' => $providers,
+            'convaiPlacements' => ConvaiWidget::PLACEMENTS,
         ]);
     }
 }

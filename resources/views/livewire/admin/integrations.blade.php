@@ -53,6 +53,41 @@
         </button>
     </section>
 
+    {{-- ElevenLabs Convai voice assistant (task #17) --}}
+    <section class="mb-8 rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Voice assistant (ElevenLabs Convai)</h2>
+        <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">
+            A floating voice agent for visitors. Nothing external loads until you enable it — the strict content-security policy widens for ElevenLabs only while it's on. When off, the WhatsApp / live-chat launcher is the fallback.
+        </p>
+
+        <label class="flex items-center gap-3">
+            <input type="checkbox" wire:model="convaiEnabled" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary">
+            <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Enable the voice assistant</span>
+        </label>
+
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Convai agent id</label>
+                <input type="text" wire:model="convaiAgentId" placeholder="e.g. agent_xxx or a public id"
+                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                <p class="mt-1 text-[11px] text-slate-400">elevenlabs.io → your Convai agent → Widget → copy the agent id (public, not your API key).</p>
+                @error('convaiAgentId') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Show it</label>
+                <select wire:model="convaiPlacement" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @foreach ($convaiPlacements as $val => $label)
+                        <option value="{{ $val }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <button type="button" wire:click="saveConvai" class="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark">
+            <x-icon name="check" class="h-4 w-4" /> Save voice widget
+        </button>
+    </section>
+
     {{-- Social sign-in providers (status + baked setup guides) --}}
     <section class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
         <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Social sign-in</h2>

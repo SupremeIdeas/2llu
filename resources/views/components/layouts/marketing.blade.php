@@ -126,4 +126,8 @@
         @livewire('wizard')
     @endauth
     <x-floating-nav />
+
+    {{-- ElevenLabs Convai voice assistant (task #17) — renders only when an admin
+         enabled it for the public site. --}}
+    <x-convai-widget context="marketing" />
 </x-layouts.app>

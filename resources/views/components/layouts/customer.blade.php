@@ -105,9 +105,15 @@
         {{ $slot }}
     </x-app-shell>
 
+    {{-- ElevenLabs Convai voice assistant (task #17) — when an admin enables it,
+         it becomes the primary support launcher and the WhatsApp button below is
+         hidden (WhatsApp remains the fallback whenever Convai is off). --}}
+    <x-convai-widget context="customer" />
+
     {{-- Live-help: WhatsApp support (blueprint Section 32). Stacked above the
-         NaaraSim Wizard launcher so the two floating actions never overlap. --}}
-    @if (\App\Support\Niche\SupportLinks::hasWhatsapp())
+         NaaraSim Wizard launcher so the two floating actions never overlap.
+         Hidden while the Convai widget is active, to avoid two support launchers. --}}
+    @if (\App\Support\Niche\SupportLinks::hasWhatsapp() && ! \App\Support\ConvaiWidget::shownOn('customer'))
         <a href="{{ \App\Support\Niche\SupportLinks::whatsappUrl() }}" target="_blank" rel="noopener"
            aria-label="Chat with support on WhatsApp"
            class="fixed bottom-40 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition hover:bg-primary-dark lg:bottom-24">
