@@ -240,6 +240,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/announcements', \App\Livewire\Admin\Announcements::class)->name('announcements');
             Route::get('/credits', \App\Livewire\Admin\Credits::class)->name('credits');
             Route::get('/social-hunt', \App\Livewire\Admin\SocialHunt::class)->name('social-hunt');
+            Route::get('/brand-directory', \App\Livewire\Admin\BrandDirectory::class)->name('brand-directory');
             Route::get('/gift-cards', \App\Livewire\Admin\GiftCards::class)->name('gift-cards');
             Route::get('/developer-api', \App\Livewire\Admin\DeveloperApi::class)->name('developer-api');
             Route::get('/payouts', \App\Livewire\Admin\Payouts::class)->name('payouts');

@@ -618,3 +618,50 @@ Also operational: register the Paystack webhook URL
 - **§5/§6/§7** Glass legibility without blur, removed animated backdrop-blur
   artifacts, marketing mobile menu now scrolls instead of clipping.
 - **§8** Consistent brand-logo sizing via a named `size` prop.
+
+---
+
+## BUILD-7 + BUILD-9 + scheduler tuning — 2026-08-04
+
+### Done — BUILD-7 (receipts, tax, merchant analytics, sub-referral)
+- **§1 Purchase receipts.** `PurchaseReceiptNotification` (email + in-app) fires on
+  eSIM/number/permanent-line orders (best-effort, queued — never blocks the money
+  path). Customer **Receipts** tab reads the authoritative `wallet_transactions`
+  ledger, so the wizard fee shows as its own line; resend-to-email supported.
+- **§2 Tax/VAT support layer — shipped OFF.** `TaxService::taxFor()` returns 0
+  unless an admin sets a per-country rate (Admin → Tax rates / `TaxRates`). Tax is
+  additive, fully separate from `PricingEngine`'s cost+profit math. **Open business
+  decision (not a code task):** which countries to enable tax for, at what rate.
+- **§3 Merchant earnings analytics.** Reporting-only page over `MerchantEarning`
+  (time-series, product-line breakdown, top customers). No change to accrual.
+- **§4 Merchant sub-referral.** One-time flat bonus, **single hop, not a downline**
+  — a full multi-level/MLM structure was deliberately NOT built (regulatory shape).
+  Reuses `Referral` with a `type` column; admin-set bonus, default 0 (off).
+
+### Done — BUILD-9 (self-service brand directory subscriptions)
+- Extends BUILD-6's `brand_partners`/`brand_partner_handles` (no second brand
+  table). New: plans, subscriptions, videos, video-watch claims, priority log.
+- **Money:** first-month + monthly billing via `WalletService` (idempotent per
+  month), mirroring the Naara Line renewal command; short wallet **pauses** (never
+  cancels) + reminds + auto-resumes. Daily **100-credit cap** across follow +
+  brand-follow + video (admin-configurable). Video credit is **server-confirmed**
+  (≥60s of heartbeat-accumulated, seek-resistant, token-bound watch-time).
+- **Priority engine:** under-delivered handles boost `priority_score` (auditable
+  `brand_priority_log`), decaying on on-target months. Directory sorts admin-
+  featured first, then priority, only `active` listings.
+- **Taxonomy** (`BrandCategories`) is admin-extensible (Setting), not fixed in code.
+- **Open product decision:** whether a `past_due` brand subscription should ever
+  **hard-cancel** after a fixed grace period — currently an indefinite past_due +
+  reminder loop (no cutoff invented), per BUILD-9 §5.2.5.
+
+### Scheduler tuning
+- Added `brand-subscriptions:bill` → `dailyAt('05:45')`, `withoutOverlapping()`,
+  `runInBackground()` (05:45 is clear, just after the 05:30 merchant sweep). The
+  command processes subscriptions in chunks so its runtime stays flat as
+  subscriber count grows.
+- **Finding:** the BUILD-4 WhatsApp Autopilot has **no scheduled artisan command**
+  in this codebase (it's service/webhook-driven — `App\Services\WhatsApp\WhatsAppAutopilot`),
+  so the hotfix's `autopilot:process` entry was intentionally NOT added (the hotfix
+  said "confirm the real name, don't assume"). Only the brand-billing sweep was added.
+- Reminder for future work: default any new recurring command to `runInBackground()`
+  unless it specifically must run inline.

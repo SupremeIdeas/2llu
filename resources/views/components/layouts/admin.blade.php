@@ -36,6 +36,7 @@
         $more[] = ['route' => 'admin.bento-icons', 'label' => 'Bento icons', 'icon' => 'image'];
         $more[] = ['route' => 'admin.credits', 'label' => 'NaaraCredits', 'icon' => 'gift'];
         $more[] = ['route' => 'admin.social-hunt', 'label' => 'Social Hunt', 'icon' => 'star'];
+        $more[] = ['route' => 'admin.brand-directory', 'label' => 'Brand Directory', 'icon' => 'grid'];
         $more[] = ['route' => 'admin.gift-cards', 'label' => 'Naara Gift', 'icon' => 'gift'];
 
         // Money & partners.

@@ -97,7 +97,7 @@
                                         </div>
                                         <p class="mt-1.5 text-center text-xs text-slate-500 dark:text-slate-400">
                                             <span x-show="!done">Keep watching — <span x-text="confirmed"></span>s / 60s confirmed</span>
-                                            <span x-show="done" class="font-semibold text-green-600 dark:text-green-400">Reward unlocked 🎉</span>
+                                            <span x-show="done" class="font-semibold text-green-600 dark:text-green-400">Reward unlocked!</span>
                                         </p>
                                     </div>
                                 </template>

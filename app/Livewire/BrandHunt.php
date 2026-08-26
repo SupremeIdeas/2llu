@@ -58,7 +58,7 @@ class BrandHunt extends Component
             return;
         }
         if ($result['earned'] > 0) {
-            $this->flash = "🎉 +{$result['earned']} NaaraCredits for following {$label}!";
+            $this->flash = "+{$result['earned']} NaaraCredits for following {$label}!";
             $this->dispatch('nx-toast', variant: 'hero', type: 'success',
                 title: 'Reward unlocked', message: "+{$result['earned']} NaaraCredits added to your balance.");
             $this->dispatch('reward-claimed');
@@ -93,7 +93,7 @@ class BrandHunt extends Component
         if (! empty($r['capped'])) {
             $this->flash = \App\Support\DailyCreditCap::MESSAGE;
         } elseif ($r['claimed'] && $r['earned'] > 0) {
-            $this->flash = "🎉 +{$r['earned']} NaaraCredits for watching!";
+            $this->flash = "+{$r['earned']} NaaraCredits for watching!";
             $this->dispatch('nx-toast', variant: 'hero', type: 'success', title: 'Reward unlocked', message: "+{$r['earned']} NaaraCredits added.");
             $this->dispatch('reward-claimed');
         }
