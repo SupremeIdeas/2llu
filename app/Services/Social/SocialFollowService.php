@@ -35,12 +35,18 @@ class SocialFollowService
      * already-claimed), and CreditService::earn is idempotent by reference so a
      * credit can never double-grant even under a retry.
      *
-     * @return array{earned: float, already: bool}
+     * @return array{earned: float, already: bool, capped?: bool}
      */
     public function claim(User $user, SocialFollowHandle|BrandPartnerHandle $handle): array
     {
         if (! (bool) $handle->is_active) {
             return ['earned' => 0.0, 'already' => false];
+        }
+
+        // Daily 100-credit cap (BUILD-9 §4). If already reached, block the claim
+        // entirely and DON'T record it — the follow can be claimed again tomorrow.
+        if (! $this->hasClaimed($user, $handle) && \App\Support\DailyCreditCap::isReached($user)) {
+            return ['earned' => 0.0, 'already' => false, 'capped' => true];
         }
 
         [$column, $source, $reference] = $this->refFor($user, $handle);

@@ -44,6 +44,12 @@ class BrandHunt extends Component
 
     private function grant(array $result, string $label): void
     {
+        if (! empty($result['capped'])) {
+            $this->flash = \App\Support\DailyCreditCap::MESSAGE;
+            $this->dispatch('nx-toast', type: 'info', message: $this->flash);
+
+            return;
+        }
         if ($result['already']) {
             $this->flash = 'You already claimed this one.';
 
