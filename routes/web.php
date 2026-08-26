@@ -108,6 +108,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/rewards', \App\Livewire\Rewards::class)->name('rewards');
         // Brand Partner Hunt (BUILD-6 §C) — follow-to-earn NaaraCredits.
         Route::get('/rewards/hunt', \App\Livewire\BrandHunt::class)->name('rewards.hunt');
+        // Brand Directory self-service (BUILD-9) — get listed + manage a listing.
+        Route::get('/brand/get-listed', \App\Livewire\GetListed::class)->name('brand.get-listed');
+        Route::get('/brand/manage', \App\Livewire\BrandManage::class)->name('brand.manage');
 
         // Partner profit-share earnings (dollars only; 404 for non-partners).
         Route::get('/partner', \App\Livewire\PartnerEarnings::class)->name('partner.earnings');

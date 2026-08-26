@@ -27,6 +27,7 @@
         ['route' => 'support', 'label' => 'Help & Support', 'icon' => 'message-circle'],
         ['route' => 'rewards', 'label' => 'Rewards', 'icon' => 'gift'],
         ['route' => 'receipts', 'label' => 'Receipts', 'icon' => 'file-text'],
+        ['route' => 'brand.get-listed', 'label' => 'List my brand', 'icon' => 'star'],
         ['route' => 'referrals', 'label' => 'Referrals', 'icon' => 'users'],
         ['route' => 'data-estimator', 'label' => 'Estimator', 'icon' => 'signal'],
         ['route' => 'profile', 'label' => 'Profile', 'icon' => 'id-card'],
