@@ -33,6 +33,11 @@ if (config('queue.default') === 'database') {
 // Ping provider wallets and alert on low balance (Section 17.2).
 Schedule::command('providers:health-check')->everyFifteenMinutes()->withoutOverlapping();
 
+// Worker-layer watchdog (Platform Health): alerts admins if Redis/Horizon has
+// stopped processing jobs. Runs off the cron (independent of the queue it
+// watches) so it can still raise the alarm when the workers themselves are down.
+Schedule::command('ops:worker-health')->everyFiveMinutes()->withoutOverlapping();
+
 // Charge permanent-number (Naara Line) monthly subscriptions + release lapsed ones.
 Schedule::command('virtual:renew')->dailyAt('04:00')->withoutOverlapping();
 

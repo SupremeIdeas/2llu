@@ -58,4 +58,39 @@ class SystemHealthTest extends TestCase
             ->assertSee('System health')
             ->assertSee('Provider health check');
     }
+
+    public function test_the_page_shows_the_worker_layer_and_cache_controls(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(SystemHealth::class)
+            ->assertOk()
+            ->assertSee('Worker driver')
+            ->assertSee('Horizon')
+            ->assertSee('Failed jobs')
+            ->assertSee('Clear app cache');
+    }
+
+    public function test_an_admin_can_flush_the_cache_and_a_user_cannot(): void
+    {
+        \Illuminate\Support\Facades\Cache::put('probe', 'x', 60);
+
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        Livewire::actingAs($admin)->test(SystemHealth::class)
+            ->call('flushCache', 'app')
+            ->assertDispatched('nx-toast');
+
+        // A non-admin is refused at mount already (page is admin-only).
+        Livewire::actingAs(User::factory()->create())->test(SystemHealth::class)->assertStatus(403);
+    }
+
+    public function test_the_worker_verdict_flags_a_sync_queue_as_degraded(): void
+    {
+        // The test env runs QUEUE_CONNECTION=sync, so jobs are not backgrounded.
+        $verdict = \App\Support\QueueHealth::workerVerdict();
+        $this->assertFalse($verdict['healthy']);
+        $this->assertStringContainsString('inline', strtolower((string) $verdict['reason']));
+    }
 }

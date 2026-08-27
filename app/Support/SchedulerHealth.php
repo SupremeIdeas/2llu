@@ -32,6 +32,7 @@ class SchedulerHealth
     public const TASKS = [
         'queue:work' => ['Queue drain (shared hosting)', 60],
         'providers:health-check' => ['Provider health check', 900],
+        'ops:worker-health' => ['Worker watchdog (Redis/Horizon)', 300],
         'media:migrate-to-wasabi' => ['Media → Wasabi migration', 3600],
         'esim:sync' => ['eSIM catalogue sync', 86400],
         'virtual:renew' => ['Naara Line renewals', 86400],
