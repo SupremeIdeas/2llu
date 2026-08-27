@@ -42,6 +42,28 @@ class Wizard extends Component
     /** State: purpose → country → (service|device|pick) → review → result. */
     public string $step = 'purpose';
 
+    /**
+     * Per-step "visit" counters + last rendered step (wizard picker fix). Each
+     * fresh entry into the country/service step bumps its counter, which keys the
+     * step's Alpine container so Livewire's DOM-morph gives a genuinely new node
+     * — Alpine then re-initialises `cq`/`sq` to '' instead of retaining a stale
+     * search string that could hide every item after a forward→back→forward.
+     */
+    public array $stepVisits = ['country' => 0, 'service' => 0];
+
+    public ?string $lastStep = null;
+
+    /** Manual escape hatch (refresh buttons) — bumps the key to force a clean re-init. */
+    public function refreshCountries(): void
+    {
+        $this->stepVisits['country'] = ($this->stepVisits['country'] ?? 0) + 1;
+    }
+
+    public function refreshServices(): void
+    {
+        $this->stepVisits['service'] = ($this->stepVisits['service'] ?? 0) + 1;
+    }
+
     /** Public Model key the user is buying (naara_verify|naara_rent|naara_line|naara_data). */
     public ?string $model = null;
 
@@ -660,6 +682,16 @@ class Wizard extends Component
 
     public function render()
     {
+        // Wizard picker fix: bump the visit counter on each genuine ENTRY into
+        // the country/service step (a step transition, not a same-step re-render),
+        // so the step's wire:key changes and Alpine re-initialises cleanly.
+        if ($this->step !== $this->lastStep) {
+            if (array_key_exists($this->step, $this->stepVisits)) {
+                $this->stepVisits[$this->step]++;
+            }
+            $this->lastStep = $this->step;
+        }
+
         // smsOrderId / virtualNumberId are public (attacker-settable) properties,
         // so both lookups MUST be scoped to the owner — the view renders the phone
         // number and OTP code, and an unscoped find() would disclose another

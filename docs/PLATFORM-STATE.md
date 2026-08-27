@@ -900,3 +900,21 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
   (`StaffWithdrawalService` + `ReturnStaffEarnings` reversal listener). Staff are
   **exempt from the free-payout/KYC threshold** (Frank's decision — already vetted
   at account creation). Included in the automatic `payouts:earnings-run`.
+
+### Wizard picker refresh (wizard+preloader blueprint)
+- **§1 (the bug) fixed:** the wizard's country/service step containers had no
+  wire:key, so Livewire's DOM-morph could reuse the old Alpine node on a
+  forward→back→forward and retain a stale `cq`/`sq` search string that hid every
+  item. Added a per-step visit counter (`stepVisits`), bumped on each genuine step
+  ENTRY (detected via `lastStep` in render()), which keys each container so Alpine
+  re-initialises cleanly. Added visible refresh buttons (`refreshCountries`/
+  `refreshServices`) as a manual escape hatch. Tested (WizardPickerRefreshTest).
+- **§2 preloader customization:** SKIPPED as already built — the completed
+  "Preloader Studio" (`PreloaderSettings` + `PreloaderStudio`, per-page-type
+  presets + overrides) already supersedes this blueprint's bg/opacity/blur/speed/
+  route-override asks with a richer system.
+- **§3 catalogue speed:** the country/service lists are already `Cache::
+  rememberForever` and recomputed each render, so they're warm by the time the
+  step shows (no separate prefetch needed). The remaining lever — a short timeout
+  on `chooseService`'s live provider quote so a slow provider degrades gracefully
+  — is a provider-layer change flagged as a follow-up (out of scope for this UI pass).

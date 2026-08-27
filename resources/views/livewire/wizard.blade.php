@@ -177,8 +177,14 @@
 
                     {{-- 2) Country (full catalogue, searchable) --}}
                     @elseif ($step === 'country')
-                        <div x-data="{ cq: '' }">
-                            <p class="text-sm text-slate-600 dark:text-slate-300">Which country?</p>
+                        <div wire:key="wiz-country-{{ $stepVisits['country'] ?? 0 }}" x-data="{ cq: '' }">
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm text-slate-600 dark:text-slate-300">Which country?</p>
+                                <button type="button" wire:click="refreshCountries" title="Refresh list"
+                                        class="rounded-md p-1 text-slate-400 transition hover:text-primary dark:hover:text-teal-300">
+                                    <x-icon name="refresh" class="h-4 w-4" />
+                                </button>
+                            </div>
                             <input type="text" x-model="cq" placeholder="Search countries…"
                                    class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
                             <div class="mt-2 grid max-h-56 grid-cols-1 gap-2 overflow-y-auto pr-1">
@@ -196,8 +202,14 @@
 
                     {{-- 3a) Service (OTP / rental) — full catalogue, searchable --}}
                     @elseif ($step === 'service')
-                        <div x-data="{ sq: '' }">
-                            <p class="text-sm text-slate-600 dark:text-slate-300">Which service is the number for?</p>
+                        <div wire:key="wiz-service-{{ $stepVisits['service'] ?? 0 }}" x-data="{ sq: '' }">
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm text-slate-600 dark:text-slate-300">Which service is the number for?</p>
+                                <button type="button" wire:click="refreshServices" title="Refresh list"
+                                        class="rounded-md p-1 text-slate-400 transition hover:text-primary dark:hover:text-teal-300">
+                                    <x-icon name="refresh" class="h-4 w-4" />
+                                </button>
+                            </div>
                             <input type="text" x-model="sq" placeholder="Search services…"
                                    class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
                             <div class="mt-2 grid max-h-56 grid-cols-3 gap-2 overflow-y-auto pr-1">
