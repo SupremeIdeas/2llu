@@ -16,6 +16,24 @@
     // own surface (eSIM/numbers → NaaraSim, gifts → Naara Gift), so each stands
     // out (owner request). Chrome, not content — see App\Support\BrandContext.
     $headerBrand = \App\Support\BrandContext::headerLogo();
+
+    // Numbers section scoping (Numbers overhaul §2/§5). ONE bidirectional
+    // condition, re-evaluated on every render (survives wire:navigate, since the
+    // layout is part of each navigation response): on /numbers/* the global nav +
+    // standard header are hidden and the Numbers nav + wallet bar take their place;
+    // everywhere else it's the reverse. Never two flags that could drift.
+    $inNumbers = request()->routeIs('numbers.*');
+    $numbersUnread = ($inNumbers && auth()->check())
+        ? \App\Models\MessageThread::totalUnread(auth()->id()) : 0;
+    $numbersWalletUsd = ($inNumbers && auth()->check())
+        ? (float) (auth()->user()->wallet->usd_balance ?? 0) : 0.0;
+    // 2 left + 2 right around the untouched centre "More".
+    $numbersNav = [
+        ['route' => 'numbers.contacts', 'label' => 'Contacts', 'icon' => 'users'],
+        ['route' => 'numbers.forwarding', 'label' => 'Forwarding', 'icon' => 'phone-forwarded'],
+        ['route' => 'numbers.dialer', 'label' => 'Dialer', 'icon' => 'phone'],
+        ['route' => 'numbers.messages', 'label' => 'Messages', 'icon' => 'message-circle', 'badge' => $numbersUnread],
+    ];
 @endphp
 
 <div x-data="{
@@ -92,6 +110,20 @@
          under it without a visible edge. Logo + actions stay fully opaque and
          carry a subtle drop-shadow (in .nx-header-fade) so they never lose
          contrast over busy content underneath. --}}
+    @if ($inNumbers)
+        {{-- §5 Numbers header: the standard header (logo, bell, toggle, hamburger)
+             is replaced by a wallet-balance bar + top-up shortcut across all
+             /numbers/* routes — the freed space Frank asked for. --}}
+        <header class="nx-header-fade sticky top-0 z-30 flex items-center justify-between px-4 py-3 lg:hidden">
+            <a href="{{ route('numbers.contacts') }}" wire:navigate class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                <x-icon name="signal" class="h-5 w-5 text-primary dark:text-teal-300" /> Numbers
+            </a>
+            <a href="{{ route('wallet') }}" wire:navigate class="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary transition hover:bg-primary/15 dark:bg-teal-500/15 dark:text-teal-300">
+                <x-icon name="wallet" class="h-4 w-4" /> ${{ number_format($numbersWalletUsd, 2) }}
+                <span class="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white dark:bg-teal-400 dark:text-navy"><x-icon name="plus" class="h-3 w-3" /></span>
+            </a>
+        </header>
+    @else
     <header class="nx-header-fade sticky top-0 z-30 flex items-center justify-between px-4 py-3 lg:hidden">
         <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex items-center">
             <x-brand-logo :variant="$headerBrand['variant']" :label="$headerBrand['label']" size="md" :fallback-icon="$brandIcon" />
@@ -104,6 +136,7 @@
             @unless (isset($headerActions))<x-theme-toggle />@endunless
         </div>
     </header>
+    @endif
 
     {{-- ============ Page content ============ --}}
     <div class="lg:pl-72 lg:transition-[padding] lg:duration-300" :class="navCollapsed ? 'lg:!pl-24' : ''">
@@ -129,6 +162,7 @@
          pill lifted off the bottom edge with a shadow on all sides; or DOCKED —
          flush to the bottom with only the top corners rounded. The little grab
          handle toggles between them (also settable from account settings). --}}
+    @unless ($inNumbers)
     <nav class="fixed z-40 border border-slate-200/70 bg-white/90 backdrop-blur-xl transition-all duration-300 lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/90"
          x-show="$store.sectionNav.globalVisible()" x-transition.opacity.duration.300ms
          :class="navFloating
@@ -154,6 +188,29 @@
             @endforeach
         </div>
     </nav>
+    @endunless
+
+    {{-- Numbers section nav (Numbers overhaul §2) — shown ONLY on /numbers/*,
+         mutually exclusive with the global nav above via the same $inNumbers. --}}
+    @if ($inNumbers)
+    <nav class="fixed inset-x-3 bottom-3 z-40 rounded-[1.75rem] border border-slate-200/70 bg-white/90 shadow-[0_10px_40px_rgba(13,27,42,0.16)] backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/90 dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
+         style="padding-bottom: env(safe-area-inset-bottom);">
+        <div class="mx-auto grid max-w-md grid-cols-5 items-center px-1 pt-1.5">
+            @foreach ([$numbersNav[0], $numbersNav[1]] as $item)
+                @include('partials.numbers-nav-item', ['item' => $item, 'isActive' => $isActive])
+            @endforeach
+            <div class="flex justify-center">
+                <button type="button" @click="moreOpen = true" aria-label="More"
+                        class="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/30 ring-4 ring-[#F8F9FA] transition active:scale-95 dark:ring-navy">
+                    <x-icon name="grid" class="h-6 w-6" />
+                </button>
+            </div>
+            @foreach ([$numbersNav[2], $numbersNav[3]] as $item)
+                @include('partials.numbers-nav-item', ['item' => $item, 'isActive' => $isActive])
+            @endforeach
+        </div>
+    </nav>
+    @endif
 
     {{-- ============ MOBILE: "More" sheet ============ --}}
     <div x-show="moreOpen" x-cloak class="fixed inset-0 z-50 lg:hidden" style="display:none;">
