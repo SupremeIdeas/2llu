@@ -840,3 +840,19 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
   never hardcoded), `/webhooks/*` excluded from Bot Fight Mode, cache-bypass for
   `/admin/*` `/api/*` `/webhooks/*`, and real-test-webhook verification via the
   System Health delivery log.
+
+### Unified payout system (NAARA-BUILD-22)
+- **§1 Referral margin-share:** see the referral-earnings entry above.
+- **§5 Payout gateways (2 → 4):** added `PayPalPayoutGateway` (PayPal Payouts —
+  self-service email payout for internationally-earning users) and
+  `CryptomusPayoutGateway` (single signed-endpoint crypto payout rail; chosen over
+  NOWPayments, whose payout API needs a JWT + interactive 2FA handshake). Both
+  implement the existing `PayoutGatewayInterface`, are registered in
+  `PayoutService`, and are allow-listed in `PayoutWebhookController`. New config:
+  `services.cryptomus.payout_api_key` (separate from the collection key).
+  - **Collection-only gateways (documented gap):** Stripe, Binance Pay,
+    NOWPayments, CoinPayments, and Payssion remain **collection-only** — their
+    payout/withdrawal APIs are meaningfully heavier to integrate (Stripe Connect
+    onboarding; NOWPayments JWT+2FA; per-vendor payout KYC), so they are
+    intentionally deferred. Paystack + Flutterwave (banks/mobile-money, Africa),
+    PayPal (global email), and Cryptomus (crypto) cover the real payout lanes today.

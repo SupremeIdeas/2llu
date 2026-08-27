@@ -211,9 +211,12 @@ return [
     ],
 
     // Cryptomus (crypto). merchant_id + api_key sign every request + webhook.
+    // payout_api_key is a SEPARATE key for the money-out (Payout) API
+    // (NAARA-BUILD-22 §5) — blank leaves crypto payouts unavailable.
     'cryptomus' => [
         'merchant_id' => env('CRYPTOMUS_MERCHANT_ID'),
         'api_key' => env('CRYPTOMUS_API_KEY'),
+        'payout_api_key' => env('CRYPTOMUS_PAYOUT_API_KEY'),
         'base_url' => env('CRYPTOMUS_BASE_URL', 'https://api.cryptomus.com'),
     ],
 

@@ -34,12 +34,14 @@ use App\Services\Payments\PaypalGateway;
 use App\Services\Payments\PayssionGateway;
 use App\Services\Payments\PaystackGateway;
 use App\Services\Payments\StripeGateway;
+use App\Services\Payouts\CryptomusPayoutGateway;
 use App\Services\Payouts\FlutterwaveBankResolver;
 use App\Services\Payouts\FlutterwavePayoutGateway;
 use App\Services\Payouts\PayoutAccountService;
 use App\Services\Payouts\PayoutService;
 use App\Services\Payouts\PaystackBankResolver;
 use App\Services\Payouts\PaystackPayoutGateway;
+use App\Services\Payouts\PayPalPayoutGateway;
 use App\Services\Pricing\PricingEngine;
 use App\Services\Push\MinishlinkPushSender;
 use App\Services\Push\WebPushSender;
@@ -168,9 +170,13 @@ class AppServiceProvider extends ServiceProvider
         // and the engine that owns the withdrawal lifecycle (ROADMAP §Layer 0.2).
         $this->app->singleton('payout.paystack', PaystackPayoutGateway::class);
         $this->app->singleton('payout.flutterwave', FlutterwavePayoutGateway::class);
+        $this->app->singleton('payout.paypal', PayPalPayoutGateway::class);
+        $this->app->singleton('payout.cryptomus', CryptomusPayoutGateway::class);
         $this->app->singleton(PayoutService::class, fn ($app) => new PayoutService([
             $app->make(PaystackPayoutGateway::class),
             $app->make(FlutterwavePayoutGateway::class),
+            $app->make(PayPalPayoutGateway::class),      // international → PayPal email
+            $app->make(CryptomusPayoutGateway::class),   // crypto payout rail
         ]));
 
         // KYC/identity providers, resolved by name via app("kyc.$provider"), and
