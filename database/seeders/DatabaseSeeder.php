@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             EsimImageSeeder::class,     // eSIM country/region navigation imagery (BUILD-8)
             NumbersBentoSeeder::class,  // six Numbers landing bento cards
             BrandPlanSeeder::class,     // brand-directory subscription starter plans (BUILD-9)
+            ProviderRegistrySeeder::class, // provider registry metadata + URLs (BUILD-14)
         ]);
     }
 }

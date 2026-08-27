@@ -68,7 +68,57 @@ class ProviderHealth
 
         Cache::put(self::CACHE_KEY, $health, now()->addMinutes(30));
 
+        // BUILD-14 §3.1 — ALSO persist each probe into the Provider Registry (in
+        // addition to the cache write above, never instead of it, so the existing
+        // "Provider wallets" dashboard widget keeps working unchanged).
+        $this->upsertRegistry($health);
+
         return $health;
+    }
+
+    /**
+     * Persist the live-truth snapshot into provider_registry, keyed on
+     * provider_key. Metadata (stack, product families, onboarding tier, URLs) is
+     * owned by the seeder; here we only touch the live-truth columns + the
+     * enabled mirror, then bust the registry snapshot cache so a fresh result is
+     * visible within its short TTL.
+     *
+     * @param array<string, array<string, mixed>> $health
+     */
+    private function upsertRegistry(array $health): void
+    {
+        foreach ($health as $provider => $info) {
+            try {
+                $status = (string) ($info['status'] ?? 'coming_soon');
+                $meta = \App\Models\ProviderRegistry::deriveMeta($provider);
+
+                $live = [
+                    'status' => $status,
+                    'balance' => $info['balance'] ?? null,
+                    'latency_ms' => $info['latency_ms'] ?? null,
+                    'last_checked_at' => now(),
+                    'enabled' => ProviderStatus::isActive($provider),
+                ];
+                if (in_array($status, ['ok', 'low'], true)) {
+                    $live['last_success_at'] = now();
+                } elseif ($status === 'down') {
+                    $live['last_failure_at'] = now();
+                    $live['last_error'] = $info['error'] ?? null;
+                }
+
+                \App\Models\ProviderRegistry::updateOrCreate(
+                    ['provider_key' => $provider],
+                    // On first sight (unseeded) fill the derived metadata too, so a
+                    // provider is never a bare row; the seeder later enriches URLs.
+                    $live + ['stack' => $meta['stack'], 'product_families' => $meta['product_families']],
+                );
+            } catch (\Throwable) {
+                // Best-effort: a registry write must never break the health check
+                // (which still alerts + updates the cache regardless).
+            }
+        }
+
+        \App\Models\ProviderRegistry::flushSnapshot();
     }
 
     /** @param array<string, mixed> $prev */
@@ -92,11 +142,15 @@ class ProviderHealth
             return ['status' => 'configured'] + $base;
         }
 
+        // Time the live probe itself (BUILD-14 §3.2 — latency was never recorded).
+        $start = microtime(true);
         try {
             $balance = (float) $service->{$method}();
         } catch (\Throwable $e) {
-            return ['status' => 'down', 'error' => $e->getMessage()] + $base;
+            return ['status' => 'down', 'error' => $e->getMessage(),
+                'latency_ms' => (int) round((microtime(true) - $start) * 1000)] + $base;
         }
+        $latencyMs = (int) round((microtime(true) - $start) * 1000);
 
         $threshold = $alertKey !== null ? (float) Setting::getValue($alertKey, 0) : 0.0;
         $low = $threshold > 0 && $balance < $threshold;
@@ -105,6 +159,7 @@ class ProviderHealth
             'status' => $low ? 'low' : 'ok',
             'balance' => $balance,
             'stack' => $stack,
+            'latency_ms' => $latencyMs,
             'checked_at' => $now,
             'last_success_at' => $now,
         ] + ($low ? ['threshold' => $threshold] : []);
