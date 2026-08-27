@@ -83,4 +83,44 @@ class SocialLinks
     {
         return self::forFooter() !== [];
     }
+
+    /**
+     * Platforms that support a plain web share-intent URL (share a page + text).
+     * Instagram / TikTok / YouTube / Discord have no such URL, so they never
+     * appear as share targets even when the brand links them in the footer.
+     * value = a sprintf template taking (rawurlencoded url, rawurlencoded text).
+     */
+    private const SHARE_INTENTS = [
+        'x' => 'https://twitter.com/intent/tweet?url=%s&text=%s',
+        'facebook' => 'https://www.facebook.com/sharer/sharer.php?u=%s',
+        'whatsapp' => 'https://wa.me/?text=%s%%20%s',
+        'linkedin' => 'https://www.linkedin.com/sharing/share-offsite/?url=%s',
+    ];
+
+    /**
+     * Share targets for a given page. Data-driven: a platform only appears when
+     * (a) it supports a share-intent URL AND (b) the admin has actually linked
+     * that platform in the footer settings — so the share sheet mirrors the
+     * brand's real presence rather than dumping every network.
+     *
+     * @return array<int, array{platform:string, label:string, icon:string, href:string}>
+     */
+    public static function shareTargets(string $url, string $title = ''): array
+    {
+        $saved = self::all();
+        $u = rawurlencode($url);
+        $t = rawurlencode($title);
+        $out = [];
+        foreach (self::SHARE_INTENTS as $key => $tpl) {
+            if (empty($saved[$key])) {
+                continue;
+            }
+            [$label, $icon] = self::PLATFORMS[$key];
+            // facebook/linkedin templates take one %s (url), x/whatsapp take two.
+            $href = substr_count($tpl, '%s') === 1 ? sprintf($tpl, $u) : sprintf($tpl, $u, $t);
+            $out[] = ['platform' => $key, 'label' => $label, 'icon' => $icon, 'href' => $href];
+        }
+
+        return $out;
+    }
 }

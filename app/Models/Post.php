@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasReactions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,8 @@ use Illuminate\Support\Str;
  */
 class Post extends Model
 {
+    use HasReactions;
+
     protected $fillable = [
         'title', 'slug', 'category', 'excerpt', 'body', 'cover_image_url', 'accent_color',
         'meta_title', 'meta_description', 'status', 'published_at', 'author_id',

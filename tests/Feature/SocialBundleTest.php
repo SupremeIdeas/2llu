@@ -71,6 +71,30 @@ class SocialBundleTest extends TestCase
         $this->assertNotContains('facebook', $keys); // invalid URL dropped
     }
 
+    public function test_share_targets_only_include_configured_shareable_platforms(): void
+    {
+        // instagram has no web share-intent; whatsapp does. Only configured ones show.
+        SocialLinks::save([
+            'x' => 'https://x.com/naarasim',
+            'whatsapp' => 'https://wa.me/2340000',
+            'instagram' => 'https://instagram.com/naarasim',
+        ]);
+        Cache::flush();
+
+        $targets = SocialLinks::shareTargets('https://naara.test/blog/hello', 'Hello world');
+        $keys = collect($targets)->pluck('platform')->all();
+
+        $this->assertContains('x', $keys);
+        $this->assertContains('whatsapp', $keys);
+        $this->assertNotContains('instagram', $keys); // configured but not shareable
+        $this->assertNotContains('facebook', $keys);   // shareable but not configured
+
+        // URL + title are encoded into the intent href.
+        $x = collect($targets)->firstWhere('platform', 'x');
+        $this->assertStringContainsString(rawurlencode('https://naara.test/blog/hello'), $x['href']);
+        $this->assertStringContainsString(rawurlencode('Hello world'), $x['href']);
+    }
+
     // ── Tracking ─────────────────────────────────────────────────────────────
 
     public function test_tracking_ids_are_shape_validated(): void

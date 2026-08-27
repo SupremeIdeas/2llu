@@ -23,5 +23,11 @@
         @endif
 
         <x-prose :body="$post->body" class="mt-6" />
+
+        {{-- Reader actions: reactions + share (component-library batch 2 §4/§5). --}}
+        <div class="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6 dark:border-[#2D4060]">
+            <livewire:post-reactions :post="$post" :key="'react-'.$post->id" />
+            <x-share-button :url="route('blog.show', $post)" :title="$post->title" />
+        </div>
     </article>
 </x-layouts.marketing>
