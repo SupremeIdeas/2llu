@@ -786,3 +786,41 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
 - The `platform_capabilities` + verify() framework was intentionally NOT built —
   it would add ceremony over money paths without new protection. See the audit doc
   for the recommended infra actions.
+
+### Component library (batch 2) — reusable UI
+- **Button variants** (`ui-elements.css`, shown in the admin UI-kit): `nx-btn--glow`
+  (conic border sheen), `nx-btn--get-started` (tilted plate + slide-in arrow),
+  `nx-btn--premium` (on-brand teal↔gold shimmer — NOT the source rainbow, which
+  would break the brand palette), `nx-btn--pill-reveal`, `nx-btn--danger-confirm`
+  (heavier ring for irreversible actions, pairs with wire:confirm),
+  `nx-btn--edit-reveal` + new `x-ui.icon-button`. All dark + reduced-motion aware.
+  The emoji-morph source pick was deliberately NOT ported (emoji-free rule).
+- **Share button** (`x-share-button`): data-driven from admin `SocialLinks` — a
+  network shows only when linked AND it supports a web share-intent (X, Facebook,
+  WhatsApp, LinkedIn). Native `navigator.share` first on mobile; Copy-link always.
+- **Post reactions** (polymorphic `reactions` table + `Reaction` + `HasReactions`
+  trait + `PostReactions` Livewire): one reaction per user per subject, toggle
+  semantics, SVG glyphs (never emoji), wired into the blog post page.
+- **Skipped as already-built (Rule 1):** social-login buttons (`components/auth/
+  social-buttons`), the theme toggle switch (batch 1). BUILD-3 (chat/mobile/
+  branding) re-confirmed already built — global-sidebar, nia-glow, NotificationCenter,
+  support-voice MediaRecorder all present — so skipped.
+
+### App Studio (NAARA-BUILD-21) — full native config surface
+- Grounded on a REAL Median-generated Android/iOS export of this platform (the
+  operator's uploaded `appConfig.json`), so `AppStudio::medianConfig()` emits the
+  genuine Median shape (general / navigation / styling / permissions / services /
+  security) — a generated app is Median-compatible, not an invented schema.
+- **`AppStudio`** support class owns the surface, every field auto-populated from
+  real platform data: initial URL + display name (brand), package/bundle IDs
+  (derived, set-once), offline page (branded default HTML, timeout, custom editor
+  with upload/URL/reset), link-handling ordered rules (own domain → internal,
+  socials → app browser, catch-all → external), sidebar menu (auto from real
+  legal/nav routes), permission usage-descriptions (real Naara reasons, never
+  blank), security (disallow insecure http, bridge domain-restriction). Push
+  **reuses** the existing provider and flags the Firebase gap rather than silently
+  adding OneSignal.
+- **Admin UI**: one App Studio section inside the existing App Builder page, with
+  a live phone-frame offline-page preview; "Generate a build" works with zero
+  fields touched. The resolved `medianConfig()` + offline HTML now ride the CI
+  build payload (`TriggerAppBuildJob`).

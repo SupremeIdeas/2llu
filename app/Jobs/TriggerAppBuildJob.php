@@ -46,6 +46,10 @@ class TriggerAppBuildJob implements ShouldQueue
             'version' => $build->version,
             'build_number' => $build->build_number,
             'callback_url' => route('webhooks.appbuild', ['provider' => 'ci']),
+            // The full native config in the real Median appConfig.json shape — so
+            // the compile backend has everything it needs (App Studio, BUILD-21).
+            'app_config' => \App\Support\AppStudio::medianConfig(),
+            'offline_html' => \App\Support\AppStudio::offlineHtml(),
         ];
         $body = json_encode($payload);
         $signature = $secret !== '' ? hash_hmac('sha256', $body, $secret) : '';

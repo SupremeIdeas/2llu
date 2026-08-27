@@ -5,9 +5,11 @@ namespace App\Livewire\Admin;
 use App\Models\AppBuild;
 use App\Services\AppExport\BuildDispatcher;
 use App\Support\AppExport;
+use App\Support\AppStudio;
 use App\Support\Auditor;
 use App\Support\MediaStorage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -35,6 +37,18 @@ class AppBuilder extends Component
     public $icon = null;
     public $keystore = null;
 
+    /* -------- App Studio (native config surface, NAARA-BUILD-21) ---------- */
+    public array $studio = [];
+
+    /** @var array<int, array{pattern:string, action:string}> */
+    public array $linkRules = [];
+
+    /** @var array<string, array{label:string, enabled:bool, description:string}> */
+    public array $permissions = [];
+
+    public $offlineFile = null;      // "Upload from a file"
+    public string $offlineUrl = '';  // "Update from a URL"
+
     public function booted(): void
     {
         abort_unless(Auth::user()?->hasAnyRole(['super_admin', 'admin']), 403);
@@ -51,6 +65,133 @@ class AppBuilder extends Component
                 'label' => (string) ($all['placements'][$key]['label'] ?? ''),
             ];
         }
+
+        $this->loadStudio();
+    }
+
+    private function loadStudio(): void
+    {
+        $s = AppStudio::all();
+        // Raw stored values for the overridable "blank = auto" fields (the view
+        // shows the resolved default as a placeholder); resolved values for the
+        // set-once package IDs so they're visible and lockable.
+        $this->studio = [
+            'initial_url' => (string) $s['initial_url'],
+            'app_display_name' => (string) $s['app_display_name'],
+            'android_package_name' => AppStudio::androidPackage(),
+            'ios_bundle_id' => AppStudio::iosBundle(),
+            'icon_source' => (string) $s['icon_source'],
+            'splash_style' => (string) $s['splash_style'],
+            'offline_style' => (string) $s['offline_style'],
+            'offline_timeout' => (int) $s['offline_timeout'],
+            'offline_html' => (string) $s['offline_html'],
+            'pull_to_refresh' => (bool) $s['pull_to_refresh'],
+            'refresh_button' => (bool) $s['refresh_button'],
+            'deep_link_domain' => (string) $s['deep_link_domain'],
+            'disallow_insecure_http' => (bool) $s['disallow_insecure_http'],
+            'bridge_restrict_own_domain' => (bool) $s['bridge_restrict_own_domain'],
+        ];
+        $this->linkRules = AppStudio::linkRules();
+        $this->permissions = AppStudio::permissions();
+    }
+
+    public function addLinkRule(): void
+    {
+        $this->linkRules[] = ['pattern' => '', 'action' => 'external'];
+    }
+
+    public function removeLinkRule(int $i): void
+    {
+        unset($this->linkRules[$i]);
+        $this->linkRules = array_values($this->linkRules);
+    }
+
+    public function moveLinkRule(int $i, string $dir): void
+    {
+        $j = $dir === 'up' ? $i - 1 : $i + 1;
+        if (isset($this->linkRules[$i], $this->linkRules[$j])) {
+            [$this->linkRules[$i], $this->linkRules[$j]] = [$this->linkRules[$j], $this->linkRules[$i]];
+        }
+    }
+
+    public function resetOffline(): void
+    {
+        $this->studio['offline_style'] = 'default';
+        $this->studio['offline_html'] = '';
+        $this->dispatch('nx-toast', type: 'success', message: 'Offline page reset to the branded default.');
+    }
+
+    public function uploadOfflineFile(): void
+    {
+        abort_unless(Auth::user()?->hasAnyRole(['super_admin', 'admin']), 403);
+        $this->validate(['offlineFile' => 'required|file|mimetypes:text/html,text/plain|max:512']);
+        $html = file_get_contents($this->offlineFile->getRealPath());
+        $this->studio['offline_html'] = (string) $html;
+        $this->studio['offline_style'] = 'custom';
+        $this->offlineFile = null;
+        $this->dispatch('nx-toast', type: 'success', message: 'Offline page loaded from file.');
+    }
+
+    public function fetchOfflineUrl(): void
+    {
+        abort_unless(Auth::user()?->hasAnyRole(['super_admin', 'admin']), 403);
+        $this->validate(['offlineUrl' => 'required|url|max:500']);
+        try {
+            $res = Http::timeout(10)->get($this->offlineUrl);
+            abort_unless($res->ok(), 422);
+            $this->studio['offline_html'] = (string) $res->body();
+            $this->studio['offline_style'] = 'custom';
+            $this->dispatch('nx-toast', type: 'success', message: 'Offline page fetched from URL.');
+        } catch (\Throwable) {
+            $this->addError('offlineUrl', 'Could not fetch that URL.');
+        }
+    }
+
+    public function saveStudio(): void
+    {
+        abort_unless(Auth::user()?->hasAnyRole(['super_admin', 'admin']), 403);
+
+        $data = $this->validate([
+            'studio.initial_url' => 'nullable|url|max:300',
+            'studio.app_display_name' => 'nullable|string|max:60',
+            'studio.android_package_name' => 'required|string|max:120|regex:/^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/',
+            'studio.ios_bundle_id' => 'required|string|max:120|regex:/^[A-Za-z][A-Za-z0-9-]*(\.[A-Za-z0-9-]+)+$/',
+            'studio.icon_source' => 'required|in:brand,custom',
+            'studio.splash_style' => 'required|in:icon,full',
+            'studio.offline_style' => 'required|in:default,custom',
+            'studio.offline_timeout' => 'required|integer|min:3|max:120',
+            'studio.offline_html' => 'nullable|string|max:100000',
+            'studio.pull_to_refresh' => 'boolean',
+            'studio.refresh_button' => 'boolean',
+            'studio.deep_link_domain' => 'nullable|string|max:190',
+            'studio.disallow_insecure_http' => 'boolean',
+            'studio.bridge_restrict_own_domain' => 'boolean',
+            'linkRules.*.pattern' => 'nullable|string|max:190',
+            'linkRules.*.action' => 'required|in:'.implode(',', AppStudio::LINK_ACTIONS),
+            'permissions.*.enabled' => 'boolean',
+            'permissions.*.description' => 'nullable|string|max:300',
+        ]);
+
+        $payload = $data['studio'];
+        // Keep only rules with a pattern; store the ordered list as-is.
+        $payload['link_rules'] = array_values(array_filter(
+            $this->linkRules,
+            fn ($r) => trim((string) ($r['pattern'] ?? '')) !== '',
+        ));
+        // Persist only enabled + (trimmed) description per permission.
+        $perms = [];
+        foreach ($this->permissions as $key => $p) {
+            $perms[$key] = [
+                'enabled' => (bool) ($p['enabled'] ?? false),
+                'description' => trim((string) ($p['description'] ?? '')),
+            ];
+        }
+        $payload['permissions'] = $perms;
+
+        AppStudio::save($payload);
+        $this->loadStudio();
+        Auditor::log('appstudio.settings_saved');
+        $this->dispatch('nx-toast', type: 'success', message: 'App Studio settings saved.');
     }
 
     public function save(): void
@@ -189,6 +330,12 @@ class AppBuilder extends Component
 
     public function render()
     {
+        // Live offline-page preview: custom HTML if the admin set it, else the
+        // branded default — so the phone-frame always shows something real.
+        $offlinePreview = trim((string) $this->studio['offline_html']) !== '' && $this->studio['offline_style'] === 'custom'
+            ? $this->studio['offline_html']
+            : AppStudio::defaultOfflineHtml();
+
         return view('livewire.admin.app-builder', [
             'placementLabels' => AppExport::PLACEMENTS,
             'preloaders' => AppExport::PRELOADERS,
@@ -197,6 +344,12 @@ class AppBuilder extends Component
             'builds' => AppBuild::latest('id')->paginate(8),
             'checklist' => AppExport::publishChecklist(),
             'score' => AppExport::readinessScore(),
+            // App Studio (NAARA-BUILD-21)
+            'linkActions' => AppStudio::LINK_ACTIONS,
+            'offlinePreview' => $offlinePreview,
+            'pushStatus' => AppStudio::pushStatus(),
+            'sidebarMenu' => AppStudio::sidebarMenu(),
+            'canGenerateWithDefaults' => AppStudio::canGenerateWithDefaults(),
         ]);
     }
 }

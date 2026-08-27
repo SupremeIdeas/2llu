@@ -273,6 +273,9 @@
         Save app settings
     </button>
 
+    {{-- ===== App Studio (native config surface, NAARA-BUILD-21) =========== --}}
+    @include('livewire.admin.partials.app-studio', ['inp' => $inp])
+
     {{-- ===== Generate build =============================================== --}}
     <div class="mb-6 rounded-2xl border border-slate-200/70 bg-white p-5 dark:border-white/10 dark:bg-slate-900/60">
         <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Generate a build</h2>
