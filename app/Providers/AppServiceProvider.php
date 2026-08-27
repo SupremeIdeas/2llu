@@ -319,6 +319,14 @@ class AppServiceProvider extends ServiceProvider
             SchedulerHealth::record((string) $event->task->command);
         });
 
+        // NAARA-BUILD-16 — NCI (Layer 3) subscribes to the routing/health signals,
+        // ALWAYS via ShouldQueue listeners, so learning never runs on the customer
+        // request path. NCI reads outcomes and writes only its own registry columns.
+        Event::listen(\App\Events\ProviderOutcomeRecorded::class, \App\Services\NCI\Listeners\IncrementNciScore::class);
+        Event::listen(\App\Events\CircuitOpened::class, \App\Services\NCI\Listeners\RecomputeProviderScore::class);
+        Event::listen(\App\Events\CircuitClosed::class, \App\Services\NCI\Listeners\RecomputeProviderScore::class);
+        Event::listen(\App\Events\HealthCheckCompleted::class, \App\Services\NCI\Listeners\RefreshNciOnHealthCheck::class);
+
         // Extend Socialite with the extra sign-in providers (owner request).
         // Google/Facebook/Twitter are core drivers; Apple/Microsoft/Discord are
         // registered here via their SocialiteProviders packages.

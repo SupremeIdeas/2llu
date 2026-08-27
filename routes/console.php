@@ -38,6 +38,10 @@ Schedule::command('providers:health-check')->everyFifteenMinutes()->withoutOverl
 // watches) so it can still raise the alarm when the workers themselves are down.
 Schedule::command('ops:worker-health')->everyFiveMinutes()->withoutOverlapping();
 
+// NCI (NAARA-BUILD-16 §3.2): daily full recompute of every provider's score,
+// confidence and risk over the trailing window. Observational only.
+Schedule::command('nci:recompute')->dailyAt('02:15')->withoutOverlapping()->runInBackground();
+
 // Charge permanent-number (Naara Line) monthly subscriptions + release lapsed ones.
 Schedule::command('virtual:renew')->dailyAt('04:00')->withoutOverlapping();
 

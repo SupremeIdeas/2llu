@@ -73,6 +73,9 @@ class ProviderHealth
         // "Provider wallets" dashboard widget keeps working unchanged).
         $this->upsertRegistry($health);
 
+        // BUILD-16 §1 — a periodic signal NCI refreshes from (queued listener).
+        \App\Events\HealthCheckCompleted::dispatch(array_keys($health));
+
         return $health;
     }
 

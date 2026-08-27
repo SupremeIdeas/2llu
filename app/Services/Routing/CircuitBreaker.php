@@ -102,6 +102,14 @@ class CircuitBreaker
         $this->evaluate($providerKey, $outcome === ProviderOutcome::SUCCESS);
 
         ProviderRegistry::flushSnapshot();
+
+        // BUILD-16 §1 — announce the outcome AFTER the synchronous work above.
+        // NCI's listener is queued, so this does not add NCI work to the request.
+        \App\Events\ProviderOutcomeRecorded::dispatch(
+            $providerKey, $stack,
+            $outcome === ProviderOutcome::SUCCESS ? ProviderOutcome::SUCCESS : ProviderOutcome::FAILURE,
+            $errorCode, now(),
+        );
     }
 
     /** Move the state machine after an outcome. */
@@ -177,6 +185,8 @@ class CircuitBreaker
 
     private function setState(string $providerKey, string $state): void
     {
+        $previous = $this->stateOf($providerKey);
+
         // updateOrCreate so a not-yet-registered provider (fresh install before the
         // first health tick) still gets a state row rather than silently no-op'ing.
         $meta = ProviderRegistry::deriveMeta($providerKey);
@@ -189,6 +199,16 @@ class CircuitBreaker
             Cache::put($this->openedKey($providerKey), now(), now()->addDay());
         } elseif ($state === self::CLOSED) {
             Cache::forget($this->openedKey($providerKey));
+        }
+
+        // BUILD-16 §1 — announce the transition (NCI listens, queued). Only on a
+        // genuine change, so a re-affirmed state doesn't spam the bus.
+        if ($state !== $previous) {
+            if ($state === self::OPEN) {
+                \App\Events\CircuitOpened::dispatch($providerKey);
+            } elseif ($state === self::CLOSED) {
+                \App\Events\CircuitClosed::dispatch($providerKey);
+            }
         }
     }
 
