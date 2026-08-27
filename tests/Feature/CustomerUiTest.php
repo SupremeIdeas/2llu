@@ -160,10 +160,29 @@ class CustomerUiTest extends TestCase
         $views = glob(resource_path('views/livewire/*.blade.php'));
         $this->assertNotEmpty($views);
 
+        // Every livewire partial's content, concatenated. A page that delegates all
+        // its markup to partials (Theme Batch 2 §2 — e.g. dashboard.blade.php) has
+        // its dark-mode styling there, so it is verified against this blob.
+        $partialBlob = '';
+        if (is_dir(resource_path('views/livewire/partials'))) {
+            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(resource_path('views/livewire/partials')));
+            foreach ($it as $file) {
+                if ($file->isFile() && str_ends_with($file->getFilename(), '.blade.php')) {
+                    $partialBlob .= file_get_contents($file->getPathname());
+                }
+            }
+        }
+
         $actionViews = ['checkout', 'wallet', 'get-number', 'catalogue'];
         foreach ($views as $view) {
             $contents = file_get_contents($view);
-            $this->assertStringContainsString('dark:', $contents, basename($view).' must have dark: variants');
+
+            // A page that carries no dark: itself but composes partials delegates
+            // its dark styling to them — check the partial blob for those wrappers.
+            $delegates = ! str_contains($contents, 'dark:')
+                && str_contains($contents, "@include('livewire.partials");
+            $haystack = $delegates ? $partialBlob : $contents;
+            $this->assertStringContainsString('dark:', $haystack, basename($view).' (or its partials) must have dark: variants');
 
             if (in_array(pathinfo($view, PATHINFO_FILENAME), $actionViews, true)) {
                 $this->assertStringContainsString('wire:loading', $contents, basename($view).' must show a loading state');
