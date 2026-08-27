@@ -49,8 +49,19 @@ class ThemePresetSeeder extends Seeder
             ],
         );
 
+        // The data-forward personas lead with wallet + connectivity state on the
+        // dashboard home (variant-b); everyone else keeps the baseline (variant-a).
+        // Only pages whose variant partials EXIST are assigned non-baseline values,
+        // so nothing renders half-wired.
+        $dashboardB = ['fintra-clean', 'genius-grid', 'slate-signal', 'capable-mono'];
+
         // Rows 2–15 — original personas. firstOrCreate = never clobber admin tuning.
         foreach ($this->presets() as $preset) {
+            $variants = $this->baselineVariants();
+            if (in_array($preset['slug'], $dashboardB, true)) {
+                $variants['dashboard_home'] = 'variant-b';
+            }
+
             ThemePreset::firstOrCreate(['slug' => $preset['slug']], [
                 'name' => $preset['name'],
                 'persona' => $preset['persona'],
@@ -62,14 +73,19 @@ class ThemePresetSeeder extends Seeder
                 ],
                 'icon_family' => ['style' => 'sprite', 'set' => 'naara-sprite-01'],
                 'hero_assets' => [],
-                'layout_variants' => $this->baselineVariants(),
+                'layout_variants' => $variants,
                 'is_built_in' => false,
                 'sort_order' => $preset['sort_order'],
             ]);
         }
     }
 
-    /** All pages on variant-a until Batch 2 §2 builds variant-b/c partials. */
+    /**
+     * The baseline page→variant map. Every page starts on variant-a (the
+     * extracted current markup); §2 assigns variant-b per persona only where the
+     * partial exists. Pages without a built variant stay on variant-a forever via
+     * ThemePreset::layoutVariant()'s default, so this map can stay conservative.
+     */
     private function baselineVariants(): array
     {
         return array_fill_keys(
