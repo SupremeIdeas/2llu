@@ -115,13 +115,21 @@
              is replaced by a wallet-balance bar + top-up shortcut across all
              /numbers/* routes — the freed space Frank asked for. --}}
         <header class="nx-header-fade sticky top-0 z-30 flex items-center justify-between px-4 py-3 lg:hidden">
-            <a href="{{ route('numbers.contacts') }}" wire:navigate class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+            <a href="{{ route('numbers.lines') }}" wire:navigate class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 <x-icon name="signal" class="h-5 w-5 text-primary dark:text-teal-300" /> Numbers
             </a>
-            <a href="{{ route('wallet') }}" wire:navigate class="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary transition hover:bg-primary/15 dark:bg-teal-500/15 dark:text-teal-300">
-                <x-icon name="wallet" class="h-4 w-4" /> ${{ number_format($numbersWalletUsd, 2) }}
-                <span class="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white dark:bg-teal-400 dark:text-navy"><x-icon name="plus" class="h-3 w-3" /></span>
-            </a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('wallet') }}" wire:navigate class="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary transition hover:bg-primary/15 dark:bg-teal-500/15 dark:text-teal-300">
+                    <x-icon name="wallet" class="h-4 w-4" /> ${{ number_format($numbersWalletUsd, 2) }}
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white dark:bg-teal-400 dark:text-navy"><x-icon name="plus" class="h-3 w-3" /></span>
+                </a>
+                {{-- Global "More" sheet stays reachable from inside the Numbers
+                     section (the section nav's centre is now My Lines). --}}
+                <button type="button" @click="moreOpen = true" aria-label="More"
+                        class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">
+                    <x-icon name="grid" class="h-4 w-4" />
+                </button>
+            </div>
         </header>
     @else
     <header class="nx-header-fade sticky top-0 z-30 flex items-center justify-between px-4 py-3 lg:hidden">
@@ -199,11 +207,13 @@
             @foreach ([$numbersNav[0], $numbersNav[1]] as $item)
                 @include('partials.numbers-nav-item', ['item' => $item, 'isActive' => $isActive])
             @endforeach
+            {{-- Centre hub: My Lines — the heart of the Numbers section (manage
+                 everything you own). Elevated like the global "More" button. --}}
             <div class="flex justify-center">
-                <button type="button" @click="moreOpen = true" aria-label="More"
-                        class="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/30 ring-4 ring-[#F8F9FA] transition active:scale-95 dark:ring-navy">
-                    <x-icon name="grid" class="h-6 w-6" />
-                </button>
+                <a href="{{ route('numbers.lines') }}" wire:navigate aria-label="My Lines"
+                   class="-mt-6 flex h-14 w-14 flex-col items-center justify-center rounded-full text-white shadow-lg shadow-primary/30 ring-4 ring-[#F8F9FA] transition active:scale-95 dark:ring-navy {{ request()->routeIs('numbers.lines') ? 'bg-gradient-to-br from-accent to-primary' : 'bg-gradient-to-br from-primary to-primary-dark' }}">
+                    <x-icon name="signal" class="h-6 w-6" />
+                </a>
             </div>
             @foreach ([$numbersNav[2], $numbersNav[3]] as $item)
                 @include('partials.numbers-nav-item', ['item' => $item, 'isActive' => $isActive])

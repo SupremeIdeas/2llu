@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Dashboard;
+use App\Livewire\MyLines;
 use App\Models\EsimOrder;
 use App\Models\EsimPlan;
 use App\Models\SmsOrder;
@@ -12,8 +13,10 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * The reorganised "My Connectivity" dashboard: numbers grouped by public Model,
- * expired/finished items in an Archive, and the raw supplier never rendered.
+ * The reorganised "My Connectivity" hub: numbers grouped by public Model,
+ * expired/finished items in an Archive, the raw supplier never rendered. The
+ * full grouping now lives on the dedicated My Lines page; the dashboard keeps a
+ * slim summary that links to it.
  */
 class DashboardOrganisationTest extends TestCase
 {
@@ -35,7 +38,7 @@ class DashboardOrganisationTest extends TestCase
         $this->number($u, 'fivesim', 'rental', 'waiting', 'telegram');  // Naara Rent (active)
         $this->number($u, 'herosms', 'otp', 'cancelled', 'google'); // archived (cancelled)
 
-        Livewire::actingAs($u)->test(Dashboard::class)
+        Livewire::actingAs($u)->test(MyLines::class)
             ->assertSee('Naara Verify')
             ->assertSee('Naara Rent')
             ->assertSee('Archive (1)')          // the cancelled number
@@ -43,6 +46,11 @@ class DashboardOrganisationTest extends TestCase
             ->assertDontSee('fivesim')
             ->assertDontSee('herosms')
             ->assertDontSee('5sim');
+
+        // The dashboard keeps a slim summary that links to the full My Lines page.
+        Livewire::actingAs($u)->test(Dashboard::class)
+            ->assertSee('My Lines')
+            ->assertSee('Active numbers');
     }
 
     public function test_expired_esims_move_to_the_archive(): void
@@ -62,7 +70,7 @@ class DashboardOrganisationTest extends TestCase
             'status' => 'expired', 'price_charged' => 10, 'wholesale_cost' => 4, 'currency' => 'USD',
         ]);
 
-        Livewire::actingAs($u)->test(Dashboard::class)
+        Livewire::actingAs($u)->test(MyLines::class)
             ->assertSee('Naara Data')
             ->assertSee('Archive (1 expired)')
             ->assertDontSee('esimgo')

@@ -91,6 +91,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/checkout/{plan}', Checkout::class)->name('checkout');
         Route::get('/wallet', Wallet::class)->name('wallet');
         Route::get('/numbers', GetNumber::class)->name('numbers');
+        // My Lines — the dedicated management hub for owned eSIMs + numbers
+        // (active, grouped by Model, with an Archive). Numbers section home.
+        Route::get('/numbers/lines', \App\Livewire\MyLines::class)->name('numbers.lines');
         // Call forwarding for permanent numbers (Live Voice — Part A). The
         // component 404s unless Twilio is Active (voice rides the same keys).
         Route::get('/numbers/forwarding', \App\Livewire\CallForwarding::class)->name('numbers.forwarding');
