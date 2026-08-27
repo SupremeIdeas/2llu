@@ -979,3 +979,47 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
   a denser lg:4/xl:5 grid view. The add/edit contact sheet stays on the shared
   modal engine (S31) — no bespoke detail pane. Tested (MessagesInboxTest,
   NumbersNavScopingTest, DialerCountryPickerTest).
+
+### Pre-blueprint batch (My Lines, glow, Platform Health, white-label, Copy Studio)
+- **Wizard/Nia glow calmed.** The "Confused? Use The Wizard" launcher stacked two
+  blurred rotating gold-teal halos (`.nx-wiz-electric` conic aurora + `.nx-wiz-glow`)
+  next to Nia's own conic glow. Dropped the electric halo, toned the remaining
+  glow to a faint single-teal (0.12–0.24), de-golded/de-duplicated the
+  floating-nav centrepiece glow, and calmed the pulses. The `nx-wiz-swell`
+  attention state (and its test) is unchanged.
+- **My Lines (route `numbers.lines`).** The "My Connectivity" hub moved off the
+  dashboard into a dedicated Numbers-section page: active eSIMs (QR/LPA + data
+  meter), numbers grouped by Model with per-line Call/Message, and an Archive.
+  New `App\Support\ConnectivityHub` is the single source both the dashboard slim
+  summary and My Lines read; markup extracted to `partials/my-connectivity`.
+  It's the section nav's centre hub button. Tested (MyLinesTest,
+  DashboardOrganisationTest retargeted).
+- **Platform Health — worker layer + cache flusher.** New `App\Support\QueueHealth`
+  reports the live Redis/Horizon picture the DB-only `SchedulerHealth` backlog
+  couldn't (driver, Horizon running + `/horizon` link, Redis reachability,
+  per-queue pending via Horizon workload, failed-job count + recent failures) —
+  visible on VPS as well as cPanel. The System Health page gains that section, a
+  per-queue breakdown, a recent-failures list, and a Caches card (Clear app cache
+  / Clear all caches). New `ops:worker-health` command (every 5 min) alerts admins
+  (email + push, via `AlertAdminJob`) when the worker layer stops — dispatched
+  SYNCHRONOUSLY off the cron, since the queue it watches may itself be down.
+  Tested (SystemHealthTest).
+- **White-label brand word + 25 palettes.** `BrandSettings::word()` + `rebrand()`
+  swap the shipped 'Naara' token for an admin-set business name in product/
+  sub-brand names ("Naara Rent" → "{word} Rent"); only the capitalised token
+  matches (lowercase asset paths untouched), a strict no-op on a default install.
+  `ProviderModels` names/taglines route through it; a `@brand` Blade directive
+  covers other central strings. Branding admin gains the brand-word field + 25
+  curated `BrandSettings::PALETTES` presets on top of the existing custom
+  override, applied sitewide via the brand CSS vars. Static per-template "Naara"
+  literals are intentionally NOT globally rewritten (would corrupt Livewire
+  snapshots) — they move onto `@brand` incrementally. Tested (BrandWhiteLabelTest).
+- **Marketing Copy Studio (route `admin.copy-studio`).** Claude-assisted CMS copy
+  populator: a saved brand brief (name defaults to the white-label word) trains
+  every generation; pick a builder page, Generate 3 on-brand variations per
+  section, Apply writes the chosen one into the draft (publish via Page Builder).
+  `App\Support\CopyFields` extracts ONLY copy (skips links/images/icons/enums)
+  and splices it back at the same paths, so a variation can never alter a URL or
+  break a layout; `MarketingCopywriter` drives the existing `AnthropicClient`.
+  Admin-only, synchronous, gated behind an "add Anthropic key" state. Tested
+  (MarketingCopyStudioTest).
