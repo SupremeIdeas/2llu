@@ -856,3 +856,27 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
     onboarding; NOWPayments JWT+2FA; per-vendor payout KYC), so they are
     intentionally deferred. Paystack + Flutterwave (banks/mobile-money, Africa),
     PayPal (global email), and Cryptomus (crypto) cover the real payout lanes today.
+
+- **§2/§3/§4/§6 Unified withdrawal + threshold + shared dashboard + auto run:**
+  - Merchant withdrawal (`MerchantWithdrawalService`) already existed; referral
+    cash-out added (`ReferralWithdrawalService` + `ReturnReferralEarnings` on
+    PayoutReversed) — both on the same PayoutService engine as partners.
+  - **Free-payout threshold (§3):** `payouts.free_payout_count` (default 5) +
+    `PayoutThreshold` — a per-user, all-earner-type-combined count of settled
+    PayoutRequests. First N payouts KYC-free; then KYC-L2. Balance/history always
+    visible. Enforced in the merchant + referral withdrawal services and the
+    auto run. (The legacy NaaraCredit cash-out page keeps its own L2 gate,
+    unchanged per §1.3.)
+  - **Shared dashboard (§4):** one `PayoutDashboard` Livewire (`earner-type`
+    partner|merchant|referral), embedded on the referrals page; status-focused
+    (balance, history, recent payouts, positive-framed KYC prompt). No bespoke
+    per-type UI.
+  - **Automatic recurring run (§6, Frank's choice):** `payouts:earnings-run`
+    (daily 04:45, staggered) pays eligible merchant + referral balances; an
+    earner past the free threshold without KYC-L2 is skipped (dashboard prompts),
+    never force-paid. Idempotent via holds + unique references.
+  - **Payout-account creation KYC decoupling (follow-up):** adding a payout
+    account still flows through the legacy kyc:2-gated `/rewards/withdraw` route;
+    a fully KYC-free first-payout also needs that account-add path relaxed — noted
+    as a deliberate follow-up so the threshold governs the withdrawal act today
+    without destabilising the existing verified-account model.

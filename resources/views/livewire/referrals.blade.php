@@ -46,4 +46,10 @@
             </div>
         @endforelse
     </div>
+
+    {{-- Real, withdrawable referral earnings + payout status (BUILD-22 §1/§4). --}}
+    <div class="mt-8">
+        <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Your cash earnings</h2>
+        <livewire:payout-dashboard earner-type="referral" />
+    </div>
 </div>
