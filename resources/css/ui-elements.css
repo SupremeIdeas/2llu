@@ -92,6 +92,136 @@
 }
 .nx-btn--danger:hover:not(:disabled) { transform: translateY(-1px); }
 
+/* --- Extra variants (component-library batch 2), all re-tokenised to brand.
+   Attribution: glow ← mrhyddenn, get-started ← catraco, pill-reveal ←
+   alexmaracinaru, edit ← aaronross1 (Uiverse.io, MIT). The emoji-morph pick
+   (ercnersoy) is intentionally NOT ported — the platform is emoji-free. --- */
+
+/* Border-glow: a conic sheen chases the border. For hero/marketing CTAs. The
+   glow sits on a ::before behind the button so the label stays crisp. */
+.nx-btn--glow {
+    background: var(--ui-primary);
+    color: #fff;
+    box-shadow: 0 4px 14px rgb(10 110 110 / 0.35);
+    z-index: 0;
+}
+.nx-btn--glow::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    border-radius: inherit;
+    background: conic-gradient(from var(--nx-glow-angle, 0deg),
+        var(--ui-accent), var(--ui-primary), var(--ui-accent), var(--ui-primary), var(--ui-accent));
+    filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+.nx-btn--glow:hover:not(:disabled) { transform: translateY(-1px); }
+.nx-btn--glow:hover:not(:disabled)::before { opacity: 0.85; animation: nx-glow-spin 3s linear infinite; }
+@property --nx-glow-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes nx-glow-spin { to { --nx-glow-angle: 360deg; } }
+@media (prefers-reduced-motion: reduce) {
+    .nx-btn--glow:hover:not(:disabled)::before { animation: none; }
+}
+
+/* Get-started: a tilted ghost plate rotates flat + an arrow slides in on hover.
+   For onboarding / primary-conversion moments. */
+.nx-btn--get-started { background: var(--ui-primary); color: #fff; z-index: 0; }
+.nx-btn--get-started::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--ui-primary);
+    box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.7);
+    opacity: 0.2;
+    transform: rotate(8deg) scale(1.04);
+    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.5s;
+}
+.nx-btn--get-started:hover:not(:disabled) { transform: scale(1.04); filter: brightness(1.08); }
+.nx-btn--get-started:hover:not(:disabled)::before { transform: rotate(0deg) scale(1.04); opacity: 1; }
+.nx-btn--get-started .nx-btn__arrow {
+    width: 0;
+    opacity: 0;
+    transform: translateX(-100%);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    overflow: hidden;
+}
+.nx-btn--get-started:hover:not(:disabled) .nx-btn__arrow { width: 1.1rem; opacity: 1; transform: translateX(0); }
+
+/* Premium: a slow on-brand teal↔gold shimmer, for "Unlock Pro" upsells. NOT the
+   rainbow of the source pick — that would break the brand palette; this stays
+   inside Teal/Gold/Navy while still reading as special. */
+.nx-btn--premium {
+    color: var(--ui-navy);
+    background: linear-gradient(110deg, var(--ui-accent), var(--ui-primary), var(--ui-accent), #f0c96b, var(--ui-accent));
+    background-size: 300% 100%;
+    box-shadow: 0 4px 16px rgb(212 160 23 / 0.4);
+    animation: nx-premium-pan 6s linear infinite;
+}
+.dark .nx-btn--premium { color: #06201f; }
+.nx-btn--premium:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 22px rgb(212 160 23 / 0.5); }
+@keyframes nx-premium-pan { to { background-position: 300% 0; } }
+@media (prefers-reduced-motion: reduce) { .nx-btn--premium { animation: none; } }
+
+/* Pill-reveal: label slides up and out on hover while a short call-word rises in.
+   Uses the child spans .nx-btn__face / .nx-btn__reveal. */
+.nx-btn--pill-reveal { background: var(--ui-navy); color: #fff; border-radius: 999px; }
+.dark .nx-btn--pill-reveal { background: var(--ui-primary); }
+.nx-btn--pill-reveal .nx-btn__stack { position: relative; display: inline-grid; overflow: hidden; }
+.nx-btn--pill-reveal .nx-btn__face,
+.nx-btn--pill-reveal .nx-btn__reveal { grid-area: 1 / 1; transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); }
+.nx-btn--pill-reveal .nx-btn__reveal { transform: translateY(120%); color: var(--ui-accent); }
+.nx-btn--pill-reveal:hover:not(:disabled) .nx-btn__face { transform: translateY(-120%); }
+.nx-btn--pill-reveal:hover:not(:disabled) .nx-btn__reveal { transform: translateY(0); }
+
+/* Danger-confirm: a deliberately heavier destructive button for high-stakes,
+   irreversible actions (delete account, wipe data) — always paired with
+   wire:confirm. The ring makes it visually distinct from routine .nx-btn--danger. */
+.nx-btn--danger-confirm {
+    background: var(--ui-danger);
+    color: #fff;
+    box-shadow: 0 0 0 3px rgb(220 38 38 / 0.18), 0 4px 14px rgb(220 38 38 / 0.4);
+    letter-spacing: 0.02em;
+}
+.nx-btn--danger-confirm:hover:not(:disabled) {
+    background: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 4px rgb(220 38 38 / 0.25), 0 6px 20px rgb(220 38 38 / 0.5);
+}
+
+/* Edit-reveal: a compact circular icon button that expands to reveal an "Edit"
+   label on hover — for inline row actions. Neutral until hovered. */
+.nx-btn--edit-reveal {
+    width: 2.5rem;
+    padding: 0;
+    gap: 0;
+    border-radius: 999px;
+    background: var(--ui-navy);
+    color: #fff;
+    box-shadow: 0 2px 10px rgb(13 27 42 / 0.25);
+    white-space: nowrap;
+    transition: width 0.35s cubic-bezier(0.23, 1, 0.32, 1), background-color 0.3s, box-shadow 0.3s;
+}
+.dark .nx-btn--edit-reveal { background: var(--ui-primary); }
+.nx-btn--edit-reveal .nx-btn__label {
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-width 0.35s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.3s, margin 0.35s;
+}
+.nx-btn--edit-reveal:hover:not(:disabled),
+.nx-btn--edit-reveal:focus-visible {
+    width: 6.5rem;
+    background: var(--ui-primary);
+}
+.dark .nx-btn--edit-reveal:hover:not(:disabled),
+.dark .nx-btn--edit-reveal:focus-visible { background: var(--ui-primary-dark); }
+.nx-btn--edit-reveal:hover:not(:disabled) .nx-btn__label,
+.nx-btn--edit-reveal:focus-visible .nx-btn__label { max-width: 4rem; opacity: 1; margin-left: 0.4rem; }
+
 /* ----------------------------------------------------------------- switch --
    Accessible toggle: a real checkbox drives a pill track + sliding knob.
    Adapted from the batch1 toggle-switch picks, sized for settings rows. */

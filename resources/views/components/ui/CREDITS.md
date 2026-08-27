@@ -25,6 +25,13 @@ Adapted source families (see the repo for the raw originals + full author list):
 | "More" menu promo card (nx-float-card) | `premium-custom-cards/` — ayman-ashine floating-light card |
 | Account day/night scene (nx-theme-scene) | `switch/` — witer33 phone sun/moon toggle |
 | Wallet collapsible top-up (nx-topup) | `premium-custom-cards/` — Na3ar-17 collapsible payment card |
+| `nx-btn--glow` | `buttons/` — mrhyddenn border-glow |
+| `nx-btn--get-started` | `buttons/` — catraco tilted get-started |
+| `nx-btn--pill-reveal` | `buttons/` — alexmaracinaru label-reveal pill |
+| `nx-btn--premium` | `buttons/` — rainbow-gradient pick, re-tokenised to an on-brand teal↔gold shimmer |
+| `nx-btn--edit-reveal` / `x-ui.icon-button` | `buttons/` — aaronross1 expanding edit button |
+| `x-share-button` (nx-share) | data-driven from admin `SocialLinks` (no single source) |
+| `x-reactions` (nx-react) | polymorphic reactions surface (own design, neutral tokens) |
 
 Still reserved: AnthonyPreite + Cobp pricing cards → eSIM plan pricing once the
 live plan APIs are active (Module 29).

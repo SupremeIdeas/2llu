@@ -76,6 +76,27 @@
                     <x-ui.btn variant="danger" type="button">Danger</x-ui.btn>
                 </div>
 
+                {{-- Component-library batch 2 button variants. --}}
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="button" class="nx-btn nx-btn--glow">Border glow</button>
+                    <button type="button" class="nx-btn nx-btn--get-started">
+                        Get started <x-icon name="chevron-right" class="nx-btn__arrow h-4 w-4" />
+                    </button>
+                    <button type="button" class="nx-btn nx-btn--premium">
+                        <x-icon name="zap" class="h-4 w-4" /> Unlock Pro
+                    </button>
+                    <button type="button" class="nx-btn nx-btn--pill-reveal">
+                        <span class="nx-btn__stack">
+                            <span class="nx-btn__face">Learn more</span>
+                            <span class="nx-btn__reveal">Let's go →</span>
+                        </span>
+                    </button>
+                    <button type="button" class="nx-btn nx-btn--danger-confirm" wire:confirm="This cannot be undone. Continue?">
+                        <x-icon name="trash" class="h-4 w-4" /> Delete account
+                    </button>
+                    <x-ui.icon-button icon="edit" label="Edit" />
+                </div>
+
                 <div class="flex flex-wrap items-center gap-6">
                     <label class="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                         <x-ui.switch checked label="Demo switch" /> Switch
