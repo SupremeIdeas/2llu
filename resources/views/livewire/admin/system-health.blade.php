@@ -176,6 +176,51 @@
         </div>
     </div>
 
+    {{-- ============ Hosting & background setup (dual: VPS + shared) ============
+         NaaraSim runs on both a VPS (Redis + Horizon) and shared cPanel (a
+         database queue drained by a one-minute cron). This shows the correct,
+         ordered setup for the environment actually detected, with the real app
+         path + PHP binary already filled into the cron line. --}}
+    <div class="mb-6 rounded-2xl border border-slate-200 bg-white dark:border-[#2D4060] dark:bg-[#1A2840]"
+         x-data="{ tab: @js($hostingMode) }">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4 dark:border-[#243352]">
+            <div>
+                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Hosting &amp; background setup</h2>
+                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    Detected: <span class="font-semibold text-primary dark:text-teal-300">{{ $hostingMode === 'vps' ? 'VPS (Redis + Horizon)' : 'Shared hosting (cron-driven queue)' }}</span>.
+                    Follow the steps for your host, in order.
+                </p>
+            </div>
+            <div class="flex items-center gap-1 rounded-lg bg-slate-100 p-0.5 dark:bg-white/5">
+                <button type="button" @click="tab = 'shared'" :class="tab === 'shared' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-400'" class="rounded-md px-3 py-1 text-xs font-semibold transition">Shared / cPanel</button>
+                <button type="button" @click="tab = 'vps'" :class="tab === 'vps' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-400'" class="rounded-md px-3 py-1 text-xs font-semibold transition">VPS / Cloudways</button>
+            </div>
+        </div>
+
+        @foreach (['shared', 'vps'] as $mode)
+            <div x-show="tab === '{{ $mode }}'" x-cloak class="space-y-3 p-4">
+                @foreach ($hostingSteps[$mode] as $step)
+                    <div class="rounded-xl border border-slate-100 p-3 dark:border-[#243352]">
+                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ $step[0] }}</p>
+                        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ $step[1] }}</p>
+                        @if (! empty($step[2]))
+                            <div class="mt-2" x-data="{ copied: false }">
+                                <div class="flex items-start gap-2">
+                                    <pre class="min-w-0 flex-1 overflow-x-auto rounded-lg bg-slate-900 px-3 py-2 text-[11px] leading-relaxed text-slate-100 dark:bg-black/40"><code>{{ $step[2] }}</code></pre>
+                                    <button type="button" @click="navigator.clipboard.writeText(@js($step[2])); copied = true; setTimeout(() => copied = false, 1500)"
+                                            class="shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50 dark:border-[#2D4060] dark:hover:bg-[#243352]" aria-label="Copy">
+                                        <x-icon name="copy" class="h-4 w-4" x-show="! copied" />
+                                        <x-icon name="check" class="h-4 w-4 text-green-500" x-show="copied" x-cloak />
+                                    </button>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        @endforeach
+    </div>
+
     {{-- Scheduled tasks --}}
     <div class="rounded-2xl border border-slate-200 bg-white dark:border-[#2D4060] dark:bg-[#1A2840]">
         <div class="border-b border-slate-100 p-4 dark:border-[#243352]">

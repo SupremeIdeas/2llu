@@ -99,8 +99,13 @@ class AdminAccountTest extends TestCase
 
         $admin->refresh();
         $this->assertTrue(SecurityQuestions::configured($admin));
-        // Stored hashed, never plaintext.
-        $this->assertStringNotContainsString('Rex', json_encode($admin->security_questions));
+        // Stored hashed (bcrypt), never plaintext. Check each answer_hash is a
+        // real hash rather than scanning for a substring — a bcrypt digest can
+        // randomly contain any 3-char sequence, which made the old scan flaky.
+        foreach ($admin->security_questions as $q) {
+            $this->assertStringStartsWith('$2y$', $q['answer_hash']);
+            $this->assertNotSame('Rex', $q['answer_hash']);
+        }
         // Case/space-insensitive verification of all three.
         $this->assertTrue(SecurityQuestions::verify($admin, [
             $qs[0] => '  rex ', $qs[1] => 'ONITSHA', $qs[2] => 'nokia',

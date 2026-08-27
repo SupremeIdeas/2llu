@@ -73,6 +73,11 @@ class SystemHealth extends Component
             'pendingByQueue' => \App\Support\QueueHealth::pendingByQueue(),
             'failedCount' => \App\Support\QueueHealth::failedCount(),
             'recentFailed' => \App\Support\QueueHealth::recentFailed(),
+            // Dual-hosting setup guidance (VPS Horizon/Redis vs shared cPanel cron),
+            // keyed to the detected environment, with the real cron line filled in.
+            'hostingMode' => \App\Support\HostingGuide::mode(),
+            'hostingSteps' => \App\Support\HostingGuide::steps(),
+            'cronLine' => \App\Support\HostingGuide::cronLine(),
             // Recent inbound webhook deliveries (readiness Domain 13/14) — lets an
             // operator confirm a provider (Paystack, Twilio…) is actually calling.
             'webhookDeliveries' => $this->webhookDeliveries(),

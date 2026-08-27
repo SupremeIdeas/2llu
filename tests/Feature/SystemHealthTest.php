@@ -93,4 +93,29 @@ class SystemHealthTest extends TestCase
         $this->assertFalse($verdict['healthy']);
         $this->assertStringContainsString('inline', strtolower((string) $verdict['reason']));
     }
+
+    public function test_the_hosting_guide_gives_ordered_steps_for_both_modes(): void
+    {
+        $steps = \App\Support\HostingGuide::steps();
+        $this->assertArrayHasKey('shared', $steps);
+        $this->assertArrayHasKey('vps', $steps);
+        // The cron line carries the real app path + a schedule:run.
+        $cron = \App\Support\HostingGuide::cronLine();
+        $this->assertStringContainsString('artisan schedule:run', $cron);
+        $this->assertStringContainsString(base_path(), $cron);
+        // Shared drives the queue from cron; VPS runs Horizon.
+        $this->assertStringContainsString('database', json_encode($steps['shared']));
+        $this->assertStringContainsString('horizon', strtolower(json_encode($steps['vps'])));
+    }
+
+    public function test_the_page_renders_the_hosting_setup_guide(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(SystemHealth::class)
+            ->assertOk()
+            ->assertSee('Hosting &amp; background setup', false)
+            ->assertSee('schedule:run');
+    }
 }
