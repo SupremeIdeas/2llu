@@ -1023,3 +1023,46 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
   break a layout; `MarketingCopywriter` drives the existing `AnthropicClient`.
   Admin-only, synchronous, gated behind an "add Anthropic key" state. Tested
   (MarketingCopyStudioTest).
+
+### NCI — Naara Core Intelligence (BUILD-14 → 15 → 16, architecture locked)
+The intelligent-orchestration layer, built as four permanently separated layers.
+The **eight amendments** in NAARA-BUILD-14 §0 are binding for every batch here and
+after; check new work against them rather than re-deriving the architecture.
+- **Layer 1 — Provider Registry (BUILD-14).** One shared `provider_registry` row
+  per provider across all three stacks (esim/sms/permanent); product_families +
+  stack derived from the existing ProviderModels lanes. `ProviderHealth::checkAll()`
+  also upserts each probe (plus a new `latency_ms`) alongside its unchanged cache
+  write, so the "Provider wallets" widget is untouched. `ProviderRegistry::snapshot()`
+  is the 45s cached read — the ONLY sanctioned read path for router code — busted on
+  upsert. Seeder ships onboarding tiers + confirmed portal/docs URLs; unconfirmed
+  provider URLs are left null (wrong link > blank) and are the admin's to fill:
+  quibity, zendit, oneglobal, montymobile, gigs, getatext, herosms, virtsms (login),
+  and most docs URLs. It's a snapshot, never the source of truth (amendment 1).
+  Tested (ProviderRegistryTest).
+- **Layer 2 — Routing Engine (BUILD-15).** `provider_outcomes` logs every real
+  attempt (success|failure + error_code). One shared `CircuitBreaker` (used by all
+  three routers): CLOSED→OPEN on 5 consecutive failures OR >50% over 20, OPEN→
+  HALF_OPEN after a 5-min cooldown, HALF_OPEN one probe → CLOSED/OPEN; transitions
+  run synchronously off real outcomes, state in `circuit_breaker_state` (Layer 2 is
+  the only writer), and it refreshes the registry's 24h rolling reliability.
+  `CandidateOrdering` reorders each router's static lane from the cached snapshot
+  (open circuits excluded; nci_score → latency → success_rate → static priority) —
+  reorder only, static fallback when the snapshot is empty. Purchase/idempotency/
+  money logic byte-for-byte unchanged — only a pre-check + a post-write wrap the
+  loop. Defaults: 5 consecutive / 20-window / 50% / 5-min cooldown (Setting-driven).
+  Tested (CircuitBreakerTest).
+- **Layer 3 — NCI (BUILD-16).** Separate `app/Services/NCI/` namespace, zero
+  synchronous entry points. Five NCI-owned registry columns (nci_score/confidence/
+  risk_rating/computed_at/sample_size — NCI is the only writer). Events at real
+  trigger points: ProviderOutcomeRecorded, CircuitOpened/Closed, HealthCheckCompleted;
+  every NCI listener is `ShouldQueue` (asserted by a reflection test) and no router
+  imports NCI (asserted by a boundary test). Scoring: EMA nudge per outcome
+  (α=0.05) + daily `nci:recompute` (confidence from sample size; risk from
+  failure-rate AND error-code diversity — concentrated timeouts → high, expected
+  out-of-stock → gentle); weights are named constants. The Routing Engine benefits
+  only by reading nci_score off the snapshot it already consumes. Tested
+  (NciLearningTest). **Batch 17 (Ops Center) + 18 (new providers) remain.**
+- **BUILD-13 (hero showcase image).** Already built + tested in a prior pass
+  (showcase block below the subheadline, 2-column-locked CTA row, admin
+  `showcase_image` upload via MediaStorage, all image combos) — verified and left
+  as-is (MarketingHeroTest). No rebuild.
