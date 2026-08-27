@@ -115,6 +115,24 @@ class QueueHealth
     }
 
     /**
+     * BUILD-19 §7 — how many of the failed jobs are NCI Layer-3 listeners. NCI
+     * learns entirely from queued listeners; if they are silently dying, scores
+     * stop updating with nothing user-facing to show it. Surfacing the count on
+     * System Health turns that invisible rot into a visible number. Matches the
+     * listener namespace inside the serialized payload.
+     */
+    public static function nciListenerFailedCount(): int
+    {
+        try {
+            return (int) DB::table('failed_jobs')
+                ->where('payload', 'like', '%App\\\\Services\\\\NCI\\\\Listeners%')
+                ->count();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
      * The most recent failures, for the admin to eyeball what's breaking.
      *
      * @return list<array{connection:string, queue:string, job:string, error:string, failed_at:?string}>

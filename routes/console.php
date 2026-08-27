@@ -42,6 +42,11 @@ Schedule::command('ops:worker-health')->everyFiveMinutes()->withoutOverlapping()
 // confidence and risk over the trailing window. Observational only.
 Schedule::command('nci:recompute')->dailyAt('02:15')->withoutOverlapping()->runInBackground();
 
+// BUILD-19 §4 — keep provider_outcomes bounded: prune rows past the 90-day
+// retention horizon weekly (NCI scores over 30d, the breaker over 24h, so
+// anything older is dead weight). Off-peak, withoutOverlapping, background.
+Schedule::command('nci:prune-outcomes')->weekly()->sundays()->at('02:40')->withoutOverlapping()->runInBackground();
+
 // Charge permanent-number (Naara Line) monthly subscriptions + release lapsed ones.
 Schedule::command('virtual:renew')->dailyAt('04:00')->withoutOverlapping();
 

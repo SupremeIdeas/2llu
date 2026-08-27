@@ -39,6 +39,14 @@ class NciScorer
     /** Below this many outcomes, risk stays 'medium' (not enough to judge). */
     private const MIN_SAMPLE_FOR_RISK = 10;
 
+    /**
+     * §6 — the MOST a healthy margin can lift a provider's score. Deliberately
+     * sub-resolution (0.003 ≪ any meaningful reliability gap) so reliability
+     * always dominates: margin only ever decides between providers whose
+     * reliability is a hair apart. A secondary tie-break, never a driver.
+     */
+    private const MARGIN_TIEBREAK = 0.003;
+
     /** Failure-rate bands for the risk rating (over the window). */
     private const RISK_HIGH_RATE = 0.35;
 
@@ -98,13 +106,60 @@ class NciScorer
         $succCount = $total - $failCount;
         $failRate = $total > 0 ? $failCount / $total : 0.0;
 
+        // §6 — reliability is the score; margin is a tiny secondary tie-break laid
+        // on top (capped at MARGIN_TIEBREAK), so two providers of near-equal
+        // reliability are separated by which one earns NaaraSim more, but a
+        // genuinely more reliable provider always outranks a more profitable one.
+        $reliability = $total > 0 ? $succCount / $total : null;
+        $score = $reliability === null
+            ? null
+            : min(1.0, round($reliability + $this->marginTieBreak($providerKey, $since), 4));
+
         ProviderRegistry::where('provider_key', $providerKey)->update([
-            'nci_score' => $total > 0 ? round($succCount / $total, 4) : null,
+            'nci_score' => $score,
             'nci_confidence' => round(min(1.0, $total / self::CONFIDENCE_FULL_SAMPLE), 4),
             'nci_risk_rating' => $this->risk($total, $failRate, $failures->pluck('error_code')->all()),
             'nci_sample_size' => $total,
             'nci_computed_at' => now(),
         ]);
+    }
+
+    /**
+     * §6 — a bounded [0, MARGIN_TIEBREAK] bonus from the provider's realised
+     * margin over the window. NCI reads its OWN margin picture from the sales
+     * ledgers (OrderLog for eSIM, SmsOrder for numbers) — cost never leaves Layer
+     * 3, and this influence is far too small to override reliability. A provider
+     * with no recorded sales gets zero bonus (no opinion), never a penalty.
+     */
+    private function marginTieBreak(string $providerKey, \Illuminate\Support\Carbon $since): float
+    {
+        $fractions = [];
+
+        // eSIM sales — profit / provider_cost per order (cost > 0 only).
+        foreach (\App\Models\OrderLog::where('provider', $providerKey)
+            ->where('created_at', '>=', $since)
+            ->where('provider_cost', '>', 0)
+            ->get(['provider_cost', 'profit']) as $o) {
+            $fractions[] = (float) $o->profit / (float) $o->provider_cost;
+        }
+
+        // Number sales — same shape from the SMS ledger.
+        foreach (\App\Models\SmsOrder::where('provider', $providerKey)
+            ->where('ordered_at', '>=', $since)
+            ->where('provider_cost', '>', 0)
+            ->get(['provider_cost', 'profit']) as $o) {
+            $fractions[] = (float) $o->profit / (float) $o->provider_cost;
+        }
+
+        if ($fractions === []) {
+            return 0.0; // no sales to judge margin on — no nudge either way
+        }
+
+        $avg = array_sum($fractions) / count($fractions);
+
+        // Clamp: a negative margin never drags reliability down (the MarginGuard
+        // and circuit breaker own loss-prevention); a 100%+ margin caps the bonus.
+        return self::MARGIN_TIEBREAK * max(0.0, min(1.0, $avg));
     }
 
     /** Recompute every provider (nci:recompute, and the health-tick refresh). */

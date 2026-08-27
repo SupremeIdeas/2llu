@@ -35,6 +35,12 @@ class CandidateOrdering
 
         // Preserve original index as the priority tiebreaker.
         $withIndex = [];
+
+        // NCI kill switch (BUILD-19 §1): when nci.enabled is false, NCI's score is
+        // ignored entirely and ordering falls back to the pre-NCI latency /
+        // success-rate ordering. Circuit breakers stay fully active regardless.
+        $nciOn = (bool) \App\Models\Setting::getValue('nci.enabled', true);
+
         foreach ($candidates as $i => $key) {
             $row = $snapshot[$key] ?? null;
 
@@ -42,6 +48,14 @@ class CandidateOrdering
             if ($row !== null && ($row['circuit_breaker_state'] ?? 'closed') === CircuitBreaker::OPEN) {
                 continue;
             }
+
+            // NCI influence weighted by its own confidence (§3): a score from 5
+            // outcomes nudges gently, one from 5,000 carries real weight —
+            // multiply score by confidence before it competes with latency/rate.
+            // -1 = "no opinion" (NCI off, or no score yet), so it never front-runs.
+            $score = $row !== null && ($row['nci_score'] ?? null) !== null ? (float) $row['nci_score'] : null;
+            $conf = $row !== null && ($row['nci_confidence'] ?? null) !== null ? (float) $row['nci_confidence'] : 0.0;
+            $nciEffective = ($nciOn && $score !== null) ? $score * $conf : -1.0;
 
             $withIndex[] = [
                 'key' => $key,
@@ -51,8 +65,7 @@ class CandidateOrdering
                 'latency' => $row['latency_ms'] ?? PHP_INT_MAX,
                 'success_rate' => $row !== null && $row['success_rate_24h'] !== null
                     ? (float) $row['success_rate_24h'] : -1.0,
-                'nci_score' => $row !== null && ($row['nci_score'] ?? null) !== null
-                    ? (float) $row['nci_score'] : -1.0,
+                'nci_score' => $nciEffective,
             ];
         }
 

@@ -1112,3 +1112,44 @@ engineering task):** Blackhawk, ePay/Euronet, Maya Connect+, eSIMCard,
 Bandwidth/Flowroute (needs a US EIN). Logged here so they're not lost; no
 placeholder adapters built.
 Tested (ProviderExpansionTest).
+
+### NCI Safety & Hygiene (BUILD-19)
+Nine gaps closed across the NCI layers; every change is additive and stays inside
+the existing four-layer separation. Covered by `NciSafetyTest` (8 tests).
+
+- **§1 Kill switch.** `nci.enabled` Setting (default true). When false,
+  `CandidateOrdering` ignores `nci_score` entirely and falls back to the pre-NCI
+  latency/success-rate order; **circuit breakers stay fully active** either way. A
+  prominent ON/OFF banner on the **Routing Console** flips it (nci.override) and
+  every toggle is audited (who + when) via `Auditor::log('nci.enabled_toggled')`.
+- **§2 Circuit alerts.** `CircuitBreaker` now fires `AlertAdminJob` on every
+  open (severity critical) and recover (info) transition — through the *existing*
+  alert path — naming the real provider and affected product family/families.
+- **§3 Confidence-weighted ordering.** Ordering multiplies `nci_score` by
+  `nci_confidence` before it competes, so a score from a handful of outcomes only
+  nudges while one from thousands carries weight.
+- **§4 Retention.** `nci:prune-outcomes` (weekly, Sundays 02:40, background,
+  withoutOverlapping) deletes `provider_outcomes` rows past a 90-day horizon
+  (`nci.outcome_retention_days`), in chunks so a big backlog never locks the table.
+- **§5 Total-outage last resort.** When EVERY candidate in a lane has an open
+  circuit, both `ProviderRouter` and `SmsNumberRouter` now attempt the
+  least-recently-failed provider anyway (via `CircuitBreaker::lastResortAmong`)
+  rather than hard-failing the customer, with a distinct critical alert
+  (`total-outage-esim` / `total-outage-sms`). The routers were refactored to a
+  per-provider `attemptProvider`/`attemptSmsProvider` helper so the live-attempt
+  vs open-skip bookkeeping that gates this is exact.
+- **§6 Margin tie-break.** `NciScorer::recompute` lays a **sub-resolution**
+  (≤0.003) margin bonus on top of reliability, read from NaaraSim's own ledgers
+  (`OrderLog` + `SmsOrder`) — cost never leaves Layer 3. Reliability always
+  dominates; margin only separates near-identical providers.
+- **§7 Visibility.** **Admin → System Health** now shows a *NCI learning health*
+  panel: failed NCI-listener count (`QueueHealth::nciListenerFailedCount`) and the
+  nightly `nci:recompute` last-run/overdue state (both NCI commands added to
+  `SchedulerHealth::TASKS`).
+- **§8 Fresh-install.** Genuinely tested empty-table behaviour (ordering returns
+  the static list, circuits default CLOSED, no last resort, recompute + prune run
+  clean) and documented in **CPANEL-INSTALL.md** (NCI needs no seeding; it learns
+  from real traffic once the cron runs).
+- **§9 PII redaction.** New `App\Support\PiiRedactor` (emails → `[email]`, 7+
+  digit runs → `[redacted]`) is applied in `CircuitBreaker::record` before any
+  provider error string reaches `provider_outcomes.error_code`.

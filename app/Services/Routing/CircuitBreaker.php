@@ -93,7 +93,8 @@ class CircuitBreaker
             'provider_key' => $providerKey,
             'stack' => $stack,
             'outcome' => $outcome === ProviderOutcome::SUCCESS ? ProviderOutcome::SUCCESS : ProviderOutcome::FAILURE,
-            'error_code' => $errorCode,
+            // BUILD-19 §9 — redact any PII a provider inlined into the error.
+            'error_code' => \App\Support\PiiRedactor::redact($errorCode),
             'order_ref' => $orderRef,
             'occurred_at' => now(),
         ]);
@@ -225,10 +226,75 @@ class CircuitBreaker
         if ($state !== $previous) {
             if ($state === self::OPEN) {
                 \App\Events\CircuitOpened::dispatch($providerKey);
+                $this->alertTransition($providerKey, true);
             } elseif ($state === self::CLOSED) {
                 \App\Events\CircuitClosed::dispatch($providerKey);
+                $this->alertTransition($providerKey, false);
             }
         }
+    }
+
+    /**
+     * BUILD-19 §2 — close the silent-failure gap: a circuit opening/closing is
+     * alerted through the existing AlertAdminJob (not a second alerting path),
+     * naming the real provider and the affected Naara product family. Recovery is
+     * a lower-urgency notice so a paged admin knows it self-healed.
+     */
+    private function alertTransition(string $providerKey, bool $opened): void
+    {
+        $families = collect(ProviderRegistry::deriveMeta($providerKey)['product_families'])
+            ->map(fn ($f) => \App\Support\OperationsCenter::familyName($f))->implode(', ') ?: 'unknown';
+
+        if ($opened) {
+            \App\Jobs\AlertAdminJob::dispatch(
+                code: 'circuit-open-'.$providerKey,
+                message: "Circuit opened: {$providerKey} (affects {$families}) — routing is skipping it until it recovers.",
+                context: ['provider' => $providerKey, 'families' => $families],
+                severity: 'critical',
+            );
+        } else {
+            \App\Jobs\AlertAdminJob::dispatch(
+                code: 'circuit-recovered-'.$providerKey,
+                message: "Circuit recovered: {$providerKey} (affects {$families}) is back in rotation.",
+                context: ['provider' => $providerKey, 'families' => $families],
+                severity: 'info',
+            );
+        }
+    }
+
+    /**
+     * BUILD-19 §5 — total-outage last resort. When EVERY candidate for a request
+     * has an open circuit, pick the one whose most recent failure is OLDEST (been
+     * failing longest ago → most likely to have recovered) so the customer still
+     * gets one real attempt instead of an immediate hard failure. Returns null if
+     * any candidate is actually attemptable (then there is no outage).
+     */
+    public function lastResortAmong(array $candidates): ?string
+    {
+        if ($candidates === []) {
+            return null;
+        }
+        // If anything is attemptable, this is not a total outage.
+        foreach ($candidates as $c) {
+            if ($this->stateOf($c) !== self::OPEN) {
+                return null;
+            }
+        }
+
+        $best = null;
+        $bestFailedAt = null;
+        foreach ($candidates as $c) {
+            $lastFail = ProviderOutcome::where('provider_key', $c)
+                ->where('outcome', ProviderOutcome::FAILURE)->max('occurred_at');
+            // No recorded failure → treat as the freshest candidate (try it first).
+            $ts = $lastFail !== null ? strtotime((string) $lastFail) : 0;
+            if ($bestFailedAt === null || $ts < $bestFailedAt) {
+                $bestFailedAt = $ts;
+                $best = $c;
+            }
+        }
+
+        return $best;
     }
 
     private function openedKey(string $providerKey): string

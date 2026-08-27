@@ -45,6 +45,10 @@ class SchedulerHealth
         'merchant:client-subscriptions' => ['Merchant client subscriptions', 86400],
         'giftcards:sync' => ['Naara Gift catalogue sync', 86400],
         'numbers:catalogue-sync' => ['Number catalogue sync', 604800],
+        // NCI Layer 3 (BUILD-19 §7) — the learning recompute must keep running or
+        // scores silently go stale; the weekly prune keeps provider_outcomes bounded.
+        'nci:recompute' => ['NCI score recompute', 86400],
+        'nci:prune-outcomes' => ['NCI outcome prune', 604800],
     ];
 
     /** Record a task's completion. Accepts the raw scheduler command string. */

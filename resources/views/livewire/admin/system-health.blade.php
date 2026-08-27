@@ -153,6 +153,43 @@
         </div>
     @endif
 
+    {{-- ============ NCI Layer-3 health (BUILD-19 §7) ============
+         NCI learns entirely from queued listeners and the nightly recompute. If
+         the listeners are dying or the recompute has stalled, scores silently go
+         stale with nothing else to show it — surface both here. --}}
+    <div class="mb-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">NCI learning health</h2>
+            <span class="text-[11px] uppercase tracking-wide text-slate-400">Layer 3</span>
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border border-slate-100 p-3 dark:border-[#243352]">
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Failed NCI listeners</p>
+                <p @class(['mt-1 text-lg font-bold', 'text-red-600 dark:text-red-400' => $nci['failed'] > 0, 'text-slate-900 dark:text-slate-100' => $nci['failed'] === 0])>{{ number_format($nci['failed']) }}</p>
+                <p class="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    @if ($nci['failed'] > 0)
+                        Queued score updates are dying — provider scores may be stale.
+                    @else
+                        All queued score updates are processing.
+                    @endif
+                </p>
+            </div>
+            <div class="rounded-xl border border-slate-100 p-3 dark:border-[#243352]">
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Nightly recompute</p>
+                <p @class(['mt-1 text-lg font-bold', 'text-red-600 dark:text-red-400' => $nci['recompute_overdue'], 'text-slate-900 dark:text-slate-100' => ! $nci['recompute_overdue']])>
+                    {{ $nci['recompute_ago'] ?? 'Never run' }}
+                </p>
+                <p class="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    @if ($nci['recompute_overdue'])
+                        Overdue — <code>nci:recompute</code> is not running; check the cron.
+                    @else
+                        Last ran {{ $nci['recompute_last'] }}.
+                    @endif
+                </p>
+            </div>
+        </div>
+    </div>
+
     {{-- ============ Maintenance: cache flusher ============ --}}
     <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
         <div class="flex flex-wrap items-center justify-between gap-3">

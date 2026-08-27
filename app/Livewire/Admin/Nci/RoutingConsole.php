@@ -65,6 +65,23 @@ class RoutingConsole extends Component
         $this->dispatch('nx-toast', type: 'success', message: 'Preference cleared for '.$stack.'.');
     }
 
+    /**
+     * BUILD-19 §1 — the NCI kill switch. Flips nci.enabled; when OFF, ordering
+     * ignores nci_score entirely and falls back to latency / success-rate (circuit
+     * breakers stay fully active either way, see CandidateOrdering). Every toggle
+     * is audited with who + when so the on/off history is never a mystery.
+     */
+    public function toggleNci(): void
+    {
+        $this->assertOverride();
+        $now = (bool) \App\Models\Setting::getValue('nci.enabled', true);
+        $next = ! $now;
+        \App\Models\Setting::setValue('nci.enabled', $next);
+        \App\Models\ProviderRegistry::flushSnapshot();
+        \App\Support\Auditor::log('nci.enabled_toggled', null, null, ['enabled' => $next]);
+        $this->dispatch('nx-toast', type: 'success', message: 'NCI intelligence '.($next ? 'ENABLED' : 'DISABLED').'.');
+    }
+
     public function render()
     {
         $ordering = app(CandidateOrdering::class);
@@ -87,6 +104,10 @@ class RoutingConsole extends Component
             $prefs[$stack] = RoutingPreference::current($stack);
         }
 
-        return view('livewire.admin.nci.routing-console', ['families' => $families, 'prefs' => $prefs]);
+        return view('livewire.admin.nci.routing-console', [
+            'families' => $families,
+            'prefs' => $prefs,
+            'nciEnabled' => (bool) \App\Models\Setting::getValue('nci.enabled', true),
+        ]);
     }
 }

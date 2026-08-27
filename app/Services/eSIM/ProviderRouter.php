@@ -99,53 +99,91 @@ class ProviderRouter
         // BUILD-15 §4: order the existing lane by the live registry (open circuits
         // excluded, fastest/most-reliable first) — reorder only; the live purchase
         // call below is unchanged. Falls back to the static chain if unavailable.
+        $liveAttempts = 0;
+        $openSkips = 0;
         foreach ($this->ordering->order($this->chainFor($plan), 'esim') as $provider) {
-            $pp = $this->findEquivalentPlan($plan, $provider);
-            if ($pp === null) {
-                continue; // provider has no equivalent plan
-            }
-
-            $cost = (float) $pp->cost_price_usd;
-            if ($charged < $cost + $minProfit) {
-                // Margin guard: fulfilling here would eat the margin. Skip.
-                Log::warning("ProviderRouter: skipping {$provider} for plan {$plan->id} — cost {$cost} too close to charged {$charged}.");
-                $errors[$provider] = 'skipped: unprofitable';
-
-                continue;
-            }
-
-            // BUILD-15 §1: skip a provider whose circuit is open before wasting a
-            // live call on it (business skips above are NOT circuit failures).
-            if (! $this->breaker->allows($provider)) {
-                $errors[$provider] = 'circuit_open';
-
-                continue;
-            }
-
-            try {
-                $result = app("esim.{$provider}")->orderBundle($pp->provider_plan_id);
-
-                OrderLog::create([
-                    'user_id' => $forLog->id,
-                    'naarasim_plan_id' => $plan->id,
-                    'provider' => $provider,
-                    'provider_cost' => $cost,
-                    'charged_to_user' => $charged,
-                    'profit' => round($charged - $cost, 4),
-                    'profit_pct' => $cost > 0 ? round(($charged - $cost) / $cost * 100, 3) : null,
-                    'result' => 'success',
-                ]);
-
-                $this->breaker->record($provider, 'esim', 'success', null, 'PLAN-'.$plan->id);
-
-                return EsimOrderResult::success($provider, $result, $cost, $charged);
-            } catch (Throwable $e) {
-                $this->breaker->record($provider, 'esim', 'failure', $this->errorCode($e), 'PLAN-'.$plan->id);
-                $errors[$provider] = $e->getMessage();
+            $result = $this->attemptProvider($plan, $provider, $charged, $forLog, $minProfit, $errors, false, $liveAttempts, $openSkips);
+            if ($result !== null) {
+                return $result;
             }
         }
 
+        // BUILD-19 §5 — total-outage last resort: if nothing got a live call and
+        // the only thing stopping it was open circuits, try the least-recently-
+        // failed provider anyway rather than hard-failing the customer.
+        if ($liveAttempts === 0 && $openSkips > 0) {
+            $lastResort = $this->breaker->lastResortAmong($this->chainFor($plan));
+            if ($lastResort !== null) {
+                \App\Jobs\AlertAdminJob::dispatch(
+                    code: 'total-outage-esim',
+                    message: "Total outage: all eSIM providers unavailable — attempting {$lastResort} as a last resort for plan {$plan->id}.",
+                    context: ['plan' => $plan->id, 'last_resort' => $lastResort],
+                    severity: 'critical',
+                );
+                $result = $this->attemptProvider($plan, $lastResort, $charged, $forLog, $minProfit, $errors, true, $liveAttempts, $openSkips);
+                if ($result !== null) {
+                    return $result;
+                }
+            }
+        }
+
+        // Existing all-failed handling (predates NCI) — unchanged.
         throw new EsimProviderException('Order could not be fulfilled — no provider available or profitable.');
+    }
+
+    /**
+     * One provider attempt: the plan/margin guards, the circuit pre-check (unless
+     * $bypassCircuit for the §5 last resort), the live purchase, the OrderLog, and
+     * the outcome record. Returns the success result or null to try the next.
+     */
+    private function attemptProvider(EsimPlan $plan, string $provider, float $charged, User $forLog, float $minProfit, array &$errors, bool $bypassCircuit, int &$liveAttempts, int &$openSkips): ?EsimOrderResult
+    {
+        $pp = $this->findEquivalentPlan($plan, $provider);
+        if ($pp === null) {
+            return null; // provider has no equivalent plan
+        }
+
+        $cost = (float) $pp->cost_price_usd;
+        if ($charged < $cost + $minProfit) {
+            Log::warning("ProviderRouter: skipping {$provider} for plan {$plan->id} — cost {$cost} too close to charged {$charged}.");
+            $errors[$provider] = 'skipped: unprofitable';
+
+            return null;
+        }
+
+        // BUILD-15 §1: skip a provider whose circuit is open (business skips above
+        // are NOT circuit failures). Bypassed only for the §5 last-resort attempt.
+        if (! $bypassCircuit && ! $this->breaker->allows($provider)) {
+            $errors[$provider] = 'circuit_open';
+            $openSkips++;
+
+            return null;
+        }
+
+        $liveAttempts++;
+        try {
+            $result = app("esim.{$provider}")->orderBundle($pp->provider_plan_id);
+
+            OrderLog::create([
+                'user_id' => $forLog->id,
+                'naarasim_plan_id' => $plan->id,
+                'provider' => $provider,
+                'provider_cost' => $cost,
+                'charged_to_user' => $charged,
+                'profit' => round($charged - $cost, 4),
+                'profit_pct' => $cost > 0 ? round(($charged - $cost) / $cost * 100, 3) : null,
+                'result' => 'success',
+            ]);
+
+            $this->breaker->record($provider, 'esim', 'success', null, 'PLAN-'.$plan->id);
+
+            return EsimOrderResult::success($provider, $result, $cost, $charged);
+        } catch (Throwable $e) {
+            $this->breaker->record($provider, 'esim', 'failure', $this->errorCode($e), 'PLAN-'.$plan->id);
+            $errors[$provider] = $e->getMessage();
+
+            return null;
+        }
     }
 
     /** A compact error class/code for the outcome log (NCI raw material, BUILD-16). */

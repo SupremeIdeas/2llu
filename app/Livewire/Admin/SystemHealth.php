@@ -73,6 +73,9 @@ class SystemHealth extends Component
             'pendingByQueue' => \App\Support\QueueHealth::pendingByQueue(),
             'failedCount' => \App\Support\QueueHealth::failedCount(),
             'recentFailed' => \App\Support\QueueHealth::recentFailed(),
+            // NCI Layer-3 health (BUILD-19 §7): failed-listener count + the
+            // recompute's last-run/overdue, so stale learning is visible.
+            'nci' => $this->nciHealth(),
             // Dual-hosting setup guidance (VPS Horizon/Redis vs shared cPanel cron),
             // keyed to the detected environment, with the real cron line filled in.
             'hostingMode' => \App\Support\HostingGuide::mode(),
@@ -82,6 +85,26 @@ class SystemHealth extends Component
             // operator confirm a provider (Paystack, Twilio…) is actually calling.
             'webhookDeliveries' => $this->webhookDeliveries(),
         ]);
+    }
+
+    /**
+     * BUILD-19 §7 — NCI Layer-3 health at a glance: how many queued listeners
+     * have died, and whether the daily recompute is running (or gone stale).
+     *
+     * @return array{failed:int, recompute_last:?string, recompute_ago:?string, recompute_overdue:bool}
+     */
+    private function nciHealth(): array
+    {
+        $last = SchedulerHealth::lastRun('nci:recompute');
+        // Overdue if the daily recompute hasn't run in over 26h (24h + slack).
+        $overdue = $last === null || now()->diffInSeconds($last) > 26 * 3600;
+
+        return [
+            'failed' => \App\Support\QueueHealth::nciListenerFailedCount(),
+            'recompute_last' => $last?->toDateTimeString(),
+            'recompute_ago' => $last?->diffForHumans(),
+            'recompute_overdue' => $overdue,
+        ];
     }
 
     /** @return \Illuminate\Support\Collection<int, object> */

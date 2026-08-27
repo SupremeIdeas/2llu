@@ -93,6 +93,19 @@ cron that runs **every minute**:
 (Use the full path to the project if it isn't `public_html`.) The admin **Setup
 Wizard** also shows this line with a copy button.
 
+> **NCI (smart routing) on a fresh install.** The Naara Core Intelligence layer
+> learns from real transactions, so on a brand-new install its tables
+> (`provider_registry`, `provider_outcomes`) are empty and it simply has no
+> opinion yet — routing falls back to the static provider order until real orders
+> accumulate. This is expected and safe: no manual seeding is required. Once the
+> cron above is running, two NCI jobs keep it healthy automatically —
+> `nci:recompute` (nightly, refreshes scores) and `nci:prune-outcomes` (weekly,
+> trims outcome rows past the 90-day retention window so the table never grows
+> unbounded). You can watch both under **Admin → System Health → NCI learning
+> health**, and turn the whole intelligence layer off (routing reverts to plain
+> latency/success-rate, circuit breakers stay active) from **Admin → Operations
+> (NCI) → Routing Console** if you ever need to.
+
 ## 6. Log in and finish setup
 Go to **`https://yourdomain.com/adminmaster`**, log in with the credentials from
 the Done screen, **change the password immediately**, then use the in-panel setup
