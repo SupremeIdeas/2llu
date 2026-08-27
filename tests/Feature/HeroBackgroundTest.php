@@ -154,10 +154,10 @@ class HeroBackgroundTest extends TestCase
         $this->assertFalse(HeroBackground::isSet());
 
         Livewire::actingAs(User::factory()->create())->test(Dashboard::class)
-            ->assertSee('My Connectivity')
+            ->assertSee('Connectivity')   // headline ("My" / "Connectivity" split across lines)
             ->assertSee(HeroBackground::DEFAULT_DESCRIPTION)
             ->assertSee('Buy eSIM')
-            ->assertSee('Get number')
-            ->assertSee('grid-cols-2', false); // buttons stay side-by-side at every width
+            ->assertSee('Get Number')
+            ->assertSee('mt-6 flex items-center gap-2.5', false); // pills stay side-by-side at every width
     }
 }
