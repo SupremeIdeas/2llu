@@ -918,3 +918,64 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
   step shows (no separate prefetch needed). The remaining lever — a short timeout
   on `chooseService`'s live provider quote so a slow provider degrades gracefully
   — is a provider-layer change flagged as a follow-up (out of scope for this UI pass).
+
+### Margin-safe discount floor (margin-safe-discount-floor blueprint)
+- **The floor is a percentage of margin, not a flat $0.50.** New
+  `App\Services\Pricing\DiscountMarginGuard::floor($cost, $adminMargin,
+  $merchantMargin?, $absoluteMinProfit?)` returns the single lowest price a
+  discount may reach: `max(absoluteFloor, pctFloor)`. Non-merchant lane keeps at
+  least `capPct%` of the admin margin (`cost + adminMargin*(1 - capPct/100)`,
+  cap default 30%); merchant lane protects BOTH sides
+  (`cost + adminMargin*(1 - adminPct/100) + merchantMargin*(1 - merchantPct/100)`,
+  defaults 20% / 10%). The absolute floor (`cost + pricing.minimum_profit_usd`,
+  or `pricing.sms_min_profit` for numbers) is the backstop for thin-margin items.
+- **One floor, computed once, shared by both engines.** `CouponEngine::price()`
+  and `CreditService::quoteRedemption()` both take optional `adminMargin` /
+  `merchantMargin` and defer to `DiscountMarginGuard`. Checkout computes the
+  margins ONCE (`adminMargin = plainRetail − cost`; `merchantMargin =
+  retail − plainRetail` on the merchant lane) and threads them into both, so a
+  combined coupon **and** credit can never dig past the floor together.
+- **Coupon XOR NaaraCredits.** Mutual exclusivity is enforced server-side in
+  Checkout (`applyCoupon` clears `useCredits`; `updatedUseCredits` clears the
+  coupon; a belt-and-braces guard blocks a request carrying both). No order can
+  stack the two discount rails.
+- **Merchant-zeroing bug fixed at the source.** Because the merchant-lane floor
+  guarantees `walletCharge > plainRetail`, the merchant accrual is always
+  non-zero — proven by a named test. New settings
+  `pricing.discount_margin_cap_pct` / `discount_margin_merchant_admin_pct` /
+  `discount_margin_merchant_pct` are editable in Admin → Pricing. Tested
+  (DiscountMarginFloorTest + updated CreditRedemption/CouponsAndBanners expectations).
+
+### Numbers section overhaul (numbers-section-overhaul blueprint)
+- **§1 Conversation inbox.** Inbound SMS now has a home. A token-verified,
+  idempotent webhook (`/webhooks/sms-inbound/{provider}`, allowlist
+  twilio/telnyx/fivesim/herosms/getatext) verifies via `hash_equals` BEFORE
+  touching the payload, maps generic provider fields, resolves the owning
+  `VirtualNumber`, and queues `RecordInboundMessageJob` (unknown number → 200
+  no-op). A `message_threads` summary table (one row per user+counterpart,
+  maintained by `created` observers on Inbound/Outbound messages) powers the
+  two-pane `Messages` inbox (`/numbers/messages`) without a live UNION; opening
+  a thread marks it read; replies reuse the existing send-message modal.
+- **§2/§5 Section-scoped chrome.** On `/numbers/*` the global bottom nav and
+  standard header are replaced by a Numbers section nav
+  (Contacts/Forwarding/Dialer/Messages, Messages carrying an unread badge) and a
+  wallet-balance top-up bar — driven by ONE bidirectional
+  `request()->routeIs('numbers.*')` condition re-evaluated each render, so it
+  survives `wire:navigate`. Everywhere else the global chrome is unchanged.
+- **§3 Dialer enhancements.** A searchable country dial-code picker (new
+  `App\Support\DialCodes`, home markets NG/GH/KE/ZA/US/GB pinned, opens on the
+  caller's own country) lets users pick the country and key only the local
+  number instead of hand-typing `+<code>`. Flags render through the self-hosted
+  flag-icons SVG set (no emoji). The wallet balance is also surfaced on the
+  dialer for desktop, where the /numbers header bar is `lg:hidden`. Connecting
+  status and recent-calls were already present; no callback switcher (per
+  blueprint).
+- **§4 Contact-grid message icon.** The grid-view contact card gained the same
+  call **and** message action icons the list row and favourites already had
+  (was edit-only), gated on `$ownsLine`.
+- **§6 Desktop two-column.** Messages is a two-pane inbox; the Dialer puts the
+  keypad card left with the contacts + recent-calls rail right on large screens;
+  the Contacts A–Z list flows into two balanced columns (break-inside-avoid) with
+  a denser lg:4/xl:5 grid view. The add/edit contact sheet stays on the shared
+  modal engine (S31) — no bespoke detail pane. Tested (MessagesInboxTest,
+  NumbersNavScopingTest, DialerCountryPickerTest).
