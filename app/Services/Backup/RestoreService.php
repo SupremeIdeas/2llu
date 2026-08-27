@@ -56,6 +56,9 @@ class RestoreService
 
         try {
             $local = $work.'/'.basename($archivePath);
+            // Reads from the dedicated backup disk directly (not MediaStorage):
+            // restore's whole job is pulling an archive off the backup destination,
+            // so it must address that named disk, not the upload-routing logic.
             File::put($local, Storage::disk($this->backups->disk())->get($archivePath));
 
             $zip = new ZipArchive;

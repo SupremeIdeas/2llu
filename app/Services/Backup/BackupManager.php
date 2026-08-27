@@ -13,7 +13,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class BackupManager
 {
-    /** The destination disk configured in config/backup.php. */
+    /**
+     * The destination disk configured in config/backup.php.
+     *
+     * Deliberately NOT routed through MediaStorage: MediaStorage picks the best
+     * disk for a user *upload*, whereas a backup must land on its own dedicated
+     * backup destination (Wasabi/local per config/backup.php) — a different
+     * concern. Every Storage::disk() call in this class + RestoreService uses
+     * this one named disk on purpose; that's the documented exception.
+     */
     public function disk(): string
     {
         return config('backup.backup.destination.disks')[0] ?? 'local';

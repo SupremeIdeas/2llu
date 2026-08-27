@@ -53,6 +53,10 @@ class CompressImageJob implements ShouldQueue
         }
 
         try {
+            // $this->disk is the disk MediaStorage already resolved for this
+            // upload and passed in at dispatch (MediaStorage::storePublic) — we
+            // must compress the exact file where MediaStorage put it, so this is
+            // MediaStorage-routed, not a hardcoded disk.
             $storage = Storage::disk($this->disk);
             if (! $storage->exists($this->path)) {
                 return; // deleted/replaced already — nothing to do.
