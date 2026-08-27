@@ -80,7 +80,7 @@
                 role="menuitem">
             <x-icon name="copy" class="h-4 w-4 text-slate-500 dark:text-slate-400" />
             <span x-show="!copied">Copy link</span>
-            <span x-show="copied" x-cloak class="text-primary dark:text-teal-300">Link copied ✓</span>
+            <span x-show="copied" x-cloak class="inline-flex items-center gap-1 text-primary dark:text-teal-300"><x-icon name="check" class="h-3.5 w-3.5" /> Link copied</span>
         </button>
     </div>
 </div>
