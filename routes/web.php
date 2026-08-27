@@ -230,6 +230,8 @@ Route::middleware(['admin', 'throttle:admin'])
             // Marketing Copy Studio — Claude-assisted copy population for CMS pages.
             Route::get('/copy-studio', \App\Livewire\Admin\MarketingCopyStudio::class)->name('copy-studio');
             Route::get('/dashboard-theme', \App\Livewire\Admin\PlatformThemePage::class)->name('dashboard-theme');
+            // Theme picker — switch the platform-wide visual skin (Theme Batch 2 §4).
+            Route::get('/theme', \App\Livewire\Admin\ThemePicker::class)->name('theme');
             Route::get('/branding', \App\Livewire\Admin\Branding::class)->name('branding');
             Route::get('/site', \App\Livewire\Admin\SiteEditor::class)->name('site');
             Route::get('/product-lines', \App\Livewire\Admin\ProductLines::class)->name('product-lines');

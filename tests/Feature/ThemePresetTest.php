@@ -97,6 +97,45 @@ class ThemePresetTest extends TestCase
         $this->assertSame('variant-a', ThemePreset::layoutVariant('nonexistent_page'));
     }
 
+    public function test_seeder_creates_all_fifteen_presets(): void
+    {
+        $this->seed(\Database\Seeders\ThemePresetSeeder::class);
+        ThemePreset::bust();
+
+        $all = ThemePreset::all();
+        $this->assertCount(15, $all);
+        // Exactly one built-in, and it is naara-official at sort_order 1.
+        $builtIns = $all->where('is_built_in', true);
+        $this->assertCount(1, $builtIns);
+        $this->assertSame('naara-official', $builtIns->first()['slug']);
+
+        // A non-official preset emits its validated palette.
+        Setting::setValue(ThemePreset::SETTING_KEY, 'aurora-shift');
+        ThemePreset::bust();
+        $css = ThemePreset::styleCss();
+        $this->assertStringContainsString('--brand-primary:30 110 140', $css);
+        $this->assertStringContainsString('--radius-card:1.5rem', $css);
+        $this->assertStringContainsString('--font-sans:\'Figtree\'', $css);
+        $this->assertSame('sprite', ThemePreset::iconFamily()['style']);
+    }
+
+    public function test_reseeding_does_not_clobber_admin_tuning(): void
+    {
+        $this->seed(\Database\Seeders\ThemePresetSeeder::class);
+        // Admin edits a preset's tokens through the picker.
+        ThemePresetModel::where('slug', 'aurora-shift')->update([
+            'tokens' => ['colors' => ['primary' => '1 2 3']],
+        ]);
+
+        // Re-running the seeder (a deploy) must NOT reset that tuning.
+        $this->seed(\Database\Seeders\ThemePresetSeeder::class);
+
+        $row = ThemePresetModel::where('slug', 'aurora-shift')->first();
+        $this->assertSame('1 2 3', $row->tokens['colors']['primary']);
+        // …but the built-in is always re-asserted authoritatively.
+        $this->assertSame(15, ThemePresetModel::count());
+    }
+
     public function test_missing_active_row_falls_back_without_blanking(): void
     {
         // Point the setting at a slug that doesn't exist → built-in, never blank.

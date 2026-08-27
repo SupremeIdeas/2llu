@@ -74,6 +74,7 @@
         $more[] = ['route' => 'admin.appearance', 'label' => 'Splash', 'icon' => 'zap'];
         $more[] = ['route' => 'admin.preloader-studio', 'label' => 'Preloader Studio', 'icon' => 'refresh'];
         $more[] = ['route' => 'admin.welcome-settings', 'label' => 'Welcome animation', 'icon' => 'zap'];
+        $more[] = ['route' => 'admin.theme', 'label' => 'Theme', 'icon' => 'star'];
         $more[] = ['route' => 'admin.dashboard-theme', 'label' => 'Dashboard theme', 'icon' => 'image'];
         $more[] = ['route' => 'admin.service-icons', 'label' => 'Service icons', 'icon' => 'grid'];
         $more[] = ['route' => 'admin.integrations', 'label' => 'Integrations', 'icon' => 'link'];
