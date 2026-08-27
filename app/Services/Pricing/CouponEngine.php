@@ -49,15 +49,22 @@ class CouponEngine
      *
      * @return array{price: float, saved: float, clamped: bool}
      */
-    public function price(Coupon $coupon, float $retail, float $cost, string $product): array
+    public function price(Coupon $coupon, float $retail, float $cost, string $product, ?float $adminMargin = null, ?float $merchantMargin = null): array
     {
         $requested = round($retail * (1 - (float) $coupon->percent_off / 100), 4);
 
-        // Same floor MarginGuard uses: cost + minimum profit (per product line).
+        // Margin-safe floor (discount-floor blueprint §3): percentage-of-margin,
+        // with the old absolute cost+minProfit kept underneath (whichever is
+        // higher wins). The SMS lane keeps its own smaller absolute floor.
         $minProfit = $product === 'esim'
             ? (float) Setting::getValue('pricing.minimum_profit_usd', 0.50)
             : (float) Setting::getValue('pricing.sms_min_profit', 0.01);
-        $floor = round($cost + $minProfit, 4);
+        $floor = app(DiscountMarginGuard::class)->floor(
+            $cost,
+            $adminMargin ?? ($retail - $cost), // non-merchant fallback: whole margin
+            $merchantMargin,
+            $minProfit,
+        );
 
         $final = max($requested, $floor);
         $final = min($final, $retail); // a coupon can never raise the price

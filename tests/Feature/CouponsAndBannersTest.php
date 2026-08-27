@@ -71,14 +71,17 @@ class CouponsAndBannersTest extends TestCase
 
     public function test_coupon_discount_is_clamped_above_cost_plus_minimum_profit(): void
     {
+        \App\Models\Setting::setValue('pricing.minimum_profit_usd', 0.50, 'pricing');
+        \App\Models\Setting::setValue('pricing.discount_margin_cap_pct', 30, 'pricing');
         $engine = app(CouponEngine::class);
         $coupon = $this->coupon(['code' => 'MEGA90', 'percent_off' => 90]);
 
-        // 90% off $10 asks for $1.00 — but cost 8.00 + 0.50 floor wins.
+        // 90% off $10 asks for $1.00 — but the margin-safe floor now binds:
+        // $10/$8 → $2 margin, 30% cap → floor = 8 + 2*0.70 = 9.40.
         $quote = $engine->price($coupon, 10.00, 8.00, 'esim');
-        $this->assertSame(8.50, $quote['price']);
+        $this->assertSame(9.40, $quote['price']);
         $this->assertTrue($quote['clamped']);
-        $this->assertSame(1.50, $quote['saved']);
+        $this->assertSame(0.60, $quote['saved']);
 
         // The clamp is auditable (same margin_guard floor, marked as a coupon).
         $this->assertDatabaseHas('pricing_engine_logs', [
@@ -86,9 +89,11 @@ class CouponsAndBannersTest extends TestCase
             'guard_active' => 'margin_guard',
         ]);
 
-        // A modest discount that stays above the floor is untouched.
+        // A high-margin plan is now protected too: $10/$0.50 → $9.50 margin,
+        // 30% cap → floor 0.50 + 9.50*0.70 = 7.15 (the OLD flat floor let this
+        // reach $1.00 — exactly the erosion this blueprint closes).
         $quote = $engine->price($coupon, 10.00, 0.50, 'esim');
-        $this->assertSame(1.0, round($quote['price'], 2)); // 90% off, floor 1.00
+        $this->assertSame(7.15, round($quote['price'], 2));
         $this->assertTrue($quote['price'] > 0.50); // never at/below cost
     }
 
@@ -131,22 +136,26 @@ class CouponsAndBannersTest extends TestCase
             'iccid' => '8944000', 'orderReference' => 'ORD-1',
         ]));
 
+        \App\Models\Setting::setValue('pricing.minimum_profit_usd', 0.50, 'pricing');
+        \App\Models\Setting::setValue('pricing.discount_margin_cap_pct', 30, 'pricing');
+
+        // Margin-safe floor: $10/$3.77 → $6.23 margin, 30% cap → max discount
+        // $1.869, so a 20% ($2) coupon is clamped to a $8.131 charge.
         Livewire::actingAs($user)->test(Checkout::class, ['plan' => $plan])
             ->set('deviceConfirmed', true)
             ->set('coupon', 'save20')
             ->call('applyCoupon')
-            ->assertSet('couponPrice', 8.0)   // preview: 20% off $10
-            ->assertSet('couponSaved', 2.0)
+            ->assertSet('couponPrice', 8.131)
+            ->assertSet('couponSaved', 1.869)
             ->assertDontSee('3.77')           // cost still never rendered
             ->call('purchase')
             ->assertSet('done', true);
 
-        // Debited $8, not $10 — and the audit trail is complete.
-        $this->assertSame('12.0000', (string) $user->wallet->fresh()->usd_balance);
-        $this->assertDatabaseHas('esim_orders', ['user_id' => $user->id, 'price_charged' => 8.0]);
+        $this->assertSame('11.8690', (string) $user->wallet->fresh()->usd_balance);
+        $this->assertDatabaseHas('esim_orders', ['user_id' => $user->id, 'price_charged' => 8.131]);
         $redemption = CouponRedemption::firstOrFail();
-        $this->assertSame(2.0, (float) $redemption->amount_saved);
-        $this->assertFalse($redemption->floor_clamped);
+        $this->assertSame(1.869, (float) $redemption->amount_saved);
+        $this->assertTrue($redemption->floor_clamped); // margin floor bound the discount
         $this->assertSame(1, Coupon::where('code', 'SAVE20')->first()->times_redeemed);
     }
 
@@ -171,8 +180,11 @@ class CouponsAndBannersTest extends TestCase
 
     public function test_number_order_applies_the_coupon_to_the_live_quote_with_the_floor(): void
     {
-        // Cost 0.20 -> retail 0.28 (40% markup). A 95% coupon asks for 0.014
-        // but the floor is cost + 0.01 = 0.21.
+        // Cost 0.20 -> retail 0.31 -> $0.11 margin. A 90% coupon asks for ~0.03,
+        // but the margin-safe floor (30% of margin) binds: 0.20 + 0.11*0.70 =
+        // 0.277 — well above the absolute cost + 0.01 = 0.21 floor.
+        \App\Models\Setting::setValue('pricing.discount_margin_cap_pct', 30, 'pricing');
+        \App\Models\Setting::setValue('pricing.sms_min_profit', 0.01, 'pricing');
         $this->coupon(['code' => 'NUM95', 'percent_off' => 90, 'applies_to' => 'number']);
         $user = User::factory()->create();
         app(WalletService::class)->credit($user, 20, 'USD');
@@ -191,8 +203,9 @@ class CouponsAndBannersTest extends TestCase
 
         $redemption = CouponRedemption::firstOrFail();
         $this->assertTrue($redemption->floor_clamped);
-        $this->assertSame(0.21, round((float) $redemption->paid_price, 2)); // never below cost+profit
-        $this->assertSame(round(20 - 0.21, 2), round((float) $user->wallet->fresh()->usd_balance, 2));
+        $this->assertSame(0.277, round((float) $redemption->paid_price, 3)); // margin floor, never below cost+profit
+        $this->assertGreaterThanOrEqual(0.21, (float) $redemption->paid_price); // absolute cost+profit floor still holds
+        $this->assertSame(round(20 - 0.277, 2), round((float) $user->wallet->fresh()->usd_balance, 2));
     }
 
     // ---------------------------------------------------------------- admin

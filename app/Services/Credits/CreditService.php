@@ -189,14 +189,19 @@ class CreditService
      *
      * @return array{usd: float, credits: float}
      */
-    public function quoteRedemption(User $user, float $retail, float $cost): array
+    public function quoteRedemption(User $user, float $retail, float $cost, ?float $adminMargin = null, ?float $merchantMargin = null): array
     {
         if (! CreditSettings::enabled()) {
             return ['usd' => 0.0, 'credits' => 0.0];
         }
 
-        $minProfit = (float) Setting::getValue('pricing.minimum_profit_usd', 0.50);
-        $floor = round($cost + $minProfit, 4);
+        // Margin-safe floor (discount-floor blueprint §3) — the SAME floor
+        // CouponEngine uses, so coupon + credits combined can never cross it.
+        $floor = app(\App\Services\Pricing\DiscountMarginGuard::class)->floor(
+            $cost,
+            $adminMargin ?? ($retail - $cost),
+            $merchantMargin,
+        );
         $maxByFloor = max(0.0, round($retail - $floor, 4));
         $maxByPct = round($retail * (int) CreditSettings::get('max_redeem_pct', 50) / 100, 4);
         $maxByBalance = CreditSettings::creditsToUsd($this->balance($user));

@@ -27,6 +27,14 @@ class Pricing extends Component
 
     public $minimum_profit_usd;
 
+    // Margin-safe discount floor (discount-floor blueprint §2) — the max % of
+    // MARGIN (not price) a single order's combined coupon+credit discount may eat.
+    public $discount_margin_cap_pct;
+
+    public $merchant_discount_admin_pct;
+
+    public $merchant_discount_merchant_pct;
+
     // Outbound-SMS wholesale cost per provider (Numbers V6 §6 — a user texting
     // from their Naara Line). Retail is layered on by PricingEngine; this is the
     // cost basis, never surfaced to users.
@@ -74,6 +82,9 @@ class Pricing extends Component
     {
         $this->default_markup_pct = Setting::getValue('pricing.default_markup_pct', 30);
         $this->minimum_profit_usd = Setting::getValue('pricing.minimum_profit_usd', 0.50);
+        $this->discount_margin_cap_pct = Setting::getValue('pricing.discount_margin_cap_pct', 30);
+        $this->merchant_discount_admin_pct = Setting::getValue('pricing.merchant_discount_admin_pct', 20);
+        $this->merchant_discount_merchant_pct = Setting::getValue('pricing.merchant_discount_merchant_pct', 10);
         $this->sms_send_cost_twilio = Setting::getValue('pricing.sms_send_cost.twilio', 0.0079);
         $this->sms_send_cost_telnyx = Setting::getValue('pricing.sms_send_cost.telnyx', 0.004);
         $this->mms_send_cost_twilio = Setting::getValue('pricing.mms_send_cost.twilio', 0.02);
@@ -117,6 +128,9 @@ class Pricing extends Component
         $this->validate([
             'default_markup_pct' => 'required|numeric|min:0|max:1000',
             'minimum_profit_usd' => 'required|numeric|min:0',
+            'discount_margin_cap_pct' => 'required|numeric|min:0|max:100',
+            'merchant_discount_admin_pct' => 'required|numeric|min:0|max:100',
+            'merchant_discount_merchant_pct' => 'required|numeric|min:0|max:100',
             'sms_send_cost_twilio' => 'required|numeric|min:0|max:5',
             'sms_send_cost_telnyx' => 'required|numeric|min:0|max:5',
             'mms_send_cost_twilio' => 'required|numeric|min:0|max:5',
@@ -125,6 +139,9 @@ class Pricing extends Component
 
         Setting::setValue('pricing.default_markup_pct', (float) $this->default_markup_pct, 'pricing');
         Setting::setValue('pricing.minimum_profit_usd', (float) $this->minimum_profit_usd, 'pricing');
+        Setting::setValue('pricing.discount_margin_cap_pct', (float) $this->discount_margin_cap_pct, 'pricing');
+        Setting::setValue('pricing.merchant_discount_admin_pct', (float) $this->merchant_discount_admin_pct, 'pricing');
+        Setting::setValue('pricing.merchant_discount_merchant_pct', (float) $this->merchant_discount_merchant_pct, 'pricing');
         Setting::setValue('pricing.sms_send_cost.twilio', round((float) $this->sms_send_cost_twilio, 4), 'pricing');
         Setting::setValue('pricing.sms_send_cost.telnyx', round((float) $this->sms_send_cost_telnyx, 4), 'pricing');
         Setting::setValue('pricing.mms_send_cost.twilio', round((float) $this->mms_send_cost_twilio, 4), 'pricing');

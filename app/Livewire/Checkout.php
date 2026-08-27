@@ -99,11 +99,24 @@ class Checkout extends Component
         $quote = $coupons->price($model, (float) $this->plan->final_retail_usd, (float) $this->plan->cost_price_usd, 'esim');
         $this->couponPrice = $quote['price'];
         $this->couponSaved = $quote['saved'];
+
+        // Mutual exclusivity (blueprint §4, client UX): applying a coupon clears
+        // any credit selection so the customer is never mid-way into both. The
+        // server guard in purchase() is the real enforcement.
+        $this->useCredits = false;
     }
 
     public function removeCoupon(): void
     {
         $this->reset('coupon', 'couponPrice', 'couponSaved', 'couponError');
+    }
+
+    /** Turning NaaraCredits on clears any coupon (the two are mutually exclusive). */
+    public function updatedUseCredits(bool $value): void
+    {
+        if ($value) {
+            $this->reset('coupon', 'couponPrice', 'couponSaved', 'couponError');
+        }
     }
 
     public function checkDevice(): void
@@ -159,6 +172,23 @@ class Checkout extends Component
             $retail = $plainRetail;
         }
 
+        // Margin-safe discount floor (blueprint §2/§3): compute the admin's and
+        // (for a merchant sale) the merchant's margin ONCE, from the pre-discount
+        // prices, and thread the SAME figures into both the coupon and credit
+        // engines — so the combined floor is identical and neither can zero the
+        // merchant's earning.
+        $cost = (float) $this->plan->cost_price_usd;
+        $adminMargin = $plainRetail - $cost;
+        $merchantMargin = $merchant !== null ? max(0.0, $retail - $plainRetail) : null;
+
+        // Mutual exclusivity (blueprint §4): a customer picks ONE discount
+        // mechanism per order. Enforced server-side before any pricing math.
+        if (trim($this->coupon) !== '' && $this->useCredits) {
+            $this->error = 'Choose either a coupon or NaaraCredits for this order — not both.';
+
+            return;
+        }
+
         // Coupon is re-resolved server-side at purchase time — the preview shown
         // by applyCoupon() is never trusted. CouponEngine clamps the discount to
         // cost + minimum profit, so no code can ever charge below wholesale.
@@ -171,7 +201,7 @@ class Checkout extends Component
 
                 return;
             }
-            $quote = $coupons->price($couponModel, $retail, (float) $this->plan->cost_price_usd, 'esim');
+            $quote = $coupons->price($couponModel, $retail, $cost, 'esim', $adminMargin, $merchantMargin);
             $listRetail = $retail;
             $retail = $quote['price'];
             $couponClamped = $quote['clamped'];
@@ -186,7 +216,7 @@ class Checkout extends Component
         $redeemUsd = 0.0;
         $creditsSpent = 0.0;
         if ($this->useCredits) {
-            $quote = $credits->quoteRedemption($user, $retail, (float) $this->plan->cost_price_usd);
+            $quote = $credits->quoteRedemption($user, $retail, $cost, $adminMargin, $merchantMargin);
             $redeemUsd = $quote['usd'];
             $creditsSpent = $quote['credits'];
         }

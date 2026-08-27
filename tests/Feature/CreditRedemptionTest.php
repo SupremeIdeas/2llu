@@ -49,8 +49,11 @@ class CreditRedemptionTest extends TestCase
 
     public function test_redemption_is_margin_capped_never_below_cost_plus_profit(): void
     {
-        // retail 10, cost 4, min profit 0.50 -> floor 4.50; max-redeem 50% -> $5.
-        // A huge credit balance can still only cover the smaller of the two caps.
+        // retail 10, cost 4 -> admin margin $6. The margin-safe floor (discount-
+        // floor blueprint §2, 30% cap) now caps the discount at 30% of that
+        // margin = $1.80, which binds BELOW the 50% price cap. A huge credit
+        // balance still can't cross it.
+        \App\Models\Setting::setValue('pricing.discount_margin_cap_pct', 30, 'pricing');
         \App\Models\Setting::setValue('credits.max_redeem_pct', 50, 'credits');
         \App\Models\Setting::setValue('credits.per_usd', 100, 'credits');
         CreditSettings::flush();
@@ -59,15 +62,15 @@ class CreditRedemptionTest extends TestCase
         $this->withCredits($user, 100000); // way more than needed
 
         $q = app(CreditService::class)->quoteRedemption($user->fresh(), 10.00, 4.00);
-        // 50% cap = $5 is the binding constraint (floor would allow $5.50).
-        $this->assertSame(5.0, $q['usd']);
-        $this->assertSame(500.0, $q['credits']);
+        // Floor = 4 + 6*0.70 = 8.20; redeemable = 10 - 8.20 = 1.80 (30% of margin).
+        $this->assertSame(1.8, $q['usd']);
+        $this->assertSame(180.0, $q['credits']);
 
-        // Now raise the % cap so the floor binds instead.
+        // Raising the % price cap does nothing — the margin floor already binds.
         \App\Models\Setting::setValue('credits.max_redeem_pct', 100, 'credits');
         CreditSettings::flush();
         $q = app(CreditService::class)->quoteRedemption($user->fresh(), 10.00, 4.00);
-        $this->assertSame(5.5, $q['usd']); // retail 10 - floor 4.50
+        $this->assertSame(1.8, $q['usd']);
     }
 
     public function test_checkout_redeems_credits_and_charges_the_reduced_amount(): void
@@ -88,11 +91,13 @@ class CreditRedemptionTest extends TestCase
             ->assertSet('done', true)
             ->assertDontSee('4.00'); // cost never shown
 
-        // Wallet charged 10 - 5 = 5 (20 - 5 = 15 left); credits fully spent.
-        $this->assertSame('15.0000', (string) $user->wallet->fresh()->usd_balance);
-        $this->assertSame('0.00', (string) $user->wallet->fresh()->naara_credits);
+        // Margin-safe floor (§2): retail 10 / cost 4 → $6 margin → 30% = $1.80
+        // redeemable. Wallet charged 10 - 1.80 = 8.20 (20 - 8.20 = 11.80 left);
+        // 180 of the 500 credits spent, 320 remain.
+        $this->assertSame('11.8000', (string) $user->wallet->fresh()->usd_balance);
+        $this->assertSame('320.00', (string) $user->wallet->fresh()->naara_credits);
         // The order records the REAL money collected, not list price.
-        $this->assertSame('5.0000', (string) EsimOrder::firstOrFail()->price_charged);
+        $this->assertSame('8.2000', (string) EsimOrder::firstOrFail()->price_charged);
     }
 
     public function test_provider_failure_refunds_both_wallet_and_credits_exactly(): void

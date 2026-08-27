@@ -88,6 +88,32 @@
                         @error('minimum_profit_usd') <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                     </div>
 
+                    {{-- Margin-safe discount floor (discount-floor blueprint §2). --}}
+                    <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-3 dark:border-[#2D4060] dark:bg-[#1a2840]/40 sm:col-span-2">
+                        <p class="mb-2 text-xs font-semibold text-slate-700 dark:text-slate-200">Discount margin caps</p>
+                        <p class="mb-3 text-[11px] text-slate-400 dark:text-slate-500">The max % of <em>margin</em> (not price) a single order's combined coupon + NaaraCredit discount may consume. The absolute floor above always wins if it's higher.</p>
+                        <div class="grid gap-3 sm:grid-cols-3">
+                            <div>
+                                <label class="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">Non-merchant cap (% of admin margin)</label>
+                                <input type="number" step="1" min="0" max="100" wire:model="discount_margin_cap_pct"
+                                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                @error('discount_margin_cap_pct') <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">Merchant lane — admin margin cap (%)</label>
+                                <input type="number" step="1" min="0" max="100" wire:model="merchant_discount_admin_pct"
+                                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                @error('merchant_discount_admin_pct') <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">Merchant lane — merchant margin cap (%)</label>
+                                <input type="number" step="1" min="0" max="100" wire:model="merchant_discount_merchant_pct"
+                                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                @error('merchant_discount_merchant_pct') <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Outbound-SMS wholesale cost (a user texting from their Naara
                          Line). Retail is layered on by the pricing engine + margin
                          floor; this is the cost basis and is never shown to users. --}}

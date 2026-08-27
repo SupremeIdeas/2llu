@@ -346,7 +346,15 @@ class GetNumber extends Component
 
                 return;
             }
-            $priced = $coupons->price($couponModel, $retail, (float) $quote['cost'], 'number');
+            // Margin-safe floor (blueprint §2/§3): pass the admin's and merchant's
+            // margins from the pre-discount prices so the floor is margin-aware and
+            // a coupon can never zero the merchant's number-lane earning.
+            $numCost = (float) $quote['cost'];
+            $priced = $coupons->price(
+                $couponModel, $retail, $numCost, 'number',
+                $plainRetail - $numCost,
+                $merchant !== null ? max(0.0, $retail - $plainRetail) : null,
+            );
             $retail = $priced['price'];
             $couponClamped = $priced['clamped'];
         }
