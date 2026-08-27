@@ -33,7 +33,7 @@
             @if ($center)
                 @php $centerHref = $href($center); @endphp
                 <div class="relative mx-0.5">
-                    <span class="nx-wiz-glow pointer-events-none absolute -inset-1 -z-10 rounded-full bg-gradient-to-r from-primary via-accent to-primary blur-[6px] motion-safe:animate-[naaraGlow_3.5s_ease-in-out_infinite]" aria-hidden="true"></span>
+                    <span class="nx-wiz-glow pointer-events-none absolute -inset-1 -z-10 rounded-full bg-gradient-to-r from-primary to-primary-dark blur-[6px]" aria-hidden="true"></span>
                     @if ($center->opensWizard() && $authed)
                         <button type="button" onclick="window.Livewire && Livewire.dispatch('open-wizard')"
                                 class="nx-floatnav__center flex h-14 items-center gap-2 rounded-full bg-gradient-to-br from-primary to-primary-dark px-5 text-white shadow-lg shadow-primary/30 transition active:scale-95">

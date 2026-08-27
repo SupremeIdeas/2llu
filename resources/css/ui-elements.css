@@ -1375,32 +1375,26 @@
 @keyframes nx-gradient-pan { 0%, 100% { background-position: 0% center; } 50% { background-position: 100% center; } }
 @media (prefers-reduced-motion: reduce) { .nx-gradient-text { animation: none; } }
 
-/* --- Wizard launcher: refined brand-gradient edge (subtle, professional) ---- */
-.nx-wiz-glow { animation: nx-wiz-glow 4.5s ease-in-out infinite; }
-@keyframes nx-wiz-glow { 0%, 100% { opacity: 0.22; } 50% { opacity: 0.4; } }
-@media (prefers-reduced-motion: reduce) { .nx-wiz-glow { animation: none; opacity: 0.28; } }
+/* --- Wizard launcher: refined brand-gradient edge (subtle, professional) ----
+   Toned down (owner request): the launcher sits next to Nia's own conic halo,
+   so a single soft edge-glow here — not a second rotating aurora — keeps the
+   two from competing. Kept deliberately faint. */
+.nx-wiz-glow { animation: nx-wiz-glow 5s ease-in-out infinite; }
+@keyframes nx-wiz-glow { 0%, 100% { opacity: 0.12; } 50% { opacity: 0.24; } }
+@media (prefers-reduced-motion: reduce) { .nx-wiz-glow { animation: none; opacity: 0.16; } }
 
 /* BUILD-3 §4: "Confused? Use The Wizard" attention state on the eSIM / Number
-   sections — the launcher swells toward the screen and a thin electric edge
-   traces it. Transform/opacity only (no particles), so it holds 60fps on
-   low-end devices; fully stilled for reduced-motion. */
-.nx-wiz-swell { animation: nx-wiz-swell 2.8s ease-in-out infinite; will-change: transform; }
+   sections — the launcher gives a gentle swell toward the screen. Transform
+   only (no rotating electric halo any more — it doubled up with Nia's glow and
+   read as noise), so it holds 60fps on low-end devices and stays calm; fully
+   stilled for reduced-motion. */
+.nx-wiz-swell { animation: nx-wiz-swell 3.2s ease-in-out infinite; will-change: transform; }
 @keyframes nx-wiz-swell {
     0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(-4px, -7px) scale(1.05); }
+    50% { transform: translate(-2px, -4px) scale(1.03); }
 }
-.nx-wiz-electric::before {
-    content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: 9999px;
-    background: conic-gradient(from 0deg,
-        var(--nia-glow-1, #0A6E6E), var(--nia-glow-2, #D4A017),
-        var(--nia-glow-3, #2dd4bf), var(--nia-glow-1, #0A6E6E));
-    filter: blur(5px); opacity: 0.6;
-    animation: nx-wiz-electric 3.5s linear infinite; will-change: transform;
-}
-@keyframes nx-wiz-electric { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
     .nx-wiz-swell { animation: none; }
-    .nx-wiz-electric::before { animation: none; }
 }
 
 /* In-call control buttons (dialer live screen). The mute button swaps its

@@ -47,7 +47,7 @@
         @if ($otp && $otp->status === 'completed')
             {{-- "Code ready" pill — the pushed OTP surfacing (roadmap §3.10). --}}
             <button type="button" wire:click="openOtp"
-                    class="mb-2 flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-semibold text-navy shadow-lg shadow-accent/40 transition hover:brightness-105 motion-safe:animate-[naaraGlow_2.2s_ease-in-out_infinite]">
+                    class="mb-2 flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-semibold text-navy shadow-lg shadow-accent/40 transition hover:brightness-105 motion-safe:animate-[naaraGlow_3.6s_ease-in-out_infinite]">
                 <x-icon name="check" class="h-4 w-4" /> Your code is ready
             </button>
         @endif
@@ -57,11 +57,12 @@
         @php $naaraAvatar = \App\Support\SupportSettings::avatar(); @endphp
         <button type="button" wire:click="toggle"
                 aria-label="{{ $wizAttention ? 'Confused? Use The Wizard' : 'Open the NaaraSim helper' }}"
-                class="group relative rounded-full p-px shadow-lg shadow-primary/15 transition hover:shadow-primary/25 {{ $wizAttention ? 'nx-wiz-swell nx-wiz-electric' : '' }}">
-            {{-- A fine gradient edge + a restrained, soft halo (professional, not
-                 heavy). Most of the pill is a clean solid surface. --}}
-            <span class="absolute inset-0 rounded-full bg-gradient-to-r from-primary/70 via-accent/70 to-primary/70" aria-hidden="true"></span>
-            <span class="nx-wiz-glow pointer-events-none absolute -inset-px -z-10 rounded-full bg-gradient-to-r from-primary via-accent to-primary blur-[6px]" aria-hidden="true"></span>
+                class="group relative rounded-full p-px shadow-lg shadow-primary/15 transition hover:shadow-primary/25 {{ $wizAttention ? 'nx-wiz-swell' : '' }}">
+            {{-- A fine gradient edge + a single restrained, soft halo (professional,
+                 not heavy — no second rotating aurora that fought Nia's glow).
+                 Most of the pill is a clean solid surface. --}}
+            <span class="absolute inset-0 rounded-full bg-gradient-to-r from-primary/60 via-primary/40 to-primary/60" aria-hidden="true"></span>
+            <span class="nx-wiz-glow pointer-events-none absolute -inset-px -z-10 rounded-full bg-gradient-to-r from-primary to-primary-dark blur-[5px]" aria-hidden="true"></span>
             <span class="relative flex items-center gap-2 rounded-full bg-white px-3.5 py-2.5 dark:bg-[#101d33]">
                 <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full {{ $naaraAvatar ? '' : 'bg-primary/10 dark:bg-primary/20' }}">
                     @if ($naaraAvatar)
