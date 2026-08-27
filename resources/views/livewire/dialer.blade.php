@@ -31,18 +31,78 @@
     <div class="rounded-3xl border border-slate-200 bg-white px-5 py-6 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]"
          x-data="{
             hold: null, held: false,
+            cc: @js($defaultCountry), ccOpen: false, ccQuery: '',
             press(d) { $wire.destination = ($wire.destination || '') + d; },
             back() { $wire.destination = ($wire.destination || '').slice(0, -1); },
             clearAll() { $wire.destination = ''; },
             startZero() { this.held = false; this.hold = setTimeout(() => { this.held = true; this.press('+'); }, 400); },
             endZero() { clearTimeout(this.hold); if (! this.held) this.press('0'); },
-            get valid() { return /^\+?[0-9]{6,15}$/.test(($wire.destination || '').trim()); }
-         }">
+            get valid() { return /^\+?[0-9]{6,15}$/.test(($wire.destination || '').trim()); },
+            // Pick a country → keep the local part the user already keyed, swap
+            // the leading +<code>. When the prior code is unknown (a paste), we
+            // start the local part fresh so we never mangle their number.
+            pickCountry(iso, name, code) {
+                const prev = this.cc ? '+' + this.cc.code : null;
+                let local = ($wire.destination || '');
+                if (prev && local.startsWith(prev)) local = local.slice(prev.length);
+                else if (local.startsWith('+')) local = '';
+                this.cc = { iso, name, code };
+                $wire.destination = '+' + code + local;
+                this.ccOpen = false; this.ccQuery = '';
+            },
+            ccMatch(name, code) {
+                const q = this.ccQuery.trim().toLowerCase();
+                if (! q) return true;
+                return name.toLowerCase().includes(q) || ('+' + code).includes(q) || code.includes(q);
+            }
+         }"
+         x-init="if (! ($wire.destination || '').length) $wire.destination = '+' + cc.code">
         @if ($error)
             <div class="mb-4 flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
                 <x-icon name="x" class="mt-0.5 h-4 w-4 shrink-0" /> <span>{{ $error }}</span>
             </div>
         @endif
+
+        {{-- §3 Country picker + desktop wallet. The picker sets the +<code>; the
+             wallet chip mirrors the mobile /numbers header (which is lg:hidden)
+             so desktop callers see their balance without leaving the dialer. --}}
+        <div class="mb-3 flex items-center justify-between gap-2">
+            <div class="relative" x-on:keydown.escape.window="ccOpen = false">
+                <button type="button" x-on:click="ccOpen = ! ccOpen" aria-haspopup="listbox" x-bind:aria-expanded="ccOpen"
+                        class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-2 pr-2.5 text-sm font-semibold text-slate-700 transition hover:border-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-200">
+                    <span class="inline-block h-4 w-6 rounded-[3px] bg-cover shadow-sm ring-1 ring-black/10"
+                          role="img" x-bind:class="cc ? 'fi fi-' + cc.iso : ''" x-bind:aria-label="cc ? cc.name : ''"></span>
+                    <span x-text="cc ? '+' + cc.code : 'Country'"></span>
+                    <x-icon name="chevron-right" class="h-3.5 w-3.5 text-slate-400 transition-transform" x-bind:class="ccOpen ? '-rotate-90' : 'rotate-90'" />
+                </button>
+                <div x-show="ccOpen" x-cloak x-transition x-on:click.outside="ccOpen = false"
+                     class="absolute left-0 z-30 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-[#2D4060] dark:bg-[#1A2840]">
+                    <div class="border-b border-slate-100 p-2 dark:border-[#243352]">
+                        <input type="text" x-model="ccQuery" x-ref="ccSearch" placeholder="Search country or code"
+                               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-0 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    </div>
+                    <ul class="max-h-64 overflow-y-auto py-1" role="listbox">
+                        @foreach ($dialCountries as $c)
+                            <li x-show="ccMatch(@js($c['name']), '{{ $c['code'] }}')" wire:key="dc-opt-{{ $c['iso'] }}">
+                                <button type="button" x-on:click="pickCountry('{{ $c['iso'] }}', @js($c['name']), '{{ $c['code'] }}')"
+                                        class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-[#243352]"
+                                        x-bind:class="cc && cc.iso === '{{ $c['iso'] }}' ? 'bg-primary/5 dark:bg-teal-500/10' : ''">
+                                    <x-country-flag :country="$c['iso']" class="h-4 w-6 shrink-0" />
+                                    <span class="flex-1 truncate">{{ $c['name'] }}</span>
+                                    <span class="shrink-0 text-xs font-medium text-slate-400">+{{ $c['code'] }}</span>
+                                </button>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+
+            {{-- Wallet balance (desktop only — mobile has it in the header bar). --}}
+            <a href="{{ route('wallet') }}" wire:navigate
+               class="hidden items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary transition hover:bg-primary/15 lg:inline-flex dark:bg-teal-500/15 dark:text-teal-300">
+                <x-icon name="wallet" class="h-4 w-4" /> ${{ number_format($walletUsd, 2) }}
+            </a>
+        </div>
 
         {{-- Number display — big, centred, editable (paste-friendly). --}}
         <div class="relative flex min-h-[3.25rem] items-center justify-center px-8">

@@ -135,6 +135,24 @@ class Dialer extends Component
         $contacts = \App\Models\Contact::where('user_id', Auth::id())
             ->orderBy('name')->limit(12)->get();
 
-        return view('livewire.dialer', ['recent' => $recent, 'contacts' => $contacts]);
+        // §3 country picker: pick the country + key the local number instead of
+        // hand-typing +<code>. Opens on the caller's own country (from their
+        // profile), falling back to Nigeria.
+        $user = Auth::user();
+        $dialCountries = \App\Support\DialCodes::all();
+        $defaultCountry = \App\Support\DialCodes::default($user->country_code ?? null);
+
+        // §3 wallet on the dialer: the mobile /numbers/* header shows the balance,
+        // but that bar is lg:hidden — surface it here too so desktop callers see
+        // their funds without leaving the dialer. Retail-side only, never cost.
+        $walletUsd = (float) ($user->wallet?->usd_balance ?? 0);
+
+        return view('livewire.dialer', [
+            'recent' => $recent,
+            'contacts' => $contacts,
+            'dialCountries' => $dialCountries,
+            'defaultCountry' => $defaultCountry,
+            'walletUsd' => $walletUsd,
+        ]);
     }
 }
