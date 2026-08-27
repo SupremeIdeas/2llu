@@ -4,17 +4,24 @@
 @php($heroDark = \App\Support\HeroBackground::dark())
 @php($hasHero = \App\Support\HeroBackground::showsOnDashboard())
 @php($heroDesc = \App\Support\HeroBackground::description())
+{{-- Per-theme home hero (owner request): each theme carries its own hero image,
+     so applying a theme swaps the art here. An admin-uploaded HeroBackground
+     still wins (an explicit choice overrides the theme default); otherwise the
+     active theme's hero shows. --}}
+@php($themeHero = \App\Support\ThemePreset::heroFor('dashboard'))
+@php($heroImg = ($hasHero ? ($heroLight ?: $heroDark) : null) ?: $themeHero)
+@php($heroImgDark = ($hasHero && $heroDark) ? $heroDark : $themeHero)
 
 <div class="mb-6">
     <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">My Connectivity</h1>
     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ $heroDesc }}</p>
 
-    @if ($hasHero)
+    @if ($heroImg)
         <div class="mt-3 aspect-[2/1] max-h-52 w-full overflow-hidden rounded-2xl border border-slate-200/70 dark:border-white/10 sm:max-h-64">
-            <img src="{{ $heroLight ?: $heroDark }}" alt="" loading="lazy" decoding="async"
-                 class="h-full w-full object-cover object-center {{ $heroDark ? 'dark:hidden' : '' }}">
-            @if ($heroDark)
-                <img src="{{ $heroDark }}" alt="" loading="lazy" decoding="async"
+            <img src="{{ $heroImg }}" alt="" loading="lazy" decoding="async"
+                 class="h-full w-full object-cover object-center {{ ($heroImgDark && $heroImgDark !== $heroImg) ? 'dark:hidden' : '' }}">
+            @if ($heroImgDark && $heroImgDark !== $heroImg)
+                <img src="{{ $heroImgDark }}" alt="" loading="lazy" decoding="async"
                      class="hidden h-full w-full object-cover object-center dark:block">
             @endif
         </div>

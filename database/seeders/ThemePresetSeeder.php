@@ -59,6 +59,28 @@ class ThemePresetSeeder extends Seeder
         // Numbers variant-b = the six-card bento leads, hero below (action-first personas).
         $numbersB = ['coral-current', 'origin-bold', 'waitlisty-soft'];
 
+        // Per-theme home hero art (owner request): applying a theme swaps the
+        // dashboard hero to its own image. Seeded under public/img/themes/. Eight
+        // unique images cover the fourteen personas; the reuse is logged in
+        // docs/build-specs/THEME-PLACEHOLDER-ASSETS.md for a later 1:1 swap.
+        $hero = fn (string $f) => ['dashboard' => "/img/themes/{$f}.webp"];
+        $heroMap = [
+            'aurora-shift' => $hero('islands-female'),
+            'sunset-transit' => $hero('balloons'),
+            'midnight-signal' => $hero('portal-gateway'),
+            'paperwhite' => $hero('app-ui-phone'),
+            'fintra-clean' => $hero('before-after'),
+            'origin-bold' => $hero('branded'),
+            'capable-mono' => $hero('app-ui-phone'),
+            'waitlisty-soft' => $hero('balloons'),
+            'genius-grid' => $hero('before-after'),
+            'lander-hero' => $hero('worldwide'),
+            'aries-contrast' => $hero('portal-gateway'),
+            'emerald-route' => $hero('islands-male'),
+            'coral-current' => $hero('islands-female'),
+            'slate-signal' => $hero('worldwide'),
+        ];
+
         // Rows 2–15 — original personas. firstOrCreate = never clobber admin tuning.
         foreach ($this->presets() as $preset) {
             $variants = $this->baselineVariants();
@@ -82,7 +104,7 @@ class ThemePresetSeeder extends Seeder
                     'surface' => $preset['surface'],
                 ],
                 'icon_family' => ['style' => 'sprite', 'set' => 'naara-sprite-01'],
-                'hero_assets' => [],
+                'hero_assets' => $heroMap[$preset['slug']] ?? [],
                 'layout_variants' => $variants,
                 'is_built_in' => false,
                 'sort_order' => $preset['sort_order'],

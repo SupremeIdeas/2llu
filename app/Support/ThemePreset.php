@@ -118,6 +118,22 @@ class ThemePreset
     }
 
     /**
+     * The active theme's hero image for a surface ('dashboard'|'esim'|'numbers'),
+     * or null if it has none. Each preset carries its own hero art in
+     * hero_assets, so applying a theme swaps the home hero. Only same-origin
+     * paths / http(s) URLs pass — never arbitrary strings reaching an <img src>.
+     */
+    public static function heroFor(string $surface): ?string
+    {
+        $val = self::active()['hero_assets'][$surface] ?? null;
+        if (! is_string($val) || $val === '') {
+            return null;
+        }
+
+        return preg_match('#^(/[\w./-]+|https?://[\w./:?=&%-]+)$#', $val) === 1 ? $val : null;
+    }
+
+    /**
      * Which structural partial a given page uses under the active theme.
      * Defaults to variant-a (the extracted current markup) for any page/theme
      * combination not explicitly set, so a missing key never 500s.
