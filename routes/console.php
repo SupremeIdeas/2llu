@@ -65,6 +65,12 @@ Schedule::command('media:migrate-to-wasabi')->hourly()->withoutOverlapping();
 // full weekly/monthly period has elapsed (idempotent per period).
 Schedule::command('partners:payout-run')->dailyAt('04:30')->withoutOverlapping();
 
+// Automatic recurring merchant + referral earnings payouts (BUILD-22 §6) —
+// staggered after the partner run. Each earner is paid their available balance
+// when a verified account exists and they haven't passed the free-payout KYC
+// threshold; idempotent (holds + unique reference).
+Schedule::command('payouts:earnings-run')->dailyAt('04:45')->withoutOverlapping();
+
 // Merchant V2 client eSIM control: settle due auto-renewals, expire lapsed
 // subscriptions, and alert merchants about upcoming renewals (money-safe).
 Schedule::command('merchant:client-subscriptions')->dailyAt('05:30')->withoutOverlapping();

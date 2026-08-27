@@ -9,6 +9,7 @@ use App\Models\PayoutRequest;
 use App\Services\Kyc\KycService;
 use App\Services\Payouts\PayoutException;
 use App\Services\Payouts\PayoutService;
+use App\Services\Payouts\PayoutThreshold;
 use App\Services\Pricing\CurrencyService;
 use App\Support\MerchantSettings;
 use App\Support\PayoutSettings;
@@ -29,6 +30,7 @@ class MerchantWithdrawalService
         private PayoutService $payouts,
         private CurrencyService $currency,
         private KycService $kyc,
+        private PayoutThreshold $threshold,
     ) {
     }
 
@@ -77,6 +79,13 @@ class MerchantWithdrawalService
         }
         if ($usd < PayoutSettings::minWithdrawal()) {
             throw new PayoutException('Below the minimum withdrawal of $'.number_format(PayoutSettings::minWithdrawal(), 2).'.');
+        }
+        // Unified free-payout threshold (BUILD-22 §3): the first N payouts across
+        // all earner types are KYC-free; past that, KYC-L2 is required.
+        if (! $this->threshold->canWithdraw($owner)) {
+            throw new PayoutException(
+                "You've reached your free payout limit — verify your identity to keep earning and withdrawing."
+            );
         }
         // Larger single payouts can require full business KYB (L3) — an admin
         // rule that ships dormant (§1.3) and is enforced only once switched on.

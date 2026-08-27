@@ -18,6 +18,8 @@ class PayoutSettings
 
     public const MIN = 'payouts.min_withdrawal_usd';
 
+    public const FREE_COUNT = 'payouts.free_payout_count'; // free payouts before KYC (BUILD-22 §3)
+
     public static function enabled(): bool
     {
         return (bool) Setting::getValue(self::FLAG, false);
@@ -38,5 +40,14 @@ class PayoutSettings
     public static function minWithdrawal(): float
     {
         return (float) Setting::getValue(self::MIN, 5.0);
+    }
+
+    /**
+     * How many successful payouts a user may take before KYC-L2 is required
+     * (BUILD-22 §3, Frank's request). Combined across every earner type. Default 5.
+     */
+    public static function freePayoutCount(): int
+    {
+        return max(0, (int) Setting::getValue(self::FREE_COUNT, 5));
     }
 }

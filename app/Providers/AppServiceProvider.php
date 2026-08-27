@@ -290,6 +290,12 @@ class AppServiceProvider extends ServiceProvider
             ReturnPartnerEarnings::class,
         );
 
+        // Same, for a reversed referral margin-share payout (BUILD-22).
+        Event::listen(
+            PayoutReversed::class,
+            \App\Listeners\ReturnReferralEarnings::class,
+        );
+
         // HOTFIX §2: record every scheduled task's last successful run, so the
         // admin System Health panel can show whether the live cron is actually
         // firing (the confirmed root cause behind "payment didn't credit" and
