@@ -45,7 +45,7 @@
                  }
              }" x-init="run()"
              @keydown.escape.window="$wire.close()">
-            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" wire:click="close"></div>
+            <div class="absolute inset-0 bg-black/60" wire:click="close"></div>
 
             <div class="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl dark:bg-[#0D1B2A]">
                 {{-- Header --}}

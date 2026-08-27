@@ -2,7 +2,7 @@
      dialog (desktop), matching the product modals. Driven by Alpine `sheet`. --}}
 <div x-show="sheet" x-cloak class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
      @keydown.escape.window="sheet = false" role="dialog" aria-modal="true" aria-label="Contact">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="sheet = false"></div>
+    <div class="absolute inset-0 bg-black/60" @click="sheet = false"></div>
 
     <div x-show="sheet" x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="translate-y-8 opacity-0 sm:scale-95" x-transition:enter-end="translate-y-0 opacity-100 sm:scale-100"

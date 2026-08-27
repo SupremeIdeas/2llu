@@ -54,7 +54,7 @@
     <div x-show="hero" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center px-4"
          x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
          x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-        <div class="absolute inset-0 bg-black/35 backdrop-blur-[3px]" x-on:click="dismissHero()"></div>
+        <div class="absolute inset-0 bg-black/45" x-on:click="dismissHero()"></div>
         <template x-if="hero">
             <div class="nx-hero pointer-events-auto"
                  :class="'nx-hero--' + hero.type"

@@ -100,7 +100,7 @@
 
     {{-- Add / edit client sheet --}}
     <div x-show="sheet" x-cloak class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="sheet = false" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="sheet = false"></div>
+        <div class="absolute inset-0 bg-black/60" @click="sheet = false"></div>
         <div x-show="sheet" x-transition class="relative w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
             <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-white/20 sm:hidden"></div>
             <h2 class="mb-3 text-base font-bold text-slate-900 dark:text-white">{{ $editingId ? 'Edit client' : 'New client' }}</h2>
@@ -126,7 +126,7 @@
 
     {{-- Assign eSIM sheet --}}
     <div x-show="assign" x-cloak class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="assign = false" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="assign = false"></div>
+        <div class="absolute inset-0 bg-black/60" @click="assign = false"></div>
         <div x-show="assign" x-transition class="relative w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
             <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-white/20 sm:hidden"></div>
             <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">Assign an eSIM</h2>
@@ -160,7 +160,7 @@
 
     {{-- Invoice sheet --}}
     <div x-show="invoice" x-cloak class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="invoice = false" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="invoice = false"></div>
+        <div class="absolute inset-0 bg-black/60" @click="invoice = false"></div>
         <div x-show="invoice" x-transition class="relative w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
             <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-white/20 sm:hidden"></div>
             <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">Send an invoice</h2>
@@ -184,7 +184,7 @@
     {{-- Deliver eSIM sheet — QR + activation code + status, forwardable to the
          client by email / WhatsApp / both. --}}
     <div x-show="deliver" x-cloak class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="deliver = false" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="deliver = false"></div>
+        <div class="absolute inset-0 bg-black/60" @click="deliver = false"></div>
         <div x-show="deliver" x-transition class="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
             <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-white/20 sm:hidden"></div>
             @if ($deliverSub)
@@ -253,7 +253,7 @@
          life", a rolling single earmark). Keeps a client's line renewing
          hands-free for as long as the merchant chooses. --}}
     <div x-show="reserve" x-cloak class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="reserve = false" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="reserve = false"></div>
+        <div class="absolute inset-0 bg-black/60" @click="reserve = false"></div>
         <div x-show="reserve" x-transition class="relative w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
             <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-white/20 sm:hidden"></div>
             @if ($reserveSub)

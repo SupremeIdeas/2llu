@@ -143,7 +143,7 @@
          NaaraSim". NaaraSim branding is never replaced, only accompanied. --}}
     @php($coBrand = \App\Support\MerchantBranding::forCustomer($u))
     @if ($coBrand)
-        <div class="fixed bottom-24 left-4 z-30 hidden items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs shadow-sm backdrop-blur lg:flex dark:border-[#2D4060] dark:bg-[#1A2840]/90">
+        <div class="fixed bottom-24 left-4 z-30 hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs shadow-sm lg:flex dark:border-[#2D4060] dark:bg-[#1A2840]">
             @if ($coBrand->logo_url)
                 <img src="{{ $coBrand->logo_url }}" alt="{{ $coBrand->business_name }}" class="h-5 w-5 rounded object-contain">
             @else

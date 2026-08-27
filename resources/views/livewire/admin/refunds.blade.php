@@ -82,7 +82,7 @@
 
     {{-- Refund confirm sheet --}}
     <div x-show="refund" x-cloak class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="refund = false" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="refund = false"></div>
+        <div class="absolute inset-0 bg-black/60" @click="refund = false"></div>
         <div x-show="refund" x-transition class="relative w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
             @if ($refundTxn)
                 <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">Refund this top-up?</h2>

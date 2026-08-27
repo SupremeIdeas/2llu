@@ -4,7 +4,7 @@
              class="fixed inset-0 z-[100] flex items-center justify-center p-4"
              x-transition.opacity>
             {{-- Scrim --}}
-            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="open = false; $wire.dismiss()"></div>
+            <div class="absolute inset-0 bg-slate-900/70" @click="open = false; $wire.dismiss()"></div>
 
             {{-- Card --}}
             <div class="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-slate-900"

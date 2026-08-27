@@ -3,7 +3,7 @@
         <div class="fixed inset-0 z-[70] flex items-end justify-center sm:items-center"
              x-data="{ q: '' }" @keydown.escape.window="$wire.close()"
              role="dialog" aria-modal="true" aria-label="Choose a country">
-            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" wire:click="close"></div>
+            <div class="absolute inset-0 bg-black/60" wire:click="close"></div>
 
             <div class="relative flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
                 {{-- Header --}}

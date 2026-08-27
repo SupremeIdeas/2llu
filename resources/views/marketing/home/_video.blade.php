@@ -42,7 +42,7 @@
 
         {{-- One modal player for the whole section. --}}
         <div x-show="show" x-cloak x-transition.opacity class="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-            <div class="absolute inset-0 bg-black/85 backdrop-blur-sm" @click="close()"></div>
+            <div class="absolute inset-0 bg-black/90" @click="close()"></div>
             <div class="relative w-full" :class="orient === 'portrait' ? 'max-w-sm' : 'max-w-3xl'">
                 <div class="mb-2 flex items-center justify-between gap-3">
                     <p class="truncate text-sm font-semibold text-white" x-text="title"></p>

@@ -5,7 +5,7 @@
          @keydown.escape.window="open = false" role="dialog" aria-modal="true" aria-label="New message">
         <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-             class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="open = false"></div>
+             class="absolute inset-0 bg-black/60" @click="open = false"></div>
 
         <div x-show="open" x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="translate-y-8 opacity-0 sm:scale-95" x-transition:enter-end="translate-y-0 opacity-100 sm:scale-100"

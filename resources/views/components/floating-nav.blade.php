@@ -23,7 +23,7 @@
 
 @if ($center || ! empty($bar['left']) || ! empty($bar['right']))
     <div class="nx-floatnav fixed inset-x-0 bottom-4 z-40 flex justify-center px-3 print:hidden">
-        <nav class="pointer-events-auto flex items-center gap-0.5 rounded-full border border-slate-200/70 bg-white/90 px-1.5 py-1.5 shadow-[0_12px_40px_rgba(13,27,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0D1B2A]/90 sm:gap-1"
+        <nav class="pointer-events-auto flex items-center gap-0.5 rounded-full border border-slate-200/70 bg-white px-1.5 py-1.5 shadow-[0_12px_40px_rgba(13,27,42,0.18)] dark:border-white/10 dark:bg-[#0D1B2A] sm:gap-1"
              aria-label="Primary">
             @foreach ($bar['left'] as $slot)
                 @include('partials.floatnav-item', ['slot' => $slot, 'href' => $href($slot), 'isActive' => $active($slot)])

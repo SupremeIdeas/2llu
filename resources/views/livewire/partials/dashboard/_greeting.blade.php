@@ -12,7 +12,7 @@
              x-show="show" x-cloak x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="translate-y-4 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
              class="fixed bottom-24 left-4 right-4 z-40 mx-auto max-w-sm sm:left-6 sm:right-auto lg:bottom-6">
-            <div class="rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-2xl shadow-primary/10 backdrop-blur-md dark:border-white/10 dark:bg-[#101d33]/90">
+            <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl shadow-primary/10 dark:border-white/10 dark:bg-[#101d33]">
                 @include('partials.greeting-bubble', ['onDismiss' => "@click=\"show = false; localStorage.setItem('{$greetKey}', '1')\""])
             </div>
         </div>

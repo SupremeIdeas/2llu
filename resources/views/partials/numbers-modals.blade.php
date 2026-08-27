@@ -8,7 +8,7 @@
     <div class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
          x-data x-trap.noscroll="true" @keydown.escape.window="$wire.closeModal()"
          role="dialog" aria-modal="true" aria-label="{{ ucfirst($modal) }}">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" wire:click="closeModal"></div>
+        <div class="absolute inset-0 bg-black/60" wire:click="closeModal"></div>
 
         <div x-show="true" x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="translate-y-8 opacity-0 sm:scale-95"

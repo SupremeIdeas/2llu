@@ -50,7 +50,7 @@
          icons + labels. The choice is remembered in localStorage. --}}
     <aside class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col lg:p-3 lg:transition-[width] lg:duration-300"
            :class="navCollapsed ? 'lg:!w-24' : ''">
-        <div class="flex h-full flex-col rounded-3xl border border-slate-200/70 bg-gradient-to-b from-teal-50 via-slate-50 to-slate-100/70 shadow-sm backdrop-blur-xl dark:border-white/10 dark:from-white/[0.06] dark:via-white/[0.03] dark:to-white/[0.02]">
+        <div class="flex h-full flex-col rounded-3xl border border-slate-200/70 bg-gradient-to-b from-teal-50 via-slate-50 to-slate-100 shadow-sm dark:border-white/10 dark:from-[#16233d] dark:via-[#141f36] dark:to-[#111a2e]">
             <div class="flex items-center py-5" :class="navCollapsed ? 'justify-center px-3' : 'justify-between px-5'">
                 <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex items-center" x-show="!navCollapsed">
                     <x-brand-logo :variant="$headerBrand['variant']" :label="$headerBrand['label']" size="lg" :fallback-icon="$brandIcon" />
@@ -171,7 +171,7 @@
          flush to the bottom with only the top corners rounded. The little grab
          handle toggles between them (also settable from account settings). --}}
     @unless ($inNumbers)
-    <nav class="fixed z-40 border border-slate-200/70 bg-white/90 backdrop-blur-xl transition-all duration-300 lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/90"
+    <nav class="fixed z-40 border border-slate-200/70 bg-white transition-all duration-300 lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]"
          x-show="$store.sectionNav.globalVisible()" x-transition.opacity.duration.300ms
          :class="navFloating
             ? 'inset-x-3 bottom-3 rounded-[1.75rem] shadow-[0_10px_40px_rgba(13,27,42,0.16)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)]'
@@ -201,7 +201,7 @@
     {{-- Numbers section nav (Numbers overhaul §2) — shown ONLY on /numbers/*,
          mutually exclusive with the global nav above via the same $inNumbers. --}}
     @if ($inNumbers)
-    <nav class="fixed inset-x-3 bottom-3 z-40 rounded-[1.75rem] border border-slate-200/70 bg-white/90 shadow-[0_10px_40px_rgba(13,27,42,0.16)] backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-[#0D1B2A]/90 dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
+    <nav class="fixed inset-x-3 bottom-3 z-40 rounded-[1.75rem] border border-slate-200/70 bg-white shadow-[0_10px_40px_rgba(13,27,42,0.16)] lg:hidden dark:border-white/10 dark:bg-[#0D1B2A] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
          style="padding-bottom: env(safe-area-inset-bottom);">
         <div class="mx-auto grid max-w-md grid-cols-5 items-center px-1 pt-1.5">
             @foreach ([$numbersNav[0], $numbersNav[1]] as $item)

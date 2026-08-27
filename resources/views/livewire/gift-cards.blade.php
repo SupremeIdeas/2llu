@@ -8,7 +8,7 @@
     @if ($live)
         <div x-data="{ loading: true }" x-init="setTimeout(() => loading = false, 1300)"
              x-show="loading" x-transition:leave.opacity.duration.500ms
-             class="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-white/95 backdrop-blur-sm dark:bg-[#0D1B2A]/95"
+             class="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-white/98 dark:bg-[#0D1B2A]/98"
              role="status" aria-live="polite">
             <x-lottie name="gift-preloader" label="Loading gift store" class="h-44 w-44" />
             <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Opening your gift store…</p>
@@ -88,7 +88,7 @@
     {{-- Brand detail sheet --}}
     @if ($selected)
         <div class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="$wire.close()" role="dialog" aria-modal="true">
-            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" wire:click="close"></div>
+            <div class="absolute inset-0 bg-black/60" wire:click="close"></div>
             <div class="relative w-full max-w-md overflow-hidden rounded-t-3xl bg-white shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
                 {{-- Brand banner --}}
                 <div class="relative flex h-36 items-center justify-center" style="background: linear-gradient(135deg, {{ $tint($selected) }}, #0D1B2A);">
