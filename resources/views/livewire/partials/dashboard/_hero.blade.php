@@ -16,7 +16,7 @@
     deeper fade over dark). Two pill CTAs below. When no image is set it degrades
     cleanly to the headline + pills with no empty gap.
 --}}
-<section class="nx-home-hero mb-8">
+<section class="nx-home-hero mb-6">
     @if ($heroImg)
         <div class="nx-home-hero__media" aria-hidden="true">
             <img src="{{ $heroImg }}" alt="" loading="eager" decoding="async"
@@ -28,14 +28,14 @@
         </div>
     @endif
 
-    <div class="relative z-10 max-w-[62%] pt-1 sm:max-w-[58%]">
-        <h1 class="font-display text-[2.35rem] font-extrabold leading-[1.03] tracking-tight text-slate-900 dark:text-white sm:text-5xl">
+    <div class="relative z-10 max-w-[60%] pt-0.5 sm:max-w-[56%]">
+        <h1 class="font-display text-[2.5rem] font-extrabold leading-[1.07] tracking-[-0.025em] text-slate-900 dark:text-white sm:text-[3.25rem]">
             My<br>
             <span class="bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent dark:from-teal-300 dark:to-teal-400">Connectivity</span>
         </h1>
-        <p class="mt-3 max-w-xs text-sm leading-relaxed text-slate-500 dark:text-slate-300 sm:text-base">{{ $heroDesc }}</p>
+        <p class="mt-3.5 max-w-[16rem] text-[15px] leading-relaxed text-slate-500 dark:text-slate-300 sm:text-base">{{ $heroDesc }}</p>
 
-        <div class="mt-6 flex items-center gap-2.5">
+        <div class="mt-7 flex items-center gap-2.5">
             <a href="{{ route('catalogue') }}" wire:navigate
                class="group inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-primary via-primary-dark to-navy px-5 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/35 sm:text-base">
                 <x-icon name="id-card" class="h-5 w-5" /> Buy eSIM

@@ -158,6 +158,6 @@ class HeroBackgroundTest extends TestCase
             ->assertSee(HeroBackground::DEFAULT_DESCRIPTION)
             ->assertSee('Buy eSIM')
             ->assertSee('Get Number')
-            ->assertSee('mt-6 flex items-center gap-2.5', false); // pills stay side-by-side at every width
+            ->assertSee('flex items-center gap-2.5', false); // pills stay side-by-side at every width
     }
 }

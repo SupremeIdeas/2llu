@@ -1528,14 +1528,19 @@
  * per-theme colour needed. The subject sits on the right (object-position) so it
  * stays visible while the left melts under the headline.
  * ========================================================================== */
-.nx-home-hero { position: relative; min-height: 15.5rem; }
+/* Height follows the CONTENT (headline + subtitle + pills) — no fixed min-height,
+   so there is never dead space between the CTAs and the card below. The image is
+   absolutely positioned (it never adds layout height) and simply tracks the text
+   block's height, with a floor so it always reads as a proper hero. */
+.nx-home-hero { position: relative; }
 .nx-home-hero__media {
   position: absolute;
-  top: -0.75rem;
-  right: -1rem;
-  width: 60%;
-  max-width: 30rem;
-  height: calc(100% + 0.75rem);
+  top: -0.5rem;
+  right: -1.25rem;
+  width: 58%;
+  max-width: 26rem;
+  height: calc(100% + 1rem);
+  min-height: 13.5rem;
   pointer-events: none;
   z-index: 0;
 }
