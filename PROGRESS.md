@@ -1209,6 +1209,25 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 
 ## NEXT  (build strictly top to bottom)
 
+### ▶ THEME SYSTEM — 15 switchable admin-selectable skins (3-batch program)
+Skin-only, zero business-logic change. `naara-official` frozen as the permanent
+default/fallback. Spec: the three `NAARA THEME SYSTEM — BATCH n of 3` blueprints.
+- **Batch 1 — ✅ DONE (this session):** `theme_presets` table + `ThemePreset`
+  support class (whitelisted `styleCss()`, cached, fail-safe fallback) +
+  `naara-official` seed + wired into the app/marketing layout head & body class
+  (`theme-{slug}`) + the eSIM hero converted to an Apple-style **3-up peek
+  carousel** (graceful <3-image fallback to today's crossfade). `ThemePresetTest`
+  green; `naara-official` emits empty CSS (no visual diff).
+- **Batch 2 — NEXT:** seed the other 14 presets (original Naara personas, using
+  the Originkit templates + 7 reference mockups as layout-energy inspiration
+  only — owner approved pull-&-adapt, rebuilt in Blade, no template assets
+  shipped); the 3-structural-variants-per-page escape hatch (21 partials);
+  `ThemePicker` admin screen; seed hero/reference art from the two owner zips to
+  Wasabi. **Owner to rotate the Originkit API key that was shared in plaintext.**
+- **Batch 3 — after 2:** Popular Destinations photo showcase, `naara-sprite-01`
+  icon sheet, `theme.manage` permission gating, headless screenshot QA sweep,
+  a11y/perf sign-off.
+
 ### ▶ NEXT STEP — Wizard polish (roadmap `docs/ROADMAP-NAARASIM-WIZARD.md` §13.5)
 The wizard core is live; polish layers on top (each independent, all optional/
 admin-toggleable, none in the money path):

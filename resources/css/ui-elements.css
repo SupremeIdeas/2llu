@@ -488,6 +488,43 @@
     .nx-imghero__slide.is-active { transform: none; }
 }
 
+/* ---- Apple-style 3-up PEEK carousel (Theme Batch 1 §3). Scoped under
+   .nx-imghero--peek so it never inherits the absolute-positioned crossfade
+   rules above (which drive the <3-image single-slide fallback). The centered
+   slide sits at 84% width; a flex track translates so the active index is
+   centered, cropping the neighbours into edge slivers via overflow:hidden. */
+.nx-imghero--peek { overflow: hidden; border-radius: var(--radius-card, 1.5rem); }
+.nx-imghero__track {
+    display: flex;
+    align-items: stretch;
+    height: 100%;
+    transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: transform;
+}
+/* Override the base .nx-imghero__slide (absolute/opacity-0) for the peek track. */
+.nx-imghero--peek .nx-imghero__slide {
+    position: relative;
+    inset: auto;
+    flex: 0 0 84%;
+    height: 100%;
+    padding: 0 0.4rem;
+    box-sizing: border-box;
+    opacity: 0.55;
+    transform: scale(0.94);
+    clip-path: none;
+    cursor: pointer;
+    transition: opacity 0.45s ease, transform 0.45s ease;
+    will-change: opacity, transform;
+}
+.nx-imghero--peek .nx-imghero__slide.is-active { opacity: 1; transform: scale(1); cursor: default; }
+.nx-imghero--peek .nx-imghero__slide > * { overflow: hidden; border-radius: var(--radius-card, 1.5rem); }
+.nx-imghero--peek:focus-visible { outline: 2px solid rgb(var(--brand-primary) / 0.7); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+    .nx-imghero__track { transition: none; }
+    .nx-imghero--peek .nx-imghero__slide { transition: none; transform: none; }
+    .nx-imghero--peek .nx-imghero__slide.is-active { transform: none; }
+}
+
 /* ---- Premium bento card: brand gradient border + corner glow on hover/focus.
    The border is a masked gradient ring (primary → accent) that fades in; two
    soft radial glows bloom from opposite corners. Follows admin brand vars. --- */

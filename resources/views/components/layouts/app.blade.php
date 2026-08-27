@@ -76,10 +76,16 @@
         @php($platformCss = \App\Support\PlatformTheme::styleCss())
         @if ($platformCss)<style id="platform-theme-vars">{!! $platformCss !!}</style>@endif
     @endisset
+    {{-- Active theme preset (Theme Batch 1): whitelisted :root overrides only.
+         Empty string for naara-official (the built-in look already ships in
+         app.css), so the default renders with zero injected CSS. Applies to
+         BOTH the dashboard and the marketing site (which extends this layout). --}}
+    @php($themeCss = \App\Support\ThemePreset::styleCss())
+    @if ($themeCss)<style id="theme-preset-vars">{!! $themeCss !!}</style>@endif
     @stack('head')
     @include('partials.tracking')
 </head>
-<body class="min-h-screen text-[#0F172A] antialiased dark:text-slate-100 {{ $bodyClass ?? 'bg-[#F8F9FA] dark:bg-navy' }}">
+<body class="min-h-screen text-[#0F172A] antialiased dark:text-slate-100 {{ \App\Support\ThemePreset::bodyClass() }} {{ $bodyClass ?? 'bg-[#F8F9FA] dark:bg-navy' }}">
     @include('partials.icon-sprite')
     @include('partials.service-icon-sprite')
     <x-brand-preloader :page-type="$pageType" />

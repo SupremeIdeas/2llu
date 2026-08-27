@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             BrandPlanSeeder::class,     // brand-directory subscription starter plans (BUILD-9)
             ProviderRegistrySeeder::class, // provider registry metadata + URLs (BUILD-14)
             ProviderExpansionSeeder::class, // new adapters, enabled=false (BUILD-18)
+            ThemePresetSeeder::class,       // switchable visual skins — built-in naara-official (Theme Batch 1)
         ]);
     }
 }
