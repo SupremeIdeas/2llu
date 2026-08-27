@@ -101,6 +101,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         // In-app contact book (Live Voice — Part C). Not provider-billed, so no
         // feature gate — standard auth-scoped CRUD that feeds the dialer.
         Route::get('/numbers/contacts', \App\Livewire\Contacts::class)->name('numbers.contacts');
+        // Conversation inbox (Numbers overhaul §1) — inbound + outbound threads.
+        Route::get('/numbers/messages', \App\Livewire\Messages::class)->name('numbers.messages');
         Route::get('/referrals', Referrals::class)->name('referrals');
 
         // NaaraCredits rewards area (loyalty module) — opt-in earning.
@@ -292,6 +294,10 @@ Route::middleware(['admin', 'throttle:admin'])
 
 // Provider webhooks (CSRF-exempt — see bootstrap/app.php). Getatext OTP
 // delivery (blueprint Section 8.2).
+// Inbound SMS conversations (Numbers overhaul §1) — verify-before-trust, queued.
+Route::post('/webhooks/sms-inbound/{provider}', \App\Http\Controllers\Webhooks\SmsInboundWebhookController::class)
+    ->name('webhooks.sms-inbound');
+
 Route::post('/webhooks/getatext', GetatextWebhookController::class)
     ->name('webhooks.getatext');
 

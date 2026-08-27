@@ -29,6 +29,22 @@ class OutboundMessage extends Model
     /** Supplier masking: the raw provider is never serialised to the client. */
     protected $hidden = ['provider'];
 
+    protected static function booted(): void
+    {
+        // Keep the conversation summary current (Numbers overhaul §1): a reply
+        // updates the thread preview and clears its unread count.
+        static::created(function (OutboundMessage $m) {
+            MessageThread::record(
+                userId: $m->user_id,
+                counterpart: $m->to_number,
+                body: (string) $m->body,
+                direction: 'out',
+                virtualNumberId: $m->virtual_number_id,
+                at: $m->created_at,
+            );
+        });
+    }
+
     protected function casts(): array
     {
         return [

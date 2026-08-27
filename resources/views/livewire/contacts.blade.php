@@ -80,12 +80,30 @@
     {{-- ============ GRID view ============ --}}
     <div x-show="view === 'grid'" x-cloak class="grid grid-cols-2 gap-3 sm:grid-cols-3">
         @forelse ($grouped->flatten(1) as $c)
-            <button type="button" wire:key="gc-{{ $c->id }}" wire:click="edit({{ $c->id }})" @click="sheet = true"
-                    class="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 nx-glass-tile p-4 text-center transition hover:border-primary/40 hover:shadow-sm dark:border-white/10">
-                @include('partials.contact-avatar', ['contact' => $c, 'size' => 'h-14 w-14 text-base'])
-                <span class="w-full truncate text-sm font-semibold text-slate-900 dark:text-white">{{ $c->name }}</span>
-                <span class="w-full truncate text-xs text-slate-400">{{ $c->phone_number }}</span>
-            </button>
+            {{-- §4: the grid card gains the same call + message actions the list
+                 row and the favourites already have (was edit-only before). --}}
+            <div wire:key="gc-{{ $c->id }}"
+                 class="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 nx-glass-tile p-4 text-center transition hover:border-primary/40 hover:shadow-sm dark:border-white/10">
+                <button type="button" wire:click="edit({{ $c->id }})" @click="sheet = true"
+                        class="flex w-full flex-col items-center gap-2">
+                    @include('partials.contact-avatar', ['contact' => $c, 'size' => 'h-14 w-14 text-base'])
+                    <span class="w-full truncate text-sm font-semibold text-slate-900 dark:text-white">{{ $c->name }}</span>
+                    <span class="w-full truncate text-xs text-slate-400">{{ $c->phone_number }}</span>
+                </button>
+                <div class="flex items-center gap-1.5">
+                    <a href="{{ route('numbers.dialer', ['to' => $c->phone_number]) }}" wire:navigate aria-label="Call {{ $c->name }}"
+                       class="flex h-8 w-8 items-center justify-center rounded-full bg-green-50 text-green-600 transition hover:bg-green-100 dark:bg-green-950/40 dark:text-green-300">
+                        <x-icon name="phone" class="h-4 w-4" />
+                    </a>
+                    @if ($ownsLine)
+                        <button type="button" wire:click="$dispatch('open-send-message', { to: '{{ $c->phone_number }}', name: @js($c->name) })"
+                                aria-label="Message {{ $c->name }}"
+                                class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/20 dark:bg-teal-500/15 dark:text-teal-300">
+                            <x-icon name="message-circle" class="h-4 w-4" />
+                        </button>
+                    @endif
+                </div>
+            </div>
         @empty
             @include('partials.contacts-empty')
         @endforelse
