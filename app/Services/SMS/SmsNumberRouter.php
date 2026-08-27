@@ -10,6 +10,8 @@ use App\Jobs\AlertAdminJob;
 use App\Models\Setting;
 use App\Models\SmsOrder;
 use App\Services\Pricing\PricingEngine;
+use App\Services\Routing\CandidateOrdering;
+use App\Services\Routing\CircuitBreaker;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Str;
 use Throwable;
@@ -26,6 +28,8 @@ class SmsNumberRouter
     public function __construct(
         private readonly PricingEngine $pricing,
         private readonly WalletService $wallet,
+        private readonly CircuitBreaker $breaker = new CircuitBreaker,
+        private readonly CandidateOrdering $ordering = new CandidateOrdering,
     ) {}
 
     public function order(NumberRequest $request): SmsOrderResult
@@ -72,7 +76,15 @@ class SmsNumberRouter
         $lane = $this->laneFor($request->country, $request->type);
         $errors = [];
 
-        foreach ($lane as $provider) {
+        // BUILD-15 §4: order the lane by the live registry (open circuits excluded,
+        // fastest/most-reliable first) — reorder only, never skipping the live call.
+        foreach ($this->ordering->order($lane, 'sms') as $provider) {
+            // BUILD-15 §1: skip a provider whose circuit is open, fast.
+            if (! $this->breaker->allows($provider)) {
+                $errors[$provider] = 'circuit_open';
+
+                continue;
+            }
             try {
                 /** @var SmsProviderInterface $svc */
                 $svc = app("number.{$provider}");
@@ -132,10 +144,16 @@ class SmsNumberRouter
                 // Itemised receipt (BUILD-7 §1) — best-effort, never blocks the order.
                 \App\Support\PurchaseReceipt::send($request->user, ucfirst($request->type).' number', $retail, 'NUM-'.$order->id);
 
+                $this->breaker->record($provider, 'sms', 'success', null, 'NUM-'.$order->id);
+
                 return SmsOrderResult::success($provider, $order, $buy, $cost, $retail);
             } catch (OutOfStockException|MaintenanceException $e) {
+                // Logged for NCI (BUILD-16) with a distinct code; NCI weighs an
+                // out-of-stock differently from a timeout when it scores later.
+                $this->breaker->record($provider, 'sms', 'failure', class_basename($e), 'NUM');
                 $errors[$provider] = $e->getMessage(); // try next in the SAME lane
             } catch (LowBalanceException $e) {
+                $this->breaker->record($provider, 'sms', 'failure', 'low_balance', 'NUM');
                 AlertAdminJob::dispatch(
                     code: strtoupper($provider).'_wallet_empty',
                     message: "NaaraSim's {$provider} wallet is empty — top up to resume number orders.",
@@ -143,6 +161,7 @@ class SmsNumberRouter
                 );
                 $errors[$provider] = 'low_balance';
             } catch (Throwable $e) {
+                $this->breaker->record($provider, 'sms', 'failure', $e->getCode() ? (string) $e->getCode() : class_basename($e), 'NUM');
                 $errors[$provider] = $e->getMessage();
             }
         }

@@ -8,6 +8,8 @@ use App\Models\EsimPlan;
 use App\Models\OrderLog;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\Routing\CandidateOrdering;
+use App\Services\Routing\CircuitBreaker;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -46,7 +48,11 @@ class ProviderRouter
      */
     protected array $voiceChain = ['zendit', 'oneglobal', 'montymobile', 'gigs'];
 
-    public function __construct(private readonly WalletService $wallet) {}
+    public function __construct(
+        private readonly WalletService $wallet,
+        private readonly CircuitBreaker $breaker = new CircuitBreaker,
+        private readonly CandidateOrdering $ordering = new CandidateOrdering,
+    ) {}
 
     public function orderPlan(string $naaraPlanId, User $user, string $currency = 'USD', ?float $charged = null): EsimOrderResult
     {
@@ -90,7 +96,10 @@ class ProviderRouter
         $minProfit = (float) Setting::getValue('pricing.minimum_profit_usd', 0.50);
         $errors = [];
 
-        foreach ($this->chainFor($plan) as $provider) {
+        // BUILD-15 §4: order the existing lane by the live registry (open circuits
+        // excluded, fastest/most-reliable first) — reorder only; the live purchase
+        // call below is unchanged. Falls back to the static chain if unavailable.
+        foreach ($this->ordering->order($this->chainFor($plan), 'esim') as $provider) {
             $pp = $this->findEquivalentPlan($plan, $provider);
             if ($pp === null) {
                 continue; // provider has no equivalent plan
@@ -101,6 +110,14 @@ class ProviderRouter
                 // Margin guard: fulfilling here would eat the margin. Skip.
                 Log::warning("ProviderRouter: skipping {$provider} for plan {$plan->id} — cost {$cost} too close to charged {$charged}.");
                 $errors[$provider] = 'skipped: unprofitable';
+
+                continue;
+            }
+
+            // BUILD-15 §1: skip a provider whose circuit is open before wasting a
+            // live call on it (business skips above are NOT circuit failures).
+            if (! $this->breaker->allows($provider)) {
+                $errors[$provider] = 'circuit_open';
 
                 continue;
             }
@@ -119,13 +136,22 @@ class ProviderRouter
                     'result' => 'success',
                 ]);
 
+                $this->breaker->record($provider, 'esim', 'success', null, 'PLAN-'.$plan->id);
+
                 return EsimOrderResult::success($provider, $result, $cost, $charged);
             } catch (Throwable $e) {
+                $this->breaker->record($provider, 'esim', 'failure', $this->errorCode($e), 'PLAN-'.$plan->id);
                 $errors[$provider] = $e->getMessage();
             }
         }
 
         throw new EsimProviderException('Order could not be fulfilled — no provider available or profitable.');
+    }
+
+    /** A compact error class/code for the outcome log (NCI raw material, BUILD-16). */
+    private function errorCode(Throwable $e): string
+    {
+        return $e->getCode() ? (string) $e->getCode() : class_basename($e);
     }
 
     /**

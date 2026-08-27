@@ -9,6 +9,8 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Models\VirtualNumber;
 use App\Services\Pricing\PricingEngine;
+use App\Services\Routing\CandidateOrdering;
+use App\Services\Routing\CircuitBreaker;
 use App\Services\Wallet\WalletService;
 use App\Support\ProviderModels;
 use Illuminate\Support\Facades\Log;
@@ -34,6 +36,8 @@ class PermanentNumberRouter
     public function __construct(
         private readonly WalletService $wallet,
         private readonly PricingEngine $pricing,
+        private readonly CircuitBreaker $breaker = new CircuitBreaker,
+        private readonly CandidateOrdering $ordering = new CandidateOrdering,
     ) {}
 
     /** Providers in the lane that actually have keys configured. */
@@ -65,8 +69,10 @@ class PermanentNumberRouter
         $digits = preg_replace('/\D/', '', (string) ($options['digits'] ?? ''));
         $position = ($options['position'] ?? 'ends') === 'contains' ? 'contains' : 'ends';
 
-        foreach ($this->lane as $provider) {
-            if (! $this->isConfigured($provider)) {
+        // BUILD-15 §4: prefer the fastest/most-reliable configured provider and
+        // skip an open circuit — reorder only; the search call itself is unchanged.
+        foreach ($this->ordering->order($this->lane, 'permanent') as $provider) {
+            if (! $this->isConfigured($provider) || ! $this->breaker->allows($provider)) {
                 continue;
             }
             $svc = app("number.{$provider}");
@@ -160,6 +166,8 @@ class PermanentNumberRouter
         try {
             $bought = $svc->buyNumber($country, ['number' => $number]);
         } catch (Throwable $e) {
+            // A genuine provider provisioning failure — feed the breaker (BUILD-15).
+            $this->breaker->record($provider, 'permanent', 'failure', $e->getCode() ? (string) $e->getCode() : class_basename($e), $ref);
             $this->wallet->refund($user, $retail, 'USD', ['reference' => "refund:{$ref}", 'description' => 'Number provisioning failed']);
             Log::warning("PermanentNumberRouter: {$provider} provisioning failed: ".$e->getMessage());
             throw new SmsException('That number could not be reserved — your wallet was refunded.');
@@ -181,6 +189,8 @@ class PermanentNumberRouter
             ]);
             // Itemised receipt (BUILD-7 §1) for the first month — best-effort.
             \App\Support\PurchaseReceipt::send($user, 'Permanent number (first month)', $retail, $ref);
+
+            $this->breaker->record($provider, 'permanent', 'success', null, $ref);
 
             return $vnumber;
         } catch (Throwable $e) {
