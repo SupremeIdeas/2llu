@@ -30,7 +30,9 @@
 
         {{-- Free-payout / KYC threshold state (§3) — positive-framed. --}}
         <div class="mt-4 border-t border-slate-100 pt-4 dark:border-white/5">
-            @if ($requiresKyc && ! $canWithdraw)
+            @if ($exempt)
+                <p class="text-xs text-slate-500 dark:text-slate-400"><x-icon name="badge-check" class="mr-1 inline h-3.5 w-3.5 text-emerald-500" />Staff earnings have no payout limits.</p>
+            @elseif ($requiresKyc && ! $canWithdraw)
                 <div class="flex items-start gap-3 rounded-xl bg-amber-50 p-3 dark:bg-amber-500/10">
                     <x-icon name="shield" class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
                     <div class="text-sm">

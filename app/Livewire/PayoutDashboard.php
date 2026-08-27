@@ -30,8 +30,14 @@ class PayoutDashboard extends Component
     public function mount(?string $earnerType = null): void
     {
         $type = $earnerType ?? $this->earnerType;
-        abort_unless(in_array($type, ['partner', 'merchant', 'referral'], true), 404);
+        abort_unless(in_array($type, ['partner', 'merchant', 'referral', 'staff'], true), 404);
         $this->earnerType = $type;
+    }
+
+    /** Staff are exempt from the free-payout / KYC threshold (BUILD-23 §4). */
+    private function isExempt(): bool
+    {
+        return $this->earnerType === 'staff';
     }
 
     private function balance(): float
@@ -41,6 +47,7 @@ class PayoutDashboard extends Component
         return match ($this->earnerType) {
             'merchant' => ($m = $user->merchantAccount) ? app(MerchantEarningsService::class)->balance($m) : 0.0,
             'partner' => ($p = $user->partnerAccount) ? app(PartnerEarningsService::class)->balance($p) : 0.0,
+            'staff' => app(\App\Services\Staff\StaffEarningsService::class)->balance($user),
             default => app(ReferralEarningsService::class)->balance($user),
         };
     }
@@ -57,6 +64,7 @@ class PayoutDashboard extends Component
             'partner' => ($p = $user->partnerAccount)
                 ? $p->earnings()->latest('id')->limit(10)->get()
                 : collect(),
+            'staff' => \App\Models\StaffEarning::where('user_id', $user->id)->latest('id')->limit(10)->get(),
             default => \App\Models\ReferralEarning::where('user_id', $user->id)->latest('id')->limit(10)->get(),
         };
     }
@@ -67,15 +75,18 @@ class PayoutDashboard extends Component
         $threshold = app(PayoutThreshold::class);
 
         $hasVerifiedAccount = PayoutAccount::where('user_id', $user->id)->where('is_verified', true)->exists();
+        $exempt = $this->isExempt();
 
         return view('livewire.payout-dashboard', [
             'balance' => round($this->balance(), 2),
             'history' => $this->history(),
             'payouts' => PayoutRequest::where('user_id', $user->id)->latest('id')->limit(10)->get(),
             'enabled' => PayoutSettings::enabled(),
+            'exempt' => $exempt,
             'remainingFree' => $threshold->remainingFree($user),
-            'requiresKyc' => $threshold->requiresKyc($user),
-            'canWithdraw' => $threshold->canWithdraw($user),
+            // Staff bypass the threshold entirely (BUILD-23 §4).
+            'requiresKyc' => ! $exempt && $threshold->requiresKyc($user),
+            'canWithdraw' => $exempt || $threshold->canWithdraw($user),
             'hasVerifiedAccount' => $hasVerifiedAccount,
             'freeCount' => PayoutSettings::freePayoutCount(),
         ]);

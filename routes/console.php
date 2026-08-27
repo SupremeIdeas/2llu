@@ -71,6 +71,11 @@ Schedule::command('partners:payout-run')->dailyAt('04:30')->withoutOverlapping()
 // threshold; idempotent (holds + unique reference).
 Schedule::command('payouts:earnings-run')->dailyAt('04:45')->withoutOverlapping();
 
+// Staff profit-share monthly close (BUILD-23 §3) — 1st of each month, quiet slot.
+// Computes the prior month's platform profit once and accrues each active staff
+// member's share; idempotent per profile+period.
+Schedule::command('staff:compensation-close')->monthlyOn(1, '03:15')->withoutOverlapping();
+
 // Merchant V2 client eSIM control: settle due auto-renewals, expire lapsed
 // subscriptions, and alert merchants about upcoming renewals (money-safe).
 Schedule::command('merchant:client-subscriptions')->dailyAt('05:30')->withoutOverlapping();

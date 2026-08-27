@@ -10,6 +10,22 @@
         </div>
     @endif
 
+    @if ($compError)
+        <div class="mb-6 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+            <x-icon name="shield" class="mt-0.5 h-4 w-4 shrink-0" /> {{ $compError }}
+        </div>
+    @endif
+
+    {{-- Combined committed profit-share (partners + staff) — over-commitment safeguard (§2.2). --}}
+    <div @class([
+        'mb-6 flex items-center justify-between gap-3 rounded-lg border p-3 text-sm',
+        'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300' => $combinedPct > 100,
+        'border-slate-200 bg-slate-50 text-slate-600 dark:border-[#2D4060] dark:bg-[#1a2840]/40 dark:text-slate-300' => $combinedPct <= 100,
+    ])>
+        <span>Committed profit-share across all active partners + staff</span>
+        <span class="font-bold tabular-nums">{{ number_format($combinedPct, 2) }}% @if ($combinedPct > 100)<span class="ml-1">— over 100%!</span>@endif</span>
+    </div>
+
     {{-- Promote an existing active user (blueprint Section 27) --}}
     <form wire:submit="promote" class="mb-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
         <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
@@ -134,6 +150,37 @@
                             <x-icon :name="$has ? 'check' : 'x'" class="h-3 w-3" /> {{ $labels[$scope] ?? $scope }}
                         </button>
                     @endforeach
+                </div>
+
+                {{-- Compensation (profit-share, BUILD-23 §2) --}}
+                @php($profile = $profiles[$member->id] ?? null)
+                <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3 dark:border-[#2D4060] dark:bg-[#1a2840]/40">
+                    <div class="flex flex-wrap items-end gap-3">
+                        <div>
+                            <label class="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">Profit-share %</label>
+                            <input type="number" step="0.1" min="0" max="100" wire:model="comp.{{ $member->id }}"
+                                   class="w-28 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        </div>
+                        <button type="button" wire:click="saveCompensation({{ $member->id }})" wire:target="saveCompensation" wire:loading.attr="disabled"
+                                class="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark">Save rate</button>
+                        @if ($profile)
+                            <button type="button" wire:click="toggleCompensationActive({{ $member->id }})"
+                                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 dark:border-[#2D4060] dark:text-slate-300">
+                                {{ $profile->is_active ? 'Pause' : 'Activate' }}
+                            </button>
+                            <span @class([
+                                'rounded-full px-2.5 py-0.5 text-[10px] font-semibold',
+                                'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' => $profile->is_active,
+                                'bg-slate-200 text-slate-500 dark:bg-[#243352] dark:text-slate-400' => ! $profile->is_active,
+                            ])>{{ $profile->is_active ? 'Active' : 'Paused' }}</span>
+                        @endif
+                        @if (($projected[$member->id] ?? 0) > 0)
+                            <span class="text-[11px] text-slate-500 dark:text-slate-400">
+                                Projected this month: <span class="font-semibold text-slate-700 dark:text-slate-200">${{ number_format($projected[$member->id], 2) }}</span>
+                                <span class="text-slate-400">(estimate on profit so far — not yet finalized or payable)</span>
+                            </span>
+                        @endif
+                    </div>
                 </div>
             </div>
         @empty

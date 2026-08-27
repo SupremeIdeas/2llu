@@ -157,6 +157,10 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/account', \App\Livewire\Account::class)->name('account');
     // Extended self-service profile (owner request).
     Route::get('/account/profile', \App\Livewire\Profile::class)->name('profile');
+    // Staff compensation earnings — the shared payout dashboard (BUILD-23 §4),
+    // staff-only. Staff are KYC-exempt for their profit-share withdrawals.
+    Route::get('/staff/earnings', fn () => view('staff.earnings'))
+        ->middleware('role:staff|super_admin')->name('staff.earnings');
     // Security Center (Module 23) — also reachable unverified (to change email).
     Route::get('/account/security', \App\Livewire\SecurityCenter::class)->name('security');
     // Identity verification (ROADMAP §Layer 0.3) — KYC L2 gate for withdrawals.

@@ -880,3 +880,23 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
     a fully KYC-free first-payout also needs that account-add path relaxed — noted
     as a deliberate follow-up so the threshold governs the withdrawal act today
     without destabilising the existing verified-account model.
+
+### Staff profit-share compensation (NAARA-BUILD-23)
+- Shares from the SAME `PlatformProfitService` figure partners share in — no second
+  profit calculation. `staff_compensation_profiles` (rate + is_active +
+  effective_from) + `staff_earnings` ledger + `StaffEarningsService` (same accrual
+  pattern as partners: per-user lock, idempotent reference, balance_after).
+- **Monthly close (§3):** `staff:compensation-close` (1st of month, 03:15) computes
+  the prior month's profit ONCE and applies each active staff member's % to that
+  single figure; idempotent per profile+period; floors each share at zero on a
+  negative-profit month; only a fully-closed month is paid. `effective_from` makes
+  a rate change non-retroactive.
+- **Admin (§2):** compensation section in Admin → Staff — set %, pause/activate,
+  a **combined partner+staff %-of-profit banner that warns over 100%** (and blocks
+  a save that would exceed it), and a **live month-to-date projected estimate** per
+  staff member, clearly labelled "estimate … not yet payable".
+- **Withdrawal (§4):** staff cash out through the SAME shared `PayoutDashboard`
+  (`earner-type="staff"`, `/staff/earnings`), on the same engine
+  (`StaffWithdrawalService` + `ReturnStaffEarnings` reversal listener). Staff are
+  **exempt from the free-payout/KYC threshold** (Frank's decision — already vetted
+  at account creation). Included in the automatic `payouts:earnings-run`.

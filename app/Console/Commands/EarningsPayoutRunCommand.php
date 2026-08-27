@@ -6,9 +6,11 @@ use App\Models\Merchant;
 use App\Models\PayoutAccount;
 use App\Models\ReferralEarning;
 use App\Models\User;
+use App\Models\StaffEarning;
 use App\Services\Merchants\MerchantWithdrawalService;
 use App\Services\Payouts\PayoutThreshold;
 use App\Services\Referrals\ReferralWithdrawalService;
+use App\Services\Staff\StaffWithdrawalService;
 use App\Support\PayoutSettings;
 use Illuminate\Console\Command;
 
@@ -33,6 +35,7 @@ class EarningsPayoutRunCommand extends Command
     public function handle(
         MerchantWithdrawalService $merchantWd,
         ReferralWithdrawalService $referralWd,
+        StaffWithdrawalService $staffWd,
         PayoutThreshold $threshold,
     ): int {
         if (! PayoutSettings::enabled()) {
@@ -100,6 +103,29 @@ class EarningsPayoutRunCommand extends Command
                 $paid++;
             } catch (\Throwable $e) {
                 $this->warn("Referral earner {$user->id}: {$e->getMessage()}");
+            }
+        }
+
+        // ── Staff (KYC-exempt, BUILD-23) ─────────────────────────────────────
+        $staffIds = StaffEarning::query()->select('user_id')->distinct()->pluck('user_id');
+        foreach ($staffIds as $staffId) {
+            $staff = User::find($staffId);
+            if (! $staff) {
+                continue;
+            }
+            $balance = $staffWd->availableUsd($staff);
+            if ($balance < $min) {
+                continue;
+            }
+            $account = $this->verifiedAccount($staff);
+            if (! $account) {
+                continue;
+            }
+            try {
+                $staffWd->request($staff, $account, $balance, autoSend: true);
+                $paid++;
+            } catch (\Throwable $e) {
+                $this->warn("Staff earner {$staff->id}: {$e->getMessage()}");
             }
         }
 

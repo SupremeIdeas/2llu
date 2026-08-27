@@ -296,6 +296,12 @@ class AppServiceProvider extends ServiceProvider
             \App\Listeners\ReturnReferralEarnings::class,
         );
 
+        // Same, for a reversed staff profit-share payout (BUILD-23).
+        Event::listen(
+            PayoutReversed::class,
+            \App\Listeners\ReturnStaffEarnings::class,
+        );
+
         // HOTFIX §2: record every scheduled task's last successful run, so the
         // admin System Health panel can show whether the live cron is actually
         // firing (the confirmed root cause behind "payment didn't credit" and
