@@ -1,28 +1,21 @@
 <div>
-    {{-- Premium 4-image interchanging-reveal hero (esim_upgrade Part 2).
-         BUILD-8 leaves this hero slider exactly as-is by explicit instruction. --}}
-    @include('partials.esim-hero')
+    {{-- eSIM top region (Theme Batch 2 §2) — HEADER/HERO REFLOW ONLY. The storefront
+         body below (tabs, plan list, search, country grid) is identical in every
+         theme; only the order of the hero and the section header/tiles changes.
+         variant-a = hero then header (baseline); variant-b = header then hero
+         (editorial/minimal personas). Defaults to variant-a. --}}
+    @php($esimVariant = \App\Support\ThemePreset::layoutVariant('esim'))
+    @if ($esimVariant === 'variant-b')
+        @include('livewire.partials.esim.head')
+        @include('partials.esim-hero')
+    @else
+        @include('partials.esim-hero')
+        @include('livewire.partials.esim.head')
+    @endif
 
     {{-- Per-request USD + local-currency formatter (live FX, never cost). --}}
     @php($fmt = fn ($usd) => app(\App\Services\Pricing\CurrencyService::class)
         ->localPrice((float) $usd, \App\Support\LocaleCurrency::resolve(auth()->user())))
-
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            {{-- NaaraSim mark now lives in the header (App\Support\BrandContext).
-                 Heading + subheading are admin-editable (Admin → eSIM hero). --}}
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ \App\Support\EsimHeroContent::sectionTitle() }}</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ \App\Support\EsimHeroContent::sectionSubtitle() }}</p>
-        </div>
-        {{-- Bento action tiles (side by side at every width) — same style as the
-             number-section bento cards. Click logic is unchanged. --}}
-        <div class="grid w-full grid-cols-2 gap-3 sm:w-auto sm:shrink-0">
-            <x-bento-tile bkey="browse-by-country" label="Browse by country"
-                          wire:click="browseCountries" class="sm:min-w-[180px]" />
-            <x-bento-tile bkey="check-compatibility" label="Check compatibility" variant="primary"
-                          @click="$dispatch('open-compatibility')" class="sm:min-w-[180px]" />
-        </div>
-    </div>
 
     {{-- One compatibility modal + the ONE shared country picker (S31). --}}
     <livewire:esim-compatibility />

@@ -2,12 +2,20 @@
     {{-- NaaraSim mark now lives in the header (App\Support\BrandContext) — this
          is a NaaraSim number surface, so the header already wears it. --}}
 
-    {{-- Premium 4-image interchanging-reveal hero (Numbers V6 §0). --}}
-    @include('partials.numbers-hero')
-
-    {{-- Six-card bento grid (Numbers V6 §1). Verify/Rent/Line cards open the
-         dedicated product modals below; the rest route to their pages. --}}
-    @include('partials.numbers-bento')
+    {{-- Numbers top region (Theme Batch 2 §2) — HEADER/HERO REFLOW ONLY. The
+         product modals + active-order surface below are identical in every theme;
+         only the order of the hero (Numbers V6 §0) and the six-card bento grid
+         (Numbers V6 §1) changes. variant-a = hero then bento (baseline);
+         variant-b = bento then hero (action-first personas). Defaults to
+         variant-a. Both partials are unchanged. --}}
+    @php($numbersVariant = \App\Support\ThemePreset::layoutVariant('numbers'))
+    @if ($numbersVariant === 'variant-b')
+        @include('partials.numbers-bento')
+        @include('partials.numbers-hero')
+    @else
+        @include('partials.numbers-hero')
+        @include('partials.numbers-bento')
+    @endif
 
     {{-- Active order surfaced on the page when no modal is open, so an
          in-progress number/OTP stays visible after the modal is closed. The

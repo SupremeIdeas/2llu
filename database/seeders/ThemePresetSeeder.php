@@ -54,12 +54,22 @@ class ThemePresetSeeder extends Seeder
         // Only pages whose variant partials EXIST are assigned non-baseline values,
         // so nothing renders half-wired.
         $dashboardB = ['fintra-clean', 'genius-grid', 'slate-signal', 'capable-mono'];
+        // eSIM variant-b = header/tiles lead, hero below (editorial/minimal personas).
+        $esimB = ['paperwhite', 'aries-contrast', 'capable-mono'];
+        // Numbers variant-b = the six-card bento leads, hero below (action-first personas).
+        $numbersB = ['coral-current', 'origin-bold', 'waitlisty-soft'];
 
         // Rows 2–15 — original personas. firstOrCreate = never clobber admin tuning.
         foreach ($this->presets() as $preset) {
             $variants = $this->baselineVariants();
             if (in_array($preset['slug'], $dashboardB, true)) {
                 $variants['dashboard_home'] = 'variant-b';
+            }
+            if (in_array($preset['slug'], $esimB, true)) {
+                $variants['esim'] = 'variant-b';
+            }
+            if (in_array($preset['slug'], $numbersB, true)) {
+                $variants['numbers'] = 'variant-b';
             }
 
             ThemePreset::firstOrCreate(['slug' => $preset['slug']], [
