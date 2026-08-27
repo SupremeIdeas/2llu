@@ -10,6 +10,13 @@ app run straight from `public_html` with no document-root change.
 > not finding Laravel's `public/` folder. The root `.htaccess` in this package
 > fixes it — just make sure that hidden file uploaded (see step 2).
 
+> **Behind Cloudflare?** If this domain proxies through Cloudflare, follow
+> [`docs/CLOUDFLARE-SETUP.md`](CLOUDFLARE-SETUP.md) **before taking payments** —
+> Cloudflare's bot protection and caching can silently drop payment webhooks
+> (payment succeeds on the gateway, never credited in Naara). That doc covers
+> webhook-IP allowlisting, excluding `/webhooks/*` from Bot Fight Mode, and
+> cache-bypass rules for `/admin/*`, `/api/*`, and `/webhooks/*`.
+
 ---
 
 ## 1. Create the database (cPanel → MySQL® Databases)

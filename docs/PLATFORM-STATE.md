@@ -824,3 +824,19 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
   a live phone-frame offline-page preview; "Generate a build" works with zero
   fields touched. The resolved `medianConfig()` + offline HTML now ride the CI
   build payload (`TriggerAppBuildJob`).
+
+### Hosting-portability hotfix (TrustProxies / Storage audit / Cloudflare)
+- **§1 TrustProxies + forceScheme:** confirmed ALREADY present (`bootstrap/app.php`
+  `trustProxies(at: '*')`, `AppServiceProvider` prod `URL::forceScheme('https')`).
+  No-op — the email-403 pass already closed this.
+- **§2 Storage disk-resolution audit:** every user-upload path (KYC export, voice
+  notes, chat attachments, data export) already routes through
+  `MediaStorage::privateDisk()/disk()`; `CompressImageJob` compresses on the exact
+  MediaStorage-resolved disk passed at dispatch. The only raw named-disk usage is
+  the backup subsystem (`BackupManager`/`RestoreService`), which must target its
+  dedicated backup destination — documented inline as the deliberate exception.
+- **§3 Cloudflare runbook:** new `docs/CLOUDFLARE-SETUP.md` (cross-linked from
+  `CPANEL-INSTALL.md`) — webhook-source-IP allowlisting (linked live per gateway,
+  never hardcoded), `/webhooks/*` excluded from Bot Fight Mode, cache-bypass for
+  `/admin/*` `/api/*` `/webhooks/*`, and real-test-webhook verification via the
+  System Health delivery log.
