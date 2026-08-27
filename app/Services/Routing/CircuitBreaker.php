@@ -112,6 +112,25 @@ class CircuitBreaker
         );
     }
 
+    /**
+     * NAARA-BUILD-17 — manual admin controls for the Operations Center. These are
+     * the ONLY sanctioned way the Ops Center changes circuit state: it calls these
+     * transition methods directly (§0) rather than reimplementing the logic. Both
+     * flush the snapshot and fire the same CircuitOpened/CircuitClosed events an
+     * automatic transition does (so NCI + alerts react identically).
+     */
+    public function forceOpen(string $providerKey): void
+    {
+        $this->setState($providerKey, self::OPEN);
+        ProviderRegistry::flushSnapshot();
+    }
+
+    public function forceClose(string $providerKey): void
+    {
+        $this->setState($providerKey, self::CLOSED);
+        ProviderRegistry::flushSnapshot();
+    }
+
     /** Move the state machine after an outcome. */
     private function evaluate(string $providerKey, bool $success): void
     {

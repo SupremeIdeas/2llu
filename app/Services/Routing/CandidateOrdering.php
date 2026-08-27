@@ -62,12 +62,20 @@ class CandidateOrdering
             return $candidates;
         }
 
-        usort($withIndex, function ($a, $b) {
-            // NCI score first (populated in BUILD-16; -1 until then, so this is a
-            // no-op ordering nudge until scores exist), then latency, then 24h
-            // success rate, then the caller's original priority.
-            return [$b['nci_score'], $a['latency'], $b['success_rate'], $a['priority']]
-                <=> [$a['nci_score'], $b['latency'], $a['success_rate'], $b['priority']];
+        // Admin manual preference (BUILD-17 §1.4): if an admin has pinned a
+        // provider for this stack (and it isn't open), it sorts first — the
+        // "admin-set manual priority" slot BUILD-15 §4.1 reserved.
+        $preferred = \App\Support\RoutingPreference::preferred($stack);
+
+        usort($withIndex, function ($a, $b) use ($preferred) {
+            $ap = $a['key'] === $preferred ? 1 : 0;
+            $bp = $b['key'] === $preferred ? 1 : 0;
+
+            // Preference first, then NCI score (populated in BUILD-16; -1 until
+            // then, a no-op nudge), then latency, then 24h success rate, then the
+            // caller's original priority.
+            return [$bp, $b['nci_score'], $a['latency'], $b['success_rate'], $a['priority']]
+                <=> [$ap, $a['nci_score'], $b['latency'], $a['success_rate'], $b['priority']];
         });
 
         return array_map(fn ($r) => $r['key'], $withIndex);

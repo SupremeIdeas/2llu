@@ -286,6 +286,17 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/esim', \App\Livewire\Admin\EsimControlCenter::class)->name('esim');
         });
 
+        // NCI Operations Center (NAARA-BUILD-17) — staff with the nci.view scope,
+        // plus admin/super_admin. Override actions inside each page additionally
+        // gate on nci.override.
+        Route::middleware('permission:nci.view')->prefix('nci')->name('nci.')->group(function () {
+            Route::get('/registry', \App\Livewire\Admin\Nci\ProviderRegistry::class)->name('registry');
+            Route::get('/provider/{provider}', \App\Livewire\Admin\Nci\ProviderDetail::class)->name('provider');
+            Route::get('/health', \App\Livewire\Admin\Nci\HealthMonitor::class)->name('health');
+            Route::get('/routing', \App\Livewire\Admin\Nci\RoutingConsole::class)->name('routing');
+            Route::get('/wallets', \App\Livewire\Admin\Nci\Wallets::class)->name('wallets');
+        });
+
         // Staff, backups + maintenance loop — super_admin only (Sections 27–29).
         Route::middleware('role:super_admin')->group(function () {
             Route::get('/staff', \App\Livewire\Admin\Staff::class)->name('staff');

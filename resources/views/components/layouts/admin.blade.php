@@ -101,6 +101,15 @@
         $more = array_merge($more, $support);
     }
 
+    // NCI Operations Center (BUILD-17) — admin/super_admin, plus staff with nci.view.
+    if ($isPrivileged || $u->can('nci.view')) {
+        $more[] = ['heading' => 'Operations (NCI)'];
+        $more[] = ['route' => 'admin.nci.registry', 'label' => 'Provider Registry', 'icon' => 'package'];
+        $more[] = ['route' => 'admin.nci.health', 'label' => 'Health Monitor', 'icon' => 'signal'];
+        $more[] = ['route' => 'admin.nci.routing', 'label' => 'Routing Console', 'icon' => 'grid'];
+        $more[] = ['route' => 'admin.nci.wallets', 'label' => 'Wallets', 'icon' => 'wallet'];
+    }
+
     // System — super-admin only.
     if ($isSuper) {
         $more[] = ['heading' => 'System'];

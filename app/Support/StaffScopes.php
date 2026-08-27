@@ -21,6 +21,11 @@ class StaffScopes
         'content.manage' => 'Manage content & pages',
         'providers.view' => 'View provider status & balances',
         'esim.manage' => 'Manage eSIM catalogue, margins & images',
+        // NCI Operations Center (NAARA-BUILD-17). view = read the five pages;
+        // override = the materially more sensitive manual circuit + routing-
+        // preference actions, granted separately.
+        'nci.view' => 'View the NCI Operations Center (registry, health, routing)',
+        'nci.override' => 'Override live routing (manual circuit + provider preference)',
     ];
 
     /** @return list<string> */
