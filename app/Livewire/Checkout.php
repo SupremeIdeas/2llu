@@ -297,6 +297,12 @@ class Checkout extends Component
             $earnings->accrue($merchant, $user, 'esim', $plainRetail, $walletCharge, 'earn:'.$ref);
         }
 
+        // Referral share (BUILD-22 §1): if this buyer was referred, book their
+        // referrer a share of Naara's OWN margin on this order — once ever, off
+        // the money path. profit is internal-only; only the payable share is
+        // persisted. Idempotent via Referral.rewarded + the ledger reference.
+        \App\Jobs\ProcessReferralRewardJob::dispatch($user->id, 'esim', $result->profit);
+
         // Order-confirmation email (best-effort; never blocks the money path) —
         // shows the real money charged.
         Mailer::notify($user, new OrderPlacedNotification('esim', $this->plan->name, $walletCharge, 'USD'));

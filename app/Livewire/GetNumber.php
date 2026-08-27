@@ -402,6 +402,10 @@ class GetNumber extends Component
             $earnings->accrue($merchant, $user, 'number', $plainRetail, $retail, 'earn:'.$ref);
         }
 
+        // Referral share (BUILD-22 §1): book the referrer a share of Naara's own
+        // margin on this number order — once ever, off the money path, idempotent.
+        \App\Jobs\ProcessReferralRewardJob::dispatch($user->id, 'number', (float) $result->order->profit);
+
         // Order-confirmation email (best-effort; never blocks the money path).
         Mailer::notify($user, new OrderPlacedNotification('number', ucfirst($this->service), $retail, 'USD'));
 
