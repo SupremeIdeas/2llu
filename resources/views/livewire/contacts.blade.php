@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-2xl"
+<div class="mx-auto max-w-2xl lg:max-w-5xl"
      x-data="{ view: $persist('{{ $defaultView }}').as('nx_contacts_view'), sheet: false, openAdd() { $wire.cancelEdit(); this.sheet = true; } }"
      @contact-edit.window="sheet = true"
      @contact-saved.window="sheet = false">
@@ -52,10 +52,13 @@
         </div>
     @endif
 
-    {{-- ============ LIST view (default) ============ --}}
-    <div x-show="view === 'list'">
+    {{-- ============ LIST view (default) ============
+         §6 desktop two-column: the A–Z letter groups flow into two balanced
+         columns on large screens (break-inside-avoid keeps a group whole),
+         collapsing to one column on mobile. --}}
+    <div x-show="view === 'list'" class="lg:columns-2 lg:gap-5">
         @forelse ($grouped as $letter => $rows)
-            <div wire:key="grp-{{ $letter }}" id="sec-{{ $letter }}" class="scroll-mt-4">
+            <div wire:key="grp-{{ $letter }}" id="sec-{{ $letter }}" class="scroll-mt-4 lg:break-inside-avoid">
                 <p class="px-1 pb-1 pt-2 text-xs font-bold text-slate-400">{{ $letter }}</p>
                 <div class="mb-2 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
                     @foreach ($rows as $c)
@@ -78,7 +81,7 @@
     </div>
 
     {{-- ============ GRID view ============ --}}
-    <div x-show="view === 'grid'" x-cloak class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div x-show="view === 'grid'" x-cloak class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         @forelse ($grouped->flatten(1) as $c)
             {{-- §4: the grid card gains the same call + message actions the list
                  row and the favourites already have (was edit-only before). --}}

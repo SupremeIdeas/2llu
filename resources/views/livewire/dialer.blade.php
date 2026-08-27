@@ -9,7 +9,7 @@
     ];
 @endphp
 
-<div class="mx-auto max-w-lg" data-dialer data-token-url="{{ route('voice.token') }}">
+<div class="mx-auto max-w-lg lg:max-w-5xl" data-dialer data-token-url="{{ route('voice.token') }}">
     <h1 class="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">Call abroad</h1>
     <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">
         Dial any international number straight from your browser — no app, no second phone.
@@ -28,6 +28,11 @@
         </a>
     </div>
 
+    {{-- §6 desktop two-column: the keypad card on the left, the contacts +
+         recent-calls rail on the right, so the wide desktop canvas isn't a
+         narrow centred column. Stacks back to one column on mobile. --}}
+    <div class="lg:grid lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
+    <div>{{-- left column: dial card --}}
     <div class="rounded-3xl border border-slate-200 bg-white px-5 py-6 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]"
          x-data="{
             hold: null, held: false,
@@ -182,15 +187,17 @@
 
     {{-- One send-message modal host for the dialer (catches open-send-message). --}}
     @livewire('send-message')
+    </div>{{-- /left column --}}
 
+    <div class="mt-6 lg:mt-0">{{-- right column: contacts + recents rail --}}
     {{-- Contacts quick-pick (Part C) — tap a saved name to fill the field. --}}
     @if ($contacts->isNotEmpty())
-        <div class="mt-6" x-data="{ fill(n) { $wire.destination = n; } }">
+        <div x-data="{ fill(n) { $wire.destination = n; } }">
             <div class="mb-2 flex items-center justify-between">
                 <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Your contacts</h2>
                 <a href="{{ route('numbers.contacts') }}" wire:navigate class="text-xs font-medium text-primary hover:underline dark:text-teal-300">Manage</a>
             </div>
-            <div class="flex gap-2 overflow-x-auto pb-1">
+            <div class="flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible">
                 @foreach ($contacts as $contact)
                     <button type="button" wire:key="dc-{{ $contact->id }}"
                             x-on:click="fill('{{ $contact->phone_number }}')"
@@ -202,6 +209,33 @@
             </div>
         </div>
     @endif
+
+    {{-- Recent calls (retail totals only — never provider cost). --}}
+    @if ($recent->isNotEmpty())
+        <div class="mt-8 lg:mt-6">
+            <h2 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Recent calls</h2>
+            <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-[#243352] dark:border-[#2D4060] dark:bg-[#1A2840]">
+                @foreach ($recent as $call)
+                    <div class="flex items-center justify-between px-4 py-3 text-sm" wire:key="call-{{ $call->id }}">
+                        <div class="flex items-center gap-2">
+                            <x-icon name="phone" class="h-4 w-4 text-slate-400" />
+                            <span class="font-medium text-slate-800 dark:text-slate-100">{{ $call->destination }}</span>
+                        </div>
+                        <div class="text-right">
+                            @if ($call->status === 'completed' && (int) $call->minutes_billed > 0)
+                                <span class="font-semibold text-slate-900 dark:text-slate-100">${{ number_format((float) $call->amount_charged, 2) }}</span>
+                                <span class="text-xs text-slate-400"> · {{ $call->minutes_billed }} min</span>
+                            @else
+                                <span class="text-xs text-slate-400">No answer — refunded</span>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+    </div>{{-- /right column --}}
+    </div>{{-- /two-column grid --}}
 
     {{-- ============================================================
          Live-call screen — a full-screen iOS-style overlay driven by
@@ -279,29 +313,4 @@
             </div>
         </div>
     </div>
-
-    {{-- Recent calls (retail totals only — never provider cost). --}}
-    @if ($recent->isNotEmpty())
-        <div class="mt-8">
-            <h2 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Recent calls</h2>
-            <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-[#243352] dark:border-[#2D4060] dark:bg-[#1A2840]">
-                @foreach ($recent as $call)
-                    <div class="flex items-center justify-between px-4 py-3 text-sm" wire:key="call-{{ $call->id }}">
-                        <div class="flex items-center gap-2">
-                            <x-icon name="phone" class="h-4 w-4 text-slate-400" />
-                            <span class="font-medium text-slate-800 dark:text-slate-100">{{ $call->destination }}</span>
-                        </div>
-                        <div class="text-right">
-                            @if ($call->status === 'completed' && (int) $call->minutes_billed > 0)
-                                <span class="font-semibold text-slate-900 dark:text-slate-100">${{ number_format((float) $call->amount_charged, 2) }}</span>
-                                <span class="text-xs text-slate-400"> · {{ $call->minutes_billed }} min</span>
-                            @else
-                                <span class="text-xs text-slate-400">No answer — refunded</span>
-                            @endif
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
 </div>
