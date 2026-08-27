@@ -180,6 +180,41 @@
                     class="text-xs font-medium text-slate-400 underline hover:text-red-500">Reset to defaults</button>
         </div>
 
+        {{-- White-label brand word — swaps "Naara" for a new business name in
+             product/sub-brand names (e.g. "Naara Rent" → "{word} Rent"). --}}
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-[#2D4060] dark:bg-[#243352]/40">
+            <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Brand word (white-label)</label>
+            <input type="text" wire:model.live="brand_word" maxlength="40" placeholder="Naara"
+                   class="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+            @error('brand_word') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                Reselling the platform to a new business? Set their name here — every product name swaps automatically, e.g.
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ trim($brand_word ?: 'Naara') }} Rent</span>,
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ trim($brand_word ?: 'Naara') }} Line</span>,
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ trim($brand_word ?: 'Naara') }} Verify</span>.
+            </p>
+        </div>
+
+        {{-- 25 curated palette presets (+ the custom fields below). One click loads
+             a palette into the colour fields; Save theme applies it sitewide. --}}
+        <div>
+            <p class="mb-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Palette presets</p>
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                @foreach (\App\Support\BrandSettings::PALETTES as $pName => $pColors)
+                    <button type="button" wire:click="applyPalette(@js($pName))"
+                            class="group flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-left transition hover:border-primary/50 hover:shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+                        <span class="flex shrink-0 -space-x-1">
+                            <span class="h-5 w-5 rounded-full ring-2 ring-white dark:ring-[#1A2840]" style="background:{{ $pColors['primary'] }}"></span>
+                            <span class="h-5 w-5 rounded-full ring-2 ring-white dark:ring-[#1A2840]" style="background:{{ $pColors['accent'] }}"></span>
+                            <span class="h-5 w-5 rounded-full ring-2 ring-white dark:ring-[#1A2840]" style="background:{{ $pColors['action'] }}"></span>
+                        </span>
+                        <span class="min-w-0 truncate text-[11px] font-medium text-slate-600 group-hover:text-primary dark:text-slate-300">{{ $pName }}</span>
+                    </button>
+                @endforeach
+            </div>
+            <p class="mt-2 text-[11px] text-slate-400">Or set any colours by hand below for a fully custom palette.</p>
+        </div>
+
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             @foreach ([
                 ['color_primary', 'Primary (teal)', $color_primary],

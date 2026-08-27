@@ -98,16 +98,32 @@ class ProviderModels
     /** A Model definition + its key, or null if the key is unknown. */
     public static function find(string $key): ?array
     {
-        return isset(self::MODELS[$key]) ? ['key' => $key] + self::MODELS[$key] : null;
+        return isset(self::MODELS[$key]) ? self::brandize(['key' => $key] + self::MODELS[$key]) : null;
     }
 
     /** Every Model, each with a live `status` (live | coming_soon | needs_key). */
     public static function all(): array
     {
         return array_map(
-            fn ($key) => ['key' => $key] + self::MODELS[$key] + ['status' => self::status($key)],
+            fn ($key) => self::brandize(['key' => $key] + self::MODELS[$key] + ['status' => self::status($key)]),
             array_keys(self::MODELS),
         );
+    }
+
+    /**
+     * Apply the white-label brand word to a Model's user-facing text so
+     * "Naara Rent" reads "{word} Rent" everywhere these Models render (My Lines,
+     * badges, wizard, catalogue). A no-op on a default 'Naara' install.
+     */
+    private static function brandize(array $model): array
+    {
+        foreach (['name', 'tagline'] as $field) {
+            if (isset($model[$field]) && is_string($model[$field])) {
+                $model[$field] = \App\Support\BrandSettings::rebrand($model[$field]);
+            }
+        }
+
+        return $model;
     }
 
     /** Only Models a user can actually reach right now (status = live). */

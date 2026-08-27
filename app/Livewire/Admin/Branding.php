@@ -26,6 +26,9 @@ class Branding extends Component
 
     public string $brand_name = '';
 
+    /** White-label brand WORD — swapped into product/sub-brand names sitewide. */
+    public string $brand_word = '';
+
     // Brand theme (Module 26) — hex colours + control roundness + preloader.
     public string $color_primary = '';
 
@@ -101,6 +104,7 @@ class Branding extends Component
     public function mount(): void
     {
         $this->brand_name = BrandSettings::name();
+        $this->brand_word = BrandSettings::word();
         $this->color_primary = BrandSettings::color('primary');
         $this->color_accent = BrandSettings::color('accent');
         $this->color_navy = BrandSettings::color('navy');
@@ -121,6 +125,7 @@ class Branding extends Component
         abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
 
         $this->validate([
+            'brand_word' => 'required|string|max:40|regex:/^[\pL\pN][\pL\pN .&\'-]*$/u',
             'color_primary' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
             'color_accent' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
             'color_navy' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
@@ -128,12 +133,14 @@ class Branding extends Component
             'radius' => 'required|in:0rem,0.25rem,0.5rem,0.75rem,1rem',
             'preloader_style' => 'required|in:'.implode(',', BrandSettings::PRELOADER_STYLES),
         ], [
+            'brand_word.regex' => 'Use a plain brand word (letters, numbers, spaces).',
             'color_primary.regex' => 'Use a 6-digit hex colour like #0A6E6E.',
             'color_accent.regex' => 'Use a 6-digit hex colour like #D4A017.',
             'color_navy.regex' => 'Use a 6-digit hex colour like #0D1B2A.',
             'color_action.regex' => 'Use a 6-digit hex colour like #E8412A.',
         ]);
 
+        Setting::setValue('brand.word', trim($this->brand_word), 'brand');
         Setting::setValue('brand.color_primary', $this->color_primary, 'brand');
         Setting::setValue('brand.color_accent', $this->color_accent, 'brand');
         Setting::setValue('brand.color_navy', $this->color_navy, 'brand');
@@ -146,6 +153,24 @@ class Branding extends Component
         Auditor::log('brand.theme_updated');
         $this->saved = 'Brand theme saved — the new colours are live across the platform.';
         $this->dispatch('nx-toast', type: 'success', message: 'Brand theme saved.');
+    }
+
+    /**
+     * Apply one of the 25 curated palettes into the colour fields (live preview
+     * via wire:model) — the admin still clicks "Save theme" to persist it, so
+     * they can audition presets without committing.
+     */
+    public function applyPalette(string $name): void
+    {
+        $palette = BrandSettings::PALETTES[$name] ?? null;
+        if ($palette === null) {
+            return;
+        }
+        $this->color_primary = $palette['primary'];
+        $this->color_accent = $palette['accent'];
+        $this->color_navy = $palette['navy'];
+        $this->color_action = $palette['action'];
+        $this->dispatch('nx-toast', type: 'success', message: "“{$name}” loaded — click Save theme to apply it.");
     }
 
     /** Reset colours + roundness to the shipped brand defaults. */

@@ -22,6 +22,7 @@ class BrandSettings
     /** Setting keys this feature owns (for upload + cache-bust). */
     public const KEYS = [
         'brand.name',
+        'brand.word',
         'brand.logo_family_light',
         'brand.logo_family_dark',
         'brand.logo_product_light',
@@ -79,6 +80,9 @@ class BrandSettings
             try {
                 return [
                     'name' => (string) (Setting::getValue('brand.name') ?: config('app.name', 'NaaraSim')),
+                    // White-label brand WORD — the token swapped into product /
+                    // sub-brand names ("Naara Rent" → "{word} Rent"). Default 'Naara'.
+                    'word' => (string) (Setting::getValue('brand.word') ?: 'Naara'),
                     'family_light' => (string) Setting::getValue('brand.logo_family_light', ''),
                     'family_dark' => (string) Setting::getValue('brand.logo_family_dark', ''),
                     'product_light' => (string) Setting::getValue('brand.logo_product_light', ''),
@@ -111,6 +115,7 @@ class BrandSettings
     {
         return [
             'name' => config('app.name', 'NaaraSim'),
+            'word' => 'Naara',
             'family_light' => '', 'family_dark' => '',
             'product_light' => '', 'product_dark' => '',
             'agency_light' => '', 'agency_dark' => '',
@@ -128,6 +133,77 @@ class BrandSettings
 
         return $v !== '' ? $v : (self::COLOR_DEFAULTS[$key] ?? '#000000');
     }
+
+    /** The shipped brand word — the token white-label rebrands away from. */
+    public const DEFAULT_WORD = 'Naara';
+
+    /** The configured white-label brand word (default 'Naara'). */
+    public static function word(): string
+    {
+        $w = trim((string) (self::current()['word'] ?? ''));
+
+        return $w !== '' ? $w : self::DEFAULT_WORD;
+    }
+
+    /** True when a white-label word is set (i.e. not the shipped 'Naara'). */
+    public static function isWhiteLabelled(): bool
+    {
+        return self::word() !== self::DEFAULT_WORD;
+    }
+
+    /**
+     * Swap the brand token for the configured white-label word in a string:
+     * "Naara Rent" → "{word} Rent", "NaaraCredits" → "{word}Credits". Only the
+     * capitalised token 'Naara' is matched, so lowercase asset paths
+     * (build/naara-x.js) and unrelated text are never touched. A no-op when the
+     * word is still the shipped 'Naara', so default installs pay nothing.
+     */
+    public static function rebrand(?string $text): string
+    {
+        $text = (string) $text;
+        $word = self::word();
+        if ($word === self::DEFAULT_WORD || $text === '') {
+            return $text;
+        }
+
+        return str_replace(self::DEFAULT_WORD, $word, $text);
+    }
+
+    /**
+     * 25 curated colour palettes offered as one-click presets in Branding, on
+     * top of the shipped Naara palette + a full custom override. Each is
+     * {primary, accent, navy, action} — chosen for contrast + a warm accent that
+     * reads on both themes. Applied sitewide via the existing brand CSS vars.
+     *
+     * @var array<string, array{primary:string, accent:string, navy:string, action:string}>
+     */
+    public const PALETTES = [
+        'Naara Teal'      => ['primary' => '#0A6E6E', 'accent' => '#D4A017', 'navy' => '#0D1B2A', 'action' => '#E8412A'],
+        'Midnight Indigo' => ['primary' => '#4F46E5', 'accent' => '#F59E0B', 'navy' => '#111827', 'action' => '#EF4444'],
+        'Royal Violet'    => ['primary' => '#7C3AED', 'accent' => '#F5B301', 'navy' => '#1E1B2E', 'action' => '#EC4899'],
+        'Emerald Forest'  => ['primary' => '#047857', 'accent' => '#F59E0B', 'navy' => '#0B1F17', 'action' => '#DC2626'],
+        'Ocean Blue'      => ['primary' => '#0369A1', 'accent' => '#FBBF24', 'navy' => '#0C1A2B', 'action' => '#F43F5E'],
+        'Sunset Coral'    => ['primary' => '#E11D48', 'accent' => '#F59E0B', 'navy' => '#1B1113', 'action' => '#FB7185'],
+        'Amber Gold'      => ['primary' => '#B45309', 'accent' => '#0EA5E9', 'navy' => '#1C1508', 'action' => '#EA580C'],
+        'Slate Pro'       => ['primary' => '#334155', 'accent' => '#F59E0B', 'navy' => '#0F172A', 'action' => '#0EA5E9'],
+        'Crimson Noir'    => ['primary' => '#B91C1C', 'accent' => '#FBBF24', 'navy' => '#180B0B', 'action' => '#F97316'],
+        'Cyber Lime'      => ['primary' => '#3F6212', 'accent' => '#84CC16', 'navy' => '#0E1406', 'action' => '#22D3EE'],
+        'Deep Purple'     => ['primary' => '#6D28D9', 'accent' => '#22D3EE', 'navy' => '#14101F', 'action' => '#F472B6'],
+        'Rose Quartz'     => ['primary' => '#BE185D', 'accent' => '#FBBF24', 'navy' => '#1A0E15', 'action' => '#FB7185'],
+        'Steel Blue'      => ['primary' => '#1D4ED8', 'accent' => '#F59E0B', 'navy' => '#0B1220', 'action' => '#06B6D4'],
+        'Jade Mint'       => ['primary' => '#0D9488', 'accent' => '#F59E0B', 'navy' => '#0A1A18', 'action' => '#F43F5E'],
+        'Copper Rust'     => ['primary' => '#9A3412', 'accent' => '#FACC15', 'navy' => '#1A0F08', 'action' => '#DC2626'],
+        'Sky Fresh'       => ['primary' => '#0284C7', 'accent' => '#FACC15', 'navy' => '#0B1725', 'action' => '#F97316'],
+        'Plum Wine'       => ['primary' => '#86198F', 'accent' => '#FBBF24', 'navy' => '#170A18', 'action' => '#E11D48'],
+        'Olive Earth'     => ['primary' => '#4D7C0F', 'accent' => '#EAB308', 'navy' => '#12160A', 'action' => '#EA580C'],
+        'Graphite Gold'   => ['primary' => '#1F2937', 'accent' => '#D4A017', 'navy' => '#0B0F17', 'action' => '#EF4444'],
+        'Turquoise Pop'   => ['primary' => '#0891B2', 'accent' => '#F59E0B', 'navy' => '#0A1A1E', 'action' => '#F43F5E'],
+        'Berry Bold'      => ['primary' => '#9D174D', 'accent' => '#FBBF24', 'navy' => '#180912', 'action' => '#FB923C'],
+        'Pine Green'      => ['primary' => '#065F46', 'accent' => '#FCD34D', 'navy' => '#08160F', 'action' => '#F87171'],
+        'Cobalt Night'    => ['primary' => '#1E40AF', 'accent' => '#FACC15', 'navy' => '#0A0F1F', 'action' => '#F97316'],
+        'Terracotta'      => ['primary' => '#C2410C', 'accent' => '#0D9488', 'navy' => '#1A0F0A', 'action' => '#DC2626'],
+        'Monochrome Ink'  => ['primary' => '#111827', 'accent' => '#6B7280', 'navy' => '#030712', 'action' => '#2563EB'],
+    ];
 
     public static function radius(): string
     {

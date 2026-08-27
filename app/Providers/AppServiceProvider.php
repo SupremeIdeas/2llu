@@ -222,6 +222,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // White-label brand token (@brand). Echoes text with the shipped 'Naara'
+        // token swapped for the admin-set brand word — used for the handful of
+        // brand names generated/shown centrally. A no-op on a default install.
+        \Illuminate\Support\Facades\Blade::directive('brand', function ($expr) {
+            $expr = $expr === '' ? "'".\App\Support\BrandSettings::DEFAULT_WORD."'" : $expr;
+
+            return "<?php echo e(\\App\\Support\\BrandSettings::rebrand($expr)); ?>";
+        });
+
         // Force HTTPS URL generation in production (NAARA-BUILD-20 §1). A second,
         // complementary safeguard to trustProxies for the signed-URL 403 class:
         // even if forwarded-header detection is incomplete for a given host,
