@@ -127,6 +127,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('esim.oneglobal', OneGlobalService::class);
         $this->app->singleton('esim.montymobile', MontyMobileService::class);
         $this->app->singleton('esim.gigs', GigsService::class);
+        // NAARA-BUILD-18 — new eSIM adapters, registered so they appear in the
+        // Operations Center. Shipped enabled=false; keys added when onboarded.
+        $this->app->singleton('esim.esimaccess', \App\Services\eSIM\EsimAccessService::class);
+        $this->app->singleton('esim.ubigi', \App\Services\eSIM\UbigiService::class); // placeholder tier
 
         // Number providers, resolved by name via app("number.$provider").
         // OTP/rental lane (SmsProviderInterface): Getatext (US), 5sim (global),
@@ -139,6 +143,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('number.virtsms', VirtSmsService::class);
         $this->app->singleton('number.twilio', TwilioService::class);
         $this->app->singleton('number.telnyx', TelnyxService::class);
+        // NAARA-BUILD-18 — new number adapters (enabled=false until onboarded).
+        $this->app->singleton('number.smspool', \App\Services\SMS\SmsPoolService::class);
+        $this->app->singleton('number.onlinesim', \App\Services\SMS\OnlineSimService::class);
+        $this->app->singleton('number.plivo', \App\Services\SMS\PlivoService::class);
+        $this->app->singleton('number.sonetel', \App\Services\SMS\SonetelService::class); // placeholder tier
 
         // Web-push sender (self-hosted VAPID) — swapped for a fake in tests.
         $this->app->bind(WebPushSender::class, MinishlinkPushSender::class);

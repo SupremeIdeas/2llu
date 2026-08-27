@@ -1066,3 +1066,49 @@ after; check new work against them rather than re-deriving the architecture.
   (showcase block below the subheadline, 2-column-locked CTA row, admin
   `showcase_image` upload via MediaStorage, all image combos) — verified and left
   as-is (MarketingHeroTest). No rebuild.
+
+### NCI Layer 4 — Operations Center (BUILD-17)
+Five admin pages under **Admin → Operations (NCI)** (`/adminmaster/nci/*`),
+gated on the new `nci.view` StaffScope (override actions on `nci.override`):
+Provider Registry (grouped by family, tier-sorted, one-click dashboard links),
+Provider Detail (dashboard button + password-gated credential reveal + manual
+circuit Open/Reset via `CircuitBreaker::forceOpen/forceClose` + read-only NCI +
+Config links), Health Monitor (shares the System Health data source), Routing
+Console (read-only order simulation via the real `CandidateOrdering` + a manual
+"prefer Provider X for N hours" override in `App\Support\RoutingPreference`,
+honoured as the top ordering tiebreaker), and Wallets (balance + volume-based
+burn). Zero business logic of its own. Tested (OperationsCenterTest).
+
+### Provider Expansion — new adapters, shipped DISABLED (BUILD-18)
+Eight adapters built against the existing interfaces, registered, and seeded into
+`provider_registry` with **`enabled = false`** (Frank enables each deliberately
+once real credentials exist — `ProviderExpansionSeeder`):
+- **Immediate / self-service:** SMSPool + OnlineSIM (SMS/OTP + rental), Plivo
+  (permanent + rental), Bitrefill (gift), eSIM Access / Redtea (data eSIM).
+- **Placeholder / gated:** Tillo (gift, enterprise), Ubigi/Transatel (eSIM,
+  enterprise), Sonetel (permanent, small-business).
+- **Skipped (false redundancy):** VirtualSMS, SMSPVA — shared-pool with HeroSMS,
+  no real failover diversity.
+
+**Activation checklist per provider (when Frank onboards one):** (1) add its keys
+in Integrations; (2) flip `enabled = true`; (3) **add it to the router lane /
+`ProviderModels` family + `ProviderHealth::PROVIDERS`** so it becomes routing-
+eligible and health-probed.
+
+**⚠ Architecture flag (BUILD-18 §7):** registration + a registry row makes a
+provider VISIBLE in the Operations Center, but NOT yet routing-eligible — the
+routers iterate lanes defined in `ProviderModels`/router `$chain`, and
+`ProviderHealth` probes a fixed provider list. So a genuinely-new provider needs
+those two touch-points edited to route + be probed. This is the decoupling gap
+BUILD-18 asks to flag rather than work around; a future batch could make lanes +
+health-probing registry-driven (read `product_families`/`enabled` from the
+registry) to close it. Left flagged, not patched.
+
+**URLs left null for the admin to fill** (unconfirmed — a wrong link is worse):
+eSIM Access login, Tillo login, Ubigi login + docs.
+
+**Future — requires a business relationship first (business-development, NOT an
+engineering task):** Blackhawk, ePay/Euronet, Maya Connect+, eSIMCard,
+Bandwidth/Flowroute (needs a US EIN). Logged here so they're not lost; no
+placeholder adapters built.
+Tested (ProviderExpansionTest).

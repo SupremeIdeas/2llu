@@ -20,6 +20,9 @@ class GiftCardCatalogueSyncService
     private const PROVIDERS = [
         'reloadly' => ReloadlyGiftCardService::class,
         'zendit' => ZenditVoucherService::class,
+        // NAARA-BUILD-18 — registered gift adapters (enabled=false until onboarded).
+        'bitrefill' => \App\Services\GiftCards\BitrefillService::class,
+        'tillo' => \App\Services\GiftCards\TilloService::class, // placeholder tier
     ];
 
     public function provider(string $key): GiftCardProviderInterface

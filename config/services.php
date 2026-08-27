@@ -356,4 +356,44 @@ return [
         'auth_url' => env('RELOADLY_AUTH_URL', 'https://auth.reloadly.com/oauth/token'),
     ],
 
+    // ── NAARA-BUILD-18: Provider Expansion. All ship enabled=false; keys go in
+    //    when Frank actually onboards each provider. Base URLs are the providers'
+    //    documented API hosts.
+    'smspool' => [
+        'api_key' => env('SMSPOOL_API_KEY'),
+        'base_url' => env('SMSPOOL_BASE_URL', 'https://api.smspool.net'),
+    ],
+    'onlinesim' => [
+        'api_key' => env('ONLINESIM_API_KEY'),
+        'base_url' => env('ONLINESIM_BASE_URL', 'https://onlinesim.io/api'),
+    ],
+    'plivo' => [
+        'auth_id' => env('PLIVO_AUTH_ID'),
+        'auth_token' => env('PLIVO_AUTH_TOKEN'),
+        'base_url' => env('PLIVO_BASE_URL', 'https://api.plivo.com/v1'),
+    ],
+    'bitrefill' => [
+        'api_id' => env('BITREFILL_API_ID'),
+        'api_secret' => env('BITREFILL_API_SECRET'),
+        'base_url' => env('BITREFILL_BASE_URL', 'https://api.bitrefill.com/v2'),
+    ],
+    'esimaccess' => [
+        'api_key' => env('ESIMACCESS_API_KEY'),
+        'base_url' => env('ESIMACCESS_BASE_URL', 'https://api.esimaccess.com/api/v1'),
+    ],
+    // Placeholder tier — adapters built, enabled later once an account exists.
+    'tillo' => [
+        'api_key' => env('TILLO_API_KEY'),
+        'secret' => env('TILLO_SECRET'),
+        'base_url' => env('TILLO_BASE_URL', 'https://sandbox.tillo.dev/api/v2'),
+    ],
+    'ubigi' => [
+        'api_key' => env('UBIGI_API_KEY'),
+        'base_url' => env('UBIGI_BASE_URL', 'https://api.ubigi.me/v1'),
+    ],
+    'sonetel' => [
+        'api_key' => env('SONETEL_API_KEY'),
+        'base_url' => env('SONETEL_BASE_URL', 'https://public-api.sonetel.com'),
+    ],
+
 ];

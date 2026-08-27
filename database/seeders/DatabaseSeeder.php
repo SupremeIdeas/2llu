@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             NumbersBentoSeeder::class,  // six Numbers landing bento cards
             BrandPlanSeeder::class,     // brand-directory subscription starter plans (BUILD-9)
             ProviderRegistrySeeder::class, // provider registry metadata + URLs (BUILD-14)
+            ProviderExpansionSeeder::class, // new adapters, enabled=false (BUILD-18)
         ]);
     }
 }
