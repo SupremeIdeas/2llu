@@ -46,7 +46,7 @@ class DashboardLayoutVariantTest extends TestCase
         // naara-official → variant-a. All the key blocks are present.
         Livewire::actingAs($this->userWithALine())->test(Dashboard::class)
             ->assertOk()
-            ->assertSee('My Connectivity')   // hero
+            ->assertSee('Connectivity')   // hero
             ->assertSee('Buy eSIM')          // action tiles
             ->assertSee('My Lines');         // connectivity summary
     }
@@ -61,15 +61,15 @@ class DashboardLayoutVariantTest extends TestCase
         // Same content renders — the wallet/lines simply lead now.
         Livewire::actingAs($this->userWithALine())->test(Dashboard::class)
             ->assertOk()
-            ->assertSee('My Connectivity')
+            ->assertSee('Connectivity')
             ->assertSee('Buy eSIM')
             ->assertSee('My Lines');
     }
 
     public function test_applying_a_theme_swaps_the_home_hero(): void
     {
-        // naara-official → no theme hero (keeps today's behaviour).
-        $this->assertNull(ThemePreset::heroFor('dashboard'));
+        // naara-official ships a default home hero (the reference traveller scene).
+        $this->assertSame('/img/themes/balloons.webp', ThemePreset::heroFor('dashboard'));
 
         // A themed persona carries its own hero image, shown on the home.
         Setting::setValue(ThemePreset::SETTING_KEY, 'aurora-shift');
@@ -100,6 +100,6 @@ class DashboardLayoutVariantTest extends TestCase
         ThemePreset::bust();
 
         $this->assertSame('variant-a', ThemePreset::layoutVariant('dashboard_home'));
-        Livewire::actingAs($this->userWithALine())->test(Dashboard::class)->assertOk()->assertSee('My Connectivity');
+        Livewire::actingAs($this->userWithALine())->test(Dashboard::class)->assertOk()->assertSee('Connectivity');
     }
 }

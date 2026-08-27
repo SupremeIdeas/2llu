@@ -42,7 +42,9 @@ class ThemePresetSeeder extends Seeder
                     'surface' => ['card_shadow' => 'sm', 'card_border_opacity' => '0.6'],
                 ],
                 'icon_family' => ['style' => '3d', 'set' => 'default'],
-                'hero_assets' => [],
+                // Default home hero (owner reference) — the traveller/balloons scene
+                // behind "My Connectivity". An admin HeroBackground upload still wins.
+                'hero_assets' => ['dashboard' => '/img/themes/balloons.webp'],
                 'layout_variants' => $this->baselineVariants(),
                 'is_built_in' => true,
                 'sort_order' => 1,
