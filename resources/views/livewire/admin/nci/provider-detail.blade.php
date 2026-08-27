@@ -99,7 +99,11 @@
                 <div class="flex items-center gap-2">
                     <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Circuit</span>
                     <x-nci.pill kind="circuit" :value="$row->circuit_breaker_state" />
-                    <span class="text-xs text-slate-400">24h: {{ $row->success_count_24h }}✓ / {{ $row->failure_count_24h }}✗</span>
+                    <span class="inline-flex items-center gap-1 text-xs text-slate-400">24h:
+                        <x-icon name="check" class="h-3 w-3 text-emerald-500" /> {{ $row->success_count_24h }}
+                        <span class="text-slate-300 dark:text-slate-600">/</span>
+                        <x-icon name="x" class="h-3 w-3 text-red-500" /> {{ $row->failure_count_24h }}
+                    </span>
                 </div>
                 @if ($canOverride)
                     <div class="flex items-center gap-2">

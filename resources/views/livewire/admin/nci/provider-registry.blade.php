@@ -34,7 +34,7 @@
                             <th class="px-3 py-2.5 font-medium">Status</th>
                             <th class="px-3 py-2.5 font-medium">Circuit</th>
                             <th class="px-3 py-2.5 font-medium">Latency</th>
-                            <th class="px-3 py-2.5 font-medium">24h ✓</th>
+                            <th class="px-3 py-2.5 font-medium">24h OK</th>
                             <th class="px-3 py-2.5 font-medium">NCI</th>
                             <th class="px-3 py-2.5 font-medium">On</th>
                             <th class="px-3 py-2.5 font-medium text-right">Links</th>
