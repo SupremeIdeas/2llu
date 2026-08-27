@@ -86,4 +86,32 @@
             @endforeach
         </div>
     </div>
+
+    {{-- Inbound webhook deliveries (readiness Domain 13/14): proof a provider is
+         actually calling us, accepted (2xx) or rejected (401 signature fail). --}}
+    <div class="mt-8">
+        <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Recent webhook deliveries</h2>
+        @if ($webhookDeliveries->isEmpty())
+            <p class="rounded-2xl border border-dashed border-slate-300 p-5 text-sm text-slate-500 dark:border-[#2D4060] dark:text-slate-400">No webhook deliveries recorded yet. If a provider (e.g. Paystack) should be calling and nothing shows here, the webhook URL likely isn't registered on the provider's dashboard.</p>
+        @else
+            <div class="overflow-hidden rounded-2xl border border-slate-200 dark:border-[#2D4060]">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-400 dark:bg-white/5">
+                        <tr><th class="px-4 py-2">Provider</th><th class="px-4 py-2">Path</th><th class="px-4 py-2">Status</th><th class="px-4 py-2">When</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-white/5">
+                        @foreach ($webhookDeliveries as $d)
+                            <tr class="text-slate-700 dark:text-slate-300">
+                                <td class="px-4 py-2 font-medium text-slate-900 dark:text-white">{{ $d->provider }}</td>
+                                <td class="px-4 py-2 font-mono text-xs">/{{ $d->path }}</td>
+                                <td class="px-4 py-2"><span class="rounded-full px-2 py-0.5 text-xs font-semibold {{ $d->status_code < 400 ? 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300' }}">{{ $d->status_code }}</span></td>
+                                <td class="px-4 py-2 text-slate-400">{{ \Illuminate\Support\Carbon::parse($d->created_at)->diffForHumans() }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
+
 </div>

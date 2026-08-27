@@ -756,3 +756,33 @@ Two blueprints (`BLUEPRINT-preloader-studio.md`, `BLUEPRINT-batch1-sections-expa
   infrastructure/ops decisions requiring Frank's environment choices. Its two
   governing rules (confirm-before-build; admin-configurable + self-test) were
   applied to everything built this session.
+
+---
+
+## BUILD-12 — Email Studio + Laravel readiness (pure-code)
+
+### Email Studio (NAARA-BUILD-20 §3)
+- **Template editor** (`admin.email-studio`): per-template DB overrides
+  (`mail_template_overrides`) for subject / intro / button text / accent, plus a
+  `global` accent — Blade files stay the real default; `MailTemplates` merges
+  overrides with full fallback. Live preview renders the real email with sample
+  data + unsaved edits. Wired into the 6 core notifications + their blades + the
+  shared mail layout/button.
+- **Broadcast** (`admin.email-broadcast`): compose + audience (all / role /
+  account type / segment, reusing existing role/merchant/partner scopes) + real
+  recipient count + confirm step; `SendEmailBroadcastJob` chunks recipients and
+  each per-user mail is queued (tries=1, never a synchronous blast). History in
+  `email_broadcasts` + Auditor log.
+
+### Laravel readiness (pure-code, high-value only)
+- Full 14-domain audit in `docs/laravel-readiness-audit.md` (Rule 1). Finding:
+  the high-value pure-code controls (auth rate limiting; webhook HMAC +
+  per-handler idempotency) are ALREADY present; most remaining domains are infra
+  decisions (Cloudflare edge, replicas, Sentry/session-replay, Capacitor).
+- **Built (Domain 13/14):** inbound **webhook delivery log** — `webhook_deliveries`
+  + a path-scoped `LogWebhookDelivery` middleware recording every `webhooks/*` hit
+  AFTER the response (never alters handler logic), surfaced in System Health. This
+  directly answers the recurring "is Paystack's webhook reaching us?" question.
+- The `platform_capabilities` + verify() framework was intentionally NOT built —
+  it would add ceremony over money paths without new protection. See the audit doc
+  for the recommended infra actions.

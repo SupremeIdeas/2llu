@@ -59,6 +59,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // Turnstile bot check on the auth POSTs (self-gates; no-op unless
             // active — blueprint Section 33).
             \App\Http\Middleware\VerifyTurnstile::class,
+            // Inbound webhook delivery log (readiness Domain 13/14) — observability
+            // only, self-scopes to webhooks/* and never alters handler behaviour.
+            \App\Http\Middleware\LogWebhookDelivery::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -39,6 +39,20 @@ class SystemHealth extends Component
             'queueBacklog' => SchedulerHealth::queueBacklog(),
             'oldestJobAge' => SchedulerHealth::oldestJobAgeSeconds(),
             'envWarnings' => EnvironmentGuard::warnings(),
+            // Recent inbound webhook deliveries (readiness Domain 13/14) — lets an
+            // operator confirm a provider (Paystack, Twilio…) is actually calling.
+            'webhookDeliveries' => $this->webhookDeliveries(),
         ]);
+    }
+
+    /** @return \Illuminate\Support\Collection<int, object> */
+    private function webhookDeliveries()
+    {
+        try {
+            return \Illuminate\Support\Facades\DB::table('webhook_deliveries')
+                ->latest('created_at')->limit(15)->get();
+        } catch (\Throwable) {
+            return collect();
+        }
     }
 }
