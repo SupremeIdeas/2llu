@@ -161,6 +161,52 @@ class ProviderKeysTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['action' => 'media.primary_disk_updated']);
     }
 
+    public function test_the_build18_providers_are_configurable_in_the_admin(): void
+    {
+        // Regression: these providers had adapters + config/services.php entries
+        // but were never added to the admin schema, so they were invisible/hidden
+        // in Admin → API Keys. Each must now be settable and flip Active.
+        $newProviders = [
+            'esimaccess' => ['esimaccess_api_key' => 'ea-live'],
+            'ubigi' => ['ubigi_api_key' => 'ub-live'],
+            'smspool' => ['smspool_api_key' => 'sp-live'],
+            'onlinesim' => ['onlinesim_api_key' => 'os-live'],
+            'plivo' => ['plivo_auth_id' => 'pl-id', 'plivo_auth_token' => 'pl-tok'],
+            'sonetel' => ['sonetel_api_key' => 'so-live'],
+            'bitrefill' => ['bitrefill_api_id' => 'br-id', 'bitrefill_api_secret' => 'br-sec'],
+            'tillo' => ['tillo_api_key' => 'ti-key', 'tillo_secret' => 'ti-sec'],
+        ];
+
+        foreach ($newProviders as $provider => $fields) {
+            $this->assertSame('Coming Soon', ProviderStatus::label($provider), "$provider should start Coming Soon");
+            ProviderKeys::save($fields);
+            ProviderKeys::applyToConfig();
+            $this->assertSame('Active', ProviderStatus::label($provider), "$provider should be Active once its key(s) are saved");
+        }
+    }
+
+    public function test_every_status_tracked_provider_is_settable_in_the_admin(): void
+    {
+        // Invariant: no provider may show a status badge with no way to enter its
+        // key. Every ProviderStatus provider whose credentials live under
+        // services.* must be settable through the ProviderKeys schema. WhatsApp is
+        // the one documented exception — it has its own admin Integrations page.
+        $settable = array_values(ProviderKeys::fieldMap());
+        $required = (new \ReflectionClass(ProviderStatus::class))->getConstant('REQUIRED');
+        $exceptions = ['whatsapp']; // configured on the admin Integrations page
+
+        foreach ($required as $provider => $paths) {
+            if (in_array($provider, $exceptions, true)) {
+                continue;
+            }
+            foreach ($paths as $path) {
+                if (str_starts_with($path, 'services.')) {
+                    $this->assertContains($path, $settable, "Provider [$provider] shows a status badge but [$path] is not settable in Admin → API Keys.");
+                }
+            }
+        }
+    }
+
     public function test_a_non_super_admin_cannot_reach_the_api_keys_page(): void
     {
         $admin = User::factory()->create();

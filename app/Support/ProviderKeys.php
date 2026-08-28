@@ -55,6 +55,8 @@ class ProviderKeys
                     'montymobile_api_key' => ['label' => 'Monty Mobile — RSP API Key (Naara Connect)', 'config' => 'services.montymobile.api_key', 'env' => 'MONTYMOBILE_API_KEY', 'secret' => true, 'hint' => 'montymobile.com → partner/sales for RSP API access. Full eSIM (voice + data).'],
                     'gigs_api_key' => ['label' => 'Gigs — API Key (Naara Connect)', 'config' => 'services.gigs.api_key', 'env' => 'GIGS_API_KEY', 'secret' => true, 'hint' => 'developers.gigs.com → API keys. Full MVNO eSIM (voice + SMS + data + number).'],
                     'gigs_project' => ['label' => 'Gigs — Project ID', 'config' => 'services.gigs.project', 'env' => 'GIGS_PROJECT', 'secret' => false, 'hint' => 'Gigs dashboard → the project every resource is scoped to.'],
+                    'esimaccess_api_key' => ['label' => 'eSIMAccess — API Key (data eSIM)', 'config' => 'services.esimaccess.api_key', 'env' => 'ESIMACCESS_API_KEY', 'secret' => true, 'hint' => 'esimaccess.com reseller dashboard → API. Data eSIM, same lane as eSIM Go / Airalo.'],
+                    'ubigi_api_key' => ['label' => 'Ubigi — API Key (data eSIM)', 'config' => 'services.ubigi.api_key', 'env' => 'UBIGI_API_KEY', 'secret' => true, 'hint' => 'ubigi.me partner portal → API. Data eSIM lane.'],
                 ],
             ],
             'numbers' => [
@@ -67,6 +69,11 @@ class ProviderKeys
                     'twilio_account_sid' => ['label' => 'Twilio — Account SID', 'config' => 'services.twilio.account_sid', 'env' => 'TWILIO_ACCOUNT_SID', 'secret' => false, 'hint' => 'twilio.com/console (permanent numbers + voice).'],
                     'twilio_auth_token' => ['label' => 'Twilio — Auth Token', 'config' => 'services.twilio.auth_token', 'env' => 'TWILIO_AUTH_TOKEN', 'secret' => true, 'hint' => 'Same page — reveal Auth Token.'],
                     'telnyx_api_key' => ['label' => 'Telnyx — API Key', 'config' => 'services.telnyx.api_key', 'env' => 'TELNYX_API_KEY', 'secret' => true, 'hint' => 'portal.telnyx.com → API Keys (permanent/voice backup).'],
+                    'smspool_api_key' => ['label' => 'SMSPool — API Key', 'config' => 'services.smspool.api_key', 'env' => 'SMSPOOL_API_KEY', 'secret' => true, 'hint' => 'smspool.net → Profile → API. OTP / verification lane. WALLET key.'],
+                    'onlinesim_api_key' => ['label' => 'OnlineSIM — API Key', 'config' => 'services.onlinesim.api_key', 'env' => 'ONLINESIM_API_KEY', 'secret' => true, 'hint' => 'onlinesim.io → Profile → API. OTP / verification lane. WALLET key.'],
+                    'plivo_auth_id' => ['label' => 'Plivo — Auth ID', 'config' => 'services.plivo.auth_id', 'env' => 'PLIVO_AUTH_ID', 'secret' => false, 'hint' => 'console.plivo.com → Account. Permanent numbers + voice/SMS.'],
+                    'plivo_auth_token' => ['label' => 'Plivo — Auth Token', 'config' => 'services.plivo.auth_token', 'env' => 'PLIVO_AUTH_TOKEN', 'secret' => true, 'hint' => 'Same page — the Auth Token.'],
+                    'sonetel_api_key' => ['label' => 'Sonetel — API Key', 'config' => 'services.sonetel.api_key', 'env' => 'SONETEL_API_KEY', 'secret' => true, 'hint' => 'sonetel.com → Settings → API. Permanent numbers + voice.'],
                 ],
             ],
             'payments' => [
@@ -130,6 +137,17 @@ class ProviderKeys
                     'coinpayments_merchant_id' => ['label' => 'CoinPayments — Merchant ID', 'config' => 'services.coinpayments.merchant_id', 'env' => 'COINPAYMENTS_MERCHANT_ID', 'secret' => false, 'hint' => 'Account → Merchant Settings — checked on each IPN.'],
                     'payssion_api_key' => ['label' => 'Payssion — API Key', 'config' => 'services.payssion.api_key', 'env' => 'PAYSSION_API_KEY', 'secret' => false, 'hint' => 'payssion.com → Merchant → API.'],
                     'payssion_secret_key' => ['label' => 'Payssion — Secret Key', 'config' => 'services.payssion.secret_key', 'env' => 'PAYSSION_SECRET_KEY', 'secret' => true, 'hint' => 'Same page. Notify URL: <your-site>/webhooks/payments/payssion.'],
+                ],
+            ],
+            'giftcards' => [
+                'label' => 'Gift cards & airtime',
+                'fields' => [
+                    'reloadly_client_id' => ['label' => 'Reloadly — Client ID', 'config' => 'services.reloadly.client_id', 'env' => 'RELOADLY_CLIENT_ID', 'secret' => false, 'hint' => 'reloadly.com → Developers → API settings. Airtime + gift cards. Use RELOADLY_SANDBOX=true first.'],
+                    'reloadly_client_secret' => ['label' => 'Reloadly — Client Secret', 'config' => 'services.reloadly.client_secret', 'env' => 'RELOADLY_CLIENT_SECRET', 'secret' => true, 'hint' => 'Same page — the OAuth client-credentials secret.'],
+                    'bitrefill_api_id' => ['label' => 'Bitrefill — API ID', 'config' => 'services.bitrefill.api_id', 'env' => 'BITREFILL_API_ID', 'secret' => false, 'hint' => 'bitrefill.com → Account → API. Gift cards + airtime (crypto-funded).'],
+                    'bitrefill_api_secret' => ['label' => 'Bitrefill — API Secret', 'config' => 'services.bitrefill.api_secret', 'env' => 'BITREFILL_API_SECRET', 'secret' => true, 'hint' => 'Same page — signs requests.'],
+                    'tillo_api_key' => ['label' => 'Tillo — API Key', 'config' => 'services.tillo.api_key', 'env' => 'TILLO_API_KEY', 'secret' => false, 'hint' => 'tillo.io merchant portal → API. Gift cards. Sandbox host until live access.'],
+                    'tillo_secret' => ['label' => 'Tillo — Secret', 'config' => 'services.tillo.secret', 'env' => 'TILLO_SECRET', 'secret' => true, 'hint' => 'Same portal — the HMAC signing secret.'],
                 ],
             ],
             'voice' => [
