@@ -38,7 +38,7 @@
         <div class="mt-7 flex items-center gap-2.5">
             <a href="{{ route('catalogue') }}" wire:navigate
                class="group inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-primary via-primary-dark to-navy px-5 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/35 sm:text-base">
-                <x-icon name="id-card" class="h-5 w-5" /> Buy eSIM
+                <x-icon name="sim" class="h-5 w-5" /> Buy eSIM
                 <x-icon name="chevron-right" class="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
             <a href="{{ route('numbers') }}" wire:navigate

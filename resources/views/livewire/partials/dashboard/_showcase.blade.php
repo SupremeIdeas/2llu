@@ -5,7 +5,7 @@
      only the presentation changed. --}}
 @unless ($hasAny)
     @php($rows = [
-        ['naara-connect', 'id-card', 'Naara Connect', 'eSIM', 'One eSIM for calls, SMS and high-speed data anywhere in the world.', route('catalogue', ['tab' => 'full'])],
+        ['naara-connect', 'sim', 'Naara Connect', 'eSIM', 'One eSIM for calls, SMS and high-speed data anywhere in the world.', route('catalogue', ['tab' => 'full'])],
         ['esim-data-plans', 'globe', 'eSIM Data Plans', null, 'Local data in 190+ countries — installed before you fly, connected when you land.', route('catalogue')],
         ['verification-numbers', 'shield-check', 'Verification Numbers', null, 'Receive one-time codes for WhatsApp, Google, Facebook and more — in seconds.', route('numbers')],
         ['virtual-numbers', 'phone', 'Virtual Numbers', null, 'A permanent second line for calls and SMS, without a second phone.', route('numbers')],
