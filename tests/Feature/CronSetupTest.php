@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Support\HostingGuide;
 use App\Support\Installer;
 use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
@@ -43,5 +44,28 @@ class CronSetupTest extends TestCase
         $html = Blade::render('<x-cron-setup hosting="vps" />');
         $this->assertStringContainsString('horizon', $html);
         $this->assertStringContainsString('supervisor', $html);
+    }
+
+    public function test_hosting_guide_delegates_to_the_installer_authority(): void
+    {
+        // Installer is the single source of truth for the binary/path/cron
+        // strings; HostingGuide (System Health) must return byte-identical values,
+        // so the fpm-safe fallback can never live in only one of them again.
+        $this->assertSame(Installer::phpBinary(), HostingGuide::phpBinary());
+        $this->assertSame(Installer::appPath(), HostingGuide::appPath());
+        $this->assertSame(Installer::cronLine(), HostingGuide::cronLine());
+        $this->assertSame(Installer::queueWorkerCommand(), HostingGuide::queueWorkerCommand());
+    }
+
+    public function test_the_vps_steps_carry_a_real_supervisor_block_and_deploy_reload(): void
+    {
+        $vps = HostingGuide::steps()['vps'];
+        $flat = json_encode($vps);
+
+        // A concrete, copy-paste Supervisor program — not just "add a process".
+        $this->assertStringContainsString('[program:naarasim-horizon]', $flat);
+        $this->assertStringContainsString('autorestart=true', $flat);
+        // Redeploy reload is a visible step, not a buried code comment.
+        $this->assertStringContainsString('horizon:terminate', $flat);
     }
 }

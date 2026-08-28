@@ -182,7 +182,21 @@ class Installer
         return config('queue.default') !== 'database';
     }
 
-    /** Best-guess absolute path to the PHP CLI binary for the cron line. */
+    /**
+     * Absolute application path for the cron / worker lines. THE single authority
+     * for this value — HostingGuide and every Blade surface delegate here so the
+     * path is computed in exactly one place.
+     */
+    public static function appPath(): string
+    {
+        return base_path();
+    }
+
+    /**
+     * Best-guess absolute path to the PHP CLI binary for the cron line. THE single
+     * authority for the fpm/apache-safe fallback — every other surface delegates
+     * here rather than reading PHP_BINARY independently.
+     */
     public static function phpBinary(): string
     {
         // PHP_BINARY under a web SAPI can be php-fpm; fall back to a plain "php"
@@ -204,7 +218,7 @@ class Installer
     public static function cronLine(?string $php = null, ?string $appPath = null): string
     {
         $php = $php ?: self::phpBinary();
-        $appPath = $appPath ?: base_path();
+        $appPath = $appPath ?: self::appPath();
 
         return '* * * * * cd '.$appPath.' && '.$php.' artisan schedule:run >> /dev/null 2>&1';
     }
@@ -213,7 +227,7 @@ class Installer
     public static function cronCommandOnly(?string $php = null, ?string $appPath = null): string
     {
         $php = $php ?: self::phpBinary();
-        $appPath = $appPath ?: base_path();
+        $appPath = $appPath ?: self::appPath();
 
         return 'cd '.$appPath.' && '.$php.' artisan schedule:run >> /dev/null 2>&1';
     }
@@ -222,7 +236,7 @@ class Installer
     public static function queueWorkerCommand(?string $php = null, ?string $appPath = null): string
     {
         $php = $php ?: self::phpBinary();
-        $appPath = $appPath ?: base_path();
+        $appPath = $appPath ?: self::appPath();
 
         return $php.' '.$appPath.'/artisan horizon';
     }

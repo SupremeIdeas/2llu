@@ -5,6 +5,10 @@ namespace App\Support;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
+use Laravel\Horizon\Contracts\MasterSupervisorRepository;
+use Laravel\Horizon\Contracts\WorkloadRepository;
+use Laravel\Horizon\Horizon;
 
 /**
  * Worker + queue visibility for the admin System Health page. Unlike
@@ -25,7 +29,7 @@ class QueueHealth
     /** Is Horizon installed in this build at all? */
     public static function horizonInstalled(): bool
     {
-        return class_exists(\Laravel\Horizon\Horizon::class);
+        return class_exists(Horizon::class);
     }
 
     /** Can we reach Redis right now? (null when Redis isn't the backend at all.) */
@@ -45,8 +49,13 @@ class QueueHealth
     }
 
     /**
-     * Is a Horizon master supervisor actually running? This is the real "are the
-     * workers alive" signal on a VPS. null = not installed / can't tell.
+     * Is a Horizon master supervisor actually running AND not paused? This is the
+     * real "are the workers alive and draining" signal on a VPS. A master process
+     * can exist while paused (php artisan horizon:pause, or an unresumed deploy) —
+     * in that state Redis pings fine and a master is present, but nothing is
+     * processed, which is exactly the silent-stall we must flag. So a master
+     * counts as active only when its status is not 'paused'. null = not installed
+     * / can't tell.
      */
     public static function horizonActive(): ?bool
     {
@@ -54,9 +63,22 @@ class QueueHealth
             return null;
         }
         try {
-            $masters = app(\Laravel\Horizon\Contracts\MasterSupervisorRepository::class)->all();
+            $masters = app(MasterSupervisorRepository::class)->all();
+            if (count($masters) === 0) {
+                return false;
+            }
 
-            return count($masters) > 0;
+            // At least one master must be actually running (status !== 'paused').
+            // An unknown/absent status is treated as running so we never false-alarm
+            // on a Horizon build that doesn't report one.
+            foreach ($masters as $master) {
+                $status = is_object($master) ? ($master->status ?? null) : ($master['status'] ?? null);
+                if ($status === null || $status !== 'paused') {
+                    return true;
+                }
+            }
+
+            return false;
         } catch (\Throwable) {
             return null;
         }
@@ -73,7 +95,7 @@ class QueueHealth
         // Horizon workload — per-queue length, wait seconds, live worker count.
         if (self::horizonInstalled()) {
             try {
-                $rows = app(\Laravel\Horizon\Contracts\WorkloadRepository::class)->get();
+                $rows = app(WorkloadRepository::class)->get();
 
                 return collect($rows)->map(fn ($r) => [
                     'queue' => (string) ($r['name'] ?? 'default'),
@@ -151,7 +173,7 @@ class QueueHealth
                         'connection' => (string) ($row->connection ?? ''),
                         'queue' => (string) ($row->queue ?? ''),
                         'job' => class_basename((string) $job),
-                        'error' => \Illuminate\Support\Str::limit($error, 160),
+                        'error' => Str::limit($error, 160),
                         'failed_at' => $row->failed_at ?? null,
                     ];
                 })->all();
@@ -176,7 +198,7 @@ class QueueHealth
             return ['healthy' => false, 'reason' => 'Redis is not reachable.'];
         }
         if (self::driver() === 'redis' && self::horizonInstalled() && self::horizonActive() === false) {
-            return ['healthy' => false, 'reason' => 'Horizon is not running — Redis jobs are queuing but nothing is processing them.'];
+            return ['healthy' => false, 'reason' => 'Horizon is not running (stopped or paused) — Redis jobs are queuing but nothing is processing them.'];
         }
 
         return ['healthy' => true, 'reason' => null];

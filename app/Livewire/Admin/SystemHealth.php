@@ -3,8 +3,13 @@
 namespace App\Livewire\Admin;
 
 use App\Support\EnvironmentGuard;
+use App\Support\HostingGuide;
+use App\Support\QueueHealth;
 use App\Support\SchedulerHealth;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -41,10 +46,10 @@ class SystemHealth extends Component
 
         try {
             if ($scope === 'all') {
-                \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+                Artisan::call('optimize:clear');
                 $msg = 'All caches cleared (application, config, routes, views).';
             } else {
-                \Illuminate\Support\Facades\Artisan::call('cache:clear');
+                Artisan::call('cache:clear');
                 $msg = 'Application cache cleared.';
             }
             $this->dispatch('nx-toast', type: 'success', message: $msg);
@@ -65,22 +70,23 @@ class SystemHealth extends Component
             'envWarnings' => EnvironmentGuard::warnings(),
             // Worker layer (Platform Health): the live Redis/Horizon picture, so
             // "are background jobs actually processing?" is answerable on VPS too.
-            'worker' => \App\Support\QueueHealth::workerVerdict(),
-            'workerDriver' => \App\Support\QueueHealth::driver(),
-            'horizonInstalled' => \App\Support\QueueHealth::horizonInstalled(),
-            'horizonActive' => \App\Support\QueueHealth::horizonActive(),
-            'redisReachable' => \App\Support\QueueHealth::redisReachable(),
-            'pendingByQueue' => \App\Support\QueueHealth::pendingByQueue(),
-            'failedCount' => \App\Support\QueueHealth::failedCount(),
-            'recentFailed' => \App\Support\QueueHealth::recentFailed(),
+            'worker' => QueueHealth::workerVerdict(),
+            'workerDriver' => QueueHealth::driver(),
+            'horizonInstalled' => QueueHealth::horizonInstalled(),
+            'horizonActive' => QueueHealth::horizonActive(),
+            'redisReachable' => QueueHealth::redisReachable(),
+            'pendingByQueue' => QueueHealth::pendingByQueue(),
+            'failedCount' => QueueHealth::failedCount(),
+            'recentFailed' => QueueHealth::recentFailed(),
             // NCI Layer-3 health (BUILD-19 §7): failed-listener count + the
             // recompute's last-run/overdue, so stale learning is visible.
             'nci' => $this->nciHealth(),
             // Dual-hosting setup guidance (VPS Horizon/Redis vs shared cPanel cron),
             // keyed to the detected environment, with the real cron line filled in.
-            'hostingMode' => \App\Support\HostingGuide::mode(),
-            'hostingSteps' => \App\Support\HostingGuide::steps(),
-            'cronLine' => \App\Support\HostingGuide::cronLine(),
+            'hostingMode' => HostingGuide::mode(),
+            'hostingSteps' => HostingGuide::steps(),
+            'cronLine' => HostingGuide::cronLine(),
+            'workerCmd' => HostingGuide::queueWorkerCommand(),
             // Recent inbound webhook deliveries (readiness Domain 13/14) — lets an
             // operator confirm a provider (Paystack, Twilio…) is actually calling.
             'webhookDeliveries' => $this->webhookDeliveries(),
@@ -100,18 +106,18 @@ class SystemHealth extends Component
         $overdue = $last === null || now()->diffInSeconds($last) > 26 * 3600;
 
         return [
-            'failed' => \App\Support\QueueHealth::nciListenerFailedCount(),
+            'failed' => QueueHealth::nciListenerFailedCount(),
             'recompute_last' => $last?->toDateTimeString(),
             'recompute_ago' => $last?->diffForHumans(),
             'recompute_overdue' => $overdue,
         ];
     }
 
-    /** @return \Illuminate\Support\Collection<int, object> */
+    /** @return Collection<int, object> */
     private function webhookDeliveries()
     {
         try {
-            return \Illuminate\Support\Facades\DB::table('webhook_deliveries')
+            return DB::table('webhook_deliveries')
                 ->latest('created_at')->limit(15)->get();
         } catch (\Throwable) {
             return collect();

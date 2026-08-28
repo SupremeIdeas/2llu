@@ -18,22 +18,34 @@ class HostingGuide
         return QueueHealth::driver() === 'redis' ? 'vps' : 'shared';
     }
 
+    // Installer is the single authority for the binary/path/cron strings (it runs
+    // at install time, when correctness matters most). HostingGuide delegates to
+    // it for every piece of shared logic so the two can never drift again — the
+    // fpm/apache-safe phpBinary fallback in particular used to live only in
+    // Installer, so System Health could print a broken cron line.
+
     /** Absolute app path for the cron line (real on the host, copy-paste ready). */
     public static function appPath(): string
     {
-        return base_path();
+        return Installer::appPath();
     }
 
-    /** The PHP binary running this process (cPanel often needs the full path). */
+    /** The PHP binary for cron (fpm/apache-safe fallback lives in Installer). */
     public static function phpBinary(): string
     {
-        return PHP_BINARY ?: 'php';
+        return Installer::phpBinary();
     }
 
     /** The one scheduler cron both hosting modes need, minute-by-minute. */
     public static function cronLine(): string
     {
-        return '* * * * * cd '.self::appPath().' && '.self::phpBinary().' artisan schedule:run >> /dev/null 2>&1';
+        return Installer::cronLine();
+    }
+
+    /** VPS-only: the persistent Horizon worker command (single-authority). */
+    public static function queueWorkerCommand(): string
+    {
+        return Installer::queueWorkerCommand();
     }
 
     /**
@@ -45,6 +57,21 @@ class HostingGuide
     {
         $cron = self::cronLine();
         $php = self::phpBinary();
+        $appPath = self::appPath();
+        $worker = self::queueWorkerCommand();
+
+        // A real, copy-paste Supervisor program — the difference between "keeps
+        // Horizon alive across a crash/reboot" and a hint nobody can act on.
+        $supervisor = "[program:naarasim-horizon]\n"
+            ."process_name=%(program_name)s\n"
+            ."command=$worker\n"
+            ."directory=$appPath\n"
+            ."autostart=true\n"
+            ."autorestart=true\n"
+            ."stopwaitsecs=3600\n"
+            ."user=www-data\n"
+            ."redirect_stderr=true\n"
+            ."stdout_logfile=$appPath/storage/logs/horizon.log";
 
         return [
             'shared' => [
@@ -63,7 +90,7 @@ class HostingGuide
             ],
             'vps' => [
                 ['1. Set the drivers in .env',
-                    'A VPS runs Redis + Horizon, so point the queue (and cache/session) at Redis.',
+                    'A VPS runs Redis + Horizon, so point the queue (and cache/session) at Redis. Leave REDIS_PASSWORD=null ONLY if your Redis has no auth (Cloudways\' default local instance is unauthenticated). If you enabled a Redis password, put it here instead of null.',
                     "QUEUE_CONNECTION=redis\nCACHE_STORE=redis\nSESSION_DRIVER=redis\nREDIS_HOST=127.0.0.1\nREDIS_PORT=6379\nREDIS_PASSWORD=null"],
                 ['2. Migrate',
                     'Still needed for failed_jobs + app tables.',
@@ -71,10 +98,13 @@ class HostingGuide
                 ['3. Add the scheduler cron (Cloudways → Cron Job Management), every minute',
                     'Same one-minute scheduler cron as shared hosting — it runs the daily/periodic tasks. On Redis it does NOT drain the queue (Horizon does that), so it stays light.',
                     $cron],
-                ['4. Run Horizon as a persistent worker',
-                    'Add a Supervisor/systemd process (Cloudways: Application Settings → Supervisor) that keeps Horizon alive and restarts it on boot. Redeploys should call horizon:terminate so workers reload the new code.',
-                    "$php artisan horizon"],
-                ['5. Verify',
+                ['4. Keep Horizon alive with Supervisor',
+                    'Horizon must run as a persistent process. On Cloudways add this under Application Settings → Supervisor; on a raw VPS save it to /etc/supervisor/conf.d/naarasim-horizon.conf, then: supervisorctl reread && supervisorctl update && supervisorctl start naarasim-horizon. autorestart=true brings it back after a crash or reboot — the difference between "processing" and a healthy Redis with no worker (the VPS-side equivalent of a dead cron).',
+                    $supervisor],
+                ['5. Reload workers on every deploy',
+                    'Long-running workers hold old code in memory until restarted, so a release with new job code silently runs the OLD code until the worker recycles. Add this as the LAST line of your deploy script (Cloudways: Deployment via Git → Deployment hooks) so Supervisor restarts Horizon on fresh code.',
+                    "$php $appPath/artisan horizon:terminate"],
+                ['6. Verify',
                     'The "Workers & background jobs" panel above should show Horizon = Running with a live worker count. If it shows Stopped, the Supervisor process is not up — jobs will queue but never process, and admins get alerted automatically.',
                     null],
             ],

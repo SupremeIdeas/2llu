@@ -18,7 +18,7 @@
             <p class="mt-1 text-sm text-red-700 dark:text-red-300">
                 @if ($anyOverdue)
                     A scheduled task is overdue — the live cron may not be running. Re-add or repair the cPanel cron:
-                    <code class="rounded bg-red-100 px-1 dark:bg-red-900/40">* * * * * php /home/USER/naarasim/artisan schedule:run &gt;&gt; /dev/null 2&gt;&amp;1</code>
+                    <code class="rounded bg-red-100 px-1 dark:bg-red-900/40">{{ $cronLine }}</code>
                 @endif
                 @if ($queueIsSync) The queue is running synchronously in production. @endif
             </p>
@@ -72,7 +72,7 @@
             <p class="mt-1 text-xs text-red-700 dark:text-red-300">{{ $worker['reason'] }} Admins are alerted automatically (email + push) while this persists.</p>
             @if ($workerDriver === 'redis')
                 <p class="mt-1 text-xs text-red-700/90 dark:text-red-300/90">On a VPS, (re)start the worker:
-                    <code class="rounded bg-red-100 px-1 dark:bg-red-900/40">php artisan horizon</code> (or restart the <code class="rounded bg-red-100 px-1 dark:bg-red-900/40">horizon</code> supervisor/systemd service).</p>
+                    <code class="rounded bg-red-100 px-1 dark:bg-red-900/40">{{ $workerCmd }}</code> (or restart the <code class="rounded bg-red-100 px-1 dark:bg-red-900/40">horizon</code> supervisor/systemd service).</p>
             @endif
         </div>
     @endif

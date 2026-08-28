@@ -4,9 +4,13 @@ namespace Tests\Feature;
 
 use App\Livewire\Admin\SystemHealth;
 use App\Models\User;
+use App\Support\HostingGuide;
+use App\Support\QueueHealth;
 use App\Support\SchedulerHealth;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Laravel\Horizon\Contracts\MasterSupervisorRepository;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -74,7 +78,7 @@ class SystemHealthTest extends TestCase
 
     public function test_an_admin_can_flush_the_cache_and_a_user_cannot(): void
     {
-        \Illuminate\Support\Facades\Cache::put('probe', 'x', 60);
+        Cache::put('probe', 'x', 60);
 
         $admin = User::factory()->create();
         $admin->assignRole('admin');
@@ -89,18 +93,48 @@ class SystemHealthTest extends TestCase
     public function test_the_worker_verdict_flags_a_sync_queue_as_degraded(): void
     {
         // The test env runs QUEUE_CONNECTION=sync, so jobs are not backgrounded.
-        $verdict = \App\Support\QueueHealth::workerVerdict();
+        $verdict = QueueHealth::workerVerdict();
         $this->assertFalse($verdict['healthy']);
         $this->assertStringContainsString('inline', strtolower((string) $verdict['reason']));
     }
 
+    public function test_horizon_active_treats_a_paused_master_as_not_processing(): void
+    {
+        // Redis reachable + a master supervisor present is NOT enough: a paused
+        // Horizon queues jobs and drains nothing. The health probe must call that
+        // out, the VPS equivalent of a cron that isn't firing.
+        $repo = \Mockery::mock(MasterSupervisorRepository::class);
+        $repo->shouldReceive('all')->andReturn([(object) ['name' => 'master-1', 'status' => 'paused']]);
+        $this->app->instance(MasterSupervisorRepository::class, $repo);
+
+        $this->assertFalse(QueueHealth::horizonActive());
+    }
+
+    public function test_horizon_active_is_true_for_a_running_master(): void
+    {
+        $repo = \Mockery::mock(MasterSupervisorRepository::class);
+        $repo->shouldReceive('all')->andReturn([(object) ['name' => 'master-1', 'status' => 'running']]);
+        $this->app->instance(MasterSupervisorRepository::class, $repo);
+
+        $this->assertTrue(QueueHealth::horizonActive());
+    }
+
+    public function test_horizon_active_is_false_when_no_master_is_running(): void
+    {
+        $repo = \Mockery::mock(MasterSupervisorRepository::class);
+        $repo->shouldReceive('all')->andReturn([]);
+        $this->app->instance(MasterSupervisorRepository::class, $repo);
+
+        $this->assertFalse(QueueHealth::horizonActive());
+    }
+
     public function test_the_hosting_guide_gives_ordered_steps_for_both_modes(): void
     {
-        $steps = \App\Support\HostingGuide::steps();
+        $steps = HostingGuide::steps();
         $this->assertArrayHasKey('shared', $steps);
         $this->assertArrayHasKey('vps', $steps);
         // The cron line carries the real app path + a schedule:run.
-        $cron = \App\Support\HostingGuide::cronLine();
+        $cron = HostingGuide::cronLine();
         $this->assertStringContainsString('artisan schedule:run', $cron);
         $this->assertStringContainsString(base_path(), $cron);
         // Shared drives the queue from cron; VPS runs Horizon.

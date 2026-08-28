@@ -175,6 +175,22 @@ API keys** (super-admin only), **not** by hand-editing `.env`:
 
 `.env` remains a valid fallback for any key you'd rather set at the file level.
 
+### 5.1 Keeping `.env.example` in sync (contributors)
+
+When you wire a new provider into `config/services.php`, add its key to **one**
+of the two operator-facing surfaces so it isn't a silent gap: a blank slot in
+`.env.example`, or a field in `App\Support\ProviderKeys::schema()` (the Admin →
+API keys UI). Before opening a PR, run:
+
+```
+php artisan env:check-example
+```
+
+It flags any credential read as `env('KEY')` (no default) in `config/services.php`
+that appears on neither surface. The same rule runs in CI as
+`tests/Feature/EnvExampleSyncTest.php`, so a forgotten key fails the build
+instead of shipping as a dead provider.
+
 ---
 
 ## 6. CI/CD (`.github/workflows/deploy.yml`)
