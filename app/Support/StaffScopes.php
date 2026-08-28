@@ -26,6 +26,9 @@ class StaffScopes
         // preference actions, granted separately.
         'nci.view' => 'View the NCI Operations Center (registry, health, routing)',
         'nci.override' => 'Override live routing (manual circuit + provider preference)',
+        // Theme System (Batch 3 §6). Grants the admin Theme Picker so delegated
+        // staff can switch the platform-wide visual skin without full admin.
+        'theme.manage' => 'Switch the platform-wide visual theme',
     ];
 
     /** @return list<string> */

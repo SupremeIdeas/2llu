@@ -46,6 +46,29 @@ class ThemePickerTest extends TestCase
             ->assertSee('Aurora Shift');
     }
 
+    public function test_a_staff_member_with_the_theme_manage_scope_can_open_and_apply(): void
+    {
+        // Delegated staff — no admin role, only the granular theme.manage scope
+        // (Batch 3 §6). The gate must accept the scope on its own.
+        $staff = User::factory()->create();
+        $staff->assignRole('staff');
+        $staff->givePermissionTo('theme.manage');
+
+        Livewire::actingAs($staff)->test(ThemePicker::class)
+            ->assertStatus(200)
+            ->call('apply', 'midnight-signal');
+
+        $this->assertSame('midnight-signal', ThemePreset::slug());
+    }
+
+    public function test_a_staff_member_without_the_scope_gets_a_403(): void
+    {
+        $staff = User::factory()->create();
+        $staff->assignRole('staff');
+
+        Livewire::actingAs($staff)->test(ThemePicker::class)->assertStatus(403);
+    }
+
     public function test_applying_a_preset_writes_the_setting_and_busts_cache(): void
     {
         $admin = User::factory()->create();
