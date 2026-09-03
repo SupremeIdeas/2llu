@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Admin\EsimControlCenter;
 use App\Livewire\Catalogue;
 use App\Models\EsimCountryImage;
+use App\Models\EsimOrder;
 use App\Models\EsimPlan;
 use App\Models\User;
 use App\Support\CountryNames;
@@ -15,13 +16,13 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * "Popular Destinations" photo-card row on the eSIM Popular tab (owner
- * request). One shared layout across every theme. A country appears purely
- * because it has an admin-featured (is_featured) single-country local plan —
- * the same signal the Popular tab's plan list already uses, no new curation
- * surface — and its photo is the pre-existing admin-editable per-country
- * image (EsimCountryImage.detail_image_path, set in Admin → eSIM Control
- * Center) — no new admin uploader either.
+ * "Popular Destinations" photo-card row on the eSIM Trending tab (owner
+ * request). One shared layout across every theme. A destination shows when it
+ * is EITHER actually bought (eSIM orders on the active line) OR admin-featured
+ * (is_featured), ranked by purchase volume first and the featured flag as the
+ * default when there are no sales yet. Its photo is the pre-existing
+ * admin-editable per-country image (EsimCountryImage.detail_image_path, set in
+ * Admin → eSIM Control Center) — no new admin uploader.
  */
 class EsimPopularDestinationsTest extends TestCase
 {
@@ -36,6 +37,19 @@ class EsimPopularDestinationsTest extends TestCase
             'data_mb' => 1024, 'validity_days' => 7,
             'cost_price_usd' => 3, 'computed_retail_usd' => 9,
         ], $overrides));
+    }
+
+    private function order(EsimPlan $plan, string $status = 'active'): EsimOrder
+    {
+        return EsimOrder::create([
+            'user_id' => User::factory()->create()->id,
+            'plan_id' => $plan->id,
+            'provider' => 'esimgo',
+            'status' => $status,
+            'price_charged' => 9,
+            'wholesale_cost' => 3,
+            'currency' => 'USD',
+        ]);
     }
 
     public function test_a_country_with_a_featured_local_plan_shows_as_a_popular_destination(): void
@@ -124,5 +138,59 @@ class EsimPopularDestinationsTest extends TestCase
             ->assertSee('Popular Destinations')
             ->call('setTab', 'full')
             ->assertDontSee('Popular Destinations');
+    }
+
+    // ---- Volume ranking + no-record fallback (owner request) ---------------
+
+    public function test_a_bought_country_shows_even_without_the_featured_flag(): void
+    {
+        // NG has a plan that is NOT featured, but it's been purchased — it must
+        // still appear (owner: "most bought countries by volume").
+        $ng = $this->plan(['countries' => ['NG'], 'is_featured' => false]);
+        $this->order($ng);
+        EsimCatalogue::flush();
+
+        $codes = collect(EsimCatalogue::popularDestinations(false))->pluck('code');
+        $this->assertTrue($codes->contains('NG'), 'A purchased country should appear even when not featured.');
+    }
+
+    public function test_a_failed_or_cancelled_order_does_not_count_as_bought(): void
+    {
+        $ng = $this->plan(['countries' => ['NG'], 'is_featured' => false]);
+        $this->order($ng, 'failed');
+        $this->order($ng, 'cancelled');
+        EsimCatalogue::flush();
+
+        // Not featured + no real purchase → excluded.
+        $codes = collect(EsimCatalogue::popularDestinations(false))->pluck('code');
+        $this->assertFalse($codes->contains('NG'));
+    }
+
+    public function test_more_bought_countries_rank_ahead_of_featured_only_ones(): void
+    {
+        // FR: featured, zero sales. NG: not featured, two sales. JP: not
+        // featured, one sale. Expected order by volume: NG, JP, then FR.
+        $this->plan(['countries' => ['FR'], 'is_featured' => true]);
+        $ng = $this->plan(['countries' => ['NG'], 'is_featured' => false]);
+        $jp = $this->plan(['countries' => ['JP'], 'is_featured' => false]);
+        $this->order($ng);
+        $this->order($ng);
+        $this->order($jp);
+        EsimCatalogue::flush();
+
+        $codes = collect(EsimCatalogue::popularDestinations(false))->pluck('code')->all();
+        $this->assertSame(['NG', 'JP', 'FR'], array_slice($codes, 0, 3));
+    }
+
+    public function test_with_no_sales_it_falls_back_to_featured_countries(): void
+    {
+        // Zero orders anywhere → the row is the curated featured set.
+        $this->plan(['countries' => ['FR'], 'is_featured' => true]);
+        $this->plan(['countries' => ['GB'], 'is_featured' => true]);
+        EsimCatalogue::flush();
+
+        $codes = collect(EsimCatalogue::popularDestinations(false))->pluck('code');
+        $this->assertTrue($codes->contains('FR'));
+        $this->assertTrue($codes->contains('GB'));
     }
 }

@@ -6,6 +6,7 @@ use App\Models\EsimCountryImage;
 use App\Models\EsimPlan;
 use App\Models\EsimRegionImage;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Cache-backed navigation data for the customer eSIM browser (BUILD-8 §3).
@@ -180,60 +181,101 @@ class EsimCatalogue
     }
 
     /**
-     * "Popular Destinations" — a photo-card row of countries that have at least
-     * one admin-featured (is_featured) active local plan. This reuses the exact
-     * "popular" signal the Popular tab's plan list already keys off (BUILD-8) —
-     * no new admin curation surface — and the same admin-editable per-country
-     * image (EsimCountryImage.detail_image_path) every other eSIM surface uses.
-     * Countries rank by featured-plan count (most-covered first), tie-broken by
-     * name. Cheapest featured plan on each country supplies the teaser price +
-     * data/validity line.
+     * "Popular Destinations" — the photo-card row on the eSIM Trending tab.
+     *
+     * A destination shows when it is EITHER actually bought (has eSIM orders on
+     * the active line) OR admin-featured (is_featured) — matching the owner's
+     * rule: "most bought countries by volume, but when there's no record just
+     * show popular countries by default." Ranking is purchase volume first, then
+     * the featured flag, then cheapest price, then name — so real demand leads
+     * and, with zero sales, the curated featured set fills the row.
+     *
+     * Only single-country LOCAL plans define a destination card (a multi-country
+     * regional/global plan is not one destination — the Regions/Global tabs cover
+     * those), and everything reads from already-synced data + the same
+     * admin-editable per-country image (EsimCountryImage.detail_image_path) every
+     * other eSIM surface uses — no new admin curation surface.
      *
      * @return list<array{code:string,name:string,from_usd:?float,data_mb:?int,validity_days:?int,count:int,photo:?string}>
      */
     public static function popularDestinations(bool $hasVoice, int $limit = 12): array
     {
-        $rows = Cache::rememberForever(self::CACHE.'popular:'.($hasVoice ? 'full' : 'data'),
-            fn () => self::buildPopularDestinations($hasVoice));
+        // Teaser (price/data/validity + featured flag) for every country with an
+        // active single-country local plan — cached with the rest of the nav grid
+        // (busted on sync / admin image change).
+        $teasers = Cache::rememberForever(self::CACHE.'popular_teasers:'.($hasVoice ? 'full' : 'data'),
+            fn () => self::buildCountryTeasers($hasVoice));
+
+        if ($teasers === []) {
+            return [];
+        }
+
+        // Live purchase volume per destination (cheap 2-query aggregate, cached
+        // briefly since it changes with every sale — not on the sync-bust path).
+        $volume = self::purchaseVolumeByCountry($hasVoice);
+
+        // Display set = countries that are bought OR featured (never the whole
+        // catalogue — an un-bought, un-featured country stays off the row).
+        $codes = array_values(array_filter(array_keys($teasers),
+            fn ($iso) => ($volume[$iso] ?? 0) > 0 || ! empty($teasers[$iso]['featured'])));
+
+        usort($codes, function ($a, $b) use ($teasers, $volume) {
+            return ($volume[$b] ?? 0) <=> ($volume[$a] ?? 0)                       // most bought first
+                ?: (int) ($teasers[$b]['featured']) <=> (int) ($teasers[$a]['featured']) // then curated-popular
+                ?: ($teasers[$a]['from'] ?? INF) <=> ($teasers[$b]['from'] ?? INF)  // then cheapest
+                ?: strcmp($teasers[$a]['name'], $teasers[$b]['name']);
+        });
 
         $photos = self::countryPhotoMap();
+        $out = [];
+        foreach (array_slice($codes, 0, $limit) as $iso) {
+            $t = $teasers[$iso];
+            $out[] = [
+                'code' => $iso,
+                'name' => $t['name'],
+                'from_usd' => $t['from'],
+                'data_mb' => $t['data_mb'],
+                'validity_days' => $t['validity_days'],
+                'count' => $t['count'],
+                'photo' => $photos[$iso] ?? null,
+            ];
+        }
 
-        return array_slice(array_map(function ($row) use ($photos) {
-            $row['photo'] = $photos[$row['code']] ?? null;
-
-            return $row;
-        }, $rows), 0, $limit);
+        return $out;
     }
 
-    /** @return list<array<string,mixed>> unsliced, undecorated (no photo yet) */
-    private static function buildPopularDestinations(bool $hasVoice): array
+    /**
+     * Per-country teaser for every country reachable by an active single-country
+     * local plan on the line: cheapest price + its data/validity, plan count, and
+     * whether any of its plans is admin-featured.
+     *
+     * @return array<string, array{name:string,from:?float,data_mb:?int,validity_days:?int,count:int,featured:bool}>
+     */
+    private static function buildCountryTeasers(bool $hasVoice): array
     {
-        $byCountry = []; // iso => ['count'=>int,'from'=>float,'data_mb'=>?int,'validity_days'=>?int]
+        $byCountry = [];
 
         EsimPlan::query()
             ->where('is_active', true)
-            ->where('is_featured', true)
             ->where('has_voice', $hasVoice)
             ->where(function ($q) {
                 $q->where('coverage_type', EsimPlan::COVERAGE_LOCAL)->orWhereNull('coverage_type');
             })
-            ->get(['countries', 'final_retail_usd', 'data_mb', 'validity_days'])
+            ->get(['countries', 'final_retail_usd', 'data_mb', 'validity_days', 'is_featured'])
             ->each(function (EsimPlan $p) use (&$byCountry) {
                 $isos = collect((array) $p->countries)
                     ->map(fn ($c) => strtoupper((string) $c))
                     ->filter(fn ($c) => strlen($c) === 2)
                     ->values();
-
-                // A plan reaching more than one country isn't a single-destination
-                // card here — the Regions tab already covers multi-country plans.
                 if ($isos->count() !== 1) {
-                    return;
+                    return; // multi-country → not a single destination card
                 }
                 $iso = $isos->first();
                 $price = (float) $p->final_retail_usd;
 
-                $byCountry[$iso] ??= ['count' => 0, 'from' => null, 'data_mb' => null, 'validity_days' => null];
+                $byCountry[$iso] ??= ['name' => CountryNames::name($iso), 'from' => null, 'data_mb' => null, 'validity_days' => null, 'count' => 0, 'featured' => false];
                 $byCountry[$iso]['count']++;
+                $byCountry[$iso]['featured'] = $byCountry[$iso]['featured'] || (bool) $p->is_featured;
                 if ($byCountry[$iso]['from'] === null || $price < $byCountry[$iso]['from']) {
                     $byCountry[$iso]['from'] = $price;
                     $byCountry[$iso]['data_mb'] = $p->data_mb;
@@ -241,20 +283,57 @@ class EsimCatalogue
                 }
             });
 
-        $rows = [];
-        foreach ($byCountry as $iso => $agg) {
-            $rows[] = [
-                'code' => $iso,
-                'name' => CountryNames::name($iso),
-                'from_usd' => $agg['from'],
-                'data_mb' => $agg['data_mb'],
-                'validity_days' => $agg['validity_days'],
-                'count' => $agg['count'],
-            ];
-        }
-        usort($rows, fn ($a, $b) => $b['count'] <=> $a['count'] ?: strcmp($a['name'], $b['name']));
+        return $byCountry;
+    }
 
-        return $rows;
+    /**
+     * eSIM order volume per single-country destination on the line. Two cheap
+     * queries (plan→country map, then grouped order counts); cached briefly since
+     * it moves with every sale. Failed/cancelled orders are not "bought."
+     *
+     * @return array<string, int> ISO2(upper) => order count
+     */
+    private static function purchaseVolumeByCountry(bool $hasVoice): array
+    {
+        return Cache::remember(self::CACHE.'popular_vol:'.($hasVoice ? 'full' : 'data'), now()->addMinutes(30), function () use ($hasVoice) {
+            $planToIso = [];
+            EsimPlan::query()
+                ->where('has_voice', $hasVoice)
+                ->where(function ($q) {
+                    $q->where('coverage_type', EsimPlan::COVERAGE_LOCAL)->orWhereNull('coverage_type');
+                })
+                ->get(['id', 'countries'])
+                ->each(function (EsimPlan $p) use (&$planToIso) {
+                    $isos = collect((array) $p->countries)
+                        ->map(fn ($c) => strtoupper((string) $c))
+                        ->filter(fn ($c) => strlen($c) === 2)
+                        ->values();
+                    if ($isos->count() === 1) {
+                        $planToIso[$p->id] = $isos->first();
+                    }
+                });
+
+            if ($planToIso === []) {
+                return [];
+            }
+
+            $counts = DB::table('esim_orders')
+                ->whereIn('plan_id', array_keys($planToIso))
+                ->whereNotIn('status', ['failed', 'cancelled'])
+                ->selectRaw('plan_id, count(*) as c')
+                ->groupBy('plan_id')
+                ->pluck('c', 'plan_id');
+
+            $vol = [];
+            foreach ($counts as $planId => $c) {
+                $iso = $planToIso[$planId] ?? null;
+                if ($iso !== null) {
+                    $vol[$iso] = ($vol[$iso] ?? 0) + (int) $c;
+                }
+            }
+
+            return $vol;
+        });
     }
 
     /** @return array<string,?string> ISO2(upper) => detail_image_path url */
@@ -271,8 +350,10 @@ class EsimCatalogue
     {
         Cache::forget(self::CACHE.'data');
         Cache::forget(self::CACHE.'full');
-        Cache::forget(self::CACHE.'popular:data');
-        Cache::forget(self::CACHE.'popular:full');
+        Cache::forget(self::CACHE.'popular_teasers:data');
+        Cache::forget(self::CACHE.'popular_teasers:full');
+        Cache::forget(self::CACHE.'popular_vol:data');
+        Cache::forget(self::CACHE.'popular_vol:full');
         Cache::forget(self::IMG_COUNTRY);
         Cache::forget(self::IMG_COUNTRY.'.photo');
         Cache::forget(self::IMG_REGION);
