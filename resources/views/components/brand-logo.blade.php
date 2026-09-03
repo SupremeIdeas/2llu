@@ -16,25 +16,16 @@
     // fallback; the platform brand name is the default.
     $name = $label ?: \App\Support\BrandSettings::name();
 
-    // Named sizes → height + max-width. The NaaraSim (product) mark is a WIDE
-    // wordmark (~4:1), while the Naara (family) and Naara Gift marks are nearly
-    // square (~1.4:1) — so at the same height the square marks read much smaller.
-    // We give family/gift a taller height per size so every mark reads with the
-    // same visual weight as NaaraSim (owner request).
+    // Named sizes → height + max-width. All four official marks (NaaraSim,
+    // Naara, Naara Gift, Supreme Ideas Agency) are WIDE wordmarks (~3.4–4.8:1),
+    // so one height-based map reads consistently across every variant.
     $wide = [
-        'sm' => 'h-7 max-w-[140px]',
-        'md' => 'h-8 max-w-[160px]',
-        'lg' => 'h-9 max-w-[180px]',
+        'sm' => 'h-7 max-w-[150px]',
+        'md' => 'h-8 max-w-[170px]',
+        'lg' => 'h-9 max-w-[190px]',
         'xl' => 'h-20 md:h-28',
     ];
-    $tall = [
-        'sm' => 'h-10 max-w-[120px]',
-        'md' => 'h-11 max-w-[140px]',
-        'lg' => 'h-12 max-w-[150px]',
-        'xl' => 'h-28 md:h-36',
-    ];
-    $map = in_array($variant, ['family', 'gift'], true) ? $tall : $wide;
-    $sizeClass = 'w-auto object-contain '.($map[$size] ?? $map['md']);
+    $sizeClass = 'w-auto object-contain '.($wide[$size] ?? $wide['md']);
 
     // Admin-tunable per-logo scale (Admin → Branding). 1.0 = shipped size; the
     // transform grows/shrinks the mark to the operator's taste without changing

@@ -78,11 +78,17 @@ class Branding extends Component
 
     public $hero_dark = null;
 
-    // Dashboard-home description line under "My Connectivity" (BUILD-13 §3).
+    // Dashboard-home description line under the hero title (BUILD-13 §3).
     public string $hero_description = '';
 
     // Admin on/off switch for the dashboard hero image (owner request).
     public bool $hero_enabled = true;
+
+    // Dashboard hero headline — overridable + resizable (owner request). Blank
+    // title falls back to the shipped "My Connectivity".
+    public string $hero_title = '';
+
+    public string $hero_title_size = HeroBackground::DEFAULT_TITLE_SIZE;
 
     public ?string $saved = null;
 
@@ -114,6 +120,8 @@ class Branding extends Component
         $this->preloader_style = BrandSettings::preloaderStyle();
         $this->hero_description = HeroBackground::description();
         $this->hero_enabled = HeroBackground::enabled();
+        $this->hero_title = HeroBackground::title();
+        $this->hero_title_size = HeroBackground::titleSize();
         $this->logo_scale_family = BrandSettings::logoScale('family');
         $this->logo_scale_product = BrandSettings::logoScale('product');
         $this->logo_scale_gift = BrandSettings::logoScale('gift');
@@ -210,6 +218,8 @@ class Branding extends Component
             'hero_light' => 'nullable|mimes:webp,jpg,jpeg|max:600',
             'hero_dark' => 'nullable|mimes:webp,jpg,jpeg|max:600',
             'hero_description' => 'nullable|string|max:120',
+            'hero_title' => 'nullable|string|max:40',
+            'hero_title_size' => 'required|in:'.implode(',', array_keys(HeroBackground::TITLE_SIZES)),
             'logo_scale_family' => 'numeric|min:0.5|max:2',
             'logo_scale_product' => 'numeric|min:0.5|max:2',
             'logo_scale_gift' => 'numeric|min:0.5|max:2',
@@ -219,6 +229,7 @@ class Branding extends Component
             'hero_light.max' => 'Keep the hero image under 600 KB for fast loading.',
             'hero_dark.max' => 'Keep the hero image under 600 KB for fast loading.',
             'hero_description.max' => 'Keep the dashboard description to one short line (120 characters).',
+            'hero_title.max' => 'Keep the hero title short (40 characters) so it still fits the layout.',
         ]);
 
         Setting::setValue('brand.name', trim($this->brand_name), 'brand');
@@ -238,6 +249,12 @@ class Branding extends Component
         // On/off switch for the dashboard hero image (owner request).
         Setting::setValue(HeroBackground::ENABLED_KEY, $this->hero_enabled, 'brand');
 
+        // Hero headline override + size (owner request). Blank clears back to
+        // the shipped "My Connectivity" (HeroBackground::title() never returns
+        // empty).
+        Setting::setValue(HeroBackground::TITLE_KEY, trim($this->hero_title), 'brand');
+        Setting::setValue(HeroBackground::TITLE_SIZE_KEY, $this->hero_title_size, 'brand');
+
         // Per-logo display scale (admin taste) — clamped 0.5–2.0.
         Setting::setValue('brand.logo_scale_family', max(0.5, min(2.0, (float) $this->logo_scale_family)), 'brand');
         Setting::setValue('brand.logo_scale_product', max(0.5, min(2.0, (float) $this->logo_scale_product)), 'brand');
@@ -246,6 +263,7 @@ class Branding extends Component
         BrandSettings::flush();
         HeroBackground::flush();
         $this->hero_description = HeroBackground::description(); // reflect resolved default if blank
+        $this->hero_title = HeroBackground::title(); // reflect resolved default if blank
         Auditor::log('brand.updated');
         $this->saved = 'Branding saved. Your logo and name now show across the platform.';
         $this->dispatch('nx-toast', type: 'success', message: 'Branding saved — live everywhere.');

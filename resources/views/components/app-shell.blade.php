@@ -270,18 +270,23 @@
                 @endif
             @endif
 
-            {{-- Grid (4-col cards) or list (stacked rows), per the §6.7 toggle. --}}
+            {{-- Grid (4-col cards) or list (stacked rows), per the §6.7 toggle.
+                 Dark mode: glass (translucent + blurred), same formula as
+                 .nx-glass-tile, in BOTH layouts — light mode stays the flat
+                 solid card it always was (owner request: glass on dark only). --}}
             <div :class="moreLayout === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-4 gap-3'">
                 @foreach ($more as $item)
                     @continue(! empty($item['heading'])) {{-- headings are desktop-sidebar only --}}
                     <a href="{{ route($item['route']) }}" wire:navigate @click="moreOpen = false"
                        :class="moreLayout === 'list' ? 'flex-row items-center gap-3 p-3 text-left' : 'flex-col items-center gap-1.5 p-3 text-center'"
                        @class([
-                           'flex rounded-2xl border transition',
+                           'flex rounded-2xl border transition dark:backdrop-blur-md dark:backdrop-saturate-150',
                            'border-primary/30 bg-primary/10 dark:border-primary/40 dark:bg-primary/20' => $isActive($item['route']),
-                           'border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10' => ! $isActive($item['route']),
+                           'border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-white/10 dark:bg-[#1A2840]/60 dark:hover:bg-[#1A2840]/75' => ! $isActive($item['route']),
                        ])>
-                        <x-icon :name="$item['icon']" class="h-6 w-6 shrink-0 text-primary" />
+                        {{-- Icon stays the brand teal in light mode; dark mode
+                             renders it plain white for contrast against the glass. --}}
+                        <x-icon :name="$item['icon']" class="h-6 w-6 shrink-0 text-primary dark:text-white" />
                         <span class="font-medium leading-tight text-slate-600 dark:text-slate-300"
                               :class="moreLayout === 'list' ? 'text-sm' : 'text-[11px]'">{{ $item['label'] }}</span>
                     </a>
