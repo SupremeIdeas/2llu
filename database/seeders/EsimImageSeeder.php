@@ -24,7 +24,9 @@ class EsimImageSeeder extends Seeder
     {
         $base = public_path('images/esim');
 
-        // Country cutouts → grid icon (detail banner left to the clean fallback).
+        // Country cutouts → grid icon AND detail image (rendered as a compact
+        // side thumbnail on the country page/plan detail, never a full-bleed
+        // cover — see catalogue.blade.php).
         foreach (glob($base.'/countries/*.webp') ?: [] as $file) {
             $iso = strtoupper(Str::of(basename($file, '.webp'))->upper());
             if (strlen($iso) !== 2) {
@@ -37,6 +39,7 @@ class EsimImageSeeder extends Seeder
                 continue; // admin-customised — leave it alone
             }
             $row->icon_path = $url;
+            $row->detail_image_path = $url;
             $row->save();
         }
 

@@ -17,31 +17,24 @@
         </button>
 
         <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
-            @if ($banner)
-                <div class="relative h-44 w-full overflow-hidden sm:h-56">
-                    <img src="{{ $banner }}" alt="{{ $plan->name }}" class="h-full w-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                    <div class="absolute inset-0 bg-gradient-to-r from-black/55 via-black/5 to-transparent"></div>
-                    <div class="absolute bottom-4 left-5 right-5">
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-slate-900">
-                            <x-icon name="globe" class="h-3.5 w-3.5 text-primary" /> {{ $plan->type ?? 'Data' }}
+            <div class="p-6">
+                {{-- The plan's coverage art sits beside the title as a compact
+                     thumbnail — never a full-bleed cover over the page. --}}
+                <div class="flex items-start gap-4">
+                    <span class="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 sm:h-24 sm:w-24 dark:from-primary/20 dark:to-transparent">
+                        @if ($banner)
+                            <img src="{{ $banner }}" alt="{{ $plan->name }}" class="h-full w-full object-cover">
+                        @else
+                            <x-icon name="globe" class="h-9 w-9 text-primary/60" gradient />
+                        @endif
+                    </span>
+                    <div class="min-w-0 pt-1">
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary-dark dark:bg-primary/20 dark:text-primary">
+                            <x-icon name="globe" class="h-3.5 w-3.5" /> {{ $plan->type ?? 'Data' }}
                         </span>
-                        <h2 class="mt-2 text-2xl font-bold text-white drop-shadow">{{ $plan->name }}</h2>
+                        <h2 class="mt-2 text-xl font-bold text-slate-900 dark:text-slate-100">{{ $plan->name }}</h2>
                     </div>
                 </div>
-            @else
-                <div class="flex h-32 w-full items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5 sm:h-40 dark:from-primary/20 dark:to-transparent">
-                    <x-icon name="globe" class="h-14 w-14 text-primary/60" gradient />
-                </div>
-            @endif
-
-            <div class="p-6">
-                @unless ($banner)
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary-dark dark:bg-primary/20 dark:text-primary">
-                        <x-icon name="globe" class="h-3.5 w-3.5" /> {{ $plan->type ?? 'Data' }}
-                    </span>
-                    <h2 class="mt-2 text-xl font-bold text-slate-900 dark:text-slate-100">{{ $plan->name }}</h2>
-                @endunless
 
                 {{-- Key facts as a clean spec grid (honest, synced data only). --}}
                 <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -85,42 +78,54 @@
             <x-icon name="chevron-right" class="h-4 w-4 rotate-180" /> Back
         </button>
 
-        {{-- Immersive header: admin photo (if set) with the flag + name overlaid,
-             else a clean flag/icon card. --}}
-        <div class="mb-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
-            @if ($banner)
-                <div class="relative h-36 w-full overflow-hidden sm:h-44">
-                    <img src="{{ $banner }}" alt="{{ $selName }}" class="h-full w-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
-                    <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/10 to-transparent"></div>
-                    <div class="absolute bottom-4 left-5 flex items-center gap-2.5 text-white">
-                        @if ($screen === 'country')<x-country-flag :country="$selCode" class="h-7 w-10 rounded shadow" />@endif
-                        <div>
+        @if ($screen === 'region')
+            {{-- Region header: the admin map photo reads well large, so it
+                 stays a wide banner with the name overlaid. --}}
+            <div class="mb-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+                @if ($banner)
+                    <div class="relative h-36 w-full overflow-hidden sm:h-44">
+                        <img src="{{ $banner }}" alt="{{ $selName }}" class="h-full w-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
+                        <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/10 to-transparent"></div>
+                        <div class="absolute bottom-4 left-5 text-white">
                             <h1 class="text-xl font-bold drop-shadow">{{ $selName }}</h1>
-                            <p class="text-xs text-white/85">{{ $screen === 'country' ? ($tab === 'full' ? 'Calls + data plans' : 'Data plans') : 'Regional plans' }}</p>
+                            <p class="text-xs text-white/85">Regional plans</p>
                         </div>
                     </div>
-                </div>
-            @else
-                <div class="flex items-center gap-3 p-4">
-                    <span class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 dark:bg-[#152238]">
-                        @if ($screen === 'country')
-                            <x-country-flag :country="$selCode" class="h-8 w-11 rounded shadow-sm" />
-                        @else
+                @else
+                    <div class="flex items-center gap-3 p-4">
+                        <span class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 dark:bg-[#152238]">
                             <x-icon name="globe" class="h-7 w-7 text-primary" gradient />
-                        @endif
-                    </span>
-                    <div>
-                        <h1 class="text-xl font-bold text-slate-900 dark:text-slate-100">{{ $selName }}</h1>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">
-                            {{ $screen === 'country'
-                                ? ($tab === 'full' ? 'Calls + data plans, valid in this country' : 'Data plans, valid in this country')
-                                : 'Multi-country plans in this region' }}
-                        </p>
+                        </span>
+                        <div>
+                            <h1 class="text-xl font-bold text-slate-900 dark:text-slate-100">{{ $selName }}</h1>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Multi-country plans in this region</p>
+                        </div>
                     </div>
+                @endif
+            </div>
+        @else
+            {{-- Country header: the country's cutout art sits beside the name
+                 as a compact thumbnail — it never covers the page as a banner. --}}
+            <div class="mb-5 flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+                <span class="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 sm:h-24 sm:w-24 dark:bg-[#152238]">
+                    @if ($banner)
+                        <img src="{{ $banner }}" alt="{{ $selName }}" class="h-full w-full object-cover">
+                    @else
+                        <x-country-flag :country="$selCode" class="h-9 w-12 rounded shadow-sm" />
+                    @endif
+                </span>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <x-country-flag :country="$selCode" class="h-4 w-6 shrink-0 rounded shadow-sm" />
+                        <h1 class="truncate text-xl font-bold text-slate-900 dark:text-slate-100">{{ $selName }}</h1>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        {{ $tab === 'full' ? 'Calls + data plans, valid in this country' : 'Data plans, valid in this country' }}
+                    </p>
                 </div>
-            @endif
-        </div>
+            </div>
+        @endif
 
         <div class="mb-2 flex items-baseline justify-between">
             <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Choose a package</p>
