@@ -1,0 +1,166 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Exceptions\InsufficientBalanceException;
+use App\Exceptions\OrphanChargeRefundedException;
+use App\Jobs\AlertAdminJob;
+use App\Models\User;
+use App\Models\WalletTransaction;
+use App\Services\Wallet\WalletService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use RuntimeException;
+use Tests\TestCase;
+
+class WalletServiceTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private WalletService $wallet;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->wallet = app(WalletService::class);
+    }
+
+    private function user(): User
+    {
+        return User::factory()->create();
+    }
+
+    public function test_credit_increases_balance_and_records_before_and_after(): void
+    {
+        $user = $this->user();
+
+        $txn = $this->wallet->credit($user, 5000, 'NGN', ['description' => 'Top-up']);
+
+        $this->assertSame('credit', $txn->type);
+        $this->assertSame('0.0000', (string) $txn->balance_before);
+        $this->assertSame('5000.0000', (string) $txn->balance_after);
+        $this->assertSame('5000.00', (string) $user->wallet->ngn_balance);
+        $this->assertSame('5000.00', (string) $user->wallet->total_deposits);
+    }
+
+    public function test_debit_reduces_balance_updates_total_spent_and_logs_transaction(): void
+    {
+        $user = $this->user();
+        $this->wallet->credit($user, 100, 'USD');
+
+        $txn = $this->wallet->debit($user, 30, 'USD', ['description' => 'eSIM purchase']);
+
+        $this->assertSame('debit', $txn->type);
+        $this->assertSame('100.0000', (string) $txn->balance_before);
+        $this->assertSame('70.0000', (string) $txn->balance_after);
+        $this->assertSame('70.0000', (string) $user->wallet->fresh()->usd_balance);
+        $this->assertSame('30.00', (string) $user->wallet->fresh()->total_spent);
+    }
+
+    public function test_refund_credits_back_without_growing_total_deposits(): void
+    {
+        $user = $this->user();
+        $this->wallet->credit($user, 100, 'NGN');
+        $this->wallet->debit($user, 40, 'NGN');
+
+        $this->wallet->refund($user, 40, 'NGN', ['description' => 'Order failed']);
+
+        $w = $user->wallet->fresh();
+        $this->assertSame('100.00', (string) $w->ngn_balance);      // back to full
+        $this->assertSame('100.00', (string) $w->total_deposits);   // unchanged by refund
+    }
+
+    public function test_debit_beyond_balance_throws_and_leaves_wallet_untouched(): void
+    {
+        $user = $this->user();
+        $this->wallet->credit($user, 25, 'NGN');
+
+        try {
+            $this->wallet->debit($user, 26, 'NGN');
+            $this->fail('Expected InsufficientBalanceException');
+        } catch (InsufficientBalanceException $e) {
+            // expected
+        }
+
+        $this->assertSame('25.00', (string) $user->wallet->fresh()->ngn_balance);
+        // Only the initial credit exists; the failed debit wrote nothing.
+        $this->assertSame(1, WalletTransaction::where('user_id', $user->id)->count());
+    }
+
+    public function test_idempotent_reference_never_moves_money_twice(): void
+    {
+        $user = $this->user();
+        $this->wallet->credit($user, 100, 'NGN');
+
+        $first = $this->wallet->debit($user, 10, 'NGN', ['reference' => 'order-777']);
+        $second = $this->wallet->debit($user, 10, 'NGN', ['reference' => 'order-777']);
+
+        $this->assertTrue($first->is($second));
+        $this->assertSame('90.00', (string) $user->wallet->fresh()->ngn_balance);
+        $this->assertSame(1, WalletTransaction::where('reference', 'order-777')->count());
+    }
+
+    public function test_charge_delivers_and_keeps_the_debit_on_success(): void
+    {
+        $user = $this->user();
+        $this->wallet->credit($user, 100, 'NGN');
+
+        $result = $this->wallet->charge($user, 40, 'NGN', fn ($debit) => 'ICCID-123');
+
+        $this->assertSame('ICCID-123', $result);
+        $this->assertSame('60.00', (string) $user->wallet->fresh()->ngn_balance);
+    }
+
+    public function test_orphan_charge_guard_auto_refunds_when_delivery_fails(): void
+    {
+        Queue::fake();
+        $user = $this->user();
+        $this->wallet->credit($user, 100, 'NGN');
+
+        try {
+            $this->wallet->charge($user, 40, 'NGN', function () {
+                throw new RuntimeException('provider save failed');
+            });
+            $this->fail('Expected OrphanChargeRefundedException');
+        } catch (OrphanChargeRefundedException $e) {
+            $this->assertInstanceOf(RuntimeException::class, $e->getPrevious());
+        }
+
+        // Debited then auto-refunded -> net zero, balance whole again.
+        $this->assertSame('100.00', (string) $user->wallet->fresh()->ngn_balance);
+        $this->assertSame(1, WalletTransaction::where('user_id', $user->id)->where('type', 'debit')->count());
+        $this->assertSame(1, WalletTransaction::where('user_id', $user->id)->where('type', 'refund')->count());
+
+        Queue::assertPushed(AlertAdminJob::class);
+    }
+
+    public function test_no_double_spend_under_repeated_contention(): void
+    {
+        // Fund exactly 10 debits' worth, then hammer 15 debits at it.
+        $user = $this->user();
+        $this->wallet->credit($user, 100, 'NGN');
+
+        $ok = 0;
+        $rejected = 0;
+        for ($i = 0; $i < 15; $i++) {
+            try {
+                $this->wallet->debit($user, 10, 'NGN', ['reference' => "spend-$i"]);
+                $ok++;
+            } catch (InsufficientBalanceException $e) {
+                $rejected++;
+            }
+        }
+
+        $this->assertSame(10, $ok, 'exactly the affordable number of debits should succeed');
+        $this->assertSame(5, $rejected);
+        $this->assertSame('0.00', (string) $user->wallet->fresh()->ngn_balance);
+        $this->assertGreaterThanOrEqual(0, (float) $user->wallet->fresh()->ngn_balance);
+        $this->assertSame(10, WalletTransaction::where('user_id', $user->id)->where('type', 'debit')->count());
+    }
+
+    public function test_unsupported_currency_is_rejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->wallet->credit($this->user(), 10, 'EUR');
+    }
+}
