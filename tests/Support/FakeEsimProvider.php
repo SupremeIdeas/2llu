@@ -17,8 +17,8 @@ class FakeEsimProvider implements EsimProviderInterface
     public function __construct(
         private bool $shouldThrow = false,
         private array $orderResponse = ['status' => 'ok'],
-    ) {
-    }
+        private array $usageResponse = [],
+    ) {}
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
     {
@@ -42,7 +42,11 @@ class FakeEsimProvider implements EsimProviderInterface
 
     public function getUsage(string $iccid, string $bundleName): array
     {
-        return [];
+        if ($this->shouldThrow) {
+            throw new RuntimeException("usage lookup failed for {$iccid}");
+        }
+
+        return $this->usageResponse;
     }
 
     public function revoke(string $iccid, string $bundleName): array

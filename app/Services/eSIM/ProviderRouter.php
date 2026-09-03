@@ -114,7 +114,7 @@ class ProviderRouter
         if ($liveAttempts === 0 && $openSkips > 0) {
             $lastResort = $this->breaker->lastResortAmong($this->chainFor($plan));
             if ($lastResort !== null) {
-                \App\Jobs\AlertAdminJob::dispatch(
+                AlertAdminJob::dispatch(
                     code: 'total-outage-esim',
                     message: "Total outage: all eSIM providers unavailable — attempting {$lastResort} as a last resort for plan {$plan->id}.",
                     context: ['plan' => $plan->id, 'last_resort' => $lastResort],
@@ -177,7 +177,7 @@ class ProviderRouter
 
             $this->breaker->record($provider, 'esim', 'success', null, 'PLAN-'.$plan->id);
 
-            return EsimOrderResult::success($provider, $result, $cost, $charged);
+            return EsimOrderResult::success($provider, $result, $cost, $charged, $pp->provider_plan_id);
         } catch (Throwable $e) {
             $this->breaker->record($provider, 'esim', 'failure', $this->errorCode($e), 'PLAN-'.$plan->id);
             $errors[$provider] = $e->getMessage();

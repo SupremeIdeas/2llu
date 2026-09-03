@@ -15,9 +15,13 @@ class EsimOrderResult
         public readonly float $cost,
         public readonly float $charged,
         public readonly float $profit,
+        /** The provider's own SKU for the plan actually fulfilled — the same
+         *  value passed to orderBundle(). Needed later for getUsage($iccid,
+         *  $bundleName) on providers whose endpoint requires it (eSIM Go). */
+        public readonly ?string $providerPlanId = null,
     ) {}
 
-    public static function success(string $provider, array $payload, float $cost, float $charged): self
+    public static function success(string $provider, array $payload, float $cost, float $charged, ?string $providerPlanId = null): self
     {
         return new self(
             provider: $provider,
@@ -25,6 +29,7 @@ class EsimOrderResult
             cost: $cost,
             charged: $charged,
             profit: round($charged - $cost, 4),
+            providerPlanId: $providerPlanId,
         );
     }
 

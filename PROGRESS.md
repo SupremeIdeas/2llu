@@ -9,6 +9,38 @@
 
 ## DONE
 
+### 📦 CONNECTIVITY ANALYTICS — Part A foundation (usage snapshots + service) — 2026-09-03
+Branch `claude/connectivity-analytics` (off `main`, separate from the eSIM
+section PR — the Analytics/USD Wallet blueprint is two independent, higher-risk
+workstreams and ships on its own branches). First slice only: the data
+pipeline + read-only aggregation layer, no UI yet.
+- `esim_usage_snapshots` table (time-series enabler for every usage graph) +
+  `EsimUsageSnapshot` model.
+- `CaptureEsimUsageSnapshotJob` — resolves the order's OWN provider adapter
+  (never ProviderRouter, which is for picking a provider on a NEW purchase)
+  and writes one snapshot. Two providers (EsimAccess, Ubigi) already
+  self-normalize to `remaining_mb`/`used_mb`; every other adapter returns raw,
+  provider-specific JSON with undocumented field names — the job trusts the
+  two normalized keys fully and falls back to a clearly-flagged best-effort
+  alias list for the rest (never invents a number; leaves it null instead).
+  **Flag to whoever verifies this: confirm each remaining provider's live
+  getUsage() field names against a sandbox response before trusting graphs
+  built on eSIM Go/Airalo/Zendit/1GLOBAL/Monty Mobile/Gigs/Quibity data.**
+- `esim:sync-usage` (scheduled every `config('esim.usage_sync_interval_minutes')`
+  minutes, default 15, chunked+delayed dispatch) and `esim:prune-usage-snapshots`
+  (weekly, `config('esim.usage_snapshot_retention_days')`, default 90).
+- Added `esim_orders.bundle_name` — the ACTUAL provider SKU fulfilled (threaded
+  through `EsimOrderResult`/`ProviderRouter`/all 3 order-creation call sites),
+  since `EsimOrder.plan_id` can diverge from what was really ordered on a
+  ProviderRouter failover and `getUsage()` needs the real one.
+- `ConnectivityAnalyticsService`: `usageTimeline()`, `usageBurnRate()` (linear
+  regression, "days of data left at current pace"), `walletSpendBreakdown()`
+  (grouped by public ProviderModels key, reading `esim_orders`/`sms_orders`
+  directly rather than wallet_transactions reference-string matching — safer,
+  can't drift), `topUpHistory()`, `purchaseCadence()`, `planMixBreakdown()`.
+  Never touches `wholesale_cost`/`provider` (repo-wide masking invariant).
+- `ConnectivityAnalyticsTest` — 11 tests, full suite green (1331 on `main`).
+
 ### 📦 BUILD-12 — homepage "Who Naara Is For" audience tabs — 2026-08-04
 Real admin-orderable homepage section (SiteContent, defaulted after `products`).
 Six tabs auto-advance 12s with a brand-gradient progress bar; manual override +
@@ -1208,6 +1240,32 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 ---
 
 ## NEXT  (build strictly top to bottom)
+
+### ▶ NEXT STEP — Connectivity Analytics Part A, continued (branch `claude/connectivity-analytics`)
+The data pipeline + service (usage snapshots, burn rate, spend/plan-mix
+aggregation) is done and tested — see DONE above. Not built yet:
+1. **Chart.js + one real chart on My Line** (blueprint build-order step 3):
+   npm install, an Alpine wrapper component, wire `ConnectivityAnalyticsService::
+   usageTimeline()`/`usageBurnRate()` into a per-active-eSIM card in
+   `partials/my-connectivity.blade.php` (shared with Dashboard — don't fork),
+   plus a rate-limited "Refresh usage" manual action (`Cache::lock`, ~60s).
+2. Home summary card (aggregate data used this week, 7-day sparkline, wallet
+   deposits-vs-spend sparkline) — reuses `ConnectivityHub`'s existing counts,
+   "see more →" into My Line's deep view.
+3. My Line "My Analytics" panel: plan-mix donut, purchase-cadence bar,
+   top-up-vs-spend chart, all from the already-built service methods.
+4. Admin side (separate, larger item — blueprint §7): refactor `Admin\Dashboard`
+   onto a new `PlatformAnalyticsService` (fixes the gift-card-revenue gap +
+   adds caching), then a dedicated `Admin\Analytics` page for wallet/FX,
+   merchant, operational-health, and provider-reliability views.
+5. **Part B (Unified USD Wallet)** is a SEPARATE, higher-risk workstream —
+   ships on its own new branch once Part A above is reviewed, sequenced with
+   its own migration + `--dry-run` backfill + verification step (never a
+   big-bang cutover). See the blueprint's §3 for the exact design (ngn_balance
+   becomes read-only/historical; every credit path converts to USD first via a
+   new `WalletService::creditTopUp()`; `GatewayCurrencyMatrix` ships alongside
+   it so the Wallet page never offers a gateway/currency pair that provider
+   doesn't actually accept).
 
 ### ▶ THEME SYSTEM — 15 switchable admin-selectable skins (3-batch program)
 Skin-only, zero business-logic change. `naara-official` frozen as the permanent
