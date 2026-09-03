@@ -179,6 +179,7 @@
         {{-- --------------------------------- GRID -------------------------------- --}}
         @else
             @if ($view === 'popular')
+                @include('livewire.catalogue._popular-destinations', ['popularDestinations' => $popularDestinations, 'fmt' => $fmt])
                 @include('livewire.catalogue._plan-list', ['plans' => $plans, 'fmt' => $fmt])
 
             @elseif ($view === 'local')

@@ -179,12 +179,102 @@ class EsimCatalogue
         return EsimRegionImage::where('region_slug', $slug)->value('detail_image_path');
     }
 
+    /**
+     * "Popular Destinations" — a photo-card row of countries that have at least
+     * one admin-featured (is_featured) active local plan. This reuses the exact
+     * "popular" signal the Popular tab's plan list already keys off (BUILD-8) —
+     * no new admin curation surface — and the same admin-editable per-country
+     * image (EsimCountryImage.detail_image_path) every other eSIM surface uses.
+     * Countries rank by featured-plan count (most-covered first), tie-broken by
+     * name. Cheapest featured plan on each country supplies the teaser price +
+     * data/validity line.
+     *
+     * @return list<array{code:string,name:string,from_usd:?float,data_mb:?int,validity_days:?int,count:int,photo:?string}>
+     */
+    public static function popularDestinations(bool $hasVoice, int $limit = 12): array
+    {
+        $rows = Cache::rememberForever(self::CACHE.'popular:'.($hasVoice ? 'full' : 'data'),
+            fn () => self::buildPopularDestinations($hasVoice));
+
+        $photos = self::countryPhotoMap();
+
+        return array_slice(array_map(function ($row) use ($photos) {
+            $row['photo'] = $photos[$row['code']] ?? null;
+
+            return $row;
+        }, $rows), 0, $limit);
+    }
+
+    /** @return list<array<string,mixed>> unsliced, undecorated (no photo yet) */
+    private static function buildPopularDestinations(bool $hasVoice): array
+    {
+        $byCountry = []; // iso => ['count'=>int,'from'=>float,'data_mb'=>?int,'validity_days'=>?int]
+
+        EsimPlan::query()
+            ->where('is_active', true)
+            ->where('is_featured', true)
+            ->where('has_voice', $hasVoice)
+            ->where(function ($q) {
+                $q->where('coverage_type', EsimPlan::COVERAGE_LOCAL)->orWhereNull('coverage_type');
+            })
+            ->get(['countries', 'final_retail_usd', 'data_mb', 'validity_days'])
+            ->each(function (EsimPlan $p) use (&$byCountry) {
+                $isos = collect((array) $p->countries)
+                    ->map(fn ($c) => strtoupper((string) $c))
+                    ->filter(fn ($c) => strlen($c) === 2)
+                    ->values();
+
+                // A plan reaching more than one country isn't a single-destination
+                // card here — the Regions tab already covers multi-country plans.
+                if ($isos->count() !== 1) {
+                    return;
+                }
+                $iso = $isos->first();
+                $price = (float) $p->final_retail_usd;
+
+                $byCountry[$iso] ??= ['count' => 0, 'from' => null, 'data_mb' => null, 'validity_days' => null];
+                $byCountry[$iso]['count']++;
+                if ($byCountry[$iso]['from'] === null || $price < $byCountry[$iso]['from']) {
+                    $byCountry[$iso]['from'] = $price;
+                    $byCountry[$iso]['data_mb'] = $p->data_mb;
+                    $byCountry[$iso]['validity_days'] = $p->validity_days;
+                }
+            });
+
+        $rows = [];
+        foreach ($byCountry as $iso => $agg) {
+            $rows[] = [
+                'code' => $iso,
+                'name' => CountryNames::name($iso),
+                'from_usd' => $agg['from'],
+                'data_mb' => $agg['data_mb'],
+                'validity_days' => $agg['validity_days'],
+                'count' => $agg['count'],
+            ];
+        }
+        usort($rows, fn ($a, $b) => $b['count'] <=> $a['count'] ?: strcmp($a['name'], $b['name']));
+
+        return $rows;
+    }
+
+    /** @return array<string,?string> ISO2(upper) => detail_image_path url */
+    private static function countryPhotoMap(): array
+    {
+        return Cache::rememberForever(self::IMG_COUNTRY.'.photo', fn () => EsimCountryImage::query()
+            ->pluck('detail_image_path', 'country_code')
+            ->mapWithKeys(fn ($v, $k) => [strtoupper((string) $k) => $v])
+            ->all());
+    }
+
     /** Bust every navigation cache (call after a sync or an admin image change). */
     public static function flush(): void
     {
         Cache::forget(self::CACHE.'data');
         Cache::forget(self::CACHE.'full');
+        Cache::forget(self::CACHE.'popular:data');
+        Cache::forget(self::CACHE.'popular:full');
         Cache::forget(self::IMG_COUNTRY);
+        Cache::forget(self::IMG_COUNTRY.'.photo');
         Cache::forget(self::IMG_REGION);
     }
 }
