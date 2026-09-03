@@ -45,3 +45,7 @@ Homestead.yaml
 
 # Installer lock (environment state)
 /storage/installed
+
+# Graphify — generated knowledge-graph output (rebuilt per-machine via
+# `graphify update .`; large + volatile, never committed). Also in .claudeignore.
+/graphify-out/

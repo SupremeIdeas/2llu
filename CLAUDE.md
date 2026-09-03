@@ -85,3 +85,32 @@ Brand: Deep Teal `#0A6E6E`, Warm Gold `#D4A017`, Midnight Navy `#0D1B2A`.
 - **S30 Security matrix:** every OWASP mistake + attack class mapped to a defense.
 - **S31 UI kit:** star rating, ONE modal engine, theme toggle, server-anchored countdown, search+debounce — themed + accessible.
 - **S32 Niche edge:** manual LPA install fallback, device-compat check BEFORE purchase, clear refund policy, live chat + WhatsApp, NaaraCredits loyalty, data estimator, i18n + multi-currency.
+
+---
+
+## Graphify Rules
+
+Graphify maps this codebase into a queryable knowledge graph under `graphify-out/`
+(regenerated per-machine with `graphify update .` — no API cost, no LLM). Use it as
+the primary architectural navigation layer for this large, highly-interconnected
+platform.
+
+- Before broad multi-file exploration or cascading searches, use Graphify when
+  architectural relationships would materially speed up the investigation.
+- Consult `graphify-out/GRAPH_REPORT.md` for system entry points, architectural
+  boundaries, dependency relationships, and the most-connected files ("God Nodes").
+- Use `graphify query "..."`, `graphify explain "X"`, and `graphify path "A" "B"`
+  when the graph answers an architectural relationship question faster than a broad
+  repository search.
+- Use Graphify to decide **where** to start, then read the actual source directly.
+  It is never a substitute for reading implementation code, tests, config, DB
+  schemas, API definitions, or docs.
+- Do not blindly modify a highly-connected file. Before changing one, inspect its
+  callers, dependencies, side effects, tests, and downstream impact — this is
+  doubly true for the money-path hubs (`WalletService`, `PricingEngine`) and the
+  `User`/`Setting` god nodes.
+- Prefer the smallest relevant search scope when the target file/function/class is
+  already known. Don't query the graph for simple, localized tasks.
+- When the graph is stale (code changed since it was built — compare
+  `git rev-parse HEAD` to the report's build commit), run `graphify update .`
+  before relying on it for architectural decisions.
