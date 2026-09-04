@@ -142,6 +142,28 @@ class SystemHealthTest extends TestCase
         $this->assertStringContainsString('horizon', strtolower(json_encode($steps['vps'])));
     }
 
+    /**
+     * Every Schedule::command(...) entry in routes/console.php must have a
+     * matching SchedulerHealth::TASKS row, or the cron silently stopping for
+     * that job would never be flagged on the System Health page — exactly the
+     * "provider health widget is empty" class of bug this feature exists to
+     * catch. Audit found esim:sync-usage, esim:prune-usage-snapshots,
+     * payouts:earnings-run, staff:compensation-close and
+     * brand-subscriptions:bill were scheduled but unmonitored — now fixed.
+     */
+    public function test_every_scheduled_command_is_monitored(): void
+    {
+        $consoleRoutes = file_get_contents(base_path('routes/console.php'));
+        preg_match_all("/Schedule::command\('([a-z0-9:_-]+)/i", $consoleRoutes, $matches);
+        $scheduled = array_unique($matches[1]);
+        $this->assertNotEmpty($scheduled);
+
+        foreach ($scheduled as $command) {
+            $this->assertArrayHasKey($command, SchedulerHealth::TASKS,
+                "Scheduled command '{$command}' has no SchedulerHealth::TASKS entry — it would silently stop with no admin alert.");
+        }
+    }
+
     public function test_the_page_renders_the_hosting_setup_guide(): void
     {
         $admin = User::factory()->create();

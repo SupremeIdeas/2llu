@@ -49,6 +49,16 @@ class SchedulerHealth
         // scores silently go stale; the weekly prune keeps provider_outcomes bounded.
         'nci:recompute' => ['NCI score recompute', 86400],
         'nci:prune-outcomes' => ['NCI outcome prune', 604800],
+        // Connectivity Analytics (Part A) — mirrors the default of
+        // esim.usage_sync_interval_minutes (15min); an admin-widened interval
+        // just makes the overdue threshold slightly generous, never a false alarm.
+        'esim:sync-usage' => ['eSIM usage snapshot sync', 900],
+        'esim:prune-usage-snapshots' => ['eSIM usage snapshot prune', 604800],
+        'payouts:earnings-run' => ['Merchant/referral earnings payouts', 86400],
+        // Monthly close (1st of month) — a wide window so month-length variance
+        // (28-31 days) never falsely flags it overdue between runs.
+        'staff:compensation-close' => ['Staff compensation monthly close', 2678400],
+        'brand-subscriptions:bill' => ['Brand Directory subscription billing', 86400],
     ];
 
     /** Record a task's completion. Accepts the raw scheduler command string. */
