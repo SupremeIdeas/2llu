@@ -4,7 +4,9 @@ namespace App\Livewire;
 
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\SmsException;
+use App\Jobs\EvaluateJourneyGoalsJob;
 use App\Jobs\PollSmsOtpJob;
+use App\Jobs\ProcessReferralRewardJob;
 use App\Models\SmsOrder;
 use App\Notifications\OrderPlacedNotification;
 use App\Services\Credits\CreditService;
@@ -412,7 +414,7 @@ class GetNumber extends Component
 
         // Referral share (BUILD-22 §1): book the referrer a share of Naara's own
         // margin on this number order — once ever, off the money path, idempotent.
-        \App\Jobs\ProcessReferralRewardJob::dispatch($user->id, 'number', (float) $result->order->profit);
+        ProcessReferralRewardJob::dispatch($user->id, 'number', (float) $result->order->profit);
 
         // Order-confirmation email (best-effort; never blocks the money path).
         Mailer::notify($user, new OrderPlacedNotification('number', ucfirst($this->service), $retail, 'USD'));
@@ -429,6 +431,10 @@ class GetNumber extends Component
             'first_purchase',
             'First purchase bonus',
         );
+
+        // My Journey goals (loyalty expansion) — queued so a purchase-count
+        // goal can unlock the instant this order lands.
+        EvaluateJourneyGoalsJob::dispatch($user->id);
 
         PollSmsOtpJob::dispatch($result->order->id, 'USD');
         $this->orderId = $result->order->id;

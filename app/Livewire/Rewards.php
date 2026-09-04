@@ -2,9 +2,11 @@
 
 namespace App\Livewire;
 
+use App\Jobs\EvaluateJourneyGoalsJob;
 use App\Models\CreditLedger;
 use App\Services\Credits\CreditService;
 use App\Support\CreditSettings;
+use App\Support\PayoutSettings;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -24,7 +26,8 @@ class Rewards extends Component
 
     public function checkIn(CreditService $credits): void
     {
-        $earned = $credits->checkIn(Auth::user()->fresh());
+        $user = Auth::user()->fresh();
+        $earned = $credits->checkIn($user);
         if ($earned > 0) {
             $this->flash = "You earned {$earned} NaaraCredits. Come back tomorrow for more!";
             // Hero toast — dispatched only after the credits are committed.
@@ -33,6 +36,9 @@ class Rewards extends Component
                 message: "+{$earned} NaaraCredits added to your balance. Come back tomorrow for more!");
             // Celebratory confetti (self-hosted Lottie), only on a real earn.
             $this->dispatch('reward-claimed');
+            // My Journey goals (loyalty expansion) — a streak goal can unlock
+            // the instant today's check-in lands.
+            EvaluateJourneyGoalsJob::dispatch($user->id);
         } else {
             $this->flash = 'You’ve already checked in — come back later for your next reward.';
             $this->dispatch('nx-toast', type: 'info', message: $this->flash);
@@ -61,7 +67,7 @@ class Rewards extends Component
             'enabled' => CreditSettings::enabled(),
             'balance' => $credits->balance($user),
             'usdValue' => CreditSettings::creditsToUsd($credits->balance($user)),
-            'canWithdraw' => \App\Support\PayoutSettings::enabled() && $credits->withdrawableBalance($user) > 0,
+            'canWithdraw' => PayoutSettings::enabled() && $credits->withdrawableBalance($user) > 0,
             'withdrawableUsd' => CreditSettings::creditsToUsd($credits->withdrawableBalance($user)),
             'perUsd' => CreditSettings::perUsd(),
             'canCheckIn' => $credits->canCheckIn($user),

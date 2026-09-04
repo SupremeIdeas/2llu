@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Jobs\EvaluateJourneyGoalsJob;
 use App\Models\EsimPlan;
 use App\Models\Merchant;
 use App\Models\MerchantClient;
@@ -129,6 +130,9 @@ class MerchantClients extends Component
                 $service->updateClient($merchant, $client, $this->formData());
             } else {
                 $service->addClient($merchant, $this->formData());
+                // My Journey goals (loyalty expansion) — a "clients connected"
+                // goal can unlock the instant a new client is added.
+                EvaluateJourneyGoalsJob::dispatch($merchant->owner_user_id);
             }
         } catch (MerchantException $e) {
             $this->error = $e->getMessage();

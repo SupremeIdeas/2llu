@@ -56,6 +56,7 @@ use App\Livewire\Admin\Guides;
 use App\Livewire\Admin\HomeMedia;
 use App\Livewire\Admin\Incidents;
 use App\Livewire\Admin\Integrations;
+use App\Livewire\Admin\JourneyGoals;
 use App\Livewire\Admin\KycReview;
 use App\Livewire\Admin\LegalEditor;
 use App\Livewire\Admin\Maintenance;
@@ -393,6 +394,7 @@ Route::middleware(['admin', 'throttle:admin'])
             // Announcements & offers — push to every user's notification bell.
             Route::get('/announcements', Announcements::class)->name('announcements');
             Route::get('/credits', Credits::class)->name('credits');
+            Route::get('/journey-goals', JourneyGoals::class)->name('journey-goals');
             Route::get('/social-hunt', SocialHunt::class)->name('social-hunt');
             Route::get('/brand-directory', BrandDirectory::class)->name('brand-directory');
             Route::get('/gift-cards', App\Livewire\Admin\GiftCards::class)->name('gift-cards');
