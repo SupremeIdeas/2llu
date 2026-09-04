@@ -9,6 +9,61 @@
 
 ## DONE
 
+### 💰 Blueprint Part B — Unified USD Wallet + PayPal/Stripe withdrawals + cron money-safety audit — 2026-09-04
+Three PRs, in dependency order (#11 stacks on #10; #12 is independent):
+
+- **`claude/unified-usd-wallet` (PR #10, draft, green CI).** `usd_balance` is now
+  the ONE spendable wallet balance — every top-up path converts to USD at the
+  live rate before crediting (`WalletService::creditTopUp()`, wired into
+  `CreditWalletJob`), NGN included, which used to credit `ngn_balance` directly.
+  Original payment preserved on the ledger (`paid_amount`/`paid_currency`) for
+  transparency without being separately spendable. `ngn_balance` is now
+  legacy/historical only — relabeled everywhere shown (Wallet page, dashboard
+  hero, admin user view, financial reconciliation) — with a
+  `wallet:migrate-ngn-to-usd` backfill command (`--dry-run` supported). The
+  top-up currency picker is a real dropdown (`GatewayCurrencyMatrix` — sourced
+  from public docs, flagged as first-draft to verify against live dashboards)
+  with "Pay with" reactively filtered to gateways that accept the selected
+  currency, validated both client- and server-side. Withdrawals gain **PayPal**
+  as a payout destination (`PayoutAccountService::addPaypalAccount()` —
+  double-entry email confirmation, since PayPal has no bank-style resolve API);
+  PayPal payout *sending* already existed, this closed the account-creation gap.
+- **`claude/stripe-connect-payouts` (PR #11, draft, green CI, base = PR #10).**
+  Full Stripe Connect onboarding for withdrawals (owner chose the full feature
+  over deferring it): `StripeConnectService` creates a Stripe Express account +
+  generates a fresh hosted-onboarding link every time (Account Links expire
+  fast, never cached); a "Stripe" tab on Withdraw.php hands the user to that
+  flow and force-refreshes status on return rather than waiting on the webhook;
+  a new `account.updated` webhook (`/webhooks/stripe-connect/account`, its own
+  secret) keeps onboarding status synced; `payout_accounts` gains
+  `details_submitted`/`charges_enabled`/`payouts_enabled` (mirrored into the
+  existing `is_verified`, so every existing money-path check already refuses an
+  unfinished account with no changes needed there); `StripePayoutGateway` sends
+  withdrawals as Transfers into the connected account once onboarding completes.
+- **`claude/cron-money-safety-fixes` (PR #12, draft, green CI, base = `main`).**
+  Full audit of all 19 `Schedule::command(...)` entries (`routes/console.php`)
+  for stub/mock implementations, prompted by an explicit "production ready, not
+  a stub" ask. Found and fixed real bugs: `RenewVirtualNumbersCommand` and
+  `BrandSubscriptionsBillCommand` keyed their `WalletService` idempotency
+  reference on the CALENDAR MONTH the command happened to run in rather than
+  the billing period being charged — a missed-then-caught-up run would silently
+  forgive a month's charge (idempotency guard returns the old transaction, no
+  new debit, while the code still advances the billing date). Now keyed on the
+  actual due date. `EarningsPayoutRunCommand`/`PartnerPayoutRunCommand` only
+  reported failures via `$this->warn()`/`Log::warning()` — invisible in
+  production (`schedule:run` pipes to `/dev/null`) — now dispatch
+  `AlertAdminJob`. `MerchantAutoPromoteCommand`'s batch loop had no per-row
+  try/catch (one failure aborted the whole day's batch) — isolated + alerted.
+  `MerchantClientService::renewDueSubscription` now also alerts the platform
+  (previously only emailed the merchant) on a failed auto-renewal. Fixed a real
+  05:30 schedule collision between `payouts:rank` and
+  `merchant:client-subscriptions`.
+- **Known follow-ups:** `wallet.blade.php` diverges between PR #9
+  (`claude/wallet-payout-upgrade`, tabbed layout) and PR #10 (currency-dropdown
+  + legacy-NGN notice on the original layout) — whichever merges second needs
+  to reconcile. `GatewayCurrencyMatrix`'s per-gateway currency lists are a first
+  draft to verify against each provider's live dashboard.
+
 ### 📦 BUILD-12 — homepage "Who Naara Is For" audience tabs — 2026-08-04
 Real admin-orderable homepage section (SiteContent, defaulted after `products`).
 Six tabs auto-advance 12s with a brand-gradient progress bar; manual override +
@@ -1143,7 +1198,7 @@ Laravel 11 (11.54) installed; Sanctum (api guard + `routes/api.php`) + Fortify (
 - every calc logged — `pricing_engine_logs` row per call verified. Locked by `tests/Feature/PricingEngineTest.php` (12 tests / 104 assertions). Full suite 24/24.
 
 ### ✅ Module 4 — WalletService  (Sections 1, 14)  — passed acceptance 2026-07-12
-`app/Services/Wallet/WalletService.php` (singleton) is the single owner of wallet balance changes: `debit`, `credit`, `refund`, `reward`, and `charge()` (charge-then-deliver with orphan-charge guard). Every change runs inside a DB transaction with `lockForUpdate` on the wallet row AND an atomic cache lock per wallet (Redis in prod), and writes a `wallet_transactions` row with `balance_before`/`balance_after` in the same transaction. Idempotent by `reference` (money actions never blind-retry). Dual-currency (NGN/USD). Auto-refund + `AlertAdminJob` (writes `error_logs`) when delivery fails. Exceptions: `InsufficientBalanceException`, `OrphanChargeRefundedException`.
+`app/Services/Wallet/WalletService.php` (singleton) is the single owner of wallet balance changes: `debit`, `credit`, `refund`, `reward`, and `charge()` (charge-then-deliver with orphan-charge guard). Every change runs inside a DB transaction with `lockForUpdate` on the wallet row AND an atomic cache lock per wallet (Redis in prod), and writes a `wallet_transactions` row with `balance_before`/`balance_after` in the same transaction. Idempotent by `reference` (money actions never blind-retry). Dual-currency (NGN/USD — **superseded 2026-09-03, see "Unified USD Wallet — Part B" in DONE below**: `usd_balance` is now the one spendable balance; `ngn_balance` is legacy/historical only). Auto-refund + `AlertAdminJob` (writes `error_logs`) when delivery fails. Exceptions: `InsufficientBalanceException`, `OrphanChargeRefundedException`.
 **Acceptance — all green:**
 - concurrent-debit proves no double-spend — 20 real concurrent OS processes debiting a 100 balance → exactly 10 succeed, 10 rejected, final balance 0.00, 10 debit rows (never negative). Plus a deterministic contention test in the suite.
 - failed downstream save auto-refunds — `charge()` debits, runs delivery, and on any throw auto-refunds (net zero), alerts, and rethrows `OrphanChargeRefundedException`. Locked by `tests/Feature/WalletServiceTest.php` (9 tests). Full suite 33/33.
@@ -1209,24 +1264,58 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 
 ## NEXT  (build strictly top to bottom)
 
+### ▶ TOP OF NEXT — Merchant V2 Invoice Dashboard (blueprint arc: Wallet ✅ → Invoicing → Journey)
+Owner-approved 3-phase arc from the wallet/invoicing/journey brainstorm
+(pre-dates a written spec — captured only in session history until now).
+Wallet (Part B, above) is done; this is next, then the Earning Journey map +
+recurring NaaraCredit rewards engine after it. Scope not yet written down in
+detail: a net-new persisted Invoice system for Merchant V2 (custom price +
+line items + merchant brand), matching a Salesforce-style dashboard reference
+the owner shared, replacing today's ad-hoc "invoice builder → WhatsApp" flow
+(see Merchant V2 client eSIM control in DONE). Needs its own scoping pass
+before implementation — pull the exact requirements back from session history
+into a real build-spec doc before starting, so it survives compaction like
+every other module here.
+
 ### ▶ THEME SYSTEM — 15 switchable admin-selectable skins (3-batch program)
 Skin-only, zero business-logic change. `naara-official` frozen as the permanent
 default/fallback. Spec: the three `NAARA THEME SYSTEM — BATCH n of 3` blueprints.
-- **Batch 1 — ✅ DONE (this session):** `theme_presets` table + `ThemePreset`
-  support class (whitelisted `styleCss()`, cached, fail-safe fallback) +
-  `naara-official` seed + wired into the app/marketing layout head & body class
-  (`theme-{slug}`) + the eSIM hero converted to an Apple-style **3-up peek
-  carousel** (graceful <3-image fallback to today's crossfade). `ThemePresetTest`
-  green; `naara-official` emits empty CSS (no visual diff).
-- **Batch 2 — NEXT:** seed the other 14 presets (original Naara personas, using
-  the Originkit templates + 7 reference mockups as layout-energy inspiration
-  only — owner approved pull-&-adapt, rebuilt in Blade, no template assets
-  shipped); the 3-structural-variants-per-page escape hatch (21 partials);
-  `ThemePicker` admin screen; seed hero/reference art from the two owner zips to
-  Wasabi. **Owner to rotate the Originkit API key that was shared in plaintext.**
-- **Batch 3 — after 2:** Popular Destinations photo showcase, `naara-sprite-01`
-  icon sheet, `theme.manage` permission gating, headless screenshot QA sweep,
-  a11y/perf sign-off.
+**Correction (2026-09-04): this NEXT entry was stale — Batch 2 and the
+`theme.manage` gating piece of Batch 3 already shipped** (git history:
+`2e95b34`/`0205652`/`6042ed4`/`330af7f` seeded all 15 presets + `ThemePicker`
+admin screen + structural variants + per-theme hero art;
+`d78adc6`/`app/Support/StaffScopes.php:31` added `theme.manage` scope gating).
+- **Batch 1 & 2 — ✅ DONE.**
+- **Batch 3 — remaining:** Popular Destinations photo showcase (no code yet);
+  confirm a dedicated `naara-sprite-01` icon sheet exists (only a generic
+  sprite is confirmed: `resources/views/partials/icon-sprite.blade.php`);
+  headless screenshot QA sweep + a11y/perf sign-off (never run); 6 more unique
+  theme-hero images (8 images currently cover 14 personas, 6 themes share art —
+  `docs/build-specs/THEME-PLACEHOLDER-ASSETS.md:11`). **Owner action still
+  open: rotate the Originkit API key shared in plaintext.**
+
+### ▶ OTHER OPEN ITEMS (audited 2026-09-04 — full detail in the docs cited, not repeated here)
+- NaaraCredit redemption at checkout works for eSIM (`Checkout.php:213`) but not
+  the number checkout (`GetNumber`) yet — `docs/REMAINING-TO-FINALIZE.md:40`.
+- Turnstile bot-check on the guest support/contact form + Cloudflare-in-front
+  guidance in `DEPLOYMENT.md` — `PROGRESS.md` M33 follow-up note.
+- Module 32 leftovers (nav / cookies-banner / date-weather / dropdown
+  components) — build "as their surfaces arrive," not urgent.
+- Still deferred, unchanged: product reviews, full i18n/multi-currency,
+  passkey-management UI.
+- BUILD-1 §3 admin-auth hardening (SecurityLog + auto-temp-ban, anti-inspect.js,
+  StripSecrets middleware + signed admin routes, Vite obfuscation, X-Frame-
+  Options DENY) — `docs/PLATFORM-STATE.md:417-433`.
+- Payments follow-ups: Flutterwave chargeback webhooks, simultaneous
+  sandbox+live key sets, inline/embedded checkout — `docs/PLATFORM-STATE.md:370-383`.
+- First full live-sandbox regression sweep has never been run; go-live
+  hardening (nonce-based CSP, `/api/user` 401 JSON, live keys, Horizon/cron/
+  backups) is blocked on it — `docs/REGRESSION-SWEEP-LOG.md:54,73`,
+  `docs/REMAINING-TO-FINALIZE.md:78-102`. This is the right gate immediately
+  before any real go-live, not before continuing feature work.
+- `docs/REMAINING-TO-FINALIZE.md` §3b is itself stale — payouts/merchants/
+  developer-API/partners admin surfaces it lists as missing already exist
+  (`Payouts.php`, `Merchants.php`, `DeveloperApi.php`, `Partners.php`).
 
 ### ▶ NEXT STEP — Wizard polish (roadmap `docs/ROADMAP-NAARASIM-WIZARD.md` §13.5)
 The wizard core is live; polish layers on top (each independent, all optional/
