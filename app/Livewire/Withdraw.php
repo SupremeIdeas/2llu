@@ -8,6 +8,7 @@ use App\Services\Payouts\AccountResolutionException;
 use App\Services\Payouts\PayoutAccountService;
 use App\Services\Payouts\PayoutException;
 use App\Services\Payouts\PayoutService;
+use App\Services\Payouts\StripeConnectService;
 use App\Services\Payouts\WithdrawalService;
 use App\Support\CreditSettings;
 use App\Support\PayoutSettings;
@@ -52,10 +53,23 @@ class Withdraw extends Component
 
     public ?string $withdrawError = null;
 
-    public function mount(): void
+    public function mount(StripeConnectService $connect): void
     {
         $this->loadBanks();
         $this->accountId = PayoutAccount::where('user_id', Auth::id())->where('is_default', true)->value('id');
+
+        // Landed back from Stripe's hosted onboarding: force-refresh status now
+        // rather than waiting on the account.updated webhook, so the page
+        // reflects reality immediately instead of looking stuck.
+        $pending = PayoutAccount::where('user_id', Auth::id())->where('type', 'stripe')
+            ->where('payouts_enabled', false)->first();
+        if ($pending !== null && $connect->available()) {
+            try {
+                $connect->refreshStatus($pending);
+            } catch (\Throwable) {
+                // Best-effort — the webhook is still the source of truth.
+            }
+        }
     }
 
     public function updatedCountry(): void
@@ -118,6 +132,20 @@ class Withdraw extends Component
         $this->dispatch('nx-toast', type: 'success', message: 'PayPal account added: '.$account->account_name);
     }
 
+    /** Start (or resume) Stripe's hosted onboarding for a Connect account. */
+    public function connectStripe(StripeConnectService $connect)
+    {
+        $account = $connect->accountFor(Auth::user());
+
+        $url = $connect->onboardingUrl(
+            $account,
+            refreshUrl: route('rewards.withdraw'),
+            returnUrl: route('rewards.withdraw'),
+        );
+
+        return redirect()->away($url);
+    }
+
     public function setDefault(int $id, PayoutAccountService $accounts): void
     {
         $accounts->setDefault(Auth::user(), PayoutAccount::findOrFail($id));
@@ -178,6 +206,8 @@ class Withdraw extends Component
             // §8: the volume-recommended payout rail (or null). Other rails still show.
             'recommendedGateway' => $payouts->recommendedGateway(),
             'paypalAvailable' => ProviderStatus::isActive('paypal'),
+            'stripeAvailable' => ProviderStatus::isActive('stripe'),
+            'stripeAccount' => PayoutAccount::where('user_id', $user->id)->where('type', 'stripe')->first(),
         ]);
     }
 }
