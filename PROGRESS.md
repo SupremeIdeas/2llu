@@ -9,6 +9,18 @@
 
 ## DONE
 
+### 💳 NaaraCredit redemption at the number checkout — 2026-09-04
+Wired the loyalty-credit redemption pattern from eSIM `Checkout.php` into
+`GetNumber.php` (verify + rent flows): margins computed once, server-side
+coupon/credits mutual-exclusivity guard, credits spent before the wallet
+debit, refund-on-failure for every downstream path, actual charged amount
+(never list retail) threaded into provider refunds / merchant accrual /
+order notifications. `CreditService::quoteRedemption()` gained a
+product-aware floor (`pricing.sms_min_profit` for numbers vs the eSIM
+`pricing.minimum_profit_usd`) so cents-level number retail can actually
+clear the margin floor. 5 new tests in `NumberCreditRedemptionTest.php`;
+full suite green (1325 passed). PR #14.
+
 ### 💰 Blueprint Part B — Unified USD Wallet + PayPal/Stripe withdrawals + cron money-safety audit — 2026-09-04
 Three PRs, in dependency order (#11 stacks on #10; #12 is independent):
 

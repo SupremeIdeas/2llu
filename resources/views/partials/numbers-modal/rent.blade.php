@@ -85,11 +85,28 @@
         <p class="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">{{ $error }}</p>
     @endif
 
+    {{-- NaaraCredits redemption (loyalty) — margin-capped server-side. --}}
+    @if ($modalPrice !== null && $creditsEnabled && $creditBalance > 0 && $creditQuote['usd'] > 0)
+        <label class="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 dark:border-primary/30 dark:bg-primary/10">
+            <input type="checkbox" wire:model.live="useCredits" class="mt-0.5 rounded text-primary focus:ring-primary/40">
+            <span class="min-w-0 flex-1">
+                <span class="flex items-center gap-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    <x-naara-coin class="h-4 w-4" /> Use my NaaraCredits
+                </span>
+                <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+                    You have {{ number_format($creditBalance, 0) }} credits. Apply
+                    <span class="font-semibold">{{ number_format($creditQuote['credits'], 0) }}</span>
+                    to save <span class="font-semibold text-green-600 dark:text-green-400">${{ number_format($creditQuote['usd'], 2) }}</span> on this order.
+                </span>
+            </span>
+        </label>
+    @endif
+
     <div class="sticky bottom-0 -mx-5 mt-5 border-t border-slate-100 bg-white px-5 pt-4 dark:border-white/10 dark:bg-[#0D1B2A]">
         <div class="mb-3 flex items-center justify-between">
             <span class="text-sm text-slate-500 dark:text-slate-400">You pay</span>
             <span class="text-lg font-bold text-slate-900 dark:text-white">
-                @if ($modalPrice !== null)${{ number_format($modalPrice, 2) }}@else <span class="text-sm font-medium text-slate-400">Priced at reservation</span>@endif
+                @if ($modalPrice !== null)${{ number_format($useCredits ? $modalPrice - $creditQuote['usd'] : $modalPrice, 2) }}@else <span class="text-sm font-medium text-slate-400">Priced at reservation</span>@endif
             </span>
         </div>
         <button type="button" wire:click="order" wire:loading.attr="disabled" wire:target="order"
