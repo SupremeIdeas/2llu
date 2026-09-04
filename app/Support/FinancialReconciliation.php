@@ -30,7 +30,7 @@ class FinancialReconciliation
      *   wallet_by_type: array<string,float>,
      *   paid_out: float, pending_out: float,
      *   provider_cost: float, charged_to_user: float, gross_profit: float,
-     *   outstanding_usd: float, outstanding_ngn: float
+     *   outstanding_usd: float, outstanding_ngn: float (legacy-only, see note below)
      * }
      */
     public function report(Carbon $from, Carbon $to): array
@@ -78,6 +78,10 @@ class FinancialReconciliation
 
         // Outstanding wallet liability RIGHT NOW (point-in-time, not the period)
         // — what the platform still owes users if everyone cashed out.
+        // Unified USD Wallet (Part B): usd_balance is the ONE live, growing
+        // liability figure. outstanding_ngn is legacy-only — no top-up credits
+        // it anymore — and only ever shrinks as the migration backfill
+        // (wallet:migrate-ngn-to-usd) or per-user conversion runs.
         $outstandingUsd = round((float) UserWallet::query()->sum('usd_balance'), 2);
         $outstandingNgn = round((float) UserWallet::query()->sum('ngn_balance'), 2);
 

@@ -3,7 +3,9 @@
 namespace App\Jobs;
 
 use App\Models\User;
+use App\Notifications\TopUpReceiptNotification;
 use App\Services\Wallet\WalletService;
+use App\Support\Mailer;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -28,8 +30,7 @@ class CreditWalletJob implements ShouldBeUnique, ShouldQueue
         public int $userId,
         public float $amount,
         public string $currency,
-    ) {
-    }
+    ) {}
 
     public function uniqueId(): string
     {
@@ -43,12 +44,14 @@ class CreditWalletJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        // A verified payment must NEVER silently fail to credit. The wallet only
-        // holds USD/NGN, so an unsupported currency here (a rare edge — e.g. a
-        // local-currency deposit whose USD-locking intent didn't persist) is
-        // alerted for manual reconciliation rather than crash-looping the queue.
+        // Unified USD Wallet (Part B): every top-up converts to USD — the one
+        // spendable balance — regardless of what currency was actually paid.
+        // A verified payment must NEVER silently fail to credit, so a truly
+        // unrecognized currency (creditTopUp() only converts CurrencyService's
+        // known list) is alerted for manual reconciliation rather than
+        // crash-looping the queue or silently guessing a 1:1 rate.
         try {
-            $txn = $wallet->credit($user, $this->amount, $this->currency, [
+            $txn = $wallet->creditTopUp($user, $this->amount, $this->currency, [
                 'reference' => "topup:{$this->gateway}:{$this->reference}",
                 'description' => "Wallet top-up via {$this->gateway}",
             ]);
@@ -65,7 +68,7 @@ class CreditWalletJob implements ShouldBeUnique, ShouldQueue
         // Receipt email — only on a genuinely new credit (idempotent replays
         // return the existing row and must not re-email). Best-effort.
         if ($txn->wasRecentlyCreated) {
-            \App\Support\Mailer::notify($user, new \App\Notifications\TopUpReceiptNotification(
+            Mailer::notify($user, new TopUpReceiptNotification(
                 $this->amount,
                 $this->currency,
                 $this->gateway,

@@ -105,7 +105,7 @@
                 <p class="text-lg font-bold text-slate-900 dark:text-slate-100">${{ number_format($report['outstanding_usd'], 2) }}</p>
             </div>
             <div>
-                <p class="text-xs text-slate-400">Wallet balances (NGN)</p>
+                <p class="text-xs text-slate-400">Wallet balances (NGN, legacy)</p>
                 <p class="text-lg font-bold text-slate-900 dark:text-slate-100">₦{{ number_format($report['outstanding_ngn'], 2) }}</p>
             </div>
             <div>

@@ -13,7 +13,10 @@
                 <p class="mt-3 font-display text-4xl font-bold tracking-tight">
                     ${{ number_format((float) $wallet->usd_balance, 2) }}
                 </p>
-                <p class="mt-1 text-sm text-teal-100/90">NGN {{ number_format((float) $wallet->ngn_balance, 2) }}</p>
+                {{-- Unified USD Wallet (Part B): usd_balance is the one spendable
+                     balance — this is its live-rate NGN equivalent, never the
+                     frozen (and now legacy) ngn_balance column. --}}
+                <p class="mt-1 text-sm text-teal-100/90">≈ {{ app(\App\Services\Pricing\CurrencyService::class)->format((float) $wallet->usd_balance, 'NGN') }}</p>
             </div>
             <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur transition group-hover:bg-accent group-hover:text-navy">
                 Top up <x-icon name="chevron-right" class="h-4 w-4" />

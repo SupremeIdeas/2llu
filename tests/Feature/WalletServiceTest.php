@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\OrphanChargeRefundedException;
 use App\Jobs\AlertAdminJob;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\WalletTransaction;
+use App\Services\Pricing\CurrencyService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -162,5 +164,43 @@ class WalletServiceTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->wallet->credit($this->user(), 10, 'EUR');
+    }
+
+    public function test_credit_top_up_passes_usd_straight_through(): void
+    {
+        $user = $this->user();
+
+        $txn = $this->wallet->creditTopUp($user, 20, 'USD', ['description' => 'Top-up']);
+
+        $this->assertSame('USD', $txn->currency);
+        $this->assertSame('20.0000', (string) $txn->amount);
+        $this->assertSame('20.0000', (string) $user->wallet->fresh()->usd_balance);
+        // A direct USD top-up's "paid in" figure equals what was credited.
+        $this->assertSame('20.0000', (string) $txn->paid_amount);
+        $this->assertSame('USD', $txn->paid_currency);
+    }
+
+    public function test_credit_top_up_converts_a_local_currency_to_usd_and_records_the_original(): void
+    {
+        Setting::setValue('pricing.ngn_rate_source', 'manual');
+        Setting::setValue('pricing.manual_ngn_rate', 1500);
+        app(CurrencyService::class)->flushNgnRate();
+        $user = $this->user();
+
+        $txn = $this->wallet->creditTopUp($user, 4500, 'NGN', ['description' => 'Top-up']);
+
+        $this->assertSame('USD', $txn->currency);
+        $this->assertSame('3.0000', (string) $txn->amount);
+        $this->assertSame('4500.0000', (string) $txn->paid_amount);
+        $this->assertSame('NGN', $txn->paid_currency);
+        $this->assertSame('3.0000', (string) $user->wallet->fresh()->usd_balance);
+        // The unified wallet never grows ngn_balance from a top-up.
+        $this->assertSame('0.00', (string) $user->wallet->fresh()->ngn_balance);
+    }
+
+    public function test_credit_top_up_rejects_a_currency_currency_service_does_not_recognize(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->wallet->creditTopUp($this->user(), 50, 'XYZ');
     }
 }

@@ -8,6 +8,7 @@ use App\Models\UserWallet;
 use App\Services\Kyc\KycService;
 use App\Services\Payouts\WithdrawalService;
 use App\Services\Pricing\CurrencyService;
+use App\Support\GatewayCurrencyMatrix;
 use App\Support\LocaleCurrency;
 use App\Support\ProviderStatus;
 use Livewire\Attributes\Layout;
@@ -59,6 +60,12 @@ class Wallet extends Component
         $this->gateway = $active[0] ?? array_key_first(self::GATEWAYS);
 
         $this->displayCurrency = LocaleCurrency::resolve(auth()->user());
+
+        // Gateway/currency orchestration (Part B §3.6): never boot into a
+        // pairing the chosen gateway doesn't actually accept.
+        if (! GatewayCurrencyMatrix::supports($this->gateway, $this->currency)) {
+            $this->currency = GatewayCurrencyMatrix::currenciesFor($this->gateway)[0] ?? $this->currency;
+        }
     }
 
     /** Switch the display currency (persists to session + profile). */
@@ -77,6 +84,45 @@ class Wallet extends Component
         );
     }
 
+    /**
+     * Gateways from availableGateways() that also accept the currently
+     * selected TOP-UP currency (Part B §3.6) — the UI never offers a
+     * gateway/currency pairing that gateway doesn't actually accept.
+     */
+    public function payGateways(): array
+    {
+        return array_filter(
+            $this->availableGateways(),
+            fn ($slug) => GatewayCurrencyMatrix::supports($slug, $this->currency),
+            ARRAY_FILTER_USE_KEY,
+        );
+    }
+
+    /** Currency changed: if the current gateway no longer accepts it, switch
+     *  to the first active gateway that does (never silently keep an invalid
+     *  pairing selected). */
+    public function updatedCurrency(): void
+    {
+        $this->currency = strtoupper($this->currency);
+        if (GatewayCurrencyMatrix::supports($this->gateway, $this->currency)) {
+            return;
+        }
+        $valid = array_keys($this->payGateways());
+        if ($valid !== []) {
+            $this->gateway = $valid[0];
+        }
+    }
+
+    /** Gateway changed: if it doesn't accept the current currency, switch to
+     *  the first currency it does accept. */
+    public function updatedGateway(): void
+    {
+        if (GatewayCurrencyMatrix::supports($this->gateway, $this->currency)) {
+            return;
+        }
+        $this->currency = GatewayCurrencyMatrix::currenciesFor($this->gateway)[0] ?? $this->currency;
+    }
+
     public function topUp()
     {
         $this->validate();
@@ -85,6 +131,15 @@ class Wallet extends Component
         $user = auth()->user();
         $amount = (float) $this->amount;
         $currency = strtoupper($this->currency);
+
+        // Server-side validation (Part B §3.6) — never rely on the UI filter
+        // alone; reject fast and legibly rather than letting the provider
+        // fail on a pairing it never accepted.
+        if (! GatewayCurrencyMatrix::supports($this->gateway, $currency)) {
+            $this->error = ucfirst($this->gateway)." doesn't accept {$currency}. Please pick a different gateway or currency.";
+
+            return null;
+        }
 
         try {
             $result = app("pay.{$this->gateway}")->initialize($user, $amount, $currency);
@@ -97,12 +152,13 @@ class Wallet extends Component
             return null;
         }
 
-        // Local-currency deposit (owner request, money-safe): USD and NGN credit
-        // their wallet column directly (unchanged). Any OTHER currency is
-        // converted to a USD credit LOCKED here at the live rate — recorded on a
-        // TopUpIntent so the webhook credits exactly this, never a figure
-        // re-derived from the gateway's reported currency.
-        if (! in_array($currency, ['USD', 'NGN'], true) && ! empty($result['reference'])) {
+        // Unified USD Wallet (Part B): USD credits directly. Every OTHER
+        // currency — NGN included — is converted to a USD credit LOCKED here
+        // at the live rate, recorded on a TopUpIntent so the webhook credits
+        // exactly this, never a figure re-derived from the gateway's reported
+        // currency. NGN used to be a second directly-credited currency; it no
+        // longer is — usd_balance is the one spendable balance.
+        if ($currency !== 'USD' && ! empty($result['reference'])) {
             $fx = app(CurrencyService::class);
             TopUpIntent::create([
                 'user_id' => $user->id,
@@ -163,18 +219,33 @@ class Wallet extends Component
             fn ($v, $i) => round($i * (200 / 13), 1).','.round(44 - ($v / $peak) * 36, 1)
         )->implode(' ');
 
+        $fx = app(CurrencyService::class);
+
         return view('livewire.wallet', compact(
             'wallet', 'transactions', 'spentUsd', 'topupUsd', 'topupNgn', 'sparkline',
             'kycLevel2', 'payoutAccount', 'withdrawableUsd'
         ) + [
             'hasSpendData' => $daily->sum() > 0,
-            'gateways' => $this->availableGateways(),
+            // Part B §3.6: only gateways that accept the CURRENTLY selected
+            // top-up currency — never a pairing the gateway doesn't support.
+            'gateways' => $this->payGateways(),
+            // The full top-up currency picker (owner request: a real dropdown,
+            // not a hardcoded NGN/USD pair) — every currency any configured
+            // gateway accepts, restricted to what CurrencyService models.
+            'payCurrencyOptions' => collect(GatewayCurrencyMatrix::allCurrencies())
+                ->mapWithKeys(fn ($code) => [$code => CurrencyService::SUPPORTED[$code][1]])
+                ->all(),
             // Localized display (owner request): the USD balance shown in the
             // user's local currency too. Display only — the wallet holds USD/NGN.
             'currencyOptions' => LocaleCurrency::options(),
             'usdLocal' => $this->displayCurrency === 'USD' || $this->displayCurrency === 'NGN'
                 ? null
-                : app(CurrencyService::class)->format((float) $wallet->usd_balance, $this->displayCurrency),
+                : $fx->format((float) $wallet->usd_balance, $this->displayCurrency),
+            // Part B code change 6: ngn_balance is now a legacy/historical
+            // figure only (no new top-up ever credits it) — the live NGN
+            // figure shown alongside the spendable USD balance is always the
+            // CURRENT-RATE equivalent, never the frozen historical column.
+            'ngnLive' => $fx->format((float) $wallet->usd_balance, 'NGN'),
         ]);
     }
 }
