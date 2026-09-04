@@ -32,6 +32,14 @@
                         @endif
                     </p>
                     <p class="text-xs text-slate-500 dark:text-slate-400">{{ $acct->bank_name }} · {{ $acct->masked_number }} · {{ $acct->currency }}</p>
+                    {{-- A Stripe Connect account isn't usable until Stripe's own
+                         onboarding is complete — never let it look silently stuck. --}}
+                    @if ($acct->type === 'stripe' && ! $acct->payouts_enabled)
+                        <p class="mt-1 flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                            <x-icon name="info" class="h-3.5 w-3.5" /> Onboarding incomplete
+                            <button type="button" wire:click="connectStripe" class="font-semibold underline">Continue setup</button>
+                        </p>
+                    @endif
                 </div>
                 <div class="flex items-center gap-2 text-xs">
                     @unless ($acct->is_default)
@@ -49,16 +57,24 @@
     <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
         <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Add a payout account</p>
 
-        @if ($paypalAvailable)
+        @if ($paypalAvailable || $stripeAvailable)
             <div class="mt-3 inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-[#2D4060]">
                 <button type="button" wire:click="$set('accountType', 'bank')"
                         @class(['rounded-md px-3 py-1.5 text-xs font-semibold transition', 'bg-primary text-white' => $accountType === 'bank', 'text-slate-500 dark:text-slate-400' => $accountType !== 'bank'])>
                     Bank account
                 </button>
-                <button type="button" wire:click="$set('accountType', 'paypal')"
-                        @class(['rounded-md px-3 py-1.5 text-xs font-semibold transition', 'bg-primary text-white' => $accountType === 'paypal', 'text-slate-500 dark:text-slate-400' => $accountType !== 'paypal'])>
-                    PayPal
-                </button>
+                @if ($paypalAvailable)
+                    <button type="button" wire:click="$set('accountType', 'paypal')"
+                            @class(['rounded-md px-3 py-1.5 text-xs font-semibold transition', 'bg-primary text-white' => $accountType === 'paypal', 'text-slate-500 dark:text-slate-400' => $accountType !== 'paypal'])>
+                        PayPal
+                    </button>
+                @endif
+                @if ($stripeAvailable)
+                    <button type="button" wire:click="$set('accountType', 'stripe')"
+                            @class(['rounded-md px-3 py-1.5 text-xs font-semibold transition', 'bg-primary text-white' => $accountType === 'stripe', 'text-slate-500 dark:text-slate-400' => $accountType !== 'stripe'])>
+                        Stripe
+                    </button>
+                @endif
             </div>
         @endif
 
@@ -103,7 +119,7 @@
                 <x-ui.spinner wire:loading wire:target="addAccount" class="h-4 w-4" />
                 Verify &amp; add account
             </button>
-        @else
+        @elseif ($accountType === 'paypal')
             {{-- PayPal has no bank-style resolve API to confirm a payout email
                  before sending money — re-typing it is the guard against a
                  mistyped destination. --}}
@@ -126,6 +142,29 @@
                 <x-ui.spinner wire:loading wire:target="addPaypalAccount" class="h-4 w-4" />
                 Add PayPal account
             </button>
+        @else
+            {{-- Stripe requires their own hosted onboarding (identity, banking
+                 details, capability review) before an account can receive a
+                 transfer — there's nothing to type here, just a handoff. --}}
+            @if ($stripeAccount && $stripeAccount->payouts_enabled)
+                <div class="mt-3 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-xs text-green-700 dark:bg-green-950/30 dark:text-green-300">
+                    <x-icon name="check" class="h-4 w-4" /> Your Stripe account is connected and ready for payouts.
+                </div>
+            @else
+                <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                    @if ($stripeAccount)
+                        Your Stripe account isn't finished onboarding yet — continue where you left off.
+                    @else
+                        You'll be redirected to Stripe to securely set up your payout account.
+                    @endif
+                </p>
+                <button type="button" wire:click="connectStripe" wire:loading.attr="disabled" wire:target="connectStripe"
+                        class="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
+                    <x-icon name="check" wire:loading.remove wire:target="connectStripe" class="h-4 w-4" />
+                    <x-ui.spinner wire:loading wire:target="connectStripe" class="h-4 w-4" />
+                    {{ $stripeAccount ? 'Continue Stripe setup' : 'Connect with Stripe' }}
+                </button>
+            @endif
         @endif
     </div>
 

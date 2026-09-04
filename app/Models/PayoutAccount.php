@@ -16,7 +16,7 @@ class PayoutAccount extends Model
     protected $fillable = [
         'user_id', 'type', 'country', 'currency', 'bank_code', 'bank_name',
         'account_number', 'account_name', 'provider', 'provider_recipient_ref',
-        'is_verified', 'is_default',
+        'is_verified', 'is_default', 'details_submitted', 'charges_enabled', 'payouts_enabled',
     ];
 
     protected function casts(): array
@@ -24,6 +24,9 @@ class PayoutAccount extends Model
         return [
             'is_verified' => 'boolean',
             'is_default' => 'boolean',
+            'details_submitted' => 'boolean',
+            'charges_enabled' => 'boolean',
+            'payouts_enabled' => 'boolean',
         ];
     }
 

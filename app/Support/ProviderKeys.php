@@ -84,6 +84,7 @@ class ProviderKeys
                     'flutterwave_secret_hash' => ['label' => 'Flutterwave — Secret Hash', 'config' => 'services.flutterwave.secret_hash', 'env' => 'FLUTTERWAVE_SECRET_HASH', 'secret' => true, 'hint' => 'The verif-hash header used to verify webhooks.'],
                     'stripe_secret_key' => ['label' => 'Stripe — Secret Key', 'config' => 'services.stripe.secret_key', 'env' => 'STRIPE_SECRET_KEY', 'secret' => true, 'hint' => 'dashboard.stripe.com → Developers → API keys.'],
                     'stripe_webhook_secret' => ['label' => 'Stripe — Webhook Secret', 'config' => 'services.stripe.webhook_secret', 'env' => 'STRIPE_WEBHOOK_SECRET', 'secret' => true, 'hint' => 'Developers → Webhooks → signing secret (whsec_…).'],
+                    'stripe_connect_webhook_secret' => ['label' => 'Stripe — Connect Webhook Secret', 'config' => 'services.stripe.connect_webhook_secret', 'env' => 'STRIPE_CONNECT_WEBHOOK_SECRET', 'secret' => true, 'hint' => 'A SEPARATE webhook endpoint in Developers → Webhooks for Connect account.updated events — its own signing secret, not the one above.'],
                 ],
             ],
             'identity' => [

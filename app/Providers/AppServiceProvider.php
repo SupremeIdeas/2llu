@@ -2,20 +2,28 @@
 
 namespace App\Providers;
 
+use App\Events\CircuitClosed;
+use App\Events\CircuitOpened;
+use App\Events\HealthCheckCompleted;
 use App\Events\PayoutReversed;
+use App\Events\ProviderOutcomeRecorded;
 use App\Listeners\ReturnMerchantEarnings;
 use App\Listeners\ReturnPartnerEarnings;
+use App\Listeners\ReturnReferralEarnings;
+use App\Listeners\ReturnStaffEarnings;
 use App\Listeners\ReturnWithdrawnCredits;
 use App\Models\Banner;
 use App\Models\NumbersBentoCard;
 use App\Models\Setting;
 use App\Notifications\Channels\WebPushChannel;
 use App\Services\eSIM\AiraloService;
+use App\Services\eSIM\EsimAccessService;
 use App\Services\eSIM\EsimGoService;
 use App\Services\eSIM\GigsService;
 use App\Services\eSIM\MontyMobileService;
 use App\Services\eSIM\OneGlobalService;
 use App\Services\eSIM\QuibityService;
+use App\Services\eSIM\UbigiService;
 use App\Services\eSIM\ZenditService;
 use App\Services\Kyc\DojahKycProvider;
 use App\Services\Kyc\KycService;
@@ -25,6 +33,9 @@ use App\Services\Maintenance\ClaudeFixProposer;
 use App\Services\Maintenance\Contracts\CodeHostClient;
 use App\Services\Maintenance\Contracts\FixProposer;
 use App\Services\Maintenance\GitHubCodeHostClient;
+use App\Services\NCI\Listeners\IncrementNciScore;
+use App\Services\NCI\Listeners\RecomputeProviderScore;
+use App\Services\NCI\Listeners\RefreshNciOnHealthCheck;
 use App\Services\Payments\BinancePayGateway;
 use App\Services\Payments\CoinPaymentsGateway;
 use App\Services\Payments\CryptomusGateway;
@@ -39,9 +50,10 @@ use App\Services\Payouts\FlutterwaveBankResolver;
 use App\Services\Payouts\FlutterwavePayoutGateway;
 use App\Services\Payouts\PayoutAccountService;
 use App\Services\Payouts\PayoutService;
+use App\Services\Payouts\PayPalPayoutGateway;
 use App\Services\Payouts\PaystackBankResolver;
 use App\Services\Payouts\PaystackPayoutGateway;
-use App\Services\Payouts\PayPalPayoutGateway;
+use App\Services\Payouts\StripePayoutGateway;
 use App\Services\Pricing\PricingEngine;
 use App\Services\Push\MinishlinkPushSender;
 use App\Services\Push\WebPushSender;
@@ -50,6 +62,10 @@ use App\Services\SMS\GetatextService;
 use App\Services\SMS\HeroSmsService;
 use App\Services\SMS\Numbers\TelnyxService;
 use App\Services\SMS\Numbers\TwilioService;
+use App\Services\SMS\OnlineSimService;
+use App\Services\SMS\PlivoService;
+use App\Services\SMS\SmsPoolService;
+use App\Services\SMS\SonetelService;
 use App\Services\SMS\VirtSmsService;
 use App\Services\Support\ClaudeChatModel;
 use App\Services\Support\Contracts\ChatModel;
@@ -57,6 +73,7 @@ use App\Services\Support\Contracts\VoiceSynthesizer;
 use App\Services\Support\ElevenLabsVoice;
 use App\Services\Wallet\WalletService;
 use App\Support\Banners;
+use App\Support\BentoIcons;
 use App\Support\BrandSettings;
 use App\Support\CreditSettings;
 use App\Support\EnvironmentGuard;
@@ -75,6 +92,7 @@ use App\Support\NumberCatalogue;
 use App\Support\NumbersBento;
 use App\Support\NumbersHeroContent;
 use App\Support\PaymentGatewayConfig;
+use App\Support\PreloaderSettings;
 use App\Support\ProviderKeys;
 use App\Support\SchedulerHealth;
 use App\Support\SecuritySettings;
@@ -84,14 +102,17 @@ use App\Support\SiteContent;
 use App\Support\SplashSettings;
 use App\Support\SupportAutopilot;
 use App\Support\SupportSettings;
+use App\Support\TaxRates;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Apple\Provider;
 use SocialiteProviders\Manager\SocialiteWasCalled;
@@ -129,8 +150,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('esim.gigs', GigsService::class);
         // NAARA-BUILD-18 — new eSIM adapters, registered so they appear in the
         // Operations Center. Shipped enabled=false; keys added when onboarded.
-        $this->app->singleton('esim.esimaccess', \App\Services\eSIM\EsimAccessService::class);
-        $this->app->singleton('esim.ubigi', \App\Services\eSIM\UbigiService::class); // placeholder tier
+        $this->app->singleton('esim.esimaccess', EsimAccessService::class);
+        $this->app->singleton('esim.ubigi', UbigiService::class); // placeholder tier
 
         // Number providers, resolved by name via app("number.$provider").
         // OTP/rental lane (SmsProviderInterface): Getatext (US), 5sim (global),
@@ -144,10 +165,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('number.twilio', TwilioService::class);
         $this->app->singleton('number.telnyx', TelnyxService::class);
         // NAARA-BUILD-18 — new number adapters (enabled=false until onboarded).
-        $this->app->singleton('number.smspool', \App\Services\SMS\SmsPoolService::class);
-        $this->app->singleton('number.onlinesim', \App\Services\SMS\OnlineSimService::class);
-        $this->app->singleton('number.plivo', \App\Services\SMS\PlivoService::class);
-        $this->app->singleton('number.sonetel', \App\Services\SMS\SonetelService::class); // placeholder tier
+        $this->app->singleton('number.smspool', SmsPoolService::class);
+        $this->app->singleton('number.onlinesim', OnlineSimService::class);
+        $this->app->singleton('number.plivo', PlivoService::class);
+        $this->app->singleton('number.sonetel', SonetelService::class); // placeholder tier
 
         // Web-push sender (self-hosted VAPID) — swapped for a fake in tests.
         $this->app->bind(WebPushSender::class, MinishlinkPushSender::class);
@@ -181,11 +202,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('payout.flutterwave', FlutterwavePayoutGateway::class);
         $this->app->singleton('payout.paypal', PayPalPayoutGateway::class);
         $this->app->singleton('payout.cryptomus', CryptomusPayoutGateway::class);
+        $this->app->singleton('payout.stripe', StripePayoutGateway::class);
         $this->app->singleton(PayoutService::class, fn ($app) => new PayoutService([
             $app->make(PaystackPayoutGateway::class),
             $app->make(FlutterwavePayoutGateway::class),
             $app->make(PayPalPayoutGateway::class),      // international → PayPal email
             $app->make(CryptomusPayoutGateway::class),   // crypto payout rail
+            $app->make(StripePayoutGateway::class),      // Stripe Connect transfer
         ]));
 
         // KYC/identity providers, resolved by name via app("kyc.$provider"), and
@@ -234,8 +257,8 @@ class AppServiceProvider extends ServiceProvider
         // White-label brand token (@brand). Echoes text with the shipped 'Naara'
         // token swapped for the admin-set brand word — used for the handful of
         // brand names generated/shown centrally. A no-op on a default install.
-        \Illuminate\Support\Facades\Blade::directive('brand', function ($expr) {
-            $expr = $expr === '' ? "'".\App\Support\BrandSettings::DEFAULT_WORD."'" : $expr;
+        Blade::directive('brand', function ($expr) {
+            $expr = $expr === '' ? "'".BrandSettings::DEFAULT_WORD."'" : $expr;
 
             return "<?php echo e(\\App\\Support\\BrandSettings::rebrand($expr)); ?>";
         });
@@ -246,7 +269,7 @@ class AppServiceProvider extends ServiceProvider
         // every generated URL (verification, reset) still carries https. Gated to
         // production so local dev over plain HTTP is unaffected.
         if (app()->environment('production')) {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
+            URL::forceScheme('https');
         }
 
         // Livewire stores EVERY file upload to a temporary disk before any app
@@ -277,8 +300,8 @@ class AppServiceProvider extends ServiceProvider
         // the domain-agnostic preloader system about their own page types here,
         // rather than the system hardcoding anything feature-specific. Idempotent
         // and DB-guarded, so it's a no-op on a not-yet-migrated install.
-        \App\Support\PreloaderSettings::registerPageType('numbers', 'Numbers & Virtual Lines');
-        \App\Support\PreloaderSettings::registerPageType('gifts', 'Naara Gift');
+        PreloaderSettings::registerPageType('numbers', 'Numbers & Virtual Lines');
+        PreloaderSettings::registerPageType('gifts', 'Naara Gift');
 
         // Self-hosted web-push channel, addressable as 'webpush' in a
         // notification's via() (owner request — closed-tab notifications).
@@ -311,13 +334,13 @@ class AppServiceProvider extends ServiceProvider
         // Same, for a reversed referral margin-share payout (BUILD-22).
         Event::listen(
             PayoutReversed::class,
-            \App\Listeners\ReturnReferralEarnings::class,
+            ReturnReferralEarnings::class,
         );
 
         // Same, for a reversed staff profit-share payout (BUILD-23).
         Event::listen(
             PayoutReversed::class,
-            \App\Listeners\ReturnStaffEarnings::class,
+            ReturnStaffEarnings::class,
         );
 
         // HOTFIX §2: record every scheduled task's last successful run, so the
@@ -331,10 +354,10 @@ class AppServiceProvider extends ServiceProvider
         // NAARA-BUILD-16 — NCI (Layer 3) subscribes to the routing/health signals,
         // ALWAYS via ShouldQueue listeners, so learning never runs on the customer
         // request path. NCI reads outcomes and writes only its own registry columns.
-        Event::listen(\App\Events\ProviderOutcomeRecorded::class, \App\Services\NCI\Listeners\IncrementNciScore::class);
-        Event::listen(\App\Events\CircuitOpened::class, \App\Services\NCI\Listeners\RecomputeProviderScore::class);
-        Event::listen(\App\Events\CircuitClosed::class, \App\Services\NCI\Listeners\RecomputeProviderScore::class);
-        Event::listen(\App\Events\HealthCheckCompleted::class, \App\Services\NCI\Listeners\RefreshNciOnHealthCheck::class);
+        Event::listen(ProviderOutcomeRecorded::class, IncrementNciScore::class);
+        Event::listen(CircuitOpened::class, RecomputeProviderScore::class);
+        Event::listen(CircuitClosed::class, RecomputeProviderScore::class);
+        Event::listen(HealthCheckCompleted::class, RefreshNciOnHealthCheck::class);
 
         // Extend Socialite with the extra sign-in providers (owner request).
         // Google/Facebook/Twitter are core drivers; Apple/Microsoft/Discord are
@@ -395,11 +418,11 @@ class AppServiceProvider extends ServiceProvider
             if (BrandSettings::isBrandKey($setting->key)) {
                 BrandSettings::flush();
             }
-            if (\App\Support\BentoIcons::isBentoKey($setting->key)) {
-                \App\Support\BentoIcons::flush();
+            if (BentoIcons::isBentoKey($setting->key)) {
+                BentoIcons::flush();
             }
-            if (\App\Support\TaxRates::isTaxKey($setting->key)) {
-                \App\Support\TaxRates::flush();
+            if (TaxRates::isTaxKey($setting->key)) {
+                TaxRates::flush();
             }
             if (HeroBackground::isHeroKey($setting->key)) {
                 HeroBackground::flush();

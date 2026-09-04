@@ -25,6 +25,7 @@ use App\Http\Controllers\Webhooks\OfferwallPostbackController;
 use App\Http\Controllers\Webhooks\PaymentWebhookController;
 use App\Http\Controllers\Webhooks\PayoutWebhookController;
 use App\Http\Controllers\Webhooks\SmsInboundWebhookController;
+use App\Http\Controllers\Webhooks\StripeConnectWebhookController;
 use App\Http\Controllers\Webhooks\TwilioDialerWebhookController;
 use App\Http\Controllers\Webhooks\TwilioDialStatusWebhookController;
 use App\Http\Controllers\Webhooks\TwilioVoiceWebhookController;
@@ -480,6 +481,12 @@ Route::post('/webhooks/payments/{gateway}', PaymentWebhookController::class)
 // idempotent payout-request settlement.
 Route::post('/webhooks/payouts/{provider}', PayoutWebhookController::class)
     ->name('webhooks.payouts');
+
+// Stripe Connect account webhooks (ROADMAP §Layer 0.2 — Stripe payout rail):
+// a separate endpoint/secret from the above, since it carries account.updated
+// onboarding-status events rather than payout-request events.
+Route::post('/webhooks/stripe-connect/account', StripeConnectWebhookController::class)
+    ->name('webhooks.stripe-connect.account');
 
 // KYC result callbacks (ROADMAP §Layer 0.3): signature-verified, idempotent
 // verification decisions.

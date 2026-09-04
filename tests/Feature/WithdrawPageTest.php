@@ -14,6 +14,7 @@ use App\Services\Payouts\ResolvedAccount;
 use App\Support\PayoutSettings;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -176,5 +177,93 @@ class WithdrawPageTest extends TestCase
             ->assertSet('accountError', fn ($v) => $v !== null);
 
         $this->assertDatabaseCount('payout_accounts', 0);
+    }
+
+    public function test_stripe_tab_only_shows_when_stripe_is_configured(): void
+    {
+        $user = $this->verifiedUser();
+
+        $this->actingAs($user)->get('/rewards/withdraw')->assertDontSee('Stripe');
+
+        config(['services.stripe.secret_key' => 'sk_test_stripe']);
+        $this->actingAs($user)->get('/rewards/withdraw')->assertSee('Stripe');
+    }
+
+    public function test_connect_stripe_creates_an_account_and_redirects_to_onboarding(): void
+    {
+        config(['services.stripe.secret_key' => 'sk_test_stripe']);
+        Http::fake([
+            'api.stripe.com/v1/accounts' => Http::response(['id' => 'acct_new']),
+            'api.stripe.com/v1/account_links' => Http::response(['url' => 'https://connect.stripe.com/setup/1']),
+        ]);
+        $user = $this->verifiedUser();
+
+        Livewire::actingAs($user)->test(Withdraw::class)
+            ->set('accountType', 'stripe')
+            ->call('connectStripe')
+            ->assertRedirect('https://connect.stripe.com/setup/1');
+
+        $this->assertDatabaseHas('payout_accounts', [
+            'user_id' => $user->id, 'type' => 'stripe', 'account_number' => 'acct_new', 'is_verified' => false,
+        ]);
+    }
+
+    public function test_an_account_still_onboarding_shows_a_continue_setup_prompt(): void
+    {
+        config(['services.stripe.secret_key' => 'sk_test_stripe']);
+        Http::fake(['api.stripe.com/v1/accounts/acct_pending' => Http::response([
+            'id' => 'acct_pending', 'details_submitted' => false, 'charges_enabled' => false, 'payouts_enabled' => false,
+        ])]);
+        $user = $this->verifiedUser();
+        PayoutAccount::create([
+            'user_id' => $user->id, 'type' => 'stripe', 'country' => 'US', 'currency' => 'USD',
+            'bank_code' => 'stripe', 'bank_name' => 'Stripe', 'account_number' => 'acct_pending',
+            'account_name' => 'acct_pending', 'provider' => 'stripe', 'is_verified' => false, 'is_default' => true,
+        ]);
+
+        $this->actingAs($user)->get('/rewards/withdraw')->assertOk()->assertSee('Onboarding incomplete');
+    }
+
+    public function test_withdrawing_to_a_not_yet_enabled_stripe_account_is_refused(): void
+    {
+        // mount() force-refreshes any pending Stripe account — keep it pending.
+        Http::fake(['api.stripe.com/v1/accounts/acct_pending' => Http::response([
+            'id' => 'acct_pending', 'details_submitted' => false, 'charges_enabled' => false, 'payouts_enabled' => false,
+        ])]);
+        $user = $this->verifiedUser();
+        app(CreditService::class)->rewardReferral($user, 1, 1000);
+        $account = PayoutAccount::create([
+            'user_id' => $user->id, 'type' => 'stripe', 'country' => 'US', 'currency' => 'USD',
+            'bank_code' => 'stripe', 'bank_name' => 'Stripe', 'account_number' => 'acct_pending',
+            'account_name' => 'acct_pending', 'provider' => 'stripe', 'is_verified' => false, 'is_default' => true,
+        ]);
+
+        Livewire::actingAs($user)->test(Withdraw::class)
+            ->set('accountId', $account->id)->set('amountUsd', 10)
+            ->call('withdraw')
+            ->assertSet('withdrawError', fn ($v) => $v !== null);
+
+        $this->assertDatabaseCount('payout_requests', 0);
+    }
+
+    public function test_withdrawing_to_an_enabled_stripe_account_succeeds(): void
+    {
+        $user = $this->verifiedUser();
+        app(CreditService::class)->rewardReferral($user, 1, 1000);
+        $account = PayoutAccount::create([
+            'user_id' => $user->id, 'type' => 'stripe', 'country' => 'US', 'currency' => 'USD',
+            'bank_code' => 'stripe', 'bank_name' => 'Stripe', 'account_number' => 'acct_ready',
+            'account_name' => 'acct_ready', 'provider' => 'stripe', 'is_verified' => true,
+            'payouts_enabled' => true, 'is_default' => true,
+        ]);
+
+        Livewire::actingAs($user)->test(Withdraw::class)
+            ->set('accountId', $account->id)->set('amountUsd', 10)
+            ->call('withdraw')
+            ->assertSet('withdrawError', null);
+
+        $this->assertDatabaseHas('payout_requests', [
+            'user_id' => $user->id, 'provider' => 'stripe', 'status' => 'pending',
+        ]);
     }
 }

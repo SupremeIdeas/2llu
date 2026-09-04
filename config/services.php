@@ -243,6 +243,10 @@ return [
         'public_key' => env('STRIPE_PUBLIC_KEY'), // publishable key (Stripe Elements)
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
         'base_url' => env('STRIPE_BASE_URL', 'https://api.stripe.com/v1'),
+        // Stripe Connect (payout onboarding — separate webhook endpoint/secret
+        // in the Stripe dashboard, since it carries account.updated events
+        // rather than checkout/payment events).
+        'connect_webhook_secret' => env('STRIPE_CONNECT_WEBHOOK_SECRET'),
     ],
 
     // Identity / KYC providers (ROADMAP §Layer 0.3). Admin-managed via the
