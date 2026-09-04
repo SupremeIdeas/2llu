@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\AlertAdminJob;
 use App\Models\User;
 use App\Services\Merchants\MerchantService;
 use App\Support\MerchantSettings;
@@ -50,8 +51,19 @@ class MerchantAutoPromoteCommand extends Command
             ->limit((int) $this->option('limit'))
             ->get()
             ->each(function (User $user) use ($merchants, $admin, &$promoted) {
-                $merchants->promote($user, 'v1', $admin, 'Auto-promoted (eligibility met)');
-                $promoted++;
+                // One failing promotion must never abort the rest of the
+                // batch — every other sweep command in this file isolates
+                // per-row failures the same way.
+                try {
+                    $merchants->promote($user, 'v1', $admin, 'Auto-promoted (eligibility met)');
+                    $promoted++;
+                } catch (\Throwable $e) {
+                    AlertAdminJob::dispatch(
+                        code: 'merchant_auto_promote_failed',
+                        message: "Auto-promotion to Merchant V1 failed for user {$user->id}: {$e->getMessage()}",
+                        context: ['user_id' => $user->id, 'exception' => $e::class],
+                    );
+                }
             });
 
         $this->info("Auto-promoted {$promoted} user(s) to Merchant V1.");

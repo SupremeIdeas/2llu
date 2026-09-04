@@ -92,7 +92,7 @@ Schedule::command('staff:compensation-close')->monthlyOn(1, '03:15')->withoutOve
 
 // Merchant V2 client eSIM control: settle due auto-renewals, expire lapsed
 // subscriptions, and alert merchants about upcoming renewals (money-safe).
-Schedule::command('merchant:client-subscriptions')->dailyAt('05:30')->withoutOverlapping();
+Schedule::command('merchant:client-subscriptions')->dailyAt('05:35')->withoutOverlapping();
 
 // Naara Gift: sync the gift-card catalogue from Reloadly (primary) + Zendit.
 Schedule::command('giftcards:sync')->dailyAt('03:15')->withoutOverlapping();
@@ -101,6 +101,7 @@ Schedule::command('giftcards:sync')->dailyAt('03:15')->withoutOverlapping();
 // pause short ones, and update follower-guarantee priority scores. runInBackground
 // because this scales with subscriber count (real per-subscription computation)
 // and must never block the per-minute queue:work tick. The command itself processes
-// in chunks so its runtime stays flat. 05:45 sits just after the merchant sweep
-// (05:30), clear of every other slot in the staggered window.
+// in chunks so its runtime stays flat. 05:45 sits just after the payout ranking
+// (05:30) and the merchant sweep (05:35), clear of every other slot in the
+// staggered window.
 Schedule::command('brand-subscriptions:bill')->dailyAt('05:45')->withoutOverlapping()->runInBackground();

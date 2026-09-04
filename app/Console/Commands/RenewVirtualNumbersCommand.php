@@ -43,7 +43,15 @@ class RenewVirtualNumbersCommand extends Command
                     if (! $vn->user) {
                         continue;
                     }
-                    $ref = "vnum-renew:{$vn->id}:".now()->format('Y-m');
+                    // Keyed on the PERIOD being charged (next_billing_date), not the
+                    // calendar month the command happens to run in — if a run is ever
+                    // missed and this fires late (or twice) in the same real month, a
+                    // now()-keyed reference would make WalletService's idempotency
+                    // return the existing transaction with no new debit, while the
+                    // code below still advances next_billing_date — silently forgiving
+                    // a month's charge. Keying on the actual due date guarantees each
+                    // distinct billing period is charged exactly once, however late.
+                    $ref = "vnum-renew:{$vn->id}:".Carbon::parse($vn->next_billing_date)->format('Y-m');
                     try {
                         $wallet->debit($vn->user, (float) $vn->monthly_retail, 'USD', [
                             'reference' => $ref,

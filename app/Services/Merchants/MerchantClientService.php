@@ -259,9 +259,18 @@ class MerchantClientService
         } catch (MerchantException $e) {
             // Provisioning failed → funds are back with the merchant (released +
             // provider self-refund). Leave the subscription for manual attention.
+            // The merchant is emailed by the calling command either way; this
+            // alert is for the PLATFORM — a repeated failure here across many
+            // merchants (e.g. a provider outage) is a signal admins need too,
+            // not just a per-merchant audit-log row nobody is watching.
             Auditor::log('merchant.autorenew_failed', 'MerchantClientSubscription', $subscription->id, [
                 'merchant_id' => $merchant->id, 'reason' => $e->getMessage(),
             ]);
+            AlertAdminJob::dispatch(
+                code: 'merchant_autorenew_failed',
+                message: "Merchant #{$merchant->id} auto-renewal failed for client {$client->name}: {$e->getMessage()}",
+                context: ['merchant_id' => $merchant->id, 'subscription_id' => $subscription->id, 'reason' => $e->getMessage()],
+            );
 
             return false;
         }
