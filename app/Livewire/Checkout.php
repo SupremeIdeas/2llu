@@ -5,6 +5,8 @@ namespace App\Livewire;
 use App\Exceptions\EsimProviderException;
 use App\Exceptions\InsufficientBalanceException;
 use App\Jobs\AlertAdminJob;
+use App\Jobs\EvaluateJourneyGoalsJob;
+use App\Jobs\ProcessReferralRewardJob;
 use App\Models\EsimOrder;
 use App\Models\EsimPlan;
 use App\Notifications\OrderPlacedNotification;
@@ -22,6 +24,7 @@ use App\Support\MerchantBranding;
 use App\Support\Niche\DeviceCompat;
 use App\Support\Niche\LpaActivation;
 use App\Support\PendingCoupon;
+use App\Support\PurchaseReceipt;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -292,7 +295,7 @@ class Checkout extends Component
                 'currency' => 'USD',
             ]);
             // Itemised receipt (BUILD-7 §1) — best-effort, never blocks the order.
-            \App\Support\PurchaseReceipt::send($user, $this->plan->name, (float) $walletCharge, $ref);
+            PurchaseReceipt::send($user, $this->plan->name, (float) $walletCharge, $ref);
         } catch (Throwable $e) {
             // Orphan-charge guard: charged + provider ordered, but we failed to
             // persist. Refund the money AND the redeemed credits, then alert.
@@ -331,7 +334,7 @@ class Checkout extends Component
         // referrer a share of Naara's OWN margin on this order — once ever, off
         // the money path. profit is internal-only; only the payable share is
         // persisted. Idempotent via Referral.rewarded + the ledger reference.
-        \App\Jobs\ProcessReferralRewardJob::dispatch($user->id, 'esim', $result->profit);
+        ProcessReferralRewardJob::dispatch($user->id, 'esim', $result->profit);
 
         // Order-confirmation email (best-effort; never blocks the money path) —
         // shows the real money charged.
@@ -349,6 +352,10 @@ class Checkout extends Component
             'first_purchase',
             'First purchase bonus',
         );
+
+        // My Journey goals (loyalty expansion) — queued so a purchase-count or
+        // countries-reached goal can unlock the instant this order lands.
+        EvaluateJourneyGoalsJob::dispatch($user->id);
 
         $this->done = true;
         $this->message = $creditsSpent > 0

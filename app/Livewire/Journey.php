@@ -4,18 +4,18 @@ namespace App\Livewire;
 
 use App\Models\CreditLedger;
 use App\Models\EsimOrder;
+use App\Models\JourneyGoal;
 use App\Models\User;
 use App\Services\Credits\CreditService;
+use App\Services\Journey\JourneyGoalService;
 use App\Support\CreditSettings;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
- * "My Journey" — two real, data-grounded timelines, no invented metrics:
+ * "My Journey" — three real, data-grounded panels, no invented metrics:
  *  - Loyalty Milestones: the user's own NaaraCredits earning history
  *    (CreditLedger), grouped into the real mechanisms the app actually grants
  *    credits through (signup, first purchase, daily check-in, ads, other).
@@ -23,6 +23,9 @@ use Livewire\Component;
  *    passport-stamp timeline (country, plan, validity) — no usage-over-time
  *    graph, since that requires a snapshot pipeline this platform doesn't
  *    have yet (getUsage() is polled nowhere).
+ *  - Goals & Challenges: admin-defined achievements (JourneyGoalService) —
+ *    evaluated lazily here as a fallback (event-driven dispatch elsewhere
+ *    makes the reward feel instant; this guarantees it's never missed).
  */
 #[Layout('components.layouts.customer')]
 class Journey extends Component
@@ -32,7 +35,7 @@ class Journey extends Component
 
     public function setTab(string $tab): void
     {
-        $this->tab = in_array($tab, ['milestones', 'travel'], true) ? $tab : 'milestones';
+        $this->tab = in_array($tab, ['milestones', 'travel', 'goals'], true) ? $tab : 'milestones';
     }
 
     /** @return array<int, array{key: string, icon: string, title: string, description: string, status: string, meta: ?string}> */
@@ -70,7 +73,7 @@ class Journey extends Component
                 'key' => 'checkin', 'icon' => 'zap', 'title' => 'Daily check-in streak',
                 'description' => $checkins->isEmpty() ? 'Check in daily from Rewards to start earning.' : 'Keep checking in daily to grow your streak.',
                 'status' => $checkins->isEmpty() ? 'locked' : 'ongoing',
-                'meta' => $checkins->isEmpty() ? null : $this->checkinStreak($checkins).'-day streak · '.$checkins->count().' total check-ins',
+                'meta' => $checkins->isEmpty() ? null : app(JourneyGoalService::class)->checkinStreak($user).'-day streak · '.$checkins->count().' total check-ins',
             ],
         ];
 
@@ -95,40 +98,25 @@ class Journey extends Component
         return $items;
     }
 
-    /** Consecutive-day streak ending today or yesterday, from real check-in rows. */
-    private function checkinStreak(Collection $checkins): int
+    /** @return array<int, array{goal: JourneyGoal, progress: array}> */
+    private function goals(User $user, JourneyGoalService $engine): array
     {
-        $dates = $checkins->map(fn ($row) => $row->created_at->copy()->startOfDay())
-            ->unique(fn ($d) => $d->toDateString())
-            ->sortByDesc(fn ($d) => $d->toDateString())
-            ->values();
-
-        if ($dates->isEmpty()) {
-            return 0;
+        // Lazy fallback evaluation: event-driven dispatch (checkout, number
+        // purchase, check-in, etc.) already grants the moment an action
+        // completes it, but a visit here always guarantees it's never missed
+        // (e.g. a goal an admin only just activated).
+        $newlyGranted = $engine->evaluate($user);
+        foreach ($newlyGranted as $claim) {
+            $this->dispatch('nx-toast', variant: 'hero', type: 'success', title: 'Goal reached!',
+                message: '+'.number_format((float) $claim->credits_granted, 0)." NaaraCredits — {$claim->goal->title}");
         }
 
-        $expected = Carbon::today();
-        if ($dates->first()->lt($expected->copy()->subDay())) {
-            return 0; // most recent check-in is older than yesterday — streak broken
-        }
-        if ($dates->first()->equalTo($expected->copy()->subDay())) {
-            $expected = $expected->subDay(); // no check-in yet today, but yesterday counts
-        }
-
-        $streak = 0;
-        foreach ($dates as $date) {
-            if ($date->equalTo($expected)) {
-                $streak++;
-                $expected = $expected->copy()->subDay();
-            } elseif ($date->lt($expected)) {
-                break;
-            }
-        }
-
-        return $streak;
+        return $engine->goalsFor($user)
+            ->map(fn ($goal) => ['goal' => $goal, 'progress' => $engine->progress($user, $goal)])
+            ->all();
     }
 
-    public function render(CreditService $credits)
+    public function render(CreditService $credits, JourneyGoalService $goalEngine)
     {
         $user = Auth::user();
 
@@ -137,6 +125,10 @@ class Journey extends Component
             'milestones' => CreditSettings::enabled() ? $this->milestones($user) : [],
             'orders' => EsimOrder::where('user_id', $user->id)->with('plan')
                 ->orderByDesc('created_at')->get(),
+            // Only evaluate/query goals when that tab is actually open — the
+            // event-driven dispatch (checkout, number purchase, etc.) is the
+            // primary path, this is just the guaranteed-to-catch-up fallback.
+            'goals' => ($this->tab === 'goals' && CreditSettings::enabled()) ? $this->goals($user, $goalEngine) : [],
         ]);
     }
 }

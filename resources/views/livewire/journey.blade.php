@@ -7,12 +7,16 @@
     {{-- Tabs --}}
     <div class="mb-6 inline-flex w-full rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-white/10 dark:bg-white/5">
         <button type="button" wire:click="setTab('milestones')"
-                class="flex-1 rounded-full px-4 py-2 text-sm font-semibold transition {{ $tab === 'milestones' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-500 dark:text-slate-400' }}">
-            <x-icon name="gift" class="mr-1 inline h-4 w-4" /> Loyalty Milestones
+                class="flex-1 rounded-full px-3 py-2 text-sm font-semibold transition {{ $tab === 'milestones' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-500 dark:text-slate-400' }}">
+            <x-icon name="gift" class="mr-1 inline h-4 w-4" /> Milestones
+        </button>
+        <button type="button" wire:click="setTab('goals')"
+                class="flex-1 rounded-full px-3 py-2 text-sm font-semibold transition {{ $tab === 'goals' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-500 dark:text-slate-400' }}">
+            <x-icon name="star" class="mr-1 inline h-4 w-4" /> Goals
         </button>
         <button type="button" wire:click="setTab('travel')"
-                class="flex-1 rounded-full px-4 py-2 text-sm font-semibold transition {{ $tab === 'travel' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-500 dark:text-slate-400' }}">
-            <x-icon name="globe" class="mr-1 inline h-4 w-4" /> Travel / eSIM
+                class="flex-1 rounded-full px-3 py-2 text-sm font-semibold transition {{ $tab === 'travel' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-500 dark:text-slate-400' }}">
+            <x-icon name="globe" class="mr-1 inline h-4 w-4" /> Travel
         </button>
     </div>
 
@@ -49,6 +53,50 @@
                 @endforeach
             </div>
             <a href="{{ route('rewards') }}" wire:navigate class="mt-2 block text-center text-sm font-semibold text-primary hover:underline dark:text-teal-300">Go earn more on Rewards →</a>
+        @endif
+    @elseif ($tab === 'goals')
+        @if (! $creditsEnabled)
+            <div class="rounded-2xl border border-dashed border-slate-300 py-12 text-center text-sm text-slate-400 dark:border-white/10">NaaraCredits isn't enabled right now.</div>
+        @elseif (empty($goals))
+            <div class="rounded-2xl border border-dashed border-slate-300 py-12 text-center text-sm text-slate-400 dark:border-white/10">No goals are live yet — check back soon.</div>
+        @else
+            <div class="space-y-3">
+                @foreach ($goals as $row)
+                    @php
+                        $goal = $row['goal']; $p = $row['progress'];
+                        $pct = $p['target'] > 0 ? min(100, (int) round($p['current'] / $p['target'] * 100)) : 0;
+                        $periodLabel = match ($goal->period_type) {
+                            'monthly' => 'This month', 'quarterly' => 'This quarter', 'yearly' => 'This year',
+                            'campaign' => 'Limited time', default => 'Lifetime',
+                        };
+                    @endphp
+                    <div wire:key="goal-{{ $goal->id }}" class="rounded-2xl border border-slate-200 nx-glass-tile p-4 dark:border-white/10">
+                        <div class="flex items-start justify-between gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $p['claimed'] ? 'bg-emerald-500 text-white' : 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300' }}">
+                                <x-icon name="{{ $p['claimed'] ? 'check' : ($goal->icon ?: 'star') }}" class="h-5 w-5" />
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center justify-between gap-2">
+                                    <p class="font-semibold text-slate-900 dark:text-white">{{ $goal->title }}</p>
+                                    <span class="shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase text-accent-dark dark:text-accent">+{{ rtrim(rtrim(number_format((float) $goal->reward_credits, 2), '0'), '.') }}</span>
+                                </div>
+                                <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{{ $goal->description }}</p>
+                                <div class="mt-2.5">
+                                    <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+                                        <div class="h-full rounded-full {{ $p['claimed'] ? 'bg-emerald-500' : 'bg-primary' }}" style="width: {{ $pct }}%"></div>
+                                    </div>
+                                    <p class="mt-1 text-xs text-slate-400">
+                                        {{ $periodLabel }} ·
+                                        @if ($p['claimed']) Reached — {{ $p['claimed_at']?->format('M j, Y') }}
+                                        @else {{ rtrim(rtrim(number_format($p['current'], 2), '0'), '.') }} / {{ rtrim(rtrim(number_format($p['target'], 2), '0'), '.') }}
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
         @endif
     @else
         @if ($orders->isEmpty())

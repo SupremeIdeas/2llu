@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\SmsException;
+use App\Jobs\EvaluateJourneyGoalsJob;
 use App\Jobs\PollSmsOtpJob;
 use App\Jobs\ProcessReferralRewardJob;
 use App\Models\SmsOrder;
@@ -480,6 +481,10 @@ class GetNumber extends Component
             'first_purchase',
             'First purchase bonus',
         );
+
+        // My Journey goals (loyalty expansion) — queued so a purchase-count
+        // goal can unlock the instant this order lands.
+        EvaluateJourneyGoalsJob::dispatch($user->id);
 
         PollSmsOtpJob::dispatch($result->order->id, 'USD');
         $this->orderId = $result->order->id;
