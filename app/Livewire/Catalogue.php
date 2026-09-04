@@ -6,7 +6,9 @@ use App\Models\EsimPlan;
 use App\Support\CountryNames;
 use App\Support\EsimCatalogue;
 use App\Support\EsimRegions;
+use App\Support\PendingCoupon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
@@ -162,7 +164,7 @@ class Catalogue extends Component
     public function mount(): void
     {
         if ($this->claim !== '') {
-            \App\Support\PendingCoupon::stash($this->claim);
+            PendingCoupon::stash($this->claim);
         }
     }
 
@@ -262,12 +264,16 @@ class Catalogue extends Component
         // 5) The default grid for the active segment (Popular/Local/Regional/Global).
         $plans = null;
         $globalBanner = null;
+        $popularDestinations = [];
         if ($view === 'popular') {
             $featured = $this->lineQuery($hasVoice)->where('is_featured', true);
             // Until an admin curates the Popular tab, fall back to every plan on
             // the line so the default landing view is never empty.
             $base = (clone $featured)->doesntExist() ? $this->lineQuery($hasVoice) : $featured;
             $plans = $base->orderByDesc('is_featured')->orderBy('name')->paginate(12);
+            // Photo-card row of the same "featured" countries (theme-shared —
+            // owner request: one layout, every theme, not a per-theme variant).
+            $popularDestinations = EsimCatalogue::popularDestinations($hasVoice);
         } elseif ($view === 'global') {
             // Global goes straight to its banner + plan list (reference layout) —
             // there is only ever the one worldwide grouping, so no tile step.
@@ -282,6 +288,7 @@ class Catalogue extends Component
             'plans' => $plans,
             'globalBanner' => $globalBanner,
             'globalCount' => $grid['global']['count'] ?? 0,
+            'popularDestinations' => $popularDestinations,
         ]));
     }
 
@@ -322,7 +329,7 @@ class Catalogue extends Component
         $coverage = match ($plan->coverage_type) {
             EsimPlan::COVERAGE_GLOBAL => 'Worldwide coverage',
             EsimPlan::COVERAGE_REGIONAL => ($plan->region_slug ? EsimRegions::label($plan->region_slug).' region' : 'Multi-country coverage'),
-            default => count((array) $plan->countries).' '.\Illuminate\Support\Str::plural('country', count((array) $plan->countries)),
+            default => count((array) $plan->countries).' '.Str::plural('country', count((array) $plan->countries)),
         };
         $facts[] = ['icon' => 'globe', 'label' => $coverage];
 

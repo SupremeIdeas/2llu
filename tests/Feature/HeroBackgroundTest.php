@@ -149,15 +149,104 @@ class HeroBackgroundTest extends TestCase
 
     public function test_the_hero_block_degrades_cleanly_with_no_image(): void
     {
-        // No hero image set: title, description and BOTH CTAs still render, in the
-        // strict two-column grid that never collapses (BUILD-13 §1.4, §3.4).
+        // No hero image set: title, description and BOTH CTAs still render.
         $this->assertFalse(HeroBackground::isSet());
 
         Livewire::actingAs(User::factory()->create())->test(Dashboard::class)
             ->assertSee('Connectivity')   // headline ("My" / "Connectivity" split across lines)
             ->assertSee(HeroBackground::DEFAULT_DESCRIPTION)
-            ->assertSee('Buy eSIM')
-            ->assertSee('Get Number')
-            ->assertSee('flex items-center gap-2.5', false); // pills stay side-by-side at every width
+            ->assertSee('eSIM')
+            ->assertSee('Number')
+            // Each pill's own label is a single line — never internally wrapped.
+            ->assertSee('whitespace-nowrap', false);
+    }
+
+    // ---- Admin-overridable, resizable hero title (owner request) ----------
+
+    public function test_the_hero_title_defaults_to_my_connectivity(): void
+    {
+        $this->assertSame(HeroBackground::DEFAULT_TITLE, HeroBackground::title());
+        $this->assertSame('My', HeroBackground::titleFirstWord());
+        $this->assertSame('Connectivity', HeroBackground::titleRestWords());
+        $this->assertSame(HeroBackground::DEFAULT_TITLE_SIZE, HeroBackground::titleSize());
+
+        Livewire::actingAs(User::factory()->create())->test(Dashboard::class)
+            ->assertSee('My')
+            ->assertSee('Connectivity');
+    }
+
+    public function test_admin_can_override_the_hero_title(): void
+    {
+        Storage::fake('public');
+        Livewire::actingAs($this->admin())->test(Branding::class)
+            ->set('brand_name', 'NaaraSim')
+            ->set('hero_title', '  Stay Connected  ')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Stay Connected', HeroBackground::title());
+        $this->assertSame('Stay', HeroBackground::titleFirstWord());
+        $this->assertSame('Connected', HeroBackground::titleRestWords());
+
+        Livewire::actingAs(User::factory()->create())->test(Dashboard::class)
+            ->assertSee('Stay')
+            ->assertSee('Connected')
+            ->assertDontSee('My Connectivity');
+    }
+
+    public function test_a_single_word_title_has_no_rest_and_still_renders(): void
+    {
+        Setting::setValue(HeroBackground::TITLE_KEY, 'Naara', 'brand');
+        HeroBackground::flush();
+
+        $this->assertSame('Naara', HeroBackground::titleFirstWord());
+        $this->assertSame('', HeroBackground::titleRestWords());
+
+        Livewire::actingAs(User::factory()->create())->test(Dashboard::class)->assertSee('Naara');
+    }
+
+    public function test_blank_title_falls_back_to_the_default(): void
+    {
+        Storage::fake('public');
+        Setting::setValue(HeroBackground::TITLE_KEY, 'Something custom', 'brand');
+        HeroBackground::flush();
+
+        Livewire::actingAs($this->admin())->test(Branding::class)
+            ->set('brand_name', 'NaaraSim')
+            ->set('hero_title', '   ')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame(HeroBackground::DEFAULT_TITLE, HeroBackground::title());
+    }
+
+    public function test_admin_can_change_the_hero_title_size(): void
+    {
+        Storage::fake('public');
+        Livewire::actingAs($this->admin())->test(Branding::class)
+            ->set('brand_name', 'NaaraSim')
+            ->set('hero_title_size', 'xl')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('xl', HeroBackground::titleSize());
+
+        // The literal class the 'xl' preset renders (kept in sync with the
+        // match() in _hero.blade.php — see that file for why it's literal).
+        Livewire::actingAs(User::factory()->create())->test(Dashboard::class)
+            ->assertSee('text-[3rem]', false);
+    }
+
+    public function test_an_invalid_title_size_is_rejected(): void
+    {
+        Storage::fake('public');
+        Livewire::actingAs($this->admin())->test(Branding::class)
+            ->set('brand_name', 'NaaraSim')
+            ->set('hero_title_size', 'huge')
+            ->call('save')
+            ->assertHasErrors('hero_title_size');
+
+        // Unchanged — still the default.
+        $this->assertSame(HeroBackground::DEFAULT_TITLE_SIZE, HeroBackground::titleSize());
     }
 }

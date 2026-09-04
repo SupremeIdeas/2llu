@@ -94,7 +94,31 @@
                     @endif
                 </div>
             </div>
-            <p class="mb-3 text-[11px] text-slate-400">Shown as a <strong>real image</strong> under the “My Connectivity” title on the customer dashboard home, above the Buy&nbsp;eSIM / Get&nbsp;number buttons. <strong>WebP or JPG, 1600×800px recommended (2:1) — will crop to fit</strong>, under 600&nbsp;KB. Switches automatically with the user’s light/dark theme. Leave blank for a clean title-only header.</p>
+            <p class="mb-3 text-[11px] text-slate-400">Shown as a <strong>real image</strong> under the hero title on the customer dashboard home, above the eSIM / Number buttons. <strong>WebP or JPG, 1600×800px recommended (2:1) — will crop to fit</strong>, under 600&nbsp;KB. Switches automatically with the user’s light/dark theme. Leave blank for a clean title-only header.</p>
+
+            {{-- Headline override + size (owner request). Blank = keep the
+                 shipped "My Connectivity"; the size preset scales it up/down
+                 without touching any other layout. --}}
+            <div class="mb-4 grid gap-4 sm:grid-cols-[1fr,10rem]">
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Hero title</label>
+                    <input type="text" wire:model="hero_title" maxlength="40"
+                           placeholder="{{ \App\Support\HeroBackground::DEFAULT_TITLE }}"
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-primary dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <p class="mt-1 text-[11px] text-slate-400">The big headline above the description. Leave blank for the default. The first word renders plain; the rest renders in the accent gradient.</p>
+                    @error('hero_title') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Title size</label>
+                    <select wire:model="hero_title_size"
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-primary dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        @foreach (\App\Support\HeroBackground::TITLE_SIZES as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('hero_title_size') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+            </div>
 
             {{-- Description line under the title (BUILD-13 §3). --}}
             <div class="mb-4">

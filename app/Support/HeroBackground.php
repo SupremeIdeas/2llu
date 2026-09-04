@@ -18,26 +18,59 @@ use Illuminate\Support\Facades\Cache;
  */
 class HeroBackground
 {
-    private const CACHE_KEY = 'dashboard.hero.v3';
+    private const CACHE_KEY = 'dashboard.hero.v4';
 
     public const LIGHT_KEY = 'dashboard.hero.image_light';
 
     public const DARK_KEY = 'dashboard.hero.image_dark';
 
-    /** Short line under the "My Connectivity" title (BUILD-13 §3). */
+    /** Short line under the hero title (BUILD-13 §3). */
     public const DESC_KEY = 'dashboard.hero.description';
 
     /** Admin on/off switch for the dashboard hero image (owner request). */
     public const ENABLED_KEY = 'dashboard.hero.enabled';
 
+    /** Admin-overridable hero headline (owner request). */
+    public const TITLE_KEY = 'dashboard.hero.title';
+
+    /** Admin-chosen headline size preset — see TITLE_SIZES. */
+    public const TITLE_SIZE_KEY = 'dashboard.hero.title_size';
+
     public const DEFAULT_DESCRIPTION = 'Your eSIMs, numbers, and wallet — all in one place.';
 
-    /** @return array{light: ?string, dark: ?string, description: string, enabled: bool} */
+    public const DEFAULT_TITLE = 'My Connectivity';
+
+    public const DEFAULT_TITLE_SIZE = 'md';
+
+    /**
+     * Headline size preset keys → admin-facing label. 'md' is the size the hero
+     * shipped with, so picking it changes nothing.
+     *
+     * The actual Tailwind classes for each preset are NOT stored here — they
+     * live as literal strings in _hero.blade.php's `match()`. Tailwind's content
+     * scanner only reads resources/**\/*.blade.php (see tailwind.config.js), not
+     * app/**\/*.php, so any class string built only inside a PHP support class
+     * would silently vanish from the production build (purged, never generated).
+     * This is the same reason ThemePreset emits CSS-variable overrides instead
+     * of composing utility classes — keep that discipline here too.
+     *
+     * @var array<string, string>
+     */
+    public const TITLE_SIZES = [
+        'sm' => 'Small',
+        'md' => 'Medium (default)',
+        'lg' => 'Large',
+        'xl' => 'Extra large',
+    ];
+
+    /** @return array{light: ?string, dark: ?string, description: string, enabled: bool, title: string, title_size: string} */
     public static function current(): array
     {
         return Cache::rememberForever(self::CACHE_KEY, function () {
             try {
                 $desc = trim((string) Setting::getValue(self::DESC_KEY, ''));
+                $title = trim((string) Setting::getValue(self::TITLE_KEY, ''));
+                $titleSize = (string) Setting::getValue(self::TITLE_SIZE_KEY, '');
 
                 return [
                     'light' => Setting::getValue(self::LIGHT_KEY) ?: null,
@@ -46,9 +79,15 @@ class HeroBackground
                     // Default ON so existing installs are unchanged; the admin can
                     // turn the hero image off without removing the uploaded art.
                     'enabled' => (bool) Setting::getValue(self::ENABLED_KEY, true),
+                    'title' => $title !== '' ? $title : self::DEFAULT_TITLE,
+                    'title_size' => array_key_exists($titleSize, self::TITLE_SIZES) ? $titleSize : self::DEFAULT_TITLE_SIZE,
                 ];
             } catch (\Throwable) {
-                return ['light' => null, 'dark' => null, 'description' => self::DEFAULT_DESCRIPTION, 'enabled' => true];
+                return [
+                    'light' => null, 'dark' => null,
+                    'description' => self::DEFAULT_DESCRIPTION, 'enabled' => true,
+                    'title' => self::DEFAULT_TITLE, 'title_size' => self::DEFAULT_TITLE_SIZE,
+                ];
             }
         });
     }
@@ -83,6 +122,36 @@ class HeroBackground
         return filled($c['light']) || filled($c['dark']);
     }
 
+    /** The dashboard hero headline — admin override or the default. Never empty. */
+    public static function title(): string
+    {
+        return self::current()['title'];
+    }
+
+    /** The admin-chosen headline size preset (sm|md|lg|xl); always a valid key. */
+    public static function titleSize(): string
+    {
+        return self::current()['title_size'];
+    }
+
+    /**
+     * The title split for the two-tone heading treatment: the first word renders
+     * plain, the rest renders in the gradient accent — the same visual pattern
+     * as the shipped "My" / "Connectivity" split, generalised to any admin-typed
+     * title. A single-word title has no "rest" — the Blade partial then applies
+     * the gradient to the whole word instead of leaving it plain.
+     */
+    public static function titleFirstWord(): string
+    {
+        return explode(' ', self::title(), 2)[0];
+    }
+
+    /** Every word after the first (see titleFirstWord()); '' for a single word. */
+    public static function titleRestWords(): string
+    {
+        return explode(' ', self::title(), 2)[1] ?? '';
+    }
+
     /** Whether the dashboard should actually SHOW the hero image right now:
      *  an image is uploaded AND the admin switch is on. */
     public static function showsOnDashboard(): bool
@@ -97,6 +166,9 @@ class HeroBackground
 
     public static function isHeroKey(string $key): bool
     {
-        return in_array($key, [self::LIGHT_KEY, self::DARK_KEY, self::DESC_KEY, self::ENABLED_KEY], true);
+        return in_array($key, [
+            self::LIGHT_KEY, self::DARK_KEY, self::DESC_KEY, self::ENABLED_KEY,
+            self::TITLE_KEY, self::TITLE_SIZE_KEY,
+        ], true);
     }
 }

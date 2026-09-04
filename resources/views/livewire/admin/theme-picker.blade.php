@@ -35,7 +35,7 @@
                     @endif
                 </div>
 
-                <div class="mt-3 flex items-center gap-2">
+                <div class="mt-3 flex flex-wrap items-center gap-2">
                     @if ($p['slug'] === $active)
                         <span class="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-sm font-semibold text-primary dark:bg-teal-500/15 dark:text-teal-300">
                             <x-icon name="check" class="h-4 w-4" /> Active
@@ -50,14 +50,72 @@
                             Apply
                         </button>
                     @endif
-                    <span class="text-[11px] uppercase tracking-wide text-slate-400">{{ str_replace('_', ' ', $p['icon_family']['style'] ?? 'sprite') }} icons</span>
+                    <button type="button" wire:click="editHero('{{ $p['slug'] }}')"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                        <x-icon name="image" class="h-4 w-4" /> Hero images
+                    </button>
                 </div>
+                <span class="mt-2 text-[11px] uppercase tracking-wide text-slate-400">{{ str_replace('_', ' ', $p['icon_family']['style'] ?? 'sprite') }} icons</span>
             </div>
         @endforeach
     </div>
 
     <p class="mt-5 text-xs text-slate-400 dark:text-slate-500">
-        Structural layout variants and the per-theme hero art land in the next batch — today each theme
-        recolours and re-shapes the whole platform. “Naara Official” is the permanent default and can’t be removed.
+        Each theme recolours and re-shapes the whole platform, and carries its own hero image per surface
+        (Dashboard, eSIM, Numbers) — click “Hero images” on any theme to upload, replace or remove them.
+        “Naara Official” is the permanent default and can’t be removed.
     </p>
+
+    {{-- ONE modal engine (blueprint §31) — hero-image editor for whichever
+         theme editHero() opened. showHeroModal is a real boolean (not the
+         string slug) so the modal's own close paths (X, backdrop, Escape) can
+         write straight back to it. --}}
+    <x-ui.modal wire="showHeroModal" title="{{ $editingName }} — hero images" max-width="lg">
+        <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">
+            Shown behind the headline on each surface when <strong>{{ $editingName }}</strong> is the active theme.
+            WebP or JPG, under 600&nbsp;KB. Leave a slot blank to keep what's already saved for it.
+        </p>
+
+        <div class="space-y-4">
+            @foreach ([
+                ['dashboard', 'Dashboard', 'hero_dashboard'],
+                ['esim', 'eSIM', 'hero_esim'],
+                ['numbers', 'Numbers', 'hero_numbers'],
+            ] as [$surface, $label, $field])
+                <div class="rounded-xl border border-slate-200 p-3 dark:border-[#2D4060]">
+                    <div class="mb-2 flex items-center justify-between">
+                        <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">{{ $label }}</label>
+                        @if ($currentHero[$surface] ?? null)
+                            <button type="button" wire:click="removeHeroSurface('{{ $surface }}')"
+                                    wire:confirm="Remove the {{ $label }} hero image for {{ $editingName }}?"
+                                    class="text-[11px] font-medium text-red-600 hover:underline">Remove</button>
+                        @endif
+                    </div>
+                    <div class="mb-2 flex aspect-[2/1] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-[#2D4060] dark:bg-[#243352]">
+                        @if ($this->{$field} && $this->{$field}->isPreviewable())
+                            <img src="{{ $this->{$field}->temporaryUrl() }}" class="h-full w-full object-cover">
+                        @elseif ($currentHero[$surface] ?? null)
+                            <img src="{{ $currentHero[$surface] }}" class="h-full w-full object-cover">
+                        @else
+                            <span class="text-[11px] text-slate-400">No image for this surface</span>
+                        @endif
+                    </div>
+                    <input type="file" wire:model="{{ $field }}" accept="image/webp,image/jpeg"
+                           class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary dark:text-slate-400">
+                    @error($field) <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-5 flex justify-end gap-2">
+            <button type="button" @click="open = false"
+                    class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                Cancel
+            </button>
+            <button type="button" wire:click="saveHero" wire:loading.attr="disabled" wire:target="saveHero"
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                <x-icon name="badge-check" class="h-4 w-4" /> Save hero images
+            </button>
+        </div>
+    </x-ui.modal>
 </div>

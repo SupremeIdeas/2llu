@@ -270,7 +270,10 @@
                 @endif
             @endif
 
-            {{-- Grid (4-col cards) or list (stacked rows), per the §6.7 toggle. --}}
+            {{-- Grid (4-col cards) or list (stacked rows), per the §6.7 toggle.
+                 SOLID cards in both themes (owner request: no glass/blur on the
+                 More sheet). The active item keeps its brand-tinted highlight;
+                 icons render white on dark for contrast against the solid card. --}}
             <div :class="moreLayout === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-4 gap-3'">
                 @foreach ($more as $item)
                     @continue(! empty($item['heading'])) {{-- headings are desktop-sidebar only --}}
@@ -278,10 +281,11 @@
                        :class="moreLayout === 'list' ? 'flex-row items-center gap-3 p-3 text-left' : 'flex-col items-center gap-1.5 p-3 text-center'"
                        @class([
                            'flex rounded-2xl border transition',
-                           'border-primary/30 bg-primary/10 dark:border-primary/40 dark:bg-primary/20' => $isActive($item['route']),
-                           'border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10' => ! $isActive($item['route']),
+                           'border-primary/30 bg-primary/10 dark:border-primary/40 dark:bg-primary/15' => $isActive($item['route']),
+                           'border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-[#2D4060] dark:bg-[#152238] dark:hover:bg-[#1B2A44]' => ! $isActive($item['route']),
                        ])>
-                        <x-icon :name="$item['icon']" class="h-6 w-6 shrink-0 text-primary" />
+                        {{-- Icon: brand teal in light mode; white on dark for contrast. --}}
+                        <x-icon :name="$item['icon']" class="h-6 w-6 shrink-0 text-primary dark:text-white" />
                         <span class="font-medium leading-tight text-slate-600 dark:text-slate-300"
                               :class="moreLayout === 'list' ? 'text-sm' : 'text-[11px]'">{{ $item['label'] }}</span>
                     </a>

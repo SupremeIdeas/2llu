@@ -47,7 +47,7 @@ class DashboardLayoutVariantTest extends TestCase
         Livewire::actingAs($this->userWithALine())->test(Dashboard::class)
             ->assertOk()
             ->assertSee('Connectivity')   // hero
-            ->assertSee('Buy eSIM')          // action tiles
+            ->assertSee('eSIM')              // action tiles
             ->assertSee('My Lines');         // connectivity summary
     }
 
@@ -62,7 +62,7 @@ class DashboardLayoutVariantTest extends TestCase
         Livewire::actingAs($this->userWithALine())->test(Dashboard::class)
             ->assertOk()
             ->assertSee('Connectivity')
-            ->assertSee('Buy eSIM')
+            ->assertSee('eSIM')
             ->assertSee('My Lines');
     }
 

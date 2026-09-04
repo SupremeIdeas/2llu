@@ -8,6 +8,20 @@
 @php($themeHero = \App\Support\ThemePreset::heroFor('dashboard'))
 @php($heroImg = ($hasHero ? ($heroLight ?: $heroDark) : null) ?: $themeHero)
 @php($heroImgDark = ($hasHero && $heroDark) ? $heroDark : $themeHero)
+{{-- Admin-overridable + resizable headline (owner request). Defaults to the
+     shipped "My Connectivity" at the shipped size, so an untouched install
+     renders byte-identical to before. --}}
+@php($heroTitleFirst = \App\Support\HeroBackground::titleFirstWord())
+@php($heroTitleRest = \App\Support\HeroBackground::titleRestWords())
+{{-- Literal classes here (not composed in the PHP support class) so Tailwind's
+     content scanner — which only reads resources/**/*.blade.php — actually sees
+     them; a string built only inside app/**/*.php would be silently purged. --}}
+@php($heroTitleSizeClasses = match (\App\Support\HeroBackground::titleSize()) {
+    'sm' => 'text-[2rem] sm:text-[2.5rem]',
+    'lg' => 'text-[2.75rem] sm:text-[3.75rem]',
+    'xl' => 'text-[3rem] sm:text-[4.25rem]',
+    default => 'text-[2.5rem] sm:text-[3.25rem]', // 'md' — the shipped default
+})
 
 {{--
     Dashboard home hero (reference-matched). Text sits LEFT; the photo bleeds into
@@ -29,22 +43,30 @@
     @endif
 
     <div class="relative z-10 max-w-[60%] pt-0.5 sm:max-w-[56%]">
-        <h1 class="font-display text-[2.5rem] font-extrabold leading-[1.07] tracking-[-0.025em] text-slate-900 dark:text-white sm:text-[3.25rem]">
-            My<br>
-            <span class="bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent dark:from-teal-300 dark:to-teal-400">Connectivity</span>
+        <h1 class="font-display {{ $heroTitleSizeClasses }} font-extrabold leading-[1.07] tracking-[-0.025em] text-slate-900 dark:text-white">
+            @if ($heroTitleRest !== '')
+                {{ $heroTitleFirst }}<br>
+                <span class="bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent dark:from-teal-300 dark:to-teal-400">{{ $heroTitleRest }}</span>
+            @else
+                <span class="bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent dark:from-teal-300 dark:to-teal-400">{{ $heroTitleFirst }}</span>
+            @endif
         </h1>
         <p class="mt-3.5 max-w-[16rem] text-[15px] leading-relaxed text-slate-500 dark:text-slate-300 sm:text-base">{{ $heroDesc }}</p>
 
-        <div class="mt-7 flex items-center gap-2.5">
+        {{-- flex-wrap is a fallback only (whole pills flow to a new row on an
+             extreme narrow viewport) — shrink-0 + whitespace-nowrap on each pill
+             is what actually stops "Buy eSIM"/"Get Number" breaking onto two
+             lines inside the button itself. --}}
+        <div class="mt-7 flex flex-wrap items-center gap-2 sm:gap-2.5">
             <a href="{{ route('catalogue') }}" wire:navigate
-               class="group inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-primary via-primary-dark to-navy px-5 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/35 sm:text-base">
-                <x-icon name="sim" class="h-5 w-5" /> Buy eSIM
-                <x-icon name="chevron-right" class="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+               class="group inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-br from-primary via-primary-dark to-navy px-4 py-2.5 text-[13px] font-bold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/35 sm:gap-2 sm:px-5 sm:py-3.5 sm:text-base">
+                <x-icon name="sim" class="h-4 w-4 sm:h-5 sm:w-5" /> eSIM
+                <x-icon name="chevron-right" class="hidden h-4 w-4 transition-transform group-hover:translate-x-0.5 sm:inline-block" />
             </a>
             <a href="{{ route('numbers') }}" wire:navigate
-               class="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3.5 text-[15px] font-bold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-[#16233d] dark:text-white sm:text-base">
-                <x-icon name="hash" class="h-5 w-5 text-primary dark:text-teal-300" /> Get Number
-                <x-icon name="chevron-right" class="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+               class="group inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-bold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-[#16233d] dark:text-white sm:gap-2 sm:px-5 sm:py-3.5 sm:text-base">
+                <x-icon name="hash" class="h-4 w-4 text-primary dark:text-teal-300 sm:h-5 sm:w-5" /> Number
+                <x-icon name="chevron-right" class="hidden h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5 sm:inline-block" />
             </a>
         </div>
     </div>

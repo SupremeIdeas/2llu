@@ -4,11 +4,14 @@ namespace Tests\Feature;
 
 use App\Livewire\Admin\ThemePicker;
 use App\Models\Setting;
+use App\Models\ThemePreset as ThemePresetModel;
 use App\Models\User;
 use App\Support\ThemePreset;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\ThemePresetSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -93,5 +96,102 @@ class ThemePickerTest extends TestCase
         // Nothing was written — still the default.
         $this->assertNotSame('not-a-real-theme', Setting::getValue(ThemePreset::SETTING_KEY));
         $this->assertSame('naara-official', ThemePreset::slug());
+    }
+
+    // ---- Per-theme hero-image editing (owner request) ----------------------
+
+    private function admin(): User
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        return $admin;
+    }
+
+    public function test_edit_hero_opens_the_editor_seeded_with_the_saved_assets(): void
+    {
+        ThemePresetModel::where('slug', 'midnight-signal')->update([
+            'hero_assets' => ['dashboard' => '/img/themes/existing.webp'],
+        ]);
+
+        Livewire::actingAs($this->admin())->test(ThemePicker::class)
+            ->call('editHero', 'midnight-signal')
+            ->assertSet('showHeroModal', true)
+            ->assertSet('editingSlug', 'midnight-signal')
+            ->assertSet('currentHero.dashboard', '/img/themes/existing.webp')
+            ->assertSet('currentHero.esim', null);
+    }
+
+    public function test_save_hero_uploads_and_persists_only_the_provided_surfaces(): void
+    {
+        Storage::fake('public');
+        // A pre-existing eSIM hero must survive a Dashboard-only save (partial
+        // update — editing one surface never clears the others).
+        ThemePresetModel::where('slug', 'midnight-signal')->update([
+            'hero_assets' => ['esim' => '/img/themes/existing-esim.webp'],
+        ]);
+
+        Livewire::actingAs($this->admin())->test(ThemePicker::class)
+            ->call('editHero', 'midnight-signal')
+            ->set('hero_dashboard', UploadedFile::fake()->image('dash-hero.jpg', 1600, 800))
+            ->call('saveHero')
+            ->assertSet('showHeroModal', false);
+
+        $assets = ThemePresetModel::where('slug', 'midnight-signal')->value('hero_assets');
+        $this->assertNotEmpty($assets['dashboard'] ?? null);
+        $this->assertSame('/img/themes/existing-esim.webp', $assets['esim'] ?? null);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'theme.hero_updated']);
+    }
+
+    public function test_save_hero_rejects_a_non_image_or_oversize_file(): void
+    {
+        Storage::fake('public');
+
+        // Every theme ships a seeded default dashboard hero — the rejected
+        // upload must leave it exactly as-is, not merely "non-empty".
+        $before = ThemePresetModel::where('slug', 'midnight-signal')->value('hero_assets');
+
+        Livewire::actingAs($this->admin())->test(ThemePicker::class)
+            ->call('editHero', 'midnight-signal')
+            ->set('hero_dashboard', UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf'))
+            ->call('saveHero')
+            ->assertHasErrors('hero_dashboard');
+
+        $after = ThemePresetModel::where('slug', 'midnight-signal')->value('hero_assets');
+        $this->assertSame($before, $after);
+    }
+
+    public function test_remove_hero_surface_clears_only_that_surface(): void
+    {
+        ThemePresetModel::where('slug', 'midnight-signal')->update([
+            'hero_assets' => ['dashboard' => '/img/a.webp', 'esim' => '/img/b.webp'],
+        ]);
+
+        Livewire::actingAs($this->admin())->test(ThemePicker::class)
+            ->call('editHero', 'midnight-signal')
+            ->call('removeHeroSurface', 'dashboard')
+            ->assertSet('currentHero.dashboard', null);
+
+        $assets = ThemePresetModel::where('slug', 'midnight-signal')->value('hero_assets');
+        $this->assertArrayNotHasKey('dashboard', $assets);
+        $this->assertSame('/img/b.webp', $assets['esim'] ?? null);
+    }
+
+    public function test_a_non_admin_cannot_edit_or_save_hero_images(): void
+    {
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)->test(ThemePicker::class)->assertStatus(403);
+    }
+
+    public function test_a_staff_member_without_the_scope_cannot_save_hero_images(): void
+    {
+        $staff = User::factory()->create();
+        $staff->assignRole('staff');
+
+        // Can't even reach the page (mount() gates it) — asserting the
+        // component-level gate too documents that saveHero()/editHero() are
+        // independently guarded, not just mount().
+        Livewire::actingAs($staff)->test(ThemePicker::class)->assertStatus(403);
     }
 }
