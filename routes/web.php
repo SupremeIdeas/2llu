@@ -115,6 +115,7 @@ use App\Livewire\GetNumber;
 use App\Livewire\GiftCards;
 use App\Livewire\Guide;
 use App\Livewire\IdentityVerification;
+use App\Livewire\Journey;
 use App\Livewire\MerchantClients;
 use App\Livewire\MerchantDashboard;
 use App\Livewire\MerchantEarnings;
@@ -243,6 +244,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         // NaaraCredits rewards area (loyalty module) — opt-in earning.
         Route::get('/receipts', Receipts::class)->name('receipts');
         Route::get('/rewards', Rewards::class)->name('rewards');
+        // My Journey — loyalty milestones + travel/eSIM history, two tabs.
+        Route::get('/journey', Journey::class)->name('journey');
         // Brand Partner Hunt (BUILD-6 §C) — follow-to-earn NaaraCredits.
         Route::get('/rewards/hunt', BrandHunt::class)->name('rewards.hunt');
         // Brand Directory self-service (BUILD-9) — get listed + manage a listing.

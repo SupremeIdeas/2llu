@@ -27,6 +27,7 @@
         ['route' => 'numbers.contacts', 'label' => 'Contacts', 'icon' => 'users'],
         ['route' => 'support', 'label' => 'Help & Support', 'icon' => 'message-circle'],
         ['route' => 'rewards', 'label' => 'Rewards', 'icon' => 'gift'],
+        ['route' => 'journey', 'label' => 'My Journey', 'icon' => 'globe'],
         ['route' => 'receipts', 'label' => 'Receipts', 'icon' => 'file-text'],
         ['route' => 'brand.get-listed', 'label' => 'List my brand', 'icon' => 'star'],
         ['route' => 'referrals', 'label' => 'Referrals', 'icon' => 'users'],
