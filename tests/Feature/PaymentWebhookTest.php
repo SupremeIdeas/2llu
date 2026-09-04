@@ -63,7 +63,9 @@ class PaymentWebhookTest extends TestCase
         $this->postRaw('/webhooks/payments/paystack', $payload, ['x-paystack-signature' => $sig])->assertOk();
         $this->postRaw('/webhooks/payments/paystack', $payload, ['x-paystack-signature' => $sig])->assertOk();
 
-        $this->assertSame('5000.00', (string) $user->wallet->fresh()->ngn_balance);
+        // Unified USD Wallet (Part B): a raw NGN top-up (no TopUpIntent) now
+        // converts to USD at the live rate rather than crediting ngn_balance.
+        $this->assertSame('3.3300', (string) $user->wallet->fresh()->usd_balance);
         $this->assertSame(1, WalletTransaction::where('reference', 'topup:paystack:NAARA-PS-1')->count());
     }
 
@@ -95,13 +97,15 @@ class PaymentWebhookTest extends TestCase
         // Credit landed: ledger row written, jobs table emptied.
         $this->assertSame(1, WalletTransaction::where('reference', 'topup:paystack:NAARA-PS-1')->count());
         $this->assertSame(0, DB::table('jobs')->count());
-        $this->assertSame('5000.00', (string) $user->fresh()->wallet->ngn_balance);
+        // Unified USD Wallet (Part B): a raw NGN top-up (no TopUpIntent) now
+        // converts to USD at the live rate rather than crediting ngn_balance.
+        $this->assertSame('3.3300', (string) $user->fresh()->wallet->usd_balance);
 
         // A retried delivery after the first credit adds no second credit.
         $this->postRaw('/webhooks/payments/paystack', $payload, ['x-paystack-signature' => $sig])->assertOk();
         $this->drainQueue();
         $this->assertSame(1, WalletTransaction::where('reference', 'topup:paystack:NAARA-PS-1')->count());
-        $this->assertSame('5000.00', (string) $user->fresh()->wallet->ngn_balance);
+        $this->assertSame('3.3300', (string) $user->fresh()->wallet->usd_balance);
     }
 
     public function test_paystack_invalid_signature_is_rejected_and_nothing_is_credited(): void

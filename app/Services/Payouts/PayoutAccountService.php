@@ -20,9 +20,7 @@ use Illuminate\Support\Facades\DB;
 class PayoutAccountService
 {
     /** @param list<BankResolverInterface> $resolvers */
-    public function __construct(private array $resolvers)
-    {
-    }
+    public function __construct(private array $resolvers) {}
 
     /** The first configured resolver that covers a country, or null. */
     public function resolverFor(string $country): ?BankResolverInterface
@@ -101,6 +99,49 @@ class PayoutAccountService
             Auditor::log('payout.account_added', 'PayoutAccount', $account->id, [
                 'provider' => $resolver->name(),
                 'country' => $country,
+            ]);
+
+            return $account;
+        });
+    }
+
+    /**
+     * Save a PayPal payout destination. Unlike a bank account, PayPal has no
+     * resolve-style API to confirm a payout email belongs to a real, claimable
+     * account before sending money — the caller (Withdraw.php) is responsible
+     * for the double-entry re-confirmation UX; this just persists the
+     * confirmed email. Marked verified immediately (there is nothing further
+     * to verify against, by PayPal's own design), matching how PayPal payouts
+     * are handled platform-wide.
+     */
+    public function addPaypalAccount(User $user, string $email): PayoutAccount
+    {
+        $email = strtolower(trim($email));
+
+        return DB::transaction(function () use ($user, $email) {
+            $isFirst = ! PayoutAccount::query()->where('user_id', $user->id)->exists();
+
+            if ($isFirst) {
+                PayoutAccount::query()->where('user_id', $user->id)->update(['is_default' => false]);
+            }
+
+            $account = PayoutAccount::create([
+                'user_id' => $user->id,
+                'type' => 'paypal',
+                'country' => $user->country_code ?: 'ZZ',
+                'currency' => 'USD',
+                'bank_code' => 'paypal',
+                'bank_name' => 'PayPal',
+                'account_number' => $email,
+                'account_name' => $email,
+                'provider' => 'paypal',
+                'is_verified' => true,
+                'is_default' => $isFirst,
+            ]);
+
+            Auditor::log('payout.account_added', 'PayoutAccount', $account->id, [
+                'provider' => 'paypal',
+                'type' => 'paypal',
             ]);
 
             return $account;

@@ -12,6 +12,8 @@ class WalletTransaction extends Model
         'type',
         'amount',
         'currency',
+        'paid_amount',
+        'paid_currency',
         'balance_before',
         'balance_after',
         'reference',
@@ -23,6 +25,7 @@ class WalletTransaction extends Model
     {
         return [
             'amount' => 'decimal:4',
+            'paid_amount' => 'decimal:4',
             'balance_before' => 'decimal:4',
             'balance_after' => 'decimal:4',
         ];

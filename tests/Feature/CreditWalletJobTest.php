@@ -40,10 +40,12 @@ class CreditWalletJobTest extends TestCase
         Bus::fake([AlertAdminJob::class]);
         $user = User::factory()->create();
 
-        // GHS is a supported *display* currency but not a wallet column — the
-        // webhook normally converts it to a locked USD credit. If it ever slips
-        // through raw, the job must not throw.
-        (new CreditWalletJob('paystack', 'ref-ghs', $user->id, 50.0, 'GHS'))
+        // Unified USD Wallet (Part B): every currency CurrencyService models
+        // (GHS included) now converts cleanly to USD via creditTopUp(). Only a
+        // currency CurrencyService doesn't recognise at all should ever hit
+        // this uncreditable path — e.g. a corrupted/unknown code slipping
+        // through raw. The job must not throw.
+        (new CreditWalletJob('paystack', 'ref-xyz', $user->id, 50.0, 'XYZ'))
             ->handle(app(WalletService::class));
 
         // No money moved, and an admin alert was queued for manual reconciliation.

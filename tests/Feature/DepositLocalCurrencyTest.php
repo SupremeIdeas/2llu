@@ -28,9 +28,14 @@ class DepositLocalCurrencyTest extends TestCase
         parent::setUp();
         Cache::flush();
         config(['services.paystack.secret_key' => 'sk_test_secret']);
+        // Flutterwave also configured: Paystack doesn't accept GBP (Part B's
+        // GatewayCurrencyMatrix), so a GBP top-up only offers gateways that
+        // actually support it.
+        config(['services.flutterwave.secret_key' => 'flw_test_secret']);
         Http::fake([
             'open.er-api.com/*' => Http::response(['result' => 'success', 'rates' => ['GBP' => 0.80, 'USD' => 1, 'NGN' => 1600]]),
             'api.paystack.co/*' => Http::response(['data' => ['authorization_url' => 'https://checkout.paystack.com/xyz', 'reference' => 'r']]),
+            'api.flutterwave.com/*' => Http::response(['data' => ['link' => 'https://checkout.flutterwave.com/xyz']]),
         ]);
     }
 

@@ -8,6 +8,10 @@ use App\Jobs\AlertAdminJob;
 use App\Models\User;
 use App\Models\UserWallet;
 use App\Models\WalletTransaction;
+use App\Notifications\RefundNotification;
+use App\Services\Pricing\CurrencyService;
+use App\Support\Auditor;
+use App\Support\Mailer;
 use Closure;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +61,42 @@ class WalletService
     }
 
     /**
+     * Unified USD Wallet (blueprint Part B §3.2/§3.3, code change 4) — the ONE
+     * entry point every top-up path should use, so a future caller can never
+     * forget the conversion step. `usd_balance` is the one spendable balance;
+     * regardless of what currency the user actually paid in, this converts to
+     * USD at the authoritative rate (CurrencyService — the same rate used for
+     * both display and payouts, so it can never disagree) before crediting.
+     * The original payment is preserved on the ledger row (paid_amount/
+     * paid_currency) for transparency ("Topped up $42.10 (₦65,000 via
+     * Paystack)") without ever making it spendable separately.
+     *
+     * Deliberately does NOT use CurrencyService::rate()'s permissive "unknown
+     * currency → treat as USD" fallback — an unrecognized currency here throws
+     * InvalidArgumentException (same contract WalletService::credit() already
+     * has), so CreditWalletJob's existing AlertAdminJob safety net still fires
+     * rather than silently crediting the wrong amount at a 1:1 guess.
+     */
+    public function creditTopUp(User $user, float $localAmount, string $localCurrency, array $meta = []): WalletTransaction
+    {
+        $localCurrency = strtoupper($localCurrency);
+
+        if (in_array($localCurrency, ['USD', 'USDT'], true)) {
+            $usdAmount = $localAmount;
+        } elseif (isset(CurrencyService::SUPPORTED[$localCurrency])) {
+            $usdAmount = app(CurrencyService::class)->toUsd($localAmount, $localCurrency);
+        } else {
+            throw new \InvalidArgumentException("Unsupported top-up currency [{$localCurrency}].");
+        }
+
+        return $this->credit($user, round($usdAmount, self::SCALE), 'USD', [
+            ...$meta,
+            'paid_amount' => $localAmount,
+            'paid_currency' => $localCurrency,
+        ]);
+    }
+
+    /**
      * Refund a previous charge back to the wallet. Sends a best-effort refund
      * notice email — centralised here so every refund path (failed order, OTP
      * timeout, orphan-charge guard) tells the user their money is back. The
@@ -69,7 +109,7 @@ class WalletService
         $txn = $this->apply($user, 'refund', $amount, $currency, $meta);
 
         if ($txn->wasRecentlyCreated && ($meta['notify'] ?? true)) {
-            \App\Support\Mailer::notify($user, new \App\Notifications\RefundNotification(
+            Mailer::notify($user, new RefundNotification(
                 $amount,
                 strtoupper($currency),
                 $meta['description'] ?? null,
@@ -92,6 +132,7 @@ class WalletService
      * itself idempotent so this can't double-refund.
      *
      * @template T
+     *
      * @param  Closure(WalletTransaction): T  $deliver
      * @return T
      */
@@ -152,7 +193,7 @@ class WalletService
             });
         });
 
-        \App\Support\Auditor::log('wallet.reserved', UserWallet::class, $user->id, ['amount' => $amount, 'currency' => 'USD']);
+        Auditor::log('wallet.reserved', UserWallet::class, $user->id, ['amount' => $amount, 'currency' => 'USD']);
     }
 
     /**
@@ -175,7 +216,7 @@ class WalletService
             });
         });
 
-        \App\Support\Auditor::log('wallet.reservation_released', UserWallet::class, $user->id, ['amount' => $amount, 'currency' => 'USD']);
+        Auditor::log('wallet.reservation_released', UserWallet::class, $user->id, ['amount' => $amount, 'currency' => 'USD']);
     }
 
     public function reservedUsd(User $user): float
@@ -272,6 +313,8 @@ class WalletService
                     'type' => $type,
                     'amount' => $amount,
                     'currency' => $currency,
+                    'paid_amount' => $meta['paid_amount'] ?? null,
+                    'paid_currency' => isset($meta['paid_currency']) ? strtoupper((string) $meta['paid_currency']) : null,
                     'balance_before' => $before,
                     'balance_after' => $after,
                     'reference' => $reference ?? (string) Str::uuid(),

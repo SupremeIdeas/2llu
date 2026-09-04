@@ -47,48 +47,86 @@
 
     {{-- Add account --}}
     <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
-        <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Add a bank account</p>
-        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">We confirm the account name with your bank before saving.</p>
+        <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Add a payout account</p>
+
+        @if ($paypalAvailable)
+            <div class="mt-3 inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-[#2D4060]">
+                <button type="button" wire:click="$set('accountType', 'bank')"
+                        @class(['rounded-md px-3 py-1.5 text-xs font-semibold transition', 'bg-primary text-white' => $accountType === 'bank', 'text-slate-500 dark:text-slate-400' => $accountType !== 'bank'])>
+                    Bank account
+                </button>
+                <button type="button" wire:click="$set('accountType', 'paypal')"
+                        @class(['rounded-md px-3 py-1.5 text-xs font-semibold transition', 'bg-primary text-white' => $accountType === 'paypal', 'text-slate-500 dark:text-slate-400' => $accountType !== 'paypal'])>
+                    PayPal
+                </button>
+            </div>
+        @endif
 
         @if ($accountError)
             <div class="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">{{ $accountError }}</div>
         @endif
 
-        <div class="mt-4 grid gap-3 sm:grid-cols-2">
-            <div>
-                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Country</label>
-                <select wire:model.live="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
-                    <option value="NG">Nigeria</option>
-                    <option value="GH">Ghana</option>
-                    <option value="KE">Kenya</option>
-                    <option value="ZA">South Africa</option>
-                </select>
+        @if ($accountType === 'bank')
+            <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">We confirm the account name with your bank before saving.</p>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Country</label>
+                    <select wire:model.live="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <option value="NG">Nigeria</option>
+                        <option value="GH">Ghana</option>
+                        <option value="KE">Kenya</option>
+                        <option value="ZA">South Africa</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Bank</label>
+                    <select wire:model="bankCode" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <option value="">Select a bank</option>
+                        @foreach ($banks as $bank)
+                            <option value="{{ $bank['code'] }}">{{ $bank['name'] }}</option>
+                        @endforeach
+                    </select>
+                    @error('bankCode') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                    @if (empty($banks))
+                        <p class="mt-1 text-[11px] text-slate-400">Bank list loads once a payout provider is configured for this country.</p>
+                    @endif
+                </div>
             </div>
-            <div>
-                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Bank</label>
-                <select wire:model="bankCode" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
-                    <option value="">Select a bank</option>
-                    @foreach ($banks as $bank)
-                        <option value="{{ $bank['code'] }}">{{ $bank['name'] }}</option>
-                    @endforeach
-                </select>
-                @error('bankCode') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
-                @if (empty($banks))
-                    <p class="mt-1 text-[11px] text-slate-400">Bank list loads once a payout provider is configured for this country.</p>
-                @endif
+            <div class="mt-3">
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Account number</label>
+                <input type="text" wire:model="accountNumber" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                @error('accountNumber') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
-        </div>
-        <div class="mt-3">
-            <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Account number</label>
-            <input type="text" wire:model="accountNumber" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
-            @error('accountNumber') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
-        </div>
-        <button type="button" wire:click="addAccount" wire:loading.attr="disabled" wire:target="addAccount"
-                class="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
-            <x-icon name="check" wire:loading.remove wire:target="addAccount" class="h-4 w-4" />
-            <x-ui.spinner wire:loading wire:target="addAccount" class="h-4 w-4" />
-            Verify &amp; add account
-        </button>
+            <button type="button" wire:click="addAccount" wire:loading.attr="disabled" wire:target="addAccount"
+                    class="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
+                <x-icon name="check" wire:loading.remove wire:target="addAccount" class="h-4 w-4" />
+                <x-ui.spinner wire:loading wire:target="addAccount" class="h-4 w-4" />
+                Verify &amp; add account
+            </button>
+        @else
+            {{-- PayPal has no bank-style resolve API to confirm a payout email
+                 before sending money — re-typing it is the guard against a
+                 mistyped destination. --}}
+            <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">Type your PayPal email twice to confirm it — we can't verify a PayPal address in advance the way we do a bank account.</p>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">PayPal email</label>
+                    <input type="email" wire:model="paypalEmail" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @error('paypalEmail') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Confirm PayPal email</label>
+                    <input type="email" wire:model="paypalEmailConfirm" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @error('paypalEmailConfirm') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+            </div>
+            <button type="button" wire:click="addPaypalAccount" wire:loading.attr="disabled" wire:target="addPaypalAccount"
+                    class="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
+                <x-icon name="check" wire:loading.remove wire:target="addPaypalAccount" class="h-4 w-4" />
+                <x-ui.spinner wire:loading wire:target="addPaypalAccount" class="h-4 w-4" />
+                Add PayPal account
+            </button>
+        @endif
     </div>
 
     {{-- Withdraw --}}

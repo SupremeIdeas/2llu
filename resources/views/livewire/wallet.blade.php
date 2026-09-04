@@ -79,11 +79,16 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4">
+            {{-- Unified USD Wallet (Part B): usd_balance is the one spendable
+                 balance. The NGN line is the LIVE-rate equivalent for
+                 convenience — never the frozen ngn_balance column, which is
+                 no longer a live top-up destination. --}}
             <div class="rounded-xl border border-slate-200 nx-glass-tile p-5 dark:border-[#2D4060]">
                 <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                    <x-icon name="wallet" class="h-4 w-4" /> NGN balance
+                    <x-icon name="wallet" class="h-4 w-4" /> ≈ NGN
                 </div>
-                <div class="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">NGN {{ number_format((float) $wallet->ngn_balance, 2) }}</div>
+                <div class="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{{ $ngnLive }}</div>
+                <div class="mt-0.5 text-xs text-slate-400 dark:text-slate-500">live rate · not a separate balance</div>
             </div>
             <div class="rounded-xl border border-slate-200 nx-glass-tile p-5 dark:border-[#2D4060]">
                 <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
@@ -95,6 +100,15 @@
                 @endif
             </div>
         </div>
+
+        {{-- Legacy NGN, only if there's actually one to show (pre-Part-B
+             top-ups). Historical only — never spendable, never grows again. --}}
+        @if ((float) $wallet->ngn_balance > 0)
+            <div class="mt-3 flex items-center justify-between rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-2.5 text-xs text-slate-500 dark:border-[#2D4060] dark:bg-[#152238] dark:text-slate-400">
+                <span>Legacy NGN balance (historical, from before top-ups settled in USD)</span>
+                <span class="font-semibold text-slate-600 dark:text-slate-300">NGN {{ number_format((float) $wallet->ngn_balance, 2) }}</span>
+            </div>
+        @endif
 
         <h2 class="mb-3 mt-8 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Recent transactions</h2>
         <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-[#2D4060]">
@@ -150,27 +164,24 @@
                     @endif
 
                     <form wire:submit="topUp" class="space-y-4">
-                        {{-- Pay-in currency (owner request): USD/NGN credit the
-                             wallet directly; your local currency is converted to a
-                             USD credit locked at the live rate. --}}
-                        @php
-                            $__payOptions = ['NGN' => 'Naira (NGN)', 'USD' => 'Dollar (USD)'];
-                            if (! in_array($displayCurrency, ['USD', 'NGN'], true)) {
-                                $__payOptions[$displayCurrency] = ($currencyOptions[$displayCurrency][1] ?? $displayCurrency).' ('.$displayCurrency.')';
-                            }
-                        @endphp
-                        <div class="grid grid-cols-{{ count($__payOptions) }} gap-2" role="radiogroup" aria-label="Pay in">
-                            @foreach ($__payOptions as $cur => $curLabel)
-                                <button type="button" wire:key="cur-{{ $cur }}" wire:click="$set('currency', '{{ $cur }}')"
-                                        role="radio" aria-checked="{{ $currency === $cur ? 'true' : 'false' }}"
-                                        @class([
-                                            'rounded-xl border px-3 py-2 text-sm font-semibold transition',
-                                            'border-primary bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300' => $currency === $cur,
-                                            'border-slate-200 text-slate-500 hover:border-primary/40 dark:border-[#2D4060] dark:text-slate-400' => $currency !== $cur,
-                                        ])>{{ $curLabel }}</button>
-                            @endforeach
+                        {{-- Pay-in currency (owner request: a real dropdown, not
+                             a hardcoded NGN/USD pair) — every currency any
+                             configured gateway accepts. USD credits the wallet
+                             directly; everything else is converted to a USD
+                             credit locked at the live rate. Changing this
+                             filters "Pay with" below to only the gateways that
+                             actually accept it (updatedCurrency()). --}}
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Top up in</label>
+                            <select wire:model.live="currency"
+                                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                @foreach ($payCurrencyOptions as $cur => $curLabel)
+                                    <option value="{{ $cur }}" @selected($currency === $cur)>{{ $curLabel }} ({{ $cur }})</option>
+                                @endforeach
+                            </select>
+                            @error('currency') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                         </div>
-                        @if (! in_array($currency, ['USD', 'NGN'], true) && is_numeric($amount) && $amount > 0)
+                        @if ($currency !== 'USD' && is_numeric($amount) && $amount > 0)
                             <p class="-mt-2 text-xs text-slate-400 dark:text-slate-500">
                                 ≈ ${{ number_format(app(\App\Services\Pricing\CurrencyService::class)->toUsd((float) $amount, $currency), 2) }} credited to your wallet (live rate, locked at checkout).
                             </p>

@@ -11,6 +11,7 @@ use App\Services\Payouts\PayoutService;
 use App\Services\Payouts\WithdrawalService;
 use App\Support\CreditSettings;
 use App\Support\PayoutSettings;
+use App\Support\ProviderStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -24,6 +25,8 @@ use Livewire\Component;
 class Withdraw extends Component
 {
     // Add-account form.
+    public string $accountType = 'bank';
+
     public string $country = 'NG';
 
     public string $bankCode = '';
@@ -34,6 +37,13 @@ class Withdraw extends Component
     public array $banks = [];
 
     public ?string $accountError = null;
+
+    // PayPal add-account form — double-entry re-confirmation (no PSP resolve
+    // API exists for a payout email, so this re-typed match is the guard
+    // against a mistyped destination).
+    public string $paypalEmail = '';
+
+    public string $paypalEmailConfirm = '';
 
     // Withdraw form.
     public ?int $accountId = null;
@@ -85,6 +95,27 @@ class Withdraw extends Component
         $this->reset('accountNumber');
         $this->accountId = $account->id;
         $this->dispatch('nx-toast', type: 'success', message: 'Account verified as '.$account->account_name.'.');
+    }
+
+    public function addPaypalAccount(PayoutAccountService $accounts): void
+    {
+        $this->accountError = null;
+        $this->validate([
+            'paypalEmail' => 'required|email|max:190',
+            'paypalEmailConfirm' => 'required|email|max:190',
+        ]);
+
+        if (strtolower($this->paypalEmail) !== strtolower($this->paypalEmailConfirm)) {
+            $this->accountError = 'Those two PayPal emails don\'t match. Please retype them.';
+
+            return;
+        }
+
+        $account = $accounts->addPaypalAccount(Auth::user(), $this->paypalEmail);
+
+        $this->reset('paypalEmail', 'paypalEmailConfirm');
+        $this->accountId = $account->id;
+        $this->dispatch('nx-toast', type: 'success', message: 'PayPal account added: '.$account->account_name);
     }
 
     public function setDefault(int $id, PayoutAccountService $accounts): void
@@ -146,6 +177,7 @@ class Withdraw extends Component
             'enabled' => PayoutSettings::enabled(),
             // §8: the volume-recommended payout rail (or null). Other rails still show.
             'recommendedGateway' => $payouts->recommendedGateway(),
+            'paypalAvailable' => ProviderStatus::isActive('paypal'),
         ]);
     }
 }

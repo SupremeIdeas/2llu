@@ -104,7 +104,9 @@
                             <td colspan="5" class="px-4 py-4">
                                 <div class="grid gap-4 sm:grid-cols-4">
                                     <div><p class="text-xs text-slate-400">USD wallet</p><p class="font-semibold text-slate-800 dark:text-slate-100">${{ number_format((float) ($viewing->wallet->usd_balance ?? 0), 2) }}</p></div>
-                                    <div><p class="text-xs text-slate-400">NGN wallet</p><p class="font-semibold text-slate-800 dark:text-slate-100">₦{{ number_format((float) ($viewing->wallet->ngn_balance ?? 0), 0) }}</p></div>
+                                    {{-- Unified USD Wallet (Part B): ngn_balance no longer grows from new
+                                         top-ups — a nonzero figure here is a pre-migration legacy balance. --}}
+                                    <div><p class="text-xs text-slate-400">NGN wallet (legacy)</p><p class="font-semibold text-slate-800 dark:text-slate-100">₦{{ number_format((float) ($viewing->wallet->ngn_balance ?? 0), 0) }}</p></div>
                                     <div><p class="text-xs text-slate-400">eSIM orders</p><p class="font-semibold text-slate-800 dark:text-slate-100">{{ $viewing->esimOrders()->count() }}</p></div>
                                     <div><p class="text-xs text-slate-400">Number orders</p><p class="font-semibold text-slate-800 dark:text-slate-100">{{ $viewing->smsOrders()->count() }}</p></div>
                                     <div><p class="text-xs text-slate-400">Country</p><p class="font-semibold text-slate-800 dark:text-slate-100">{{ $viewing->country_code ?: '—' }}</p></div>

@@ -134,4 +134,47 @@ class WithdrawPageTest extends TestCase
             'user_id' => $user->id, 'source_bucket' => 'referral_credits', 'status' => 'pending',
         ]);
     }
+
+    public function test_paypal_toggle_only_shows_when_paypal_is_configured(): void
+    {
+        $user = $this->verifiedUser();
+
+        $this->actingAs($user)->get('/rewards/withdraw')->assertDontSee('PayPal');
+
+        config(['services.paypal.client_id' => 'id', 'services.paypal.client_secret' => 'secret']);
+        $this->actingAs($user)->get('/rewards/withdraw')->assertSee('PayPal');
+    }
+
+    public function test_a_matching_paypal_email_pair_saves_a_verified_account(): void
+    {
+        config(['services.paypal.client_id' => 'id', 'services.paypal.client_secret' => 'secret']);
+        $user = $this->verifiedUser();
+
+        Livewire::actingAs($user)->test(Withdraw::class)
+            ->set('accountType', 'paypal')
+            ->set('paypalEmail', 'jane@example.com')
+            ->set('paypalEmailConfirm', 'jane@example.com')
+            ->call('addPaypalAccount')
+            ->assertSet('accountError', null);
+
+        $this->assertDatabaseHas('payout_accounts', [
+            'user_id' => $user->id, 'type' => 'paypal', 'provider' => 'paypal',
+            'account_number' => 'jane@example.com', 'is_verified' => true,
+        ]);
+    }
+
+    public function test_mismatched_paypal_emails_are_rejected(): void
+    {
+        config(['services.paypal.client_id' => 'id', 'services.paypal.client_secret' => 'secret']);
+        $user = $this->verifiedUser();
+
+        Livewire::actingAs($user)->test(Withdraw::class)
+            ->set('accountType', 'paypal')
+            ->set('paypalEmail', 'jane@example.com')
+            ->set('paypalEmailConfirm', 'typo@example.com')
+            ->call('addPaypalAccount')
+            ->assertSet('accountError', fn ($v) => $v !== null);
+
+        $this->assertDatabaseCount('payout_accounts', 0);
+    }
 }
