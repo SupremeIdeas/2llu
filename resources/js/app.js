@@ -4,6 +4,8 @@ import { initImageCompression } from './image-compress';
 import { registerVoiceRecorder } from './support-voice';
 import { registerNiaChat } from './nia-chat';
 import { registerStorytellingCarousel } from './storytelling-carousel';
+import { registerUsageCharts } from './usage-chart';
+import { registerLinesAnalyticsCharts } from './lines-analytics-charts';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -22,6 +24,16 @@ registerNiaChat();
 // Storytelling Carousel (BLUEPRINT-batch1-sections §3) — Alpine component +
 // shared section-nav store, registered on alpine:init before Livewire boots it.
 registerStorytellingCarousel();
+
+// Per-eSIM usage chart on My Line (Connectivity Analytics blueprint Part A
+// §2.6) — registers window.NaaraUsageCharts.mount(); Chart.js itself is only
+// dynamic-imported the first time a user actually opens a usage panel.
+registerUsageCharts();
+
+// "My Analytics" panel on My Line (Connectivity Analytics blueprint Part A
+// §2.4/2.7) — registers window.NaaraLinesAnalytics.mountAll(); shares the
+// same lazy Chart.js chunk as the per-eSIM usage chart above.
+registerLinesAnalyticsCharts();
 
 // Alpine is provided by Livewire 3's bundled build (do not start a second
 // Alpine instance here — Livewire injects and starts it globally).

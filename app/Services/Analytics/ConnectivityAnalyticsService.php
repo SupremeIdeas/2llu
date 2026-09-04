@@ -83,6 +83,50 @@ class ConnectivityAnalyticsService
     }
 
     /**
+     * Real data used per day over the trailing window, summed across every
+     * eSIM order the user has snapshots for. data_used_mb is cumulative SINCE
+     * BUNDLE ACTIVATION (not a per-day figure — CaptureEsimUsageSnapshotJob),
+     * so each day's figure is a snapshot-to-snapshot DELTA per order, never
+     * the raw column. A bundle refill/reset (delta <= 0) contributes nothing
+     * for that step rather than an invented negative — mirrors
+     * usageBurnRate()'s arithmetic-only philosophy.
+     *
+     * @return array{total_mb: float, daily: array<int, array{date: string, mb: float}>}
+     */
+    public function weeklyDataUsage(User $user, int $days = 7): array
+    {
+        $since = now()->subDays($days)->startOfDay();
+
+        $snapshots = EsimUsageSnapshot::where('user_id', $user->id)
+            ->where('captured_at', '>=', $since->copy()->subDay())
+            ->orderBy('captured_at')
+            ->get(['esim_order_id', 'data_used_mb', 'captured_at']);
+
+        $dailyTotals = collect(range($days - 1, 0))->mapWithKeys(
+            fn ($back) => [now()->subDays($back)->toDateString() => 0.0]
+        );
+
+        foreach ($snapshots->groupBy('esim_order_id') as $orderSnapshots) {
+            $previous = null;
+            foreach ($orderSnapshots as $snapshot) {
+                if ($previous !== null) {
+                    $delta = (int) $snapshot->data_used_mb - (int) $previous->data_used_mb;
+                    $day = $snapshot->captured_at->toDateString();
+                    if ($delta > 0 && $dailyTotals->has($day)) {
+                        $dailyTotals[$day] += $delta;
+                    }
+                }
+                $previous = $snapshot;
+            }
+        }
+
+        return [
+            'total_mb' => round($dailyTotals->sum(), 1),
+            'daily' => $dailyTotals->map(fn ($mb, $date) => ['date' => $date, 'mb' => round($mb, 1)])->values()->all(),
+        ];
+    }
+
+    /**
      * Spend grouped by public Model (Naara Data / Naara Connect / Naara Verify
      * / Naara Line), read directly from the source-of-truth order tables — not
      * a wallet_transactions reference-string match, so it can never drift from

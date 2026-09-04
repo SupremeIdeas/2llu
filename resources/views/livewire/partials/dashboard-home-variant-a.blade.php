@@ -12,3 +12,4 @@
 @include('livewire.partials.dashboard._wallet')
 @include('livewire.partials.dashboard._showcase')
 @include('livewire.partials.dashboard._lines')
+@include('livewire.partials.dashboard._analytics')

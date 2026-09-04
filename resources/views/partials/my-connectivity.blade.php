@@ -10,7 +10,7 @@
         </h2>
         <div class="space-y-3">
             @forelse ($esimsActive as $esim)
-                <div wire:key="esim-{{ $esim->id }}" x-data="{ setup: false }" class="nx-card !p-4">
+                <div wire:key="esim-{{ $esim->id }}" x-data="{ setup: false, usage: false }" class="nx-card !p-4">
                     <div class="flex items-center justify-between gap-3">
                         <span class="flex min-w-0 items-center gap-2.5">
                             @foreach (array_slice($esim->plan?->countries ?? [], 0, 3) as $iso)
@@ -82,6 +82,41 @@
                             </div>
                         </div>
                     @endif
+
+                    {{-- Usage panel (Connectivity Analytics blueprint Part A §2.6):
+                         real burn-rate text + a Chart.js timeline of snapshot
+                         history. Chart.js is lazy-loaded on first open — never
+                         part of the main bundle for a page most visits never
+                         touch. --}}
+                    @php($usage = $usageByEsim[$esim->id] ?? ['burn' => null, 'timeline' => []])
+                    <button type="button" @click="usage = ! usage; usage && $nextTick(() => window.NaaraUsageCharts?.mount($refs.usageChart))"
+                            class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                        <x-icon name="signal" class="h-3.5 w-3.5" /> <span x-text="usage ? 'Hide usage' : 'Show usage'"></span>
+                    </button>
+
+                    <div x-show="usage" x-cloak class="mt-3 space-y-2 border-t border-slate-100 pt-3 dark:border-[#243352]">
+                        @if ($usage['burn'])
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                Using about
+                                @if ($usage['burn']['mb_per_day'] >= 1024)
+                                    {{ number_format($usage['burn']['mb_per_day'] / 1024, 2) }} GB/day
+                                @else
+                                    {{ number_format($usage['burn']['mb_per_day'], 0) }} MB/day
+                                @endif
+                                @if ($usage['burn']['days_left'] !== null)
+                                    — roughly {{ $usage['burn']['days_left'] }} days of data left at this pace.
+                                @endif
+                            </p>
+                        @endif
+
+                        @if (count($usage['timeline']) >= 2)
+                            <div class="h-32">
+                                <canvas x-ref="usageChart" data-usage-chart data-usage='@json($usage['timeline'])'></canvas>
+                            </div>
+                        @else
+                            <p class="text-xs text-slate-400 dark:text-slate-500">Not enough history yet to chart usage — check back after your next reading.</p>
+                        @endif
+                    </div>
                 </div>
             @empty
                 @if ($esimsArchived->isEmpty())

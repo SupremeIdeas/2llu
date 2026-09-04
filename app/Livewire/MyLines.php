@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Services\Analytics\ConnectivityAnalyticsService;
 use App\Support\ConnectivityHub;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -18,9 +19,22 @@ use Livewire\Component;
 #[Layout('components.layouts.customer')]
 class MyLines extends Component
 {
-    public function render()
+    public function render(ConnectivityAnalyticsService $analytics)
     {
         $hub = ConnectivityHub::for(auth()->user());
+
+        // Connectivity Analytics blueprint Part A §2.6 — per-eSIM burn rate +
+        // 30-day usage timeline for the expandable "Usage" panel. Computed
+        // only for the (already-limited) active eSIMs on this page, never
+        // eagerly for the whole account.
+        $usageByEsim = $hub['esimsActive']->mapWithKeys(fn ($esim) => [
+            $esim->id => [
+                'burn' => $analytics->usageBurnRate($esim),
+                'timeline' => $analytics->usageTimeline($esim, '30d'),
+            ],
+        ]);
+
+        $user = auth()->user();
 
         return view('livewire.my-lines', [
             'esimsActive' => $hub['esimsActive'],
@@ -28,6 +42,28 @@ class MyLines extends Component
             'numberGroups' => $hub['numberGroups'],
             'numbersArchived' => $hub['numbersArchived'],
             'hasAny' => $hub['hasAny'],
-        ]);
+            'usageByEsim' => $usageByEsim,
+        ] + $this->analyticsPanel($user, $hub['hasAny'], $analytics));
+    }
+
+    /**
+     * "My Analytics" panel (Connectivity Analytics blueprint Part A §2.4/2.7):
+     * the 4 aggregate views not already covered by the per-eSIM usage panel
+     * above — plan mix, purchase cadence, spend by public Model, and deposit
+     * history. Collapsed by default in the Blade view so Chart.js is only
+     * ever fetched once a user actually opens it.
+     */
+    private function analyticsPanel($user, bool $hasAny, ConnectivityAnalyticsService $analytics): array
+    {
+        if (! $hasAny) {
+            return [];
+        }
+
+        return [
+            'planMix' => $analytics->planMixBreakdown($user, '90d'),
+            'purchaseCadence' => $analytics->purchaseCadence($user, '90d'),
+            'spendBreakdown' => $analytics->walletSpendBreakdown($user, '30d'),
+            'topUpHistory' => $analytics->topUpHistory($user, '90d'),
+        ];
     }
 }

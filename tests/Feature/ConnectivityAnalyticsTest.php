@@ -160,6 +160,54 @@ class ConnectivityAnalyticsTest extends TestCase
         $this->assertNull((new ConnectivityAnalyticsService)->usageBurnRate($order));
     }
 
+    public function test_weekly_data_usage_sums_snapshot_to_snapshot_deltas_not_the_raw_cumulative_column(): void
+    {
+        $user = User::factory()->create();
+        $order = $this->order($user, $this->plan());
+
+        // data_used_mb is cumulative since activation — 200 -> 350 -> 500 is
+        // 150mb used on each of two distinct days, never the raw 500 figure.
+        EsimUsageSnapshot::create(['esim_order_id' => $order->id, 'user_id' => $user->id, 'data_used_mb' => 200, 'captured_at' => now()->subDays(2)]);
+        EsimUsageSnapshot::create(['esim_order_id' => $order->id, 'user_id' => $user->id, 'data_used_mb' => 350, 'captured_at' => now()->subDays(1)]);
+        EsimUsageSnapshot::create(['esim_order_id' => $order->id, 'user_id' => $user->id, 'data_used_mb' => 500, 'captured_at' => now()]);
+
+        $usage = (new ConnectivityAnalyticsService)->weeklyDataUsage($user, 7);
+
+        $this->assertSame(300.0, $usage['total_mb']);
+        $this->assertCount(7, $usage['daily']);
+        $this->assertSame(now()->toDateString(), $usage['daily'][6]['date']);
+        $this->assertSame(150.0, $usage['daily'][6]['mb']);
+    }
+
+    public function test_weekly_data_usage_sums_across_multiple_orders_and_ignores_a_bundle_reset(): void
+    {
+        $user = User::factory()->create();
+        $orderA = $this->order($user, $this->plan(), ['iccid' => '8944'.uniqid()]);
+        $orderB = $this->order($user, $this->plan(), ['iccid' => '8944'.uniqid()]);
+
+        EsimUsageSnapshot::create(['esim_order_id' => $orderA->id, 'user_id' => $user->id, 'data_used_mb' => 100, 'captured_at' => now()->subHours(20)]);
+        EsimUsageSnapshot::create(['esim_order_id' => $orderA->id, 'user_id' => $user->id, 'data_used_mb' => 180, 'captured_at' => now()]);
+
+        // Bundle B refilled/reset (used_mb dropped) — that step contributes 0,
+        // never a negative or invented figure.
+        EsimUsageSnapshot::create(['esim_order_id' => $orderB->id, 'user_id' => $user->id, 'data_used_mb' => 900, 'captured_at' => now()->subHours(20)]);
+        EsimUsageSnapshot::create(['esim_order_id' => $orderB->id, 'user_id' => $user->id, 'data_used_mb' => 50, 'captured_at' => now()]);
+
+        $usage = (new ConnectivityAnalyticsService)->weeklyDataUsage($user, 7);
+
+        $this->assertSame(80.0, $usage['total_mb']);
+    }
+
+    public function test_weekly_data_usage_is_zero_with_no_snapshot_history(): void
+    {
+        $user = User::factory()->create();
+
+        $usage = (new ConnectivityAnalyticsService)->weeklyDataUsage($user, 7);
+
+        $this->assertSame(0.0, $usage['total_mb']);
+        $this->assertCount(7, $usage['daily']);
+    }
+
     public function test_wallet_spend_breakdown_groups_by_public_model_never_provider(): void
     {
         $user = User::factory()->create();

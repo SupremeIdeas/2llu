@@ -112,6 +112,40 @@ pipeline + read-only aggregation layer, no UI yet.
   Never touches `wholesale_cost`/`provider` (repo-wide masking invariant).
 - `ConnectivityAnalyticsTest` — 11 tests, full suite green (1331 on `main`).
 
+### 📦 CONNECTIVITY ANALYTICS — Part A UI (Home hero + My Line charts) — 2026-09-04
+Branch `claude/connectivity-analytics-ui` (off `main`, 3 commits). Builds the
+customer-facing visualization layer on top of the Part A service above —
+every figure is real and non-invented, nothing synthetic.
+- **`ConnectivityAnalyticsService::weeklyDataUsage()`** — new method: a real
+  7-day usage total + daily series, computed by diffing consecutive
+  `esim_usage_snapshots.data_used_mb` values PER ORDER (that column is
+  cumulative-since-activation, never a per-day figure — confirmed from
+  `CaptureEsimUsageSnapshotJob`), summed across every order the user has. A
+  bundle refill/reset (delta ≤ 0) contributes nothing for that step rather
+  than an invented negative — mirrors `usageBurnRate()`'s philosophy.
+- **Home hero card** (`livewire/partials/dashboard/_analytics.blade.php`,
+  included from both layout variants): dependency-free SVG sparklines
+  (matching Wallet.php's existing polyline convention) for the week's data
+  usage and a 30-day wallet deposits-vs-spend comparison. Hidden entirely for
+  a brand-new account; each side degrades to a plain message with no history.
+- **My Line per-eSIM "Show usage" panel** (`partials/my-connectivity.blade.php`):
+  real burn-rate text + a `usageTimeline()` line chart. Chart.js is
+  dynamic-imported only on first open, via `window.NaaraUsageCharts.mount()`
+  registered in `resources/js/usage-chart.js` — confirmed by the Vite build
+  producing a separate `chart-*.js` chunk, never part of the main bundle.
+- **My Line "My Analytics" panel** (`partials/my-lines-analytics.blade.php`,
+  collapsed by default): plan-mix donut, purchase-cadence bar, spend-by-Model
+  donut (never a provider name), and deposit-history bar — the 4 aggregate
+  service methods not already used by the per-eSIM panel. Shares the same
+  lazy Chart.js chunk as the usage panel (one `chart-*.js` chunk in the build,
+  not two) via `resources/js/lines-analytics-charts.js`.
+- 3 new test files (`DashboardAnalyticsHeroTest`, `MyLineUsageChartTest`,
+  `MyLineAnalyticsPanelTest`) plus new `ConnectivityAnalyticsTest` cases for
+  `weeklyDataUsage()`. Full suite green (1440 passed). Every panel verified
+  visually with Playwright (light + dark) — real seeded data rendering real
+  charts, graceful empty states confirmed for zero-history accounts.
+- **Not yet done:** the admin side (blueprint §7) — see TOP OF NEXT below.
+
 ### 📦 BUILD-12 — homepage "Who Naara Is For" audience tabs — 2026-08-04
 Real admin-orderable homepage section (SiteContent, defaulted after `products`).
 Six tabs auto-advance 12s with a brand-gradient progress bar; manual override +
@@ -1316,24 +1350,17 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 > (loyalty milestones, travel timeline, admin-defined achievements paying
 > NaaraCredits) that used to top this list are now DONE — see DONE above.
 
-### ▶ TOP OF NEXT — Connectivity Analytics Part A, continued (branch `claude/connectivity-analytics`)
-The data pipeline + service (usage snapshots, burn rate, spend/plan-mix
-aggregation) is done and tested — see DONE above. Not built yet:
-1. **Chart.js + one real chart on My Line** (blueprint build-order step 3):
-   npm install, an Alpine wrapper component, wire `ConnectivityAnalyticsService::
-   usageTimeline()`/`usageBurnRate()` into a per-active-eSIM card in
-   `partials/my-connectivity.blade.php` (shared with Dashboard — don't fork),
-   plus a rate-limited "Refresh usage" manual action (`Cache::lock`, ~60s).
-2. Home summary card (aggregate data used this week, 7-day sparkline, wallet
-   deposits-vs-spend sparkline) — reuses `ConnectivityHub`'s existing counts,
-   "see more →" into My Line's deep view.
-3. My Line "My Analytics" panel: plan-mix donut, purchase-cadence bar,
-   top-up-vs-spend chart, all from the already-built service methods.
-4. Admin side (separate, larger item — blueprint §7): refactor `Admin\Dashboard`
-   onto a new `PlatformAnalyticsService` (fixes the gift-card-revenue gap +
-   adds caching), then a dedicated `Admin\Analytics` page for wallet/FX,
-   merchant, operational-health, and provider-reliability views.
-5. ~~**Part B (Unified USD Wallet)**~~ — ✅ done and merged to `main`
+### ▶ TOP OF NEXT — Connectivity Analytics Part A: admin side (blueprint §7)
+The full customer-facing Part A UI is now DONE (branch
+`claude/connectivity-analytics-ui`, not yet merged — see DONE above):
+`weeklyDataUsage()` + Home hero sparkline card, the per-eSIM lazy Chart.js
+usage panel on My Line, and the "My Analytics" panel (plan mix / cadence /
+spend / deposits). Only the admin side remains:
+1. Refactor `Admin\Dashboard` onto a new `PlatformAnalyticsService` (fixes
+   the gift-card-revenue gap + adds caching).
+2. A dedicated `Admin\Analytics` page for wallet/FX, merchant,
+   operational-health, and provider-reliability views.
+3. ~~**Part B (Unified USD Wallet)**~~ — ✅ done and merged to `main`
    2026-09-04 (see DONE above) — `usd_balance` is the one spendable balance,
    `GatewayCurrencyMatrix` wired into the Wallet page's real currency
    dropdown, PayPal/Stripe Connect payouts, the `wallet:migrate-ngn-to-usd`
