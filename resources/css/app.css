@@ -46,6 +46,12 @@
     --brand-navy: 13 27 42;           /* Midnight Navy #0D1B2A */
     --brand-action: 232 65 42;        /* Coral Red   #E8412A */
     --brand-radius: 0.5rem;           /* default control roundness */
+
+    /* Site-wide font override (admin Branding page). Defaults to the shipped
+       Naara fonts so an unconfigured install is byte-identical to before —
+       the quoted names match the @font-face declarations above exactly. */
+    --font-display: 'Supreme Display';
+    --font-sans: 'Didact Gothic';
 }
 
 @tailwind base;
@@ -53,20 +59,23 @@
 @tailwind utilities;
 
 @layer base {
-    /* Body copy defaults to Didact Gothic (the `sans` family). */
+    /* Body copy defaults to Didact Gothic (the `sans` family). The CSS variable
+       is read first so the admin font system (site-wide override) can repaint
+       every element at runtime; theme('fontFamily.sans') is the static
+       fallback stack if --font-sans is ever unset. */
     body {
-        font-family: theme('fontFamily.sans');
+        font-family: var(--font-sans), theme('fontFamily.sans');
     }
     /* Titles & headings use the branded display font. */
     h1, h2, h3, h4, h5, h6 {
-        font-family: theme('fontFamily.display');
+        font-family: var(--font-display), theme('fontFamily.display');
         letter-spacing: -0.01em;
     }
 }
 
 /* Utility to force the display font on any element (e.g. the wordmark). */
 .font-display {
-    font-family: theme('fontFamily.display');
+    font-family: var(--font-display), theme('fontFamily.display');
 }
 
 /* Hide Alpine-cloaked elements until Alpine initializes (prevents icon flash). */

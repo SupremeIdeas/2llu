@@ -151,5 +151,119 @@ class BrandingTest extends TestCase
         $css = file_get_contents(resource_path('css/app.css'));
         $this->assertStringContainsString('Supreme Display', $css);
         $this->assertStringContainsString('Didact Gothic', $css);
+        // app.css must actually read the override variable, not just theme() —
+        // this is the dead-CSS-variable bug the admin font system depends on.
+        $this->assertStringContainsString('var(--font-sans)', $css);
+        $this->assertStringContainsString('var(--font-display)', $css);
+    }
+
+    public function test_unconfigured_install_has_no_font_override(): void
+    {
+        $this->assertFalse(BrandSettings::hasFontOverride());
+        $this->assertFalse(BrandSettings::usesGoogleFont());
+        $this->assertSame('', BrandSettings::fontCss());
+        $this->assertNull(BrandSettings::googleFontsHref());
+
+        // No injected <style id="brand-font-vars"> and no Google Fonts <link>
+        // on a fresh install — byte-identical to before this feature shipped.
+        $html = $this->get('/')->assertOk()->getContent();
+        $this->assertStringNotContainsString('brand-font-vars', $html);
+        $this->assertStringNotContainsString('fonts.googleapis.com', $html);
+    }
+
+    public function test_admin_can_set_a_google_font_for_titles_and_body(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(Branding::class)
+            ->set('font_display_source', 'google')
+            ->set('font_display_google', 'Poppins')
+            ->set('font_sans_source', 'google')
+            ->set('font_sans_google', 'Inter')
+            ->call('saveFonts')
+            ->assertHasNoErrors();
+
+        $this->assertTrue(BrandSettings::hasFontOverride());
+        $this->assertTrue(BrandSettings::usesGoogleFont());
+        $this->assertSame('Poppins', BrandSettings::googleFontName('display'));
+        $this->assertSame('Inter', BrandSettings::googleFontName('sans'));
+
+        $css = BrandSettings::fontCss();
+        $this->assertStringContainsString("--font-display: 'Poppins'", $css);
+        $this->assertStringContainsString("--font-sans: 'Inter'", $css);
+
+        $href = BrandSettings::googleFontsHref();
+        $this->assertStringContainsString('fonts.googleapis.com/css2', $href);
+        $this->assertStringContainsString('family=Poppins', $href);
+        $this->assertStringContainsString('family=Inter', $href);
+
+        $html = $this->get('/')->assertOk()->getContent();
+        $this->assertStringContainsString('brand-font-vars', $html);
+        $this->assertStringContainsString('fonts.googleapis.com', $html);
+
+        $csp = (string) $this->get('/')->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString('fonts.googleapis.com', $csp);
+        $this->assertStringContainsString('fonts.gstatic.com', $csp);
+    }
+
+    public function test_google_font_name_is_strictly_validated(): void
+    {
+        $this->assertTrue(BrandSettings::isValidGoogleFontName('Poppins'));
+        $this->assertTrue(BrandSettings::isValidGoogleFontName('Noto Sans JP'));
+        $this->assertFalse(BrandSettings::isValidGoogleFontName('Evil";}</style><script>alert(1)</script>'));
+        $this->assertFalse(BrandSettings::isValidGoogleFontName("Poppins');}body{color:red"));
+
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(Branding::class)
+            ->set('font_display_source', 'google')
+            ->set('font_display_google', 'Evil"; } body { display: none; } .x {')
+            ->call('saveFonts')
+            ->assertHasErrors('font_display_google');
+    }
+
+    public function test_admin_can_upload_a_custom_font(): void
+    {
+        Storage::fake('wasabi');
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(Branding::class)
+            ->set('font_sans_source', 'custom')
+            ->set('font_sans_custom', File::create('body-font.woff2', 50))
+            ->call('saveFonts')
+            ->assertHasNoErrors();
+
+        $this->assertSame('custom', BrandSettings::fontSource('sans'));
+        $this->assertNotNull(BrandSettings::customFontUrl('sans'));
+
+        $css = BrandSettings::fontCss();
+        $this->assertStringContainsString('@font-face', $css);
+        $this->assertStringContainsString(BrandSettings::CUSTOM_FONT_FAMILY['sans'], $css);
+        $this->assertStringContainsString("--font-sans: '".BrandSettings::CUSTOM_FONT_FAMILY['sans']."'", $css);
+        // A custom upload never trusts admin text as a CSS family name — a
+        // fixed, code-generated name sidesteps that injection risk entirely.
+        $this->assertFalse(BrandSettings::usesGoogleFont());
+    }
+
+    public function test_resetting_fonts_returns_to_the_naara_defaults(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(Branding::class)
+            ->set('font_display_source', 'google')
+            ->set('font_display_google', 'Poppins')
+            ->call('saveFonts')
+            ->assertHasNoErrors();
+        $this->assertTrue(BrandSettings::hasFontOverride());
+
+        Livewire::actingAs($admin)->test(Branding::class)
+            ->call('resetFonts');
+
+        $this->assertFalse(BrandSettings::hasFontOverride());
+        $this->assertSame('', BrandSettings::fontSource('display'));
     }
 }

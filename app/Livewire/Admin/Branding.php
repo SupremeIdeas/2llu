@@ -90,6 +90,21 @@ class Branding extends Component
 
     public string $hero_title_size = HeroBackground::DEFAULT_TITLE_SIZE;
 
+    // Site-wide font system (owner request): '' keeps the shipped Naara default
+    // (Supreme Display / Didact Gothic); 'google' picks a Google Font by name;
+    // 'custom' uses an uploaded web font file. One source per slot.
+    public string $font_display_source = '';
+
+    public string $font_display_google = '';
+
+    public $font_display_custom = null;
+
+    public string $font_sans_source = '';
+
+    public string $font_sans_google = '';
+
+    public $font_sans_custom = null;
+
     public ?string $saved = null;
 
     /** field => setting key. */
@@ -125,6 +140,10 @@ class Branding extends Component
         $this->logo_scale_family = BrandSettings::logoScale('family');
         $this->logo_scale_product = BrandSettings::logoScale('product');
         $this->logo_scale_gift = BrandSettings::logoScale('gift');
+        $this->font_display_source = BrandSettings::fontSource('display');
+        $this->font_display_google = BrandSettings::googleFontName('display') ?? '';
+        $this->font_sans_source = BrandSettings::fontSource('sans');
+        $this->font_sans_google = BrandSettings::googleFontName('sans') ?? '';
     }
 
     /** Save the brand theme (colours, roundness, preloader). Takes effect live. */
@@ -197,6 +216,91 @@ class Branding extends Component
         $this->radius = BrandSettings::radius();
         Auditor::log('brand.theme_reset');
         $this->saved = 'Brand colours reset to the NaaraSim defaults.';
+    }
+
+    /**
+     * Save the site-wide font system (owner request): a Google Font or an
+     * uploaded custom font, per slot (title/display + body/sans). Leaving a
+     * slot's source blank keeps the shipped Naara default untouched.
+     */
+    public function saveFonts(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        $this->validate([
+            'font_display_source' => 'nullable|in:google,custom',
+            'font_sans_source' => 'nullable|in:google,custom',
+            'font_display_google' => 'nullable|string|max:60|regex:/^[A-Za-z0-9 ]+$/',
+            'font_sans_google' => 'nullable|string|max:60|regex:/^[A-Za-z0-9 ]+$/',
+            'font_display_custom' => 'nullable|mimes:woff2,woff,ttf,otf|max:2048',
+            'font_sans_custom' => 'nullable|mimes:woff2,woff,ttf,otf|max:2048',
+        ], [
+            'font_display_google.regex' => 'Use a plain Google Font name (letters, numbers, spaces).',
+            'font_sans_google.regex' => 'Use a plain Google Font name (letters, numbers, spaces).',
+            'font_display_custom.mimes' => 'Upload a woff2, woff, ttf, or otf font file.',
+            'font_sans_custom.mimes' => 'Upload a woff2, woff, ttf, or otf font file.',
+        ]);
+
+        foreach (['display', 'sans'] as $slot) {
+            $sourceField = "font_{$slot}_source";
+            $googleField = "font_{$slot}_google";
+            $customField = "font_{$slot}_custom";
+            $source = $this->{$sourceField};
+
+            if ($source === 'google') {
+                if (trim($this->{$googleField}) === '') {
+                    $this->addError($googleField, 'Enter a Google Font name.');
+
+                    return;
+                }
+                Setting::setValue("brand.font_{$slot}_source", 'google', 'brand');
+                Setting::setValue("brand.font_{$slot}_google", trim($this->{$googleField}), 'brand');
+                Setting::where('key', "brand.font_{$slot}_custom")->get()->each->delete();
+            } elseif ($source === 'custom') {
+                if ($this->{$customField}) {
+                    $url = MediaStorage::storePublic($this->{$customField}, 'fonts');
+                    Setting::setValue("brand.font_{$slot}_custom", $url, 'brand');
+                    $this->{$customField} = null;
+                } elseif (BrandSettings::customFontUrl($slot) === null) {
+                    $this->addError($customField, 'Upload a font file.');
+
+                    return;
+                }
+                Setting::setValue("brand.font_{$slot}_source", 'custom', 'brand');
+                Setting::where('key', "brand.font_{$slot}_google")->get()->each->delete();
+            } else {
+                foreach (["brand.font_{$slot}_source", "brand.font_{$slot}_google", "brand.font_{$slot}_custom"] as $key) {
+                    Setting::where('key', $key)->get()->each->delete();
+                }
+            }
+        }
+
+        BrandSettings::flush();
+        Auditor::log('brand.fonts_updated');
+        $this->saved = 'Font settings saved — live across the platform.';
+        $this->dispatch('nx-toast', type: 'success', message: 'Fonts saved.');
+    }
+
+    /** Reset both font slots back to the shipped Naara defaults. */
+    public function resetFonts(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        foreach (['display', 'sans'] as $slot) {
+            foreach (["brand.font_{$slot}_source", "brand.font_{$slot}_google", "brand.font_{$slot}_custom"] as $key) {
+                Setting::where('key', $key)->get()->each->delete();
+            }
+        }
+        BrandSettings::flush();
+        $this->font_display_source = '';
+        $this->font_display_google = '';
+        $this->font_display_custom = null;
+        $this->font_sans_source = '';
+        $this->font_sans_google = '';
+        $this->font_sans_custom = null;
+        Auditor::log('brand.fonts_reset');
+        $this->saved = 'Fonts reset to the Naara defaults.';
+        $this->dispatch('nx-toast', type: 'success', message: 'Fonts reset.');
     }
 
     public function save(): void

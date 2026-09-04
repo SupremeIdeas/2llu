@@ -308,4 +308,74 @@
             </button>
         </div>
     </form>
+
+    {{-- Site-wide font system (owner request): pick a Google Font or upload a
+         custom web font, per slot. Left blank, the shipped Naara default
+         (Supreme Display for titles, Didact Gothic for body) stays untouched —
+         this whole section is a purely additive override. --}}
+    <form wire:submit="saveFonts" class="mt-8 space-y-6 border-t border-slate-200 pt-8 dark:border-[#2D4060]">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">Fonts</h2>
+                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Pick a Google Font or upload a custom web font for titles and body text, applied instantly across the whole platform. Leave a slot on "Naara default" to keep the shipped look.</p>
+            </div>
+            <button type="button" wire:click="resetFonts" wire:confirm="Reset both fonts to the Naara defaults?"
+                    class="text-xs font-medium text-slate-400 underline hover:text-red-500">Reset to defaults</button>
+        </div>
+
+        @php($fontSlots = [
+            ['display', 'Titles & headings', 'Used for every heading and the wordmark. Default: Supreme Display.'],
+            ['sans', 'Body text', 'Used for paragraphs, labels and buttons across the platform. Default: Didact Gothic.'],
+        ])
+        @foreach ($fontSlots as [$slot, $label, $hint])
+            @php($sourceField = "font_{$slot}_source")
+            @php($googleField = "font_{$slot}_google")
+            @php($customField = "font_{$slot}_custom")
+            @php($currentCustomUrl = $brand["font_{$slot}_custom"] ?? '')
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]" x-data="{ source: @entangle($sourceField) }">
+                <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ $label }}</h3>
+                <p class="mb-3 mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ $hint }}</p>
+
+                <div class="mb-4 flex flex-wrap gap-2">
+                    <label class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium dark:border-[#2D4060]" :class="source === '' ? 'border-primary bg-primary/10 text-primary' : 'text-slate-500 dark:text-slate-400'">
+                        <input type="radio" wire:model="{{ $sourceField }}" value="" class="hidden"> Naara default
+                    </label>
+                    <label class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium dark:border-[#2D4060]" :class="source === 'google' ? 'border-primary bg-primary/10 text-primary' : 'text-slate-500 dark:text-slate-400'">
+                        <input type="radio" wire:model="{{ $sourceField }}" value="google" class="hidden"> Google Font
+                    </label>
+                    <label class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium dark:border-[#2D4060]" :class="source === 'custom' ? 'border-primary bg-primary/10 text-primary' : 'text-slate-500 dark:text-slate-400'">
+                        <input type="radio" wire:model="{{ $sourceField }}" value="custom" class="hidden"> Upload font
+                    </label>
+                </div>
+
+                <div x-show="source === 'google'" x-cloak>
+                    <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Google Font name</label>
+                    <input type="text" wire:model="{{ $googleField }}" placeholder="e.g. Poppins" maxlength="60"
+                           class="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <p class="mt-1 text-[11px] text-slate-400">Exact name as it appears on <span class="font-medium">fonts.google.com</span> — letters, numbers and spaces only.</p>
+                    @error($googleField) <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div x-show="source === 'custom'" x-cloak>
+                    <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Font file</label>
+                    <input type="file" wire:model="{{ $customField }}" accept=".woff2,.woff,.ttf,.otf"
+                           class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-primary-dark dark:text-slate-400">
+                    <div wire:loading wire:target="{{ $customField }}" class="mt-1 text-[11px] text-slate-400">Uploading…</div>
+                    @if ($currentCustomUrl)
+                        <p class="mt-1 text-[11px] text-slate-400">Current file: <a href="{{ $currentCustomUrl }}" target="_blank" class="underline">view</a>. Upload a new one to replace it.</p>
+                    @endif
+                    <p class="mt-1 text-[11px] text-slate-400">WOFF2, WOFF, TTF or OTF — up to 2&nbsp;MB.</p>
+                    @error($customField) <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+            </div>
+        @endforeach
+
+        <div class="flex justify-end">
+            <button type="submit" wire:loading.attr="disabled" wire:target="saveFonts"
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                <span wire:loading.remove wire:target="saveFonts" class="inline-flex items-center gap-2"><x-icon name="badge-check" class="h-4 w-4" /> Save fonts</span>
+                <span wire:loading wire:target="saveFonts" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Saving…</span>
+            </button>
+        </div>
+    </form>
 </div>

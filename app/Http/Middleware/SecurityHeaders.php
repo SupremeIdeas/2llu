@@ -2,6 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\BrandSettings;
+use App\Support\ConvaiWidget;
+use App\Support\SecuritySettings;
+use App\Support\Turnstile;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,13 +31,14 @@ class SecurityHeaders
         ];
 
         // CSP + HSTS are admin-toggleable at runtime (config is the default).
-        if (\App\Support\SecuritySettings::cspEnabled() && filled(config('security.csp.policy'))) {
+        if (SecuritySettings::cspEnabled() && filled(config('security.csp.policy'))) {
             $policy = $this->policyWithTurnstile((string) config('security.csp.policy'));
             $policy = $this->policyWithConvai($policy);
+            $policy = $this->policyWithGoogleFonts($policy);
             $headers['Content-Security-Policy'] = $policy;
         }
 
-        if (\App\Support\SecuritySettings::hstsEnabled() && $request->secure()) {
+        if (SecuritySettings::hstsEnabled() && $request->secure()) {
             $headers['Strict-Transport-Security'] = 'max-age='.config('security.hsts.max_age').'; includeSubDomains';
         }
 
@@ -53,11 +58,11 @@ class SecurityHeaders
      */
     private function policyWithTurnstile(string $policy): string
     {
-        if (! \App\Support\Turnstile::active()) {
+        if (! Turnstile::active()) {
             return $policy;
         }
 
-        $origin = \App\Support\Turnstile::ORIGIN;
+        $origin = Turnstile::ORIGIN;
         $directives = array_map('trim', explode(';', $policy));
         $sawFrame = false;
 
@@ -88,11 +93,11 @@ class SecurityHeaders
      */
     private function policyWithConvai(string $policy): string
     {
-        if (! \App\Support\ConvaiWidget::active()) {
+        if (! ConvaiWidget::active()) {
             return $policy;
         }
 
-        $add = \App\Support\ConvaiWidget::CSP;
+        $add = ConvaiWidget::CSP;
         $directives = array_map('trim', explode(';', $policy));
         $present = [];
 
@@ -111,6 +116,50 @@ class SecurityHeaders
         }
 
         // Directives not already in the policy (e.g. worker-src) are appended.
+        foreach ($add as $name => $origins) {
+            if (empty($present[$name])) {
+                $directives[] = $name.' '.implode(' ', $origins);
+            }
+        }
+
+        return implode('; ', array_filter($directives));
+    }
+
+    /**
+     * When the admin font system (Branding page) has a Google Font selected,
+     * allow exactly Google's two font-serving origins — the stylesheet from
+     * fonts.googleapis.com (style-src) and the actual font files from
+     * fonts.gstatic.com (font-src) — and nowhere else. Gated on
+     * BrandSettings::usesGoogleFont(), so the strict default policy is
+     * untouched on an unconfigured install.
+     */
+    private function policyWithGoogleFonts(string $policy): string
+    {
+        if (! BrandSettings::usesGoogleFont()) {
+            return $policy;
+        }
+
+        $add = [
+            'style-src' => ['https://fonts.googleapis.com'],
+            'font-src' => ['https://fonts.gstatic.com'],
+        ];
+        $directives = array_map('trim', explode(';', $policy));
+        $present = [];
+
+        foreach ($directives as $i => $directive) {
+            foreach ($add as $name => $origins) {
+                if (str_starts_with($directive, $name.' ')) {
+                    $present[$name] = true;
+                    foreach ($origins as $origin) {
+                        if (! str_contains($directive, $origin)) {
+                            $directive .= ' '.$origin;
+                        }
+                    }
+                    $directives[$i] = $directive;
+                }
+            }
+        }
+
         foreach ($add as $name => $origins) {
             if (empty($present[$name])) {
                 $directives[] = $name.' '.implode(' ', $origins);

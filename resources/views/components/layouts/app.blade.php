@@ -37,6 +37,17 @@
          (it's a heavy download that blocks the critical path for no benefit). --}}
     <link rel="preload" href="/fonts/didact-gothic.woff2" as="font" type="font/woff2" crossorigin>
 
+    {{-- Admin font system (Branding page): loads a Google Font's stylesheet only
+         when one is actually selected for the title or body font. CSP is widened
+         for exactly these two Google origins by SecurityHeaders::policyWithGoogleFonts()
+         when this is active. --}}
+    @php($googleFontsHref = \App\Support\BrandSettings::googleFontsHref())
+    @if ($googleFontsHref)
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="{{ $googleFontsHref }}">
+    @endif
+
     {{-- Pre-paint theme script: sets the `dark` class BEFORE first paint so
          there is no flash of the wrong theme (blueprint Section 4.2 / 24.3).
          The user's choice lives in localStorage and MUST outlive navigation:
@@ -82,6 +93,14 @@
          BOTH the dashboard and the marketing site (which extends this layout). --}}
     @php($themeCss = \App\Support\ThemePreset::styleCss())
     @if ($themeCss)<style id="theme-preset-vars">{!! $themeCss !!}</style>@endif
+    {{-- Site-wide font override (admin Branding page): swaps --font-display /
+         --font-sans for a Google Font or an uploaded custom font. Emitted LAST
+         so it wins over any theme-preset font variable — this is the single
+         authoritative source for the platform's rendered font, regardless of
+         which of the 20 themes is active. Empty on an unconfigured install, so
+         the shipped Naara fonts (Supreme Display / Didact Gothic) are untouched. --}}
+    @php($fontCss = \App\Support\BrandSettings::fontCss())
+    @if ($fontCss)<style id="brand-font-vars">{!! $fontCss !!}</style>@endif
     @stack('head')
     @include('partials.tracking')
 </head>

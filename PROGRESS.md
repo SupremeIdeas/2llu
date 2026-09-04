@@ -9,6 +9,52 @@
 
 ## DONE
 
+### 🔤 Admin-configurable site-wide font system — 2026-09-04
+Owner request: an admin should be able to pick a Google Font or upload a
+custom web font for titles and body text, applied platform-wide, while the
+shipped Naara default (Supreme Display / Didact Gothic) stays the untouched
+fallback for an unconfigured install. Branch `claude/admin-font-system` (base
+`main`).
+
+- **Fixed a real pre-existing bug first**: `resources/css/app.css`'s
+  `body`/`h1-h6`/`.font-display` rules used Tailwind's build-time
+  `theme('fontFamily.sans'/'display')` only — no CSS variable was ever read,
+  so `ThemePreset`'s own `--font-display`/`--font-sans` tokens (validated,
+  never wired to anything) had NEVER actually changed the rendered font on
+  any of the 20 themes. Now `:root` ships `--font-display`/`--font-sans`
+  defaults (the shipped Naara fonts) and every rule reads
+  `var(--font-*), theme('fontFamily.*')` — zero visual change until an admin
+  overrides it.
+- **`BrandSettings`** gains the font system, kept deliberately separate from
+  `ThemePreset` (which stays font-inert) so ONE system is ever authoritative
+  for the platform's actual font, regardless of active theme: `fontSource()`,
+  `googleFontName()` (strict `^[A-Za-z0-9 ]{1,60}$` validation — the name
+  flows into both a CSS value and a fonts.googleapis.com query param),
+  `customFontUrl()`, `usesGoogleFont()`, `googleFontsHref()`, and `fontCss()`
+  (the injected `<style>` — `@font-face` for a custom upload under a FIXED
+  code-generated family name `'Naara Custom Display'`/`'Naara Custom Sans'`,
+  sidestepping any need to trust admin text as a CSS family name).
+- **CSP**: new `SecurityHeaders::policyWithGoogleFonts()` (mirrors the
+  existing `policyWithConvai()`/`policyWithTurnstile()` pattern) widens
+  `style-src`/`font-src` for exactly `fonts.googleapis.com`/`fonts.gstatic.com`,
+  gated on `BrandSettings::usesGoogleFont()` — untouched on a default install.
+- **Admin UI**: `Admin\Branding` gained a "Fonts" section (`saveFonts()`/
+  `resetFonts()`) — per slot (title/body), pick "Naara default", a Google
+  Font by name, or upload a font file (`MediaStorage::storePublic`, woff2/
+  woff/ttf/otf, 2 MB cap) — mirroring the existing `saveTheme()`/
+  `resetTheme()` conventions exactly (role gate, `Auditor::log`, toast).
+- `app.blade.php` emits the font `<style>` block LAST (after `ThemePreset`'s,
+  which stays inert for fonts) and a Google Fonts `<link rel=stylesheet>`
+  only when a Google Font is actually selected.
+- 14 new tests (`BrandingTest.php`): unconfigured install has zero font
+  override/no injected tag; Google Font override applies to both slots + CSP
+  widens; malicious font-name strings rejected; custom upload wires
+  `@font-face` under the fixed family name; reset returns to defaults. Full
+  suite green (1433 passed on `main` base). Playwright-verified live:
+  default fonts unaffected pre-configuration; a Poppins/Inter Google Font
+  override actually repaints `<h1>`/`<body>` computed styles and the CSP
+  header widens correctly.
+
 ### 🎨 Theme system palette refresh + expansion to 20 themes, favicon swap to App Icon 2 — 2026-09-04
 Owner feedback: too many of the 14 original persona palettes read as teal/gold
 variations of `naara-official` itself. Branch `claude/theme-refresh-and-favicon`

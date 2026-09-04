@@ -39,6 +39,26 @@ class BrandSettings
         'brand.radius',
         'brand.preloader_enabled',
         'brand.preloader_style',
+        'brand.font_display_source',
+        'brand.font_display_google',
+        'brand.font_display_custom',
+        'brand.font_sans_source',
+        'brand.font_sans_google',
+        'brand.font_sans_custom',
+    ];
+
+    /** Sources an admin can pick per font slot ('' = keep the shipped default). */
+    public const FONT_SOURCES = ['google', 'custom'];
+
+    /**
+     * Fixed CSS font-family names used for a CUSTOM-uploaded font file. Using a
+     * code-generated name (rather than trusting admin-supplied text) sidesteps
+     * CSS-injection risk entirely for the upload path — only the Google Fonts
+     * name is admin-supplied free text, and that is strictly validated.
+     */
+    public const CUSTOM_FONT_FAMILY = [
+        'display' => 'Naara Custom Display',
+        'sans' => 'Naara Custom Sans',
     ];
 
     /** Preloader visual styles the admin can pick (blueprint audit §7). */
@@ -103,6 +123,14 @@ class BrandSettings
                     'logo_scale_family' => (string) Setting::getValue('brand.logo_scale_family', ''),
                     'logo_scale_product' => (string) Setting::getValue('brand.logo_scale_product', ''),
                     'logo_scale_gift' => (string) Setting::getValue('brand.logo_scale_gift', ''),
+                    // Site-wide font override (title + body). '' source = the
+                    // shipped Naara default (Supreme Display / Didact Gothic).
+                    'font_display_source' => (string) Setting::getValue('brand.font_display_source', ''),
+                    'font_display_google' => (string) Setting::getValue('brand.font_display_google', ''),
+                    'font_display_custom' => (string) Setting::getValue('brand.font_display_custom', ''),
+                    'font_sans_source' => (string) Setting::getValue('brand.font_sans_source', ''),
+                    'font_sans_google' => (string) Setting::getValue('brand.font_sans_google', ''),
+                    'font_sans_custom' => (string) Setting::getValue('brand.font_sans_custom', ''),
                 ];
             } catch (\Throwable) {
                 return self::defaults();
@@ -123,6 +151,8 @@ class BrandSettings
             'favicon' => '',
             'color_primary' => '', 'color_accent' => '', 'color_navy' => '', 'color_action' => '',
             'radius' => '', 'preloader_enabled' => false, 'preloader_style' => '',
+            'font_display_source' => '', 'font_display_google' => '', 'font_display_custom' => '',
+            'font_sans_source' => '', 'font_sans_google' => '', 'font_sans_custom' => '',
         ];
     }
 
@@ -178,31 +208,31 @@ class BrandSettings
      * @var array<string, array{primary:string, accent:string, navy:string, action:string}>
      */
     public const PALETTES = [
-        'Naara Teal'      => ['primary' => '#0A6E6E', 'accent' => '#D4A017', 'navy' => '#0D1B2A', 'action' => '#E8412A'],
+        'Naara Teal' => ['primary' => '#0A6E6E', 'accent' => '#D4A017', 'navy' => '#0D1B2A', 'action' => '#E8412A'],
         'Midnight Indigo' => ['primary' => '#4F46E5', 'accent' => '#F59E0B', 'navy' => '#111827', 'action' => '#EF4444'],
-        'Royal Violet'    => ['primary' => '#7C3AED', 'accent' => '#F5B301', 'navy' => '#1E1B2E', 'action' => '#EC4899'],
-        'Emerald Forest'  => ['primary' => '#047857', 'accent' => '#F59E0B', 'navy' => '#0B1F17', 'action' => '#DC2626'],
-        'Ocean Blue'      => ['primary' => '#0369A1', 'accent' => '#FBBF24', 'navy' => '#0C1A2B', 'action' => '#F43F5E'],
-        'Sunset Coral'    => ['primary' => '#E11D48', 'accent' => '#F59E0B', 'navy' => '#1B1113', 'action' => '#FB7185'],
-        'Amber Gold'      => ['primary' => '#B45309', 'accent' => '#0EA5E9', 'navy' => '#1C1508', 'action' => '#EA580C'],
-        'Slate Pro'       => ['primary' => '#334155', 'accent' => '#F59E0B', 'navy' => '#0F172A', 'action' => '#0EA5E9'],
-        'Crimson Noir'    => ['primary' => '#B91C1C', 'accent' => '#FBBF24', 'navy' => '#180B0B', 'action' => '#F97316'],
-        'Cyber Lime'      => ['primary' => '#3F6212', 'accent' => '#84CC16', 'navy' => '#0E1406', 'action' => '#22D3EE'],
-        'Deep Purple'     => ['primary' => '#6D28D9', 'accent' => '#22D3EE', 'navy' => '#14101F', 'action' => '#F472B6'],
-        'Rose Quartz'     => ['primary' => '#BE185D', 'accent' => '#FBBF24', 'navy' => '#1A0E15', 'action' => '#FB7185'],
-        'Steel Blue'      => ['primary' => '#1D4ED8', 'accent' => '#F59E0B', 'navy' => '#0B1220', 'action' => '#06B6D4'],
-        'Jade Mint'       => ['primary' => '#0D9488', 'accent' => '#F59E0B', 'navy' => '#0A1A18', 'action' => '#F43F5E'],
-        'Copper Rust'     => ['primary' => '#9A3412', 'accent' => '#FACC15', 'navy' => '#1A0F08', 'action' => '#DC2626'],
-        'Sky Fresh'       => ['primary' => '#0284C7', 'accent' => '#FACC15', 'navy' => '#0B1725', 'action' => '#F97316'],
-        'Plum Wine'       => ['primary' => '#86198F', 'accent' => '#FBBF24', 'navy' => '#170A18', 'action' => '#E11D48'],
-        'Olive Earth'     => ['primary' => '#4D7C0F', 'accent' => '#EAB308', 'navy' => '#12160A', 'action' => '#EA580C'],
-        'Graphite Gold'   => ['primary' => '#1F2937', 'accent' => '#D4A017', 'navy' => '#0B0F17', 'action' => '#EF4444'],
-        'Turquoise Pop'   => ['primary' => '#0891B2', 'accent' => '#F59E0B', 'navy' => '#0A1A1E', 'action' => '#F43F5E'],
-        'Berry Bold'      => ['primary' => '#9D174D', 'accent' => '#FBBF24', 'navy' => '#180912', 'action' => '#FB923C'],
-        'Pine Green'      => ['primary' => '#065F46', 'accent' => '#FCD34D', 'navy' => '#08160F', 'action' => '#F87171'],
-        'Cobalt Night'    => ['primary' => '#1E40AF', 'accent' => '#FACC15', 'navy' => '#0A0F1F', 'action' => '#F97316'],
-        'Terracotta'      => ['primary' => '#C2410C', 'accent' => '#0D9488', 'navy' => '#1A0F0A', 'action' => '#DC2626'],
-        'Monochrome Ink'  => ['primary' => '#111827', 'accent' => '#6B7280', 'navy' => '#030712', 'action' => '#2563EB'],
+        'Royal Violet' => ['primary' => '#7C3AED', 'accent' => '#F5B301', 'navy' => '#1E1B2E', 'action' => '#EC4899'],
+        'Emerald Forest' => ['primary' => '#047857', 'accent' => '#F59E0B', 'navy' => '#0B1F17', 'action' => '#DC2626'],
+        'Ocean Blue' => ['primary' => '#0369A1', 'accent' => '#FBBF24', 'navy' => '#0C1A2B', 'action' => '#F43F5E'],
+        'Sunset Coral' => ['primary' => '#E11D48', 'accent' => '#F59E0B', 'navy' => '#1B1113', 'action' => '#FB7185'],
+        'Amber Gold' => ['primary' => '#B45309', 'accent' => '#0EA5E9', 'navy' => '#1C1508', 'action' => '#EA580C'],
+        'Slate Pro' => ['primary' => '#334155', 'accent' => '#F59E0B', 'navy' => '#0F172A', 'action' => '#0EA5E9'],
+        'Crimson Noir' => ['primary' => '#B91C1C', 'accent' => '#FBBF24', 'navy' => '#180B0B', 'action' => '#F97316'],
+        'Cyber Lime' => ['primary' => '#3F6212', 'accent' => '#84CC16', 'navy' => '#0E1406', 'action' => '#22D3EE'],
+        'Deep Purple' => ['primary' => '#6D28D9', 'accent' => '#22D3EE', 'navy' => '#14101F', 'action' => '#F472B6'],
+        'Rose Quartz' => ['primary' => '#BE185D', 'accent' => '#FBBF24', 'navy' => '#1A0E15', 'action' => '#FB7185'],
+        'Steel Blue' => ['primary' => '#1D4ED8', 'accent' => '#F59E0B', 'navy' => '#0B1220', 'action' => '#06B6D4'],
+        'Jade Mint' => ['primary' => '#0D9488', 'accent' => '#F59E0B', 'navy' => '#0A1A18', 'action' => '#F43F5E'],
+        'Copper Rust' => ['primary' => '#9A3412', 'accent' => '#FACC15', 'navy' => '#1A0F08', 'action' => '#DC2626'],
+        'Sky Fresh' => ['primary' => '#0284C7', 'accent' => '#FACC15', 'navy' => '#0B1725', 'action' => '#F97316'],
+        'Plum Wine' => ['primary' => '#86198F', 'accent' => '#FBBF24', 'navy' => '#170A18', 'action' => '#E11D48'],
+        'Olive Earth' => ['primary' => '#4D7C0F', 'accent' => '#EAB308', 'navy' => '#12160A', 'action' => '#EA580C'],
+        'Graphite Gold' => ['primary' => '#1F2937', 'accent' => '#D4A017', 'navy' => '#0B0F17', 'action' => '#EF4444'],
+        'Turquoise Pop' => ['primary' => '#0891B2', 'accent' => '#F59E0B', 'navy' => '#0A1A1E', 'action' => '#F43F5E'],
+        'Berry Bold' => ['primary' => '#9D174D', 'accent' => '#FBBF24', 'navy' => '#180912', 'action' => '#FB923C'],
+        'Pine Green' => ['primary' => '#065F46', 'accent' => '#FCD34D', 'navy' => '#08160F', 'action' => '#F87171'],
+        'Cobalt Night' => ['primary' => '#1E40AF', 'accent' => '#FACC15', 'navy' => '#0A0F1F', 'action' => '#F97316'],
+        'Terracotta' => ['primary' => '#C2410C', 'accent' => '#0D9488', 'navy' => '#1A0F0A', 'action' => '#DC2626'],
+        'Monochrome Ink' => ['primary' => '#111827', 'accent' => '#6B7280', 'navy' => '#030712', 'action' => '#2563EB'],
     ];
 
     public static function radius(): string
@@ -314,6 +344,149 @@ class BrandSettings
     private static function sanitizeRadius(string $radius): string
     {
         return preg_match('/^\d?\.?\d+rem$/', trim($radius)) ? trim($radius) : '0.5rem';
+    }
+
+    /**
+     * A Google Font family name is free text an admin types in, but it flows
+     * into both a CSS font-family string and a fonts.googleapis.com query
+     * parameter — letters/digits/spaces only, so it can never break out of
+     * either context.
+     */
+    public static function isValidGoogleFontName(string $name): bool
+    {
+        return (bool) preg_match('/^[A-Za-z0-9 ]{1,60}$/', $name);
+    }
+
+    /** The admin's chosen source for a font slot ('display'|'sans'), or ''. */
+    public static function fontSource(string $slot): string
+    {
+        $v = (string) (self::current()['font_'.$slot.'_source'] ?? '');
+
+        return in_array($v, self::FONT_SOURCES, true) ? $v : '';
+    }
+
+    /** The validated Google Font name configured for a slot, or null. */
+    public static function googleFontName(string $slot): ?string
+    {
+        $name = trim((string) (self::current()['font_'.$slot.'_google'] ?? ''));
+
+        return ($name !== '' && self::isValidGoogleFontName($name)) ? $name : null;
+    }
+
+    /** The uploaded custom font file URL configured for a slot, or null. */
+    public static function customFontUrl(string $slot): ?string
+    {
+        $url = (string) (self::current()['font_'.$slot.'_custom'] ?? '');
+
+        return $url !== '' ? $url : null;
+    }
+
+    /** True when either slot is actively overridden (Google or custom). */
+    public static function hasFontOverride(): bool
+    {
+        foreach (['display', 'sans'] as $slot) {
+            $source = self::fontSource($slot);
+            if ($source === 'google' && self::googleFontName($slot) !== null) {
+                return true;
+            }
+            if ($source === 'custom' && self::customFontUrl($slot) !== null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** True when at least one slot is sourced from Google Fonts (CSP gate). */
+    public static function usesGoogleFont(): bool
+    {
+        foreach (['display', 'sans'] as $slot) {
+            if (self::fontSource($slot) === 'google' && self::googleFontName($slot) !== null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Distinct Google Font names currently in use, across both slots. */
+    public static function googleFontFamilies(): array
+    {
+        $names = [];
+        foreach (['display', 'sans'] as $slot) {
+            if ($slot === 'sans' && self::fontSource('display') === 'google') {
+                $prev = self::googleFontName('display');
+                if ($prev !== null && $prev === self::googleFontName('sans')) {
+                    continue; // same family requested twice — one <link> is enough.
+                }
+            }
+            if (self::fontSource($slot) === 'google' && ($name = self::googleFontName($slot)) !== null) {
+                $names[$name] = true;
+            }
+        }
+
+        return array_keys($names);
+    }
+
+    /** The fonts.googleapis.com stylesheet URL to <link>, or null if unused. */
+    public static function googleFontsHref(): ?string
+    {
+        $families = self::googleFontFamilies();
+        if ($families === []) {
+            return null;
+        }
+
+        $parts = array_map(
+            fn (string $name) => 'family='.str_replace(' ', '+', $name).':wght@400;500;700',
+            $families
+        );
+
+        return 'https://fonts.googleapis.com/css2?'.implode('&', $parts).'&display=swap';
+    }
+
+    /** font-format for a custom-uploaded font file, by its extension. */
+    private static function customFontFormat(string $url): string
+    {
+        return match (strtolower((string) pathinfo(parse_url($url, PHP_URL_PATH) ?: $url, PATHINFO_EXTENSION))) {
+            'woff2' => 'woff2',
+            'woff' => 'woff',
+            'ttf' => 'truetype',
+            'otf' => 'opentype',
+            default => 'woff2',
+        };
+    }
+
+    /**
+     * The runtime font override CSS injected into the layout head: @font-face
+     * rules for any custom upload, plus the :root --font-display/--font-sans
+     * variables app.css reads. Returns '' when nothing is overridden (no
+     * wasted <style>) — an unconfigured install keeps the shipped Naara fonts.
+     */
+    public static function fontCss(): string
+    {
+        if (! self::hasFontOverride()) {
+            return '';
+        }
+
+        $faces = [];
+        $vars = [];
+        foreach (['display', 'sans'] as $slot) {
+            $source = self::fontSource($slot);
+            if ($source === 'custom' && ($url = self::customFontUrl($slot)) !== null) {
+                $family = self::CUSTOM_FONT_FAMILY[$slot];
+                $format = self::customFontFormat($url);
+                $faces[] = "@font-face{font-family:'{$family}';src:url('{$url}') format('{$format}');font-weight:400 900;font-display:swap;}";
+                $vars[] = "--font-{$slot}: '{$family}';";
+            } elseif ($source === 'google' && ($name = self::googleFontName($slot)) !== null) {
+                $vars[] = "--font-{$slot}: '{$name}';";
+            }
+        }
+
+        if ($vars === []) {
+            return '';
+        }
+
+        return implode('', $faces).':root{'.implode('', $vars).'}';
     }
 
     public static function name(): string
