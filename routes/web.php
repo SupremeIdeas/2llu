@@ -400,6 +400,8 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/social-hunt', SocialHunt::class)->name('social-hunt');
             Route::get('/brand-directory', BrandDirectory::class)->name('brand-directory');
             Route::get('/gift-cards', App\Livewire\Admin\GiftCards::class)->name('gift-cards');
+            // Naara Gift storefront hero — same system as the dashboard home hero.
+            Route::get('/gift-hero', App\Livewire\Admin\GiftHero::class)->name('gift-hero');
             Route::get('/developer-api', DeveloperApi::class)->name('developer-api');
             Route::get('/payouts', Payouts::class)->name('payouts');
             Route::get('/refunds', Refunds::class)->name('refunds');

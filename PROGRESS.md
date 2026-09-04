@@ -9,6 +9,29 @@
 
 ## DONE
 
+### 🎁 Naara Gift storefront hero (same system as the dashboard home hero) — 2026-09-04
+Owner request: give the Naara Gift storefront the same hero visual treatment
+as the customer dashboard home, so it can be re-themed independently later.
+- New `App\Support\GiftHeroBackground` — a field-for-field mirror of
+  `HeroBackground` (title/description/title-size/on-off/light+dark image),
+  under its OWN `giftcard.hero.*` setting namespace (never shares state with
+  `dashboard.hero.*`) so the two heroes can be customised independently.
+- New partial `resources/views/livewire/partials/gift-cards/_hero.blade.php`
+  reuses the exact same `nx-home-hero`/`nx-home-hero__img` CSS (no new styles
+  written) — two-tone gradient title split, photo bleeding top-right with the
+  same mask, degrading cleanly to text-only with no image uploaded. Default
+  title "Naara Gift" splits as "Naara" (plain) / "Gift" (gradient).
+- New standalone admin page `Admin\GiftHero` (`/adminmaster/gift-hero`, nav
+  entry under "Store & pricing" next to "Naara Gift"), mirroring
+  `Admin\Branding`'s dashboard-hero field set exactly, plus the
+  `Setting::saved` cache-flush hook wired in `AppServiceProvider`.
+- 7 new tests (`GiftHeroBackgroundTest.php`): unconfigured install renders the
+  default title/description with no injected image; admin overrides title/
+  description/size; blank title falls back; image upload + removal; on/off
+  toggle without deleting; and explicit independence from the dashboard hero.
+  Full suite green (1480 passed). Playwright-verified the rendered hero
+  visually matches the dashboard home hero's typography/gradient/layout.
+
 ### 💳 Payment gateway webhook audit — 2026-09-04
 End-to-end audit of every wallet top-up gateway (Paystack, Flutterwave,
 Stripe, PayPal, NOWPayments, Binance Pay, Cryptomus, CoinPayments, Payssion),

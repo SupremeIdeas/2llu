@@ -16,10 +16,10 @@
     @endif
 
     {{-- The Naara Gift mark now lives in the header (App\Support\BrandContext) —
-         this is the gift surface, so the header already wears it. --}}
-    <div class="mb-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Gift cards for the brands you love — delivered instantly.</p>
-    </div>
+         this is the gift surface, so the header already wears it. The hero
+         below is the same admin-customisable system as the dashboard home
+         hero, its own independent setting namespace (owner request). --}}
+    @include('livewire.partials.gift-cards._hero')
 
     @if (! $live)
         {{-- Coming Soon — the store flips live automatically the moment the API

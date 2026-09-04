@@ -82,6 +82,7 @@ use App\Support\FeatureFlags;
 use App\Support\GatewayCredentials;
 use App\Support\Geo\CloudflareGeoResolver;
 use App\Support\Geo\GeoResolver;
+use App\Support\GiftHeroBackground;
 use App\Support\HeroBackground;
 use App\Support\IconOverrides;
 use App\Support\Installer;
@@ -435,6 +436,9 @@ class AppServiceProvider extends ServiceProvider
             }
             if (NumbersHeroContent::isHeroKey($setting->key)) {
                 NumbersHeroContent::flush();
+            }
+            if (GiftHeroBackground::isHeroKey($setting->key)) {
+                GiftHeroBackground::flush();
             }
             if (SiteContent::isSiteKey($setting->key)) {
                 SiteContent::flush();
