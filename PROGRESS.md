@@ -9,6 +9,18 @@
 
 ## DONE
 
+### 💳 NaaraCredit redemption at the number checkout — 2026-09-04
+Wired the loyalty-credit redemption pattern from eSIM `Checkout.php` into
+`GetNumber.php` (verify + rent flows): margins computed once, server-side
+coupon/credits mutual-exclusivity guard, credits spent before the wallet
+debit, refund-on-failure for every downstream path, actual charged amount
+(never list retail) threaded into provider refunds / merchant accrual /
+order notifications. `CreditService::quoteRedemption()` gained a
+product-aware floor (`pricing.sms_min_profit` for numbers vs the eSIM
+`pricing.minimum_profit_usd`) so cents-level number retail can actually
+clear the margin floor. 5 new tests in `NumberCreditRedemptionTest.php`;
+full suite green (1325 passed). PR #14.
+
 ### 📦 BUILD-12 — homepage "Who Naara Is For" audience tabs — 2026-08-04
 Real admin-orderable homepage section (SiteContent, defaulted after `products`).
 Six tabs auto-advance 12s with a brand-gradient progress bar; manual override +
