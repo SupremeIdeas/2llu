@@ -6,6 +6,7 @@ use App\Models\CreditLedger;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserWallet;
+use App\Services\Pricing\DiscountMarginGuard;
 use App\Support\CreditSettings;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -187,9 +188,13 @@ class CreditService
      *   - the admin's max-redeem-% of the retail, and
      *   - the USD value of the user's credit balance.
      *
+     * @param  string  $product  'esim' or 'sms' — selects the absolute min-profit
+     *                           floor (CouponEngine::price() uses the same split;
+     *                           the number lane's retail is cents-level, so the
+     *                           eSIM $0.50 floor would zero out every quote).
      * @return array{usd: float, credits: float}
      */
-    public function quoteRedemption(User $user, float $retail, float $cost, ?float $adminMargin = null, ?float $merchantMargin = null): array
+    public function quoteRedemption(User $user, float $retail, float $cost, ?float $adminMargin = null, ?float $merchantMargin = null, string $product = 'esim'): array
     {
         if (! CreditSettings::enabled()) {
             return ['usd' => 0.0, 'credits' => 0.0];
@@ -197,10 +202,14 @@ class CreditService
 
         // Margin-safe floor (discount-floor blueprint §3) — the SAME floor
         // CouponEngine uses, so coupon + credits combined can never cross it.
-        $floor = app(\App\Services\Pricing\DiscountMarginGuard::class)->floor(
+        $minProfit = $product === 'esim'
+            ? (float) Setting::getValue('pricing.minimum_profit_usd', 0.50)
+            : (float) Setting::getValue('pricing.sms_min_profit', 0.01);
+        $floor = app(DiscountMarginGuard::class)->floor(
             $cost,
             $adminMargin ?? ($retail - $cost),
             $merchantMargin,
+            $minProfit,
         );
         $maxByFloor = max(0.0, round($retail - $floor, 4));
         $maxByPct = round($retail * (int) CreditSettings::get('max_redeem_pct', 50) / 100, 4);

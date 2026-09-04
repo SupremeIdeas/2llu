@@ -5,9 +5,11 @@ namespace App\Livewire;
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\SmsException;
 use App\Jobs\PollSmsOtpJob;
+use App\Jobs\ProcessReferralRewardJob;
 use App\Models\SmsOrder;
 use App\Notifications\OrderPlacedNotification;
 use App\Services\Credits\CreditService;
+use App\Services\Credits\InsufficientCreditsException;
 use App\Services\Merchants\MerchantEarningsService;
 use App\Services\Pricing\CouponEngine;
 use App\Services\Pricing\PricingEngine;
@@ -67,6 +69,9 @@ class GetNumber extends Component
 
     public ?string $couponNote = null;
 
+    /** NaaraCredits redemption (loyalty). Margin-capped server-side. */
+    public bool $useCredits = false;
+
     /** Client-side filter for the (large) service picker. */
     public string $serviceSearch = '';
 
@@ -99,6 +104,14 @@ class GetNumber extends Component
         }
     }
 
+    /** Turning NaaraCredits on clears any coupon (the two are mutually exclusive). */
+    public function updatedUseCredits(bool $value): void
+    {
+        if ($value) {
+            $this->reset('coupon', 'couponNote');
+        }
+    }
+
     /** Open a product modal from the bento (verify | rent | line). */
     #[On('open-numbers-modal')]
     public function openModal(string $name): void
@@ -106,7 +119,7 @@ class GetNumber extends Component
         if (! in_array($name, ['verify', 'rent', 'line'], true)) {
             return;
         }
-        $this->reset('orderId', 'error', 'couponNote');
+        $this->reset('orderId', 'error', 'couponNote', 'useCredits');
         $this->modal = $name;
         // Default the request type + a sensible service per line.
         $this->type = match ($name) {
@@ -288,7 +301,7 @@ class GetNumber extends Component
             cta: ['label' => 'View my numbers', 'href' => route('dashboard')]);
     }
 
-    public function order(WalletService $wallet, SmsNumberRouter $router, CouponEngine $coupons, PricingEngine $pricing, MerchantEarningsService $earnings): void
+    public function order(WalletService $wallet, SmsNumberRouter $router, CouponEngine $coupons, PricingEngine $pricing, MerchantEarningsService $earnings, CreditService $credits): void
     {
         $this->error = null;
         $this->couponNote = null;
@@ -335,6 +348,23 @@ class GetNumber extends Component
             : $plainRetail;
         $listRetail = $retail;
 
+        // Margin-safe discount floor (blueprint §2/§3): compute the admin's and
+        // (for a merchant sale) the merchant's margin ONCE, from the pre-discount
+        // prices, and thread the SAME figures into both the coupon and credit
+        // engines — so the combined floor is identical and neither can zero the
+        // merchant's earning.
+        $numCost = (float) $quote['cost'];
+        $adminMargin = $plainRetail - $numCost;
+        $merchantMargin = $merchant !== null ? max(0.0, $retail - $plainRetail) : null;
+
+        // Mutual exclusivity (blueprint §4): a customer picks ONE discount
+        // mechanism per order. Enforced server-side before any pricing math.
+        if (trim($this->coupon) !== '' && $this->useCredits) {
+            $this->error = 'Choose either a coupon or NaaraCredits for this order — not both.';
+
+            return;
+        }
+
         // Coupon (Module 31): re-validated here, priced off the LIVE quote and
         // clamped by CouponEngine so the charge never dips below cost + profit.
         $couponModel = null;
@@ -346,24 +376,41 @@ class GetNumber extends Component
 
                 return;
             }
-            // Margin-safe floor (blueprint §2/§3): pass the admin's and merchant's
-            // margins from the pre-discount prices so the floor is margin-aware and
-            // a coupon can never zero the merchant's number-lane earning.
-            $numCost = (float) $quote['cost'];
-            $priced = $coupons->price(
-                $couponModel, $retail, $numCost, 'number',
-                $plainRetail - $numCost,
-                $merchant !== null ? max(0.0, $retail - $plainRetail) : null,
-            );
+            $priced = $coupons->price($couponModel, $retail, $numCost, 'number', $adminMargin, $merchantMargin);
             $retail = $priced['price'];
             $couponClamped = $priced['clamped'];
         }
 
         $ref = "number-checkout:{$user->id}:".now()->timestamp;
 
+        // NaaraCredits redemption (loyalty). Re-quoted server-side and MARGIN-CAPPED
+        // by CreditService (the 'sms' product uses the number lane's own smaller
+        // absolute floor) so credits can never push the money charged below cost +
+        // minimum profit. Credits are spent BEFORE the wallet debit and refunded on
+        // any downstream failure, so the user is never left short.
+        $redeemUsd = 0.0;
+        $creditsSpent = 0.0;
+        if ($this->useCredits) {
+            $creditQuote = $credits->quoteRedemption($user, $retail, $numCost, $adminMargin, $merchantMargin, 'sms');
+            $redeemUsd = $creditQuote['usd'];
+            $creditsSpent = $creditQuote['credits'];
+        }
+        $walletCharge = round($retail - $redeemUsd, 4); // always >= cost + min profit > 0
+
+        if ($creditsSpent > 0) {
+            try {
+                $credits->spend($user, $creditsSpent, 'redeem', "credit-redeem:{$ref}", "Redeemed on number: {$this->service}");
+            } catch (InsufficientCreditsException $e) {
+                $this->error = 'Your NaaraCredits balance changed — please review and try again.';
+
+                return;
+            }
+        }
+
         try {
-            $debit = $wallet->debit($user, $retail, 'USD', ['reference' => $ref, 'description' => "Number: {$this->service}"]);
+            $debit = $wallet->debit($user, $walletCharge, 'USD', ['reference' => $ref, 'description' => "Number: {$this->service}"]);
         } catch (InsufficientBalanceException $e) {
+            $this->refundCredits($credits, $user, $creditsSpent, $ref);
             $this->error = 'Your wallet balance is too low. Please top up and try again.';
             $this->dispatch('nx-toast', variant: 'hero', type: 'error',
                 title: 'Payment failed',
@@ -386,10 +433,12 @@ class GetNumber extends Component
 
         try {
             $result = $router->order(new NumberRequest(
-                $this->country, $this->type, $this->service, $user, 'USD', $retail, $operator, $rentalTime, $this->autoRenew
+                $this->country, $this->type, $this->service, $user, 'USD', $walletCharge, $operator, $rentalTime, $this->autoRenew
             ));
         } catch (SmsException $e) {
-            // The router already refunded (charged was set).
+            // The router already refunded (charged was set) — return the
+            // redeemed credits too.
+            $this->refundCredits($credits, $user, $creditsSpent, $ref);
             $this->error = 'Could not reserve a number — your wallet was refunded.';
             $this->dispatch('nx-toast', variant: 'hero', type: 'error',
                 title: 'Could not reserve a number',
@@ -404,18 +453,20 @@ class GetNumber extends Component
             $this->couponNote = 'Coupon applied — you saved $'.number_format($listRetail - $retail, 2).'.';
         }
 
-        // Merchant earnings (ROADMAP §Layer 3.4): accrue the upcharge collected
-        // above plain retail to the customer's merchant. Idempotent on $ref.
+        // Merchant earnings (ROADMAP §Layer 3.4): accrue the cash collected ABOVE
+        // plain retail to the customer's merchant — only what was actually paid,
+        // so the admin's own margin is never touched. Idempotent on $ref.
         if ($merchant !== null) {
-            $earnings->accrue($merchant, $user, 'number', $plainRetail, $retail, 'earn:'.$ref);
+            $earnings->accrue($merchant, $user, 'number', $plainRetail, $walletCharge, 'earn:'.$ref);
         }
 
         // Referral share (BUILD-22 §1): book the referrer a share of Naara's own
         // margin on this number order — once ever, off the money path, idempotent.
-        \App\Jobs\ProcessReferralRewardJob::dispatch($user->id, 'number', (float) $result->order->profit);
+        ProcessReferralRewardJob::dispatch($user->id, 'number', (float) $result->order->profit);
 
-        // Order-confirmation email (best-effort; never blocks the money path).
-        Mailer::notify($user, new OrderPlacedNotification('number', ucfirst($this->service), $retail, 'USD'));
+        // Order-confirmation email (best-effort; never blocks the money path) —
+        // shows the real money charged.
+        Mailer::notify($user, new OrderPlacedNotification('number', ucfirst($this->service), $walletCharge, 'USD'));
 
         // WhatsApp Autopilot (§7): mirror to WhatsApp for opted-in users (gated,
         // best-effort — queues a template or silently no-ops).
@@ -423,7 +474,7 @@ class GetNumber extends Component
             ->notify($user, 'number_delivered', [$user->name ?: 'there', ucfirst($this->service)]);
 
         // First-purchase NaaraCredits bonus (loyalty; idempotent, best-effort).
-        app(CreditService::class)->grantOnce(
+        $credits->grantOnce(
             $user,
             (float) CreditSettings::get('first_purchase_bonus', 0),
             'first_purchase',
@@ -436,15 +487,29 @@ class GetNumber extends Component
         // Hero toast — dispatched only after the number is reserved (server-anchored).
         $this->dispatch('nx-toast', variant: 'hero', type: 'success',
             title: 'Number reserved',
-            message: 'We’re fetching your code now — it’ll appear here in a moment.');
+            message: $creditsSpent > 0
+                ? number_format($creditsSpent, 0).' NaaraCredits applied. We’re fetching your code now — it’ll appear here in a moment.'
+                : 'We’re fetching your code now — it’ll appear here in a moment.');
     }
 
     public function reset_(): void
     {
-        $this->reset('orderId', 'error', 'coupon', 'couponNote');
+        $this->reset('orderId', 'error', 'coupon', 'couponNote', 'useCredits');
     }
 
-    public function render()
+    /** Return redeemed credits to the user after a failed/aborted purchase. */
+    private function refundCredits(CreditService $credits, $user, float $amount, string $ref): void
+    {
+        if ($amount > 0) {
+            try {
+                $credits->earn($user, $amount, 'redeem', "credit-refund:{$ref}", 'Credits returned — order not completed');
+            } catch (\Throwable $e) {
+                // best-effort; the wallet money refund is the primary guarantee
+            }
+        }
+    }
+
+    public function render(CreditService $credits)
     {
         // orderId is a public (attacker-settable) property, so the lookup MUST be
         // scoped to the owner — the view renders the phone number and OTP code,
@@ -461,6 +526,9 @@ class GetNumber extends Component
         // catalogue render stays cheap. Never exposes cost — retail only.
         $modalPrice = null;
         $operators = [];
+        // Live credit-redemption quote for the UI (margin-capped, never cost).
+        $creditBalance = $credits->balance(auth()->user());
+        $creditQuote = ['usd' => 0.0, 'credits' => 0.0];
         if (in_array($this->modal, ['verify', 'rent'], true) && $order === null) {
             $router = app(SmsNumberRouter::class);
             try {
@@ -468,6 +536,9 @@ class GetNumber extends Component
                     new NumberRequest($this->country, $this->type, $this->service, auth()->user(), operator: $this->operator ?: null, rentalTime: $this->activeRentalTime(), autoRenew: $this->autoRenew)
                 );
                 $modalPrice = (float) $q['retail'];
+                if (CreditSettings::enabled() && $creditBalance > 0) {
+                    $creditQuote = $credits->quoteRedemption(auth()->user(), $modalPrice, (float) $q['cost'], product: 'sms');
+                }
             } catch (\Throwable) {
                 $modalPrice = null; // out of stock / not configured — shown as "checked at reservation"
             }
@@ -498,6 +569,9 @@ class GetNumber extends Component
             'rentalDurations' => NumberRequest::RENTAL_DURATIONS,
             'permanentAvailable' => ProviderStatus::isActive('twilio')
                 || ProviderStatus::isActive('telnyx'),
+            'creditsEnabled' => CreditSettings::enabled(),
+            'creditBalance' => $creditBalance,
+            'creditQuote' => $creditQuote,
         ]);
     }
 }
