@@ -33,6 +33,7 @@ use App\Http\Controllers\Webhooks\WhatsAppWebhookController;
 use App\Livewire\Account;
 use App\Livewire\Admin\AccountDeletions;
 use App\Livewire\Admin\Alerts;
+use App\Livewire\Admin\Analytics;
 use App\Livewire\Admin\Announcements;
 use App\Livewire\Admin\AppBuilder;
 use App\Livewire\Admin\Backups;
@@ -403,6 +404,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/payouts', Payouts::class)->name('payouts');
             Route::get('/refunds', Refunds::class)->name('refunds');
             Route::get('/reconciliation', Reconciliation::class)->name('reconciliation');
+            Route::get('/analytics', Analytics::class)->name('analytics');
             Route::get('/tax-rates', TaxRates::class)->name('tax-rates');
             Route::get('/system-health', SystemHealth::class)->name('system-health');
             Route::get('/gateways', Gateways::class)->name('gateways');

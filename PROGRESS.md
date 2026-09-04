@@ -9,6 +9,56 @@
 
 ## DONE
 
+### 📦 CONNECTIVITY ANALYTICS — Part A admin side: PlatformAnalyticsService + Admin\Analytics (blueprint §7) — 2026-09-04
+Branch `claude/admin-analytics` (off `main`, 5 commits). Closes every
+confirmed gap in blueprint §7.1 and builds the dedicated admin deep-dive page.
+- **`PlatformAnalyticsService`** (new, `App\Services\Analytics`) — admin-scoped
+  sibling to Part A's `ConnectivityAnalyticsService`, `Cache::remember()`-wrapped
+  throughout:
+  - **Revenue & profit** (fixes gap #1 — gift-card revenue was invisible
+    everywhere): `revenueBreakdown()` now has a 4th `Naara Gift` segment,
+    `revenueTrend()`, `dailyRevenueBars()`. `profitWindow()` deliberately
+    EXCLUDES Naara Gift — `gift_card_orders` never persists a provider cost
+    per order (only retail `price_charged`), and re-deriving a historical
+    cost from the product's CURRENT `cost_meta` would be an invented figure,
+    not a real one — so cost/profit/margin stay scoped to eSIM + numbers,
+    with an explicit caption on the Dashboard saying so.
+  - **Wallet & FX** (fixes gap #2): `topUpVolumeByGateway()` (reshapes the
+    same `payment_charges` aggregation `FinancialReconciliation` already
+    computes), `topUpVolumeByCurrency()` (genuinely new — the FX-mix view by
+    ORIGINAL paid currency, via Part B's `paid_currency`/`paid_amount`),
+    `platformUsdLiability()`, `fxRateSnapshot()` (reuses `CurrencyService::
+    rate()`, never re-fetches FX independently).
+  - **Merchant** (fixes gap #3): `merchantVolumeLeaderboard()` (joined
+    through `merchant_client_subscriptions`, the same link Merchant V2's own
+    pages use), `merchantEarningsTotal()`.
+  - **Operational health** (fixes gap #4): `kycApprovalRate()` (final
+    decisions only), `refundRateVsRevenue()` (settled refunds only),
+    `supportQueueTrend()` (open vs resolved + avg resolution time,
+    approximated as `updated_at - created_at` on a resolved ticket since
+    there's no dedicated `resolved_at` column — a real, if coarse, signal).
+  - **Provider reliability + eSIM usage** (fixes gap #5): confirmed via grep
+    that a FULL NCI reliability system already exists (`ProviderRegistry.
+    success_rate_24h`/`circuit_breaker_state`, `Admin\Nci\HealthMonitor`,
+    BUILD-15/17) — `providerReliabilitySummary()` is a deliberately THIN
+    read of it, not a new tracker, linking out to the existing Health
+    Monitor for drill-down. `platformEsimUsageSummary()` ties back to Part
+    A: the same `esim_usage_snapshots` table, aggregated platform-wide.
+- **`Admin\Dashboard` refactored** onto the service (fixes gap #1 + #6 on the
+  main overview immediately) — the revenue hero, split donut, and daily bars
+  now include Naara Gift; cost/profit/margin tiles stay eSIM+numbers-only
+  with an explicit caption explaining why.
+- **New `Admin\Analytics` page** (`/adminmaster/analytics`, nav entry under
+  "Money & partners") — the deep-dive counterpart to the fast Dashboard,
+  mirroring Part A's Home-vs-My-Line split. No new charting dependency —
+  plain Tailwind cards/tables (matching `Reconciliation`'s existing style),
+  keeping this branch independent of PR #18's Chart.js work.
+- 6 new test files, full suite green (1451 passed). Every section verified
+  visually with Playwright (light + dark) using real seeded data across all
+  four groups — figures hand-checked against the seed data's arithmetic.
+- Branched off `main` directly (not off PR #18) so it can merge in either
+  order relative to the customer-facing Analytics UI PR.
+
 ### 💳 NaaraCredit redemption at the number checkout — 2026-09-04
 Wired the loyalty-credit redemption pattern from eSIM `Checkout.php` into
 `GetNumber.php` (verify + rent flows): margins computed once, server-side
@@ -1350,21 +1400,28 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 > (loyalty milestones, travel timeline, admin-defined achievements paying
 > NaaraCredits) that used to top this list are now DONE — see DONE above.
 
-### ▶ TOP OF NEXT — Connectivity Analytics Part A: admin side (blueprint §7)
-The full customer-facing Part A UI is now DONE (branch
-`claude/connectivity-analytics-ui`, not yet merged — see DONE above):
-`weeklyDataUsage()` + Home hero sparkline card, the per-eSIM lazy Chart.js
-usage panel on My Line, and the "My Analytics" panel (plan mix / cadence /
-spend / deposits). Only the admin side remains:
-1. Refactor `Admin\Dashboard` onto a new `PlatformAnalyticsService` (fixes
-   the gift-card-revenue gap + adds caching).
-2. A dedicated `Admin\Analytics` page for wallet/FX, merchant,
-   operational-health, and provider-reliability views.
-3. ~~**Part B (Unified USD Wallet)**~~ — ✅ done and merged to `main`
+### ▶ TOP OF NEXT — Analytics blueprint is now feature-complete across both PRs; pick the next backlog item
+The full Analytics blueprint (Part A + admin §7) is done — see DONE above and
+below. Status across the two branches this shipped on:
+1. ~~**Chart.js + real charts on My Line + Home hero**~~ — ✅ done and merged
+   to `main`, branch `claude/connectivity-analytics-ui` (PR #18).
+2. ~~**Home summary card**~~ — ✅ done, same PR #18.
+3. ~~**My Line "My Analytics" panel**~~ — ✅ done, same PR #18.
+4. ~~**Admin side (blueprint §7): `PlatformAnalyticsService` + `Admin\Analytics`**~~
+   — ✅ done, branch `claude/admin-analytics` (this PR) — see the DONE entry
+   below for the full breakdown. Branched off `main` (not off PR #18), so it
+   did NOT depend on #18 merging first.
+5. ~~**Part B (Unified USD Wallet)**~~ — ✅ done and merged to `main`
    2026-09-04 (see DONE above) — `usd_balance` is the one spendable balance,
    `GatewayCurrencyMatrix` wired into the Wallet page's real currency
    dropdown, PayPal/Stripe Connect payouts, the `wallet:migrate-ngn-to-usd`
    backfill command ready to run (`--dry-run` first).
+
+**Not done (flagged, not built — out of scope for both PRs):** blueprint §7.4's
+suggested "quick verification pass" on Flutterwave/PayPal/crypto-gateway
+webhook signature checks (Paystack/Stripe already confirmed correctly
+implemented). Pick the next priority from OTHER OPEN ITEMS below, or ask the
+owner.
 
 ### ▶ THEME SYSTEM — 15 switchable admin-selectable skins (3-batch program)
 Skin-only, zero business-logic change. `naara-official` frozen as the permanent

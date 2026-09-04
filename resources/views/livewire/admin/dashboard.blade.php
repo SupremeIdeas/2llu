@@ -58,7 +58,7 @@
                             <x-icon name="credit-card" class="h-4 w-4" /> Revenue — last 30 days
                         </p>
                         <p class="mt-2 font-display text-4xl font-bold tracking-tight text-white">${{ number_format($revenue, 2) }}</p>
-                        <p class="mt-2 text-xs text-teal-100/70">eSIM data + numbers + verification, before provider cost.</p>
+                        <p class="mt-2 text-xs text-teal-100/70">eSIM data + numbers + verification + Naara Gift, before provider cost.</p>
                     </div>
                     @if ($revenueDelta !== null)
                         <span @class([
@@ -139,6 +139,9 @@
             </div>
         @endforeach
     </div>
+    <p class="-mt-6 mb-8 text-xs text-slate-400 dark:text-slate-500">
+        Cost / profit / margin cover eSIM + numbers + verification only — Naara Gift's provider cost isn't tracked per order (see revenue split above for its revenue contribution).
+    </p>
 
     {{-- Oversight metrics (owner request): users, weekly/monthly profit, API. --}}
     <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">

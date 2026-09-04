@@ -4,9 +4,9 @@ namespace App\Livewire\Admin;
 
 use App\Models\ApiOrder;
 use App\Models\EsimOrder;
-use App\Models\OrderLog;
 use App\Models\SmsOrder;
 use App\Models\User;
+use App\Services\Analytics\PlatformAnalyticsService;
 use App\Support\PaymentSandbox;
 use App\Support\ProviderModels;
 use App\Support\ProviderStatus;
@@ -25,7 +25,7 @@ use Livewire\Component;
 #[Layout('components.layouts.admin')]
 class Dashboard extends Component
 {
-    public function render()
+    public function render(PlatformAnalyticsService $analytics)
     {
         $user = Auth::user();
 
@@ -41,48 +41,22 @@ class Dashboard extends Component
             ]);
         }
 
-        // Revenue = what users paid, across BOTH product lines: eSIM orders
-        // (price_charged) and number/verification orders (charged_to_user,
-        // excluding timed-out orders — those were auto-refunded).
+        // Analytics blueprint §7.2: revenue/profit is now PlatformAnalyticsService's
+        // job, not inline queries here — every admin surface that needs these
+        // numbers calls the same methods and can never disagree.
         $since = now()->subDays(30);
-        $esimRevenue = (float) EsimOrder::where('created_at', '>=', $since)->sum('price_charged');
-        $smsRevenue = (float) SmsOrder::where('created_at', '>=', $since)
-            ->whereNotIn('status', ['timeout', 'cancelled'])->sum('charged_to_user');
-        $revenue = $esimRevenue + $smsRevenue;
 
-        $cost = (float) OrderLog::where('created_at', '>=', $since)->sum('provider_cost')
-            + (float) SmsOrder::where('created_at', '>=', $since)
-                ->whereNotIn('status', ['timeout', 'cancelled'])->sum('provider_cost');
+        // Hero revenue + the split donut: ALL FOUR product lanes, Naara Gift
+        // included for the first time (§7.1 gap #1) — pure revenue, no cost
+        // ambiguity, so folding it in here is unambiguously correct.
+        $trend = $analytics->revenueTrend('30d');
+        $revenue = $trend['current'];
+        $revenueDelta = $trend['delta_pct'];
+        $revenueBars = $analytics->dailyRevenueBars(7);
 
-        // Trend vs the previous 30-day window (for the animated revenue card).
-        $prevRevenue = (float) EsimOrder::whereBetween('created_at', [now()->subDays(60), $since])->sum('price_charged')
-            + (float) SmsOrder::whereBetween('created_at', [now()->subDays(60), $since])
-                ->whereNotIn('status', ['timeout', 'cancelled'])->sum('charged_to_user');
-        $revenueDelta = $prevRevenue > 0 ? round(($revenue - $prevRevenue) / $prevRevenue * 100, 1) : null;
-
-        // Last-7-days revenue bars (real daily sums, normalised in the view).
-        $revenueBars = collect(range(6, 0))->map(function ($back) {
-            $day = now()->subDays($back);
-
-            return [
-                'label' => $day->format('D'),
-                'value' => (float) EsimOrder::whereDate('created_at', $day->toDateString())->sum('price_charged')
-                    + (float) SmsOrder::whereDate('created_at', $day->toDateString())
-                        ->whereNotIn('status', ['timeout', 'cancelled'])->sum('charged_to_user'),
-            ];
-        })->values()->all();
-
-        // Revenue split by product lane (for the donut): eSIM vs permanent
-        // numbers (twilio/telnyx) vs verification (getatext/5sim/sms-activate).
-        $numberRevenue = (float) SmsOrder::where('created_at', '>=', $since)
-            ->whereNotIn('status', ['timeout', 'cancelled'])
-            ->whereIn('provider', ['twilio', 'telnyx'])->sum('charged_to_user');
-        $split = [
-            ['label' => 'eSIM data', 'value' => round($esimRevenue, 2), 'color' => '#0A6E6E'],
-            ['label' => 'Virtual numbers', 'value' => round($numberRevenue, 2), 'color' => '#D4A017'],
-            ['label' => 'Verification', 'value' => round($smsRevenue - $numberRevenue, 2), 'color' => '#4C9F9F'],
-        ];
-        $splitTotal = array_sum(array_column($split, 'value'));
+        $breakdown = $analytics->revenueBreakdown('30d');
+        $split = $breakdown['segments'];
+        $splitTotal = $breakdown['total'];
 
         // conic-gradient stops for the donut (computed here so the view stays dumb).
         $stops = [];
@@ -94,6 +68,14 @@ class Dashboard extends Component
         }
         $splitGradient = 'conic-gradient('.implode(', ', $stops).')';
 
+        // Cost/profit/margin tiles: deliberately scoped to the two lanes with a
+        // real, persisted per-order cost (see PlatformAnalyticsService::
+        // profitWindow()'s doc block for why Naara Gift is excluded here).
+        $coreRevenue = $analytics->coreRevenueWindow($since);
+        $cost = $analytics->costWindow($since);
+        $profit = $analytics->profitWindow($since);
+        $margin = $coreRevenue > 0 ? round($profit / $coreRevenue * 100, 1) : 0.0;
+
         // ── Oversight metrics (owner request) ────────────────────────────────
         $weekStart = now()->subDays(7);
         $monthStart = now()->startOfMonth();
@@ -102,19 +84,9 @@ class Dashboard extends Component
         $totalUsers = User::count();
         $newUsersWeek = User::where('created_at', '>=', $weekStart)->count();
 
-        // Weekly / monthly profit (revenue − provider cost).
-        $profitWindow = function ($from) {
-            $rev = (float) EsimOrder::where('created_at', '>=', $from)->sum('price_charged')
-                + (float) SmsOrder::where('created_at', '>=', $from)
-                    ->whereNotIn('status', ['timeout', 'cancelled'])->sum('charged_to_user');
-            $cst = (float) OrderLog::where('created_at', '>=', $from)->sum('provider_cost')
-                + (float) SmsOrder::where('created_at', '>=', $from)
-                    ->whereNotIn('status', ['timeout', 'cancelled'])->sum('provider_cost');
-
-            return round($rev - $cst, 2);
-        };
-        $profitWeek = $profitWindow($weekStart);
-        $profitMonth = $profitWindow($monthStart);
+        // Weekly / monthly profit (revenue − provider cost) — same core-lane scope as above.
+        $profitWeek = $analytics->profitWindow($weekStart);
+        $profitMonth = $analytics->profitWindow($monthStart);
 
         // Most-bought numbers by country (top 6, last 30 days).
         $topCountries = SmsOrder::where('created_at', '>=', $since)
@@ -162,8 +134,8 @@ class Dashboard extends Component
             'statuses' => ProviderStatus::all(),
             'revenue' => $revenue,
             'cost' => $cost,
-            'profit' => round($revenue - $cost, 2),
-            'margin' => $revenue > 0 ? round(($revenue - $cost) / $revenue * 100, 1) : 0.0,
+            'profit' => $profit,
+            'margin' => $margin,
             'revenueDelta' => $revenueDelta,
             'revenueBars' => $revenueBars,
             'barPeak' => max(array_column($revenueBars, 'value')) ?: 1,
