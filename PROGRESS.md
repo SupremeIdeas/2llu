@@ -70,11 +70,15 @@ Three PRs, in dependency order (#11 stacks on #10; #12 is independent):
   (previously only emailed the merchant) on a failed auto-renewal. Fixed a real
   05:30 schedule collision between `payouts:rank` and
   `merchant:client-subscriptions`.
-- **Known follow-ups:** `wallet.blade.php` diverges between PR #9
-  (`claude/wallet-payout-upgrade`, tabbed layout) and PR #10 (currency-dropdown
-  + legacy-NGN notice on the original layout) — whichever merges second needs
-  to reconcile. `GatewayCurrencyMatrix`'s per-gateway currency lists are a first
-  draft to verify against each provider's live dashboard.
+- **Reconciled 2026-09-04:** PR #9 (`claude/wallet-payout-upgrade`, tabbed
+  layout) and PR #10 (currency-dropdown + legacy-NGN notice) both merged into
+  `main` — kept #9's tabbed structure (Top Up / Payout / Spending), ported
+  #10's real `GatewayCurrencyMatrix`-driven currency dropdown into the Top Up
+  tab, and its live-rate NGN row + legacy-balance notice into the balance hero.
+  Full suite green after the merge (1409 passed), including both PRs' own
+  test files. **Known follow-up:** `GatewayCurrencyMatrix`'s per-gateway
+  currency lists are a first draft to verify against each provider's live
+  dashboard.
 
 ### 📦 CONNECTIVITY ANALYTICS — Part A foundation (usage snapshots + service) — 2026-09-03
 Branch `claude/connectivity-analytics` (off `main`, separate from the eSIM
@@ -1329,14 +1333,11 @@ aggregation) is done and tested — see DONE above. Not built yet:
    onto a new `PlatformAnalyticsService` (fixes the gift-card-revenue gap +
    adds caching), then a dedicated `Admin\Analytics` page for wallet/FX,
    merchant, operational-health, and provider-reliability views.
-5. **Part B (Unified USD Wallet)** is a SEPARATE, higher-risk workstream —
-   ships on its own new branch once Part A above is reviewed, sequenced with
-   its own migration + `--dry-run` backfill + verification step (never a
-   big-bang cutover). See the blueprint's §3 for the exact design (ngn_balance
-   becomes read-only/historical; every credit path converts to USD first via a
-   new `WalletService::creditTopUp()`; `GatewayCurrencyMatrix` ships alongside
-   it so the Wallet page never offers a gateway/currency pair that provider
-   doesn't actually accept).
+5. ~~**Part B (Unified USD Wallet)**~~ — ✅ done and merged to `main`
+   2026-09-04 (see DONE above) — `usd_balance` is the one spendable balance,
+   `GatewayCurrencyMatrix` wired into the Wallet page's real currency
+   dropdown, PayPal/Stripe Connect payouts, the `wallet:migrate-ngn-to-usd`
+   backfill command ready to run (`--dry-run` first).
 
 ### ▶ THEME SYSTEM — 15 switchable admin-selectable skins (3-batch program)
 Skin-only, zero business-logic change. `naara-official` frozen as the permanent
