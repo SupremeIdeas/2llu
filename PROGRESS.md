@@ -9,6 +9,32 @@
 
 ## DONE
 
+### 💳 Payment gateway webhook audit — 2026-09-04
+End-to-end audit of every wallet top-up gateway (Paystack, Flutterwave,
+Stripe, PayPal, NOWPayments, Binance Pay, Cryptomus, CoinPayments, Payssion),
+requested as part of the go-live readiness pass. **No critical findings** —
+every gateway verifies its webhook signature with an HMAC/shared-secret
+scheme (or PayPal's secure `verify-webhook-signature` API) via `hash_equals()`,
+sourced from config/env, and idempotency against a replayed webhook is
+enforced at three layers (`CreditWalletJob`'s `ShouldBeUnique`, an explicit
+`WalletTransaction.reference` lookup, and `Cache::lock` + `lockForUpdate()`
+inside `WalletService::apply()`). Fixed two minor gaps:
+- `.env.example` was missing every credential placeholder for Stripe's
+  webhook secrets, all of PayPal, Binance Pay, NOWPayments, CoinPayments,
+  Payssion, and Flutterwave's `verif-hash` secret — added all of them.
+- `PaypalGateway`'s `token()`/`verifySignature()`/`initialize()` HTTP calls had
+  no explicit timeout (unlike its own `refund()`, which already sets
+  `timeout(15)->connectTimeout(3)`) — a hanging PayPal response could stall a
+  webhook worker indefinitely. Matched the existing pattern.
+**Not changed, flagged for a decision**: `wallet_transactions.reference` is
+only indexed, not a DB-level `unique` constraint — the double-credit guard
+rests entirely on the app-level check + cache lock. The column is nullable
+and shared across 5 transaction types (credit/debit/refund/referral/
+withdrawal) with dozens of call sites never fully audited in this pass, so
+adding a unique constraint blindly on a money table was judged too risky to
+do without an explicit go-ahead — recommended as a follow-up, not done here.
+Full suite green (1473 passed).
+
 ### 🔤 Admin-configurable site-wide font system — 2026-09-04
 Owner request: an admin should be able to pick a Google Font or upload a
 custom web font for titles and body text, applied platform-wide, while the

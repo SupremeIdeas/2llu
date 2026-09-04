@@ -103,7 +103,7 @@ class PaypalGateway implements DisputeAwareGateway, PaymentGatewayInterface, Ref
         return (string) Http::withBasicAuth(
             (string) config('services.paypal.client_id'),
             (string) config('services.paypal.client_secret'),
-        )->asForm()->acceptJson()
+        )->asForm()->acceptJson()->timeout(15)->connectTimeout(3)
             ->post($this->base().'/v1/oauth2/token', ['grant_type' => 'client_credentials'])
             ->throw()->json('access_token');
     }
@@ -112,7 +112,7 @@ class PaypalGateway implements DisputeAwareGateway, PaymentGatewayInterface, Ref
     {
         $reference = 'NAARA-'.Str::uuid();
 
-        $response = Http::withToken($this->token())->acceptJson()
+        $response = Http::withToken($this->token())->acceptJson()->timeout(15)->connectTimeout(3)
             ->post($this->base().'/v2/checkout/orders', [
                 'intent' => 'CAPTURE',
                 'purchase_units' => [[
@@ -152,7 +152,7 @@ class PaypalGateway implements DisputeAwareGateway, PaymentGatewayInterface, Ref
         }
 
         try {
-            $status = Http::withToken($this->token())->acceptJson()
+            $status = Http::withToken($this->token())->acceptJson()->timeout(15)->connectTimeout(3)
                 ->post($this->base().'/v1/notifications/verify-webhook-signature', [
                     'auth_algo' => $request->header('paypal-auth-algo'),
                     'cert_url' => $request->header('paypal-cert-url'),
