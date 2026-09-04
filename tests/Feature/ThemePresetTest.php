@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Setting;
 use App\Models\ThemePreset as ThemePresetModel;
 use App\Support\ThemePreset;
+use Database\Seeders\ThemePresetSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -34,7 +35,7 @@ class ThemePresetTest extends TestCase
 
     public function test_seeded_naara_official_still_emits_empty_css(): void
     {
-        $this->seed(\Database\Seeders\ThemePresetSeeder::class);
+        $this->seed(ThemePresetSeeder::class);
         ThemePreset::bust();
 
         $this->assertSame('naara-official', ThemePreset::slug());
@@ -97,13 +98,13 @@ class ThemePresetTest extends TestCase
         $this->assertSame('variant-a', ThemePreset::layoutVariant('nonexistent_page'));
     }
 
-    public function test_seeder_creates_all_fifteen_presets(): void
+    public function test_seeder_creates_all_twenty_presets(): void
     {
-        $this->seed(\Database\Seeders\ThemePresetSeeder::class);
+        $this->seed(ThemePresetSeeder::class);
         ThemePreset::bust();
 
         $all = ThemePreset::all();
-        $this->assertCount(15, $all);
+        $this->assertCount(20, $all);
         // Exactly one built-in, and it is naara-official at sort_order 1.
         $builtIns = $all->where('is_built_in', true);
         $this->assertCount(1, $builtIns);
@@ -113,7 +114,7 @@ class ThemePresetTest extends TestCase
         Setting::setValue(ThemePreset::SETTING_KEY, 'aurora-shift');
         ThemePreset::bust();
         $css = ThemePreset::styleCss();
-        $this->assertStringContainsString('--brand-primary:30 110 140', $css);
+        $this->assertStringContainsString('--brand-primary:59 63 140', $css);
         $this->assertStringContainsString('--radius-card:1.5rem', $css);
         $this->assertStringContainsString('--font-sans:\'Figtree\'', $css);
         $this->assertSame('sprite', ThemePreset::iconFamily()['style']);
@@ -121,19 +122,19 @@ class ThemePresetTest extends TestCase
 
     public function test_reseeding_does_not_clobber_admin_tuning(): void
     {
-        $this->seed(\Database\Seeders\ThemePresetSeeder::class);
+        $this->seed(ThemePresetSeeder::class);
         // Admin edits a preset's tokens through the picker.
         ThemePresetModel::where('slug', 'aurora-shift')->update([
             'tokens' => ['colors' => ['primary' => '1 2 3']],
         ]);
 
         // Re-running the seeder (a deploy) must NOT reset that tuning.
-        $this->seed(\Database\Seeders\ThemePresetSeeder::class);
+        $this->seed(ThemePresetSeeder::class);
 
         $row = ThemePresetModel::where('slug', 'aurora-shift')->first();
         $this->assertSame('1 2 3', $row->tokens['colors']['primary']);
         // …but the built-in is always re-asserted authoritatively.
-        $this->assertSame(15, ThemePresetModel::count());
+        $this->assertSame(20, ThemePresetModel::count());
     }
 
     public function test_missing_active_row_falls_back_without_blanking(): void

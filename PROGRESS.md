@@ -9,6 +9,48 @@
 
 ## DONE
 
+### 🎨 Theme system palette refresh + expansion to 20 themes, favicon swap to App Icon 2 — 2026-09-04
+Owner feedback: too many of the 14 original persona palettes read as teal/gold
+variations of `naara-official` itself. Branch `claude/theme-refresh-and-favicon`
+(off `main`).
+- **Favicon**: `public/brand/naarasim-favicon.png` (the `BrandSettings` shipped
+  default, used by `<link rel="icon">`/`apple-touch-icon` and the PWA manifest
+  fallback) and `public/favicon.ico` (previously an EMPTY 0-byte file — a
+  pre-existing gap, now fixed) both replaced with "Naara App Icon 2" from the
+  owner's logo set (the colourful teal→gold→orange N with SIM/wifi/plane
+  detail), regenerated as a real multi-res `.ico` (16–256px). No code changes
+  needed — everything already resolves through `BrandSettings::favicon()`.
+- **Theme palettes**: all 14 existing persona slugs RECOLOURED (name, persona
+  text, and `tokens.colors` only — slug, sort_order, radius, typography and
+  surface all UNCHANGED, so every layout-variant assignment and hero-art
+  mapping stays valid with zero other wiring touched). Each new palette is
+  inspired by the colour-story of one of 15 reference mockups the owner
+  forwarded (mood only, never their copy/imagery). `naara-official` untouched.
+- **5 brand-new personas added** (Verdant Pulse, Cobalt Frost, Mango Burst,
+  Arctic Teal, Rosewood Luxe) so the platform now ships **20 themes total**.
+  One is inspired by the 15th reference image left over after the 14
+  recolours; the rest are original combinations picked to stay visually
+  distinct from every other preset.
+- **`ThemePresetSeeder`** updated in place — a fresh install now seeds the new
+  palette + 20 rows directly. For an ALREADY-seeded database, the seeder's own
+  `firstOrCreate` (by design, so it never clobbers an admin's own tuning
+  through the picker) would silently no-op on all 14 existing rows — so a new
+  **migration** (`2026_09_04_150000_refresh_theme_preset_palettes`) does the
+  actual one-time data update: recolours the 14 rows (guarded — only updates a
+  row whose `tokens->colors->primary` still matches the OLD shipped default,
+  so real admin tuning is never overwritten) and inserts the 5 new rows if
+  missing. Fully reversible `down()`.
+- Updated the 2 hardcoded "15" references (`ThemePicker.php` doc comment,
+  `theme-picker.blade.php` copy) to 20, and `docs/build-specs/
+  THEME-PLACEHOLDER-ASSETS.md`'s hero-image reuse table for 19 personas.
+- 4 new migration tests (`ThemePresetPaletteRefreshMigrationTest`) + updated
+  assertions in `ThemePresetTest`/`ThemePickerTest` for the new counts/colors/
+  names. Full suite green (1432 passed). Verified visually with Playwright:
+  the full 20-card swatch grid, and a recoloured theme (Boarding Pass) applied
+  live to a real page confirming the CSS-variable override pipeline actually
+  repaints the UI, not just the admin preview swatches. Favicon confirmed
+  serving the exact new file bytes via a live HTTP request.
+
 ### 📦 CONNECTIVITY ANALYTICS — Part A admin side: PlatformAnalyticsService + Admin\Analytics (blueprint §7) — 2026-09-04
 Branch `claude/admin-analytics` (off `main`, 5 commits). Closes every
 confirmed gap in blueprint §7.1 and builds the dedicated admin deep-dive page.

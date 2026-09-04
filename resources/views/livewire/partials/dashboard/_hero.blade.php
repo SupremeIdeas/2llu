@@ -44,11 +44,14 @@
 
     <div class="relative z-10 max-w-[60%] pt-0.5 sm:max-w-[56%]">
         <h1 class="font-display {{ $heroTitleSizeClasses }} font-extrabold leading-[1.07] tracking-[-0.025em] text-slate-900 dark:text-white">
+            {{-- from-primary to-accent (not a hardcoded teal) so the gradient
+                 repaints with the active theme — same --brand-* vars every
+                 other themed gradient on the platform already uses. --}}
             @if ($heroTitleRest !== '')
                 {{ $heroTitleFirst }}<br>
-                <span class="bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent dark:from-teal-300 dark:to-teal-400">{{ $heroTitleRest }}</span>
+                <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{{ $heroTitleRest }}</span>
             @else
-                <span class="bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent dark:from-teal-300 dark:to-teal-400">{{ $heroTitleFirst }}</span>
+                <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{{ $heroTitleFirst }}</span>
             @endif
         </h1>
         <p class="mt-3.5 max-w-[16rem] text-[15px] leading-relaxed text-slate-500 dark:text-slate-300 sm:text-base">{{ $heroDesc }}</p>

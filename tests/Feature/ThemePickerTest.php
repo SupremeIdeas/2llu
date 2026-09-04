@@ -37,16 +37,16 @@ class ThemePickerTest extends TestCase
         Livewire::actingAs(User::factory()->create())->test(ThemePicker::class)->assertStatus(403);
     }
 
-    public function test_an_admin_sees_all_fifteen_presets(): void
+    public function test_an_admin_sees_all_twenty_presets(): void
     {
         $admin = User::factory()->create();
         $admin->assignRole('admin');
 
         Livewire::actingAs($admin)->test(ThemePicker::class)
             ->assertStatus(200)
-            ->assertViewHas('presets', fn ($p) => $p->count() === 15)
+            ->assertViewHas('presets', fn ($p) => $p->count() === 20)
             ->assertSee('Naara Official')
-            ->assertSee('Aurora Shift');
+            ->assertSee('Indigo Current');
     }
 
     public function test_a_staff_member_with_the_theme_manage_scope_can_open_and_apply(): void

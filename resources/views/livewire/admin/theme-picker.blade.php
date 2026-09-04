@@ -2,7 +2,7 @@
     <div class="mb-5">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Theme</h1>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Pick one of the 15 skins for the whole platform. This changes colours, radius and typography
+            Pick one of the 20 skins for the whole platform. This changes colours, radius and typography
             for every user — the codebase, features and prices are untouched. It applies on the next page load.
         </p>
     </div>
