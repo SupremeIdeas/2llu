@@ -14,6 +14,7 @@ class EsimOrder extends Model
         'provider',
         'provider_order_ref',
         'iccid',
+        'bundle_name',
         'qr_code_url',
         'lpa_string',
         'status',

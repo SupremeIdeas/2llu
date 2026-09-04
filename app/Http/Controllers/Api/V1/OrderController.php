@@ -10,6 +10,7 @@ use App\Jobs\AlertAdminJob;
 use App\Jobs\PollSmsOtpJob;
 use App\Models\ApiClient;
 use App\Models\ApiOrder;
+use App\Models\ApiWalletTransaction;
 use App\Models\EsimOrder;
 use App\Models\EsimPlan;
 use App\Services\Api\ApiWalletService;
@@ -94,6 +95,7 @@ class OrderController extends Controller
                 'provider' => $result->provider,
                 'provider_order_ref' => data_get($result->payload, 'orderReference') ?? data_get($result->payload, 'id'),
                 'iccid' => data_get($result->payload, 'iccid') ?? data_get($result->payload, 'esims.0.iccid'),
+                'bundle_name' => $result->providerPlanId,
                 'qr_code_url' => data_get($result->payload, 'qr_code') ?? data_get($result->payload, 'qrCodeUrl'),
                 'lpa_string' => LpaActivation::fromPayload($result->payload),
                 'status' => 'processing',
@@ -197,7 +199,7 @@ class OrderController extends Controller
      * check is read-then-act, so two concurrent calls with the same reference can
      * both reach here; the debit is idempotent but fulfilment is not).
      */
-    private function charge(ApiWalletService $wallet, ApiClient $client, float $price, string $ref, string $desc): JsonResponse|\App\Models\ApiWalletTransaction
+    private function charge(ApiWalletService $wallet, ApiClient $client, float $price, string $ref, string $desc): JsonResponse|ApiWalletTransaction
     {
         try {
             return $wallet->debit($client, $price, ['reference' => "api-order:{$ref}", 'description' => $desc]);

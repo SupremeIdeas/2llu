@@ -53,6 +53,18 @@ Schedule::command('virtual:renew')->dailyAt('04:00')->withoutOverlapping();
 // Refresh eSIM catalogues + recompute retail via the PricingEngine.
 Schedule::command('esim:sync')->dailyAt('03:00')->withoutOverlapping();
 
+// Connectivity Analytics (Part A): poll active eSIMs for a usage reading —
+// the interval is config-driven so it's tunable per environment without a
+// code change (config('esim.usage_sync_interval_minutes'), default 15).
+Schedule::command('esim:sync-usage')
+    ->everyMinute()
+    ->when(fn () => now()->minute % max(1, (int) config('esim.usage_sync_interval_minutes', 15)) === 0)
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Keep esim_usage_snapshots bounded — prune past the retention window weekly.
+Schedule::command('esim:prune-usage-snapshots')->weekly()->sundays()->at('02:50')->withoutOverlapping();
+
 // Refresh the number country + service catalogue from the providers so the
 // storefront always lists everything they support (blueprint Section 12).
 Schedule::command('numbers:catalogue-sync')->weekly()->sundays()->at('03:30')->withoutOverlapping();

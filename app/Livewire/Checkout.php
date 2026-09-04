@@ -286,6 +286,7 @@ class Checkout extends Component
                     ?? data_get($result->payload, 'id'),
                 'iccid' => data_get($result->payload, 'iccid')
                     ?? data_get($result->payload, 'esims.0.iccid'),
+                'bundle_name' => $result->providerPlanId,
                 'qr_code_url' => data_get($result->payload, 'qr_code')
                     ?? data_get($result->payload, 'qrCodeUrl'),
                 'lpa_string' => LpaActivation::fromPayload($result->payload),
