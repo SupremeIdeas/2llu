@@ -2,7 +2,14 @@
 
 namespace App\Livewire;
 
+use App\Models\PayoutAccount;
+use App\Models\TopUpIntent;
 use App\Models\UserWallet;
+use App\Services\Kyc\KycService;
+use App\Services\Payouts\WithdrawalService;
+use App\Services\Pricing\CurrencyService;
+use App\Support\LocaleCurrency;
+use App\Support\ProviderStatus;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -51,13 +58,13 @@ class Wallet extends Component
         $active = array_keys($this->availableGateways());
         $this->gateway = $active[0] ?? array_key_first(self::GATEWAYS);
 
-        $this->displayCurrency = \App\Support\LocaleCurrency::resolve(auth()->user());
+        $this->displayCurrency = LocaleCurrency::resolve(auth()->user());
     }
 
     /** Switch the display currency (persists to session + profile). */
     public function setCurrency(string $code): void
     {
-        $this->displayCurrency = \App\Support\LocaleCurrency::choose(auth()->user(), $code);
+        $this->displayCurrency = LocaleCurrency::choose(auth()->user(), $code);
     }
 
     /** Gateways the admin has configured (keys present) — the selectable set. */
@@ -65,7 +72,7 @@ class Wallet extends Component
     {
         return array_filter(
             self::GATEWAYS,
-            fn ($slug) => \App\Support\ProviderStatus::isActive($slug),
+            fn ($slug) => ProviderStatus::isActive($slug),
             ARRAY_FILTER_USE_KEY,
         );
     }
@@ -96,8 +103,8 @@ class Wallet extends Component
         // TopUpIntent so the webhook credits exactly this, never a figure
         // re-derived from the gateway's reported currency.
         if (! in_array($currency, ['USD', 'NGN'], true) && ! empty($result['reference'])) {
-            $fx = app(\App\Services\Pricing\CurrencyService::class);
-            \App\Models\TopUpIntent::create([
+            $fx = app(CurrencyService::class);
+            TopUpIntent::create([
                 'user_id' => $user->id,
                 'gateway' => $this->gateway,
                 'reference' => $result['reference'],
@@ -112,11 +119,21 @@ class Wallet extends Component
         return redirect()->away($result['redirect_url']);
     }
 
-    public function render()
+    public function render(WithdrawalService $withdrawals, KycService $kyc)
     {
         $user = auth()->user();
         $wallet = $user->wallet ?? new UserWallet(['ngn_balance' => 0, 'usd_balance' => 0]);
         $transactions = $user->walletTransactions()->latest()->limit(20)->get();
+
+        // Payout/withdraw summary (owner request: surface it prominently on the
+        // wallet page itself rather than only at the separate /rewards/withdraw
+        // route). KYC-gating check reuses the SAME service the route middleware
+        // uses — WithdrawalService::request() independently re-enforces KYC-L2
+        // server-side regardless, so this is a display decision, not the
+        // security boundary.
+        $kycLevel2 = $kyc->hasLevel($user, 2);
+        $payoutAccount = PayoutAccount::where('user_id', $user->id)->where('is_default', true)->first();
+        $withdrawableUsd = $withdrawals->availableUsd($user);
 
         // "My Spending" card (Module 32 pick — Gidarx aurora card, made real):
         // this-month sums + a 14-day USD spend sparkline, all from the user's
@@ -147,16 +164,17 @@ class Wallet extends Component
         )->implode(' ');
 
         return view('livewire.wallet', compact(
-            'wallet', 'transactions', 'spentUsd', 'topupUsd', 'topupNgn', 'sparkline'
+            'wallet', 'transactions', 'spentUsd', 'topupUsd', 'topupNgn', 'sparkline',
+            'kycLevel2', 'payoutAccount', 'withdrawableUsd'
         ) + [
             'hasSpendData' => $daily->sum() > 0,
             'gateways' => $this->availableGateways(),
             // Localized display (owner request): the USD balance shown in the
             // user's local currency too. Display only — the wallet holds USD/NGN.
-            'currencyOptions' => \App\Support\LocaleCurrency::options(),
+            'currencyOptions' => LocaleCurrency::options(),
             'usdLocal' => $this->displayCurrency === 'USD' || $this->displayCurrency === 'NGN'
                 ? null
-                : app(\App\Services\Pricing\CurrencyService::class)->format((float) $wallet->usd_balance, $this->displayCurrency),
+                : app(CurrencyService::class)->format((float) $wallet->usd_balance, $this->displayCurrency),
         ]);
     }
 }
