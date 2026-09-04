@@ -12,6 +12,7 @@ use App\Http\Controllers\GiftCardOrderController;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\SupportAttachmentController;
 use App\Http\Controllers\SupportVoiceController;
@@ -118,6 +119,7 @@ use App\Livewire\Journey;
 use App\Livewire\MerchantClients;
 use App\Livewire\MerchantDashboard;
 use App\Livewire\MerchantEarnings;
+use App\Livewire\MerchantInvoices;
 use App\Livewire\MerchantJoin;
 use App\Livewire\Messages;
 use App\Livewire\MyLines;
@@ -197,6 +199,10 @@ Route::get('/blog/{post:slug}', [BlogController::class, 'show'])->name('blog.sho
 // Public pricing page (Module 29) — real plans when live, estimate tiers before.
 Route::get('/pricing', PricingPage::class)->name('pricing');
 
+// Public, unauthenticated invoice view (Merchant V2 invoicing) — the link a
+// merchant forwards to a client, who never has a NaaraSim login.
+Route::get('/i/{token}', [PublicInvoiceController::class, 'show'])->name('invoice.public');
+
 // Merchant invite landing (ROADMAP §Layer 3.3) — a reseller's co-branded
 // storefront link. Captures the invite and sends the visitor to register.
 Route::get('/merchant/{slug}/join', MerchantJoin::class)->name('merchant.join');
@@ -272,6 +278,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/merchant/earnings', MerchantEarnings::class)->name('merchant.earnings');
         // Merchant V2 — client management (404s for a non-V2 merchant).
         Route::get('/merchant/clients', MerchantClients::class)->name('merchant.clients');
+        // Merchant V2 — invoice dashboard (404s for a non-V2 merchant).
+        Route::get('/merchant/invoices', MerchantInvoices::class)->name('merchant.invoices');
 
         // eSIM activation QR (SVG), generated from the LPA string. Owner- or
         // assigning-merchant-scoped inside the controller.

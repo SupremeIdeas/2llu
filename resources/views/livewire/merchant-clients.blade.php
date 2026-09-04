@@ -177,6 +177,7 @@
                         <p class="text-xs text-amber-600 dark:text-amber-400">Add a WhatsApp number to this client to forward it directly.</p>
                     @endif
                 @endif
+                <a href="{{ route('merchant.invoices', ['client' => $invoiceClientId]) }}" wire:navigate class="block text-center text-xs font-semibold text-primary hover:underline dark:text-teal-300">Prefer to track paid/unpaid status? Create a tracked invoice instead →</a>
             </div>
         </div>
     </div>
