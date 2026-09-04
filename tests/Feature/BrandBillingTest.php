@@ -5,11 +5,11 @@ namespace Tests\Feature;
 use App\Exceptions\InsufficientBalanceException;
 use App\Models\BrandPartner;
 use App\Models\BrandPartnerHandle;
-use App\Models\BrandPriorityLog;
 use App\Models\BrandSubscription;
 use App\Models\BrandSubscriptionPlan;
 use App\Models\SocialFollowClaim;
 use App\Models\User;
+use App\Notifications\BrandBillingReminderNotification;
 use App\Services\Brands\BrandSubscriptionService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -85,7 +85,33 @@ class BrandBillingTest extends TestCase
         $subBroke->refresh();
         $this->assertSame(BrandSubscription::PAST_DUE, $subBroke->status);
         $this->assertSame(BrandPartner::STATUS_PAUSED, $subBroke->brandPartner->listing_status);
-        Notification::assertSentTo($broke, \App\Notifications\BrandBillingReminderNotification::class);
+        Notification::assertSentTo($broke, BrandBillingReminderNotification::class);
+    }
+
+    public function test_running_the_sweep_twice_in_the_same_month_charges_each_overdue_period_once(): void
+    {
+        // A subscription 2 months behind (e.g. the scheduler missed a run).
+        // Money-safety: catching up must charge BOTH overdue periods, never
+        // silently advance next_billing_at on the second run without a
+        // matching debit just because it's still the same calendar month.
+        $plan = $this->plan(19);
+        $owner = User::factory()->create();
+        app(WalletService::class)->credit($owner, 40, 'USD');
+        $sub = app(BrandSubscriptionService::class)->subscribe($owner, $plan); // spends 19, leaves 21
+        $sub->forceFill(['next_billing_at' => now()->subMonths(2)])->save();
+
+        $this->artisan('brand-subscriptions:bill')->assertSuccessful();
+        $this->assertSame(2.0, (float) $owner->fresh()->wallet->usd_balance); // 21 - 19
+        $sub->refresh();
+        $this->assertTrue($sub->next_billing_at->lte(now()), 'still overdue after only one month advanced');
+
+        $this->artisan('brand-subscriptions:bill')->assertSuccessful();
+
+        // Second overdue period can't be charged (balance is now 2) — must
+        // pause, never silently advance the date as if it were charged.
+        $sub->refresh();
+        $this->assertSame(BrandSubscription::PAST_DUE, $sub->status);
+        $this->assertTrue($sub->next_billing_at->lte(now()), 'unpaid period must not advance the billing date');
     }
 
     public function test_priority_score_boosts_on_shortfall_and_logs(): void

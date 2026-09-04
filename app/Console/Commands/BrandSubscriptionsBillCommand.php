@@ -46,7 +46,14 @@ class BrandSubscriptionsBillCommand extends Command
                         continue;
                     }
 
-                    $ref = "brand-sub:{$sub->id}:".now()->format('Y-m');
+                    // Keyed on the PERIOD being charged (next_billing_at), not the
+                    // calendar month the command happens to run in — a now()-keyed
+                    // reference would let a late or repeated run in the same real
+                    // month hit WalletService's idempotency guard (no new debit) while
+                    // still advancing next_billing_at below, silently forgiving a
+                    // month's charge. Keying on the actual due date guarantees each
+                    // distinct billing period is charged exactly once, however late.
+                    $ref = "brand-sub:{$sub->id}:".Carbon::parse($sub->next_billing_at)->format('Y-m');
                     try {
                         $wallet->debit($owner, (float) $plan->price_usd_per_month, 'USD', [
                             'reference' => $ref,

@@ -4,12 +4,13 @@ namespace Tests\Feature;
 
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\SmsException;
-use App\Models\Setting;
 use App\Models\User;
 use App\Models\VirtualNumber;
+use App\Models\WalletTransaction;
 use App\Services\Pricing\PricingEngine;
 use App\Services\SMS\PermanentNumberRouter;
 use App\Services\Wallet\WalletService;
+use App\Support\ProviderKeys;
 use App\Support\ProviderModels;
 use Database\Seeders\PricingSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,7 +30,7 @@ class PermanentNumberTest extends TestCase
         $this->seed(PricingSettingsSeeder::class);
         // Make Twilio "configured" so the lane is live, and bind a fake over it.
         config(['services.twilio.account_sid' => 'AC_test', 'services.twilio.auth_token' => 'tok']);
-        \App\Support\ProviderKeys::flush();
+        ProviderKeys::flush();
     }
 
     private function fakeTwilio(FakePermanentProvider $fake): void
@@ -42,8 +43,8 @@ class PermanentNumberTest extends TestCase
         $this->assertSame('live', ProviderModels::status('naara_line'));
 
         config(['services.twilio.account_sid' => null, 'services.twilio.auth_token' => null,
-                'services.telnyx.api_key' => null]);
-        \App\Support\ProviderKeys::flush();
+            'services.telnyx.api_key' => null]);
+        ProviderKeys::flush();
         $this->assertSame('needs_key', ProviderModels::status('naara_line'));
     }
 
@@ -134,7 +135,7 @@ class PermanentNumberTest extends TestCase
 
     public function test_insufficient_balance_blocks_provisioning(): void
     {
-        $this->fakeTwilio(new FakePermanentProvider());
+        $this->fakeTwilio(new FakePermanentProvider);
         $user = User::factory()->create(); // no funds
 
         $this->expectException(InsufficientBalanceException::class);
@@ -182,9 +183,30 @@ class PermanentNumberTest extends TestCase
         $this->assertNotNull($vn->expires_at);
     }
 
+    public function test_running_renew_twice_in_the_same_month_charges_each_overdue_period_once(): void
+    {
+        // A subscription 2 months behind (e.g. the scheduler missed a run).
+        // Money-safety: catching up must charge BOTH overdue periods, never
+        // silently advance next_billing_date on the second run without a
+        // matching debit just because it's still the same calendar month.
+        $u = User::factory()->create();
+        app(WalletService::class)->credit($u, 10, 'USD');
+        $vn = $this->subscription($u, ['next_billing_date' => today()->subMonths(2)->toDateString()]);
+
+        $this->artisan('virtual:renew')->assertSuccessful();
+        $this->assertSame('8.5000', (string) $u->wallet->fresh()->usd_balance);
+        $vn->refresh();
+        $this->assertTrue($vn->next_billing_date->lte(today()), 'still overdue after only one month advanced');
+
+        $this->artisan('virtual:renew')->assertSuccessful();
+
+        $this->assertSame('7.0000', (string) $u->wallet->fresh()->usd_balance);
+        $this->assertSame(2, WalletTransaction::where('user_id', $u->id)->where('type', 'debit')->count());
+    }
+
     public function test_a_lapsed_past_due_number_is_released_and_expired(): void
     {
-        $fake = new FakePermanentProvider();
+        $fake = new FakePermanentProvider;
         $this->fakeTwilio($fake);
         $u = User::factory()->create();
         $vn = $this->subscription($u, [

@@ -3,16 +3,17 @@
 namespace Tests\Feature;
 
 use App\Events\PayoutReversed;
+use App\Jobs\AlertAdminJob;
 use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
-use App\Models\ReferralEarning;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\Payouts\PayoutThreshold;
 use App\Services\Referrals\ReferralEarningsService;
 use App\Services\Referrals\ReferralWithdrawalService;
-use App\Models\Setting;
 use App\Support\PayoutSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -138,5 +139,26 @@ class UnifiedPayoutTest extends TestCase
         $this->assertEqualsWithDelta(0.0, app(ReferralEarningsService::class)->balance($user), 0.0001);
         $this->assertEqualsWithDelta(8.0, app(ReferralEarningsService::class)->balance($noAccount), 0.0001);
         $this->assertSame(1, PayoutRequest::where('source_bucket', 'referral_earnings')->count());
+    }
+
+    public function test_automatic_run_alerts_an_admin_when_a_payout_throws(): void
+    {
+        // The cron's own stdout is discarded in production (routes/console.php
+        // pipes schedule:run to /dev/null) — a payout that throws must not be
+        // invisible until someone happens to grep the log file.
+        Bus::fake([AlertAdminJob::class]);
+        $user = User::factory()->create();
+        $this->fund($user, 8.0);
+        $this->verifiedAccount($user);
+
+        $failing = \Mockery::mock(ReferralWithdrawalService::class);
+        $failing->shouldReceive('availableUsd')->andReturn(8.0);
+        $failing->shouldReceive('request')->andThrow(new \RuntimeException('simulated infra failure'));
+        $this->app->instance(ReferralWithdrawalService::class, $failing);
+
+        $this->artisan('payouts:earnings-run')->assertSuccessful();
+
+        Bus::assertDispatched(AlertAdminJob::class, fn ($job) => $job->code === 'earnings_payout_failed'
+            && $job->context['user_id'] === $user->id);
     }
 }
