@@ -50,6 +50,11 @@ class Merchant extends Model
         return $this->hasMany(MerchantClient::class);
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(MerchantInvoice::class);
+    }
+
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');

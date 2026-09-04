@@ -50,8 +50,9 @@
     // Active merchants get a link to their reseller storefront (ROADMAP §3.5).
     if ($u && $u->merchantAccount && $u->merchantAccount->isActive()) {
         array_unshift($more, ['route' => 'merchant.dashboard', 'label' => 'My Storefront', 'icon' => 'package']);
-        // V2 merchants also get client management.
+        // V2 merchants also get client management + invoicing.
         if ($u->merchantAccount->isV2()) {
+            array_unshift($more, ['route' => 'merchant.invoices', 'label' => 'Invoices', 'icon' => 'file-text']);
             array_unshift($more, ['route' => 'merchant.clients', 'label' => 'Clients', 'icon' => 'users']);
         }
     }

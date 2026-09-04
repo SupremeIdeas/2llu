@@ -26,6 +26,11 @@ class MerchantClient extends Model
         return $this->hasMany(MerchantClientSubscription::class);
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(MerchantInvoice::class);
+    }
+
     /** The current (most recent, non-disabled) eSIM subscription, if any. */
     public function activeSubscription(): ?MerchantClientSubscription
     {
