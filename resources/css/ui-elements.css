@@ -1511,13 +1511,21 @@
    on the platform, and its backdrop-filter created a containing block that
    trapped `fixed` descendants (menus/modals) inside the header's box. The
    gradient fade alone keeps the soft "invisible header" look; the top stop is
-   firmed slightly so labels stay readable over busy content without any blur. */
+   firmed slightly so labels stay readable over busy content without any blur.
+
+   Owner-reported bug: the old 55%→100% fade started ITS transition while the
+   logo/icon row was still inside that zone, so a bold heading or stat number
+   scrolling underneath (e.g. Merchant Invoices' "‹ Clients" link) visibly
+   bled through and collided with the logo. Held flat at 95% through 70% of
+   the header's own height now — comfortably past the logo/icon row on every
+   page — and the fade to transparent is compressed into the last 30%, which
+   is just the empty bottom padding, never actual header content. */
 .nx-header-fade {
-  background: linear-gradient(to bottom, rgb(255 255 255 / .95) 0%, rgb(255 255 255 / .72) 55%, rgb(255 255 255 / 0) 100%);
+  background: linear-gradient(to bottom, rgb(255 255 255 / .95) 0%, rgb(255 255 255 / .95) 70%, rgb(255 255 255 / 0) 100%);
   border-bottom: none;
 }
 .dark .nx-header-fade {
-  background: linear-gradient(to bottom, rgb(var(--brand-navy) / .95) 0%, rgb(var(--brand-navy) / .72) 55%, rgb(var(--brand-navy) / 0) 100%);
+  background: linear-gradient(to bottom, rgb(var(--brand-navy) / .95) 0%, rgb(var(--brand-navy) / .95) 70%, rgb(var(--brand-navy) / 0) 100%);
 }
 /* =============================================================================
  * Dashboard home hero (reference-matched). Text left, photo bleeding into the
