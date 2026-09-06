@@ -36,11 +36,16 @@ class HeroBackground
     /** Admin-chosen headline size preset — see TITLE_SIZES. */
     public const TITLE_SIZE_KEY = 'dashboard.hero.title_size';
 
+    /** Admin-chosen CTA (Buy eSIM / Get Number) size preset — see CTA_SIZES. */
+    public const CTA_SIZE_KEY = 'dashboard.hero.cta_size';
+
     public const DEFAULT_DESCRIPTION = 'Your eSIMs, numbers, and wallet — all in one place.';
 
     public const DEFAULT_TITLE = 'My Connectivity';
 
     public const DEFAULT_TITLE_SIZE = 'md';
+
+    public const DEFAULT_CTA_SIZE = 'md';
 
     /**
      * Headline size preset keys → admin-facing label. 'md' is the size the hero
@@ -63,7 +68,20 @@ class HeroBackground
         'xl' => 'Extra large',
     ];
 
-    /** @return array{light: ?string, dark: ?string, description: string, enabled: bool, title: string, title_size: string} */
+    /**
+     * CTA size preset keys → admin-facing label. 'md' is the shipped size.
+     * Same "classes live in the blade, not here" discipline as TITLE_SIZES —
+     * see that constant's docblock for why.
+     *
+     * @var array<string, string>
+     */
+    public const CTA_SIZES = [
+        'sm' => 'Small (compact)',
+        'md' => 'Medium (default)',
+        'lg' => 'Large',
+    ];
+
+    /** @return array{light: ?string, dark: ?string, description: string, enabled: bool, title: string, title_size: string, cta_size: string} */
     public static function current(): array
     {
         return Cache::rememberForever(self::CACHE_KEY, function () {
@@ -71,6 +89,7 @@ class HeroBackground
                 $desc = trim((string) Setting::getValue(self::DESC_KEY, ''));
                 $title = trim((string) Setting::getValue(self::TITLE_KEY, ''));
                 $titleSize = (string) Setting::getValue(self::TITLE_SIZE_KEY, '');
+                $ctaSize = (string) Setting::getValue(self::CTA_SIZE_KEY, '');
 
                 return [
                     'light' => Setting::getValue(self::LIGHT_KEY) ?: null,
@@ -81,12 +100,14 @@ class HeroBackground
                     'enabled' => (bool) Setting::getValue(self::ENABLED_KEY, true),
                     'title' => $title !== '' ? $title : self::DEFAULT_TITLE,
                     'title_size' => array_key_exists($titleSize, self::TITLE_SIZES) ? $titleSize : self::DEFAULT_TITLE_SIZE,
+                    'cta_size' => array_key_exists($ctaSize, self::CTA_SIZES) ? $ctaSize : self::DEFAULT_CTA_SIZE,
                 ];
             } catch (\Throwable) {
                 return [
                     'light' => null, 'dark' => null,
                     'description' => self::DEFAULT_DESCRIPTION, 'enabled' => true,
                     'title' => self::DEFAULT_TITLE, 'title_size' => self::DEFAULT_TITLE_SIZE,
+                    'cta_size' => self::DEFAULT_CTA_SIZE,
                 ];
             }
         });
@@ -134,6 +155,12 @@ class HeroBackground
         return self::current()['title_size'];
     }
 
+    /** The admin-chosen CTA button size preset (sm|md|lg); always a valid key. */
+    public static function ctaSize(): string
+    {
+        return self::current()['cta_size'];
+    }
+
     /**
      * The title split for the two-tone heading treatment: the first word renders
      * plain, the rest renders in the gradient accent — the same visual pattern
@@ -168,7 +195,7 @@ class HeroBackground
     {
         return in_array($key, [
             self::LIGHT_KEY, self::DARK_KEY, self::DESC_KEY, self::ENABLED_KEY,
-            self::TITLE_KEY, self::TITLE_SIZE_KEY,
+            self::TITLE_KEY, self::TITLE_SIZE_KEY, self::CTA_SIZE_KEY,
         ], true);
     }
 }

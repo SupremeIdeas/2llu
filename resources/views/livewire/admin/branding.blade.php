@@ -120,6 +120,22 @@
                 </div>
             </div>
 
+            {{-- CTA button size override (owner request): the "Buy eSIM" /
+                 "Get Number" pills below the hero. 'md' is the shipped size. --}}
+            <div class="mb-4 grid gap-4 sm:grid-cols-[1fr,10rem]">
+                <p class="self-center text-[11px] text-slate-400">Size of the "Buy eSIM" / "Get Number" buttons under the hero title.</p>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Button size</label>
+                    <select wire:model="hero_cta_size"
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-primary dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        @foreach (\App\Support\HeroBackground::CTA_SIZES as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('hero_cta_size') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+            </div>
+
             {{-- Description line under the title (BUILD-13 §3). --}}
             <div class="mb-4">
                 <label class="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">Description line under the title</label>

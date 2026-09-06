@@ -9,6 +9,27 @@
 
 ## DONE
 
+### 🏠 Dashboard home hero: unstacked CTA buttons + restored labels + size override — 2026-09-06
+Owner report: the "Buy eSIM"/"Get Number" pills (shortened to "eSIM"/"Number" in
+an earlier pass) were stacking on top of each other on mid-narrow viewports.
+Root cause: the CTA row was nested inside the headline's `max-w-[56–60%]`
+column (reserved for the bleeding hero photo) — restoring the longer labels
+inside that same narrow column would have made the stacking worse, not better.
+- Moved the CTA row OUT of the headline's constrained column to a full-width
+  sibling — safe because the hero photo's own mask already fades to
+  transparent well above that row by design (existing comment: "clearing the
+  CTA row so the pills sit on clean background"), so nothing overlaps.
+- Restored the button text to "Buy eSIM" / "Get Number".
+- New admin control: `HeroBackground::CTA_SIZE_KEY` (sm/md/lg, 'md' = the
+  shipped size — an untouched install renders byte-identical), same
+  literal-classes-in-blade pattern already used for the hero title size, on
+  Admin → Branding.
+- 4 new tests (full labels render, default size, admin override, invalid
+  value rejected). Full suite green (1490 passed), Pint clean.
+- Playwright-verified at 320/360/390px and in dark mode: both pills render
+  side by side with full text at every width that previously stacked, and
+  the `lg` override visibly enlarges them.
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,
