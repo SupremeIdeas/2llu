@@ -27,6 +27,11 @@ class GiftCardBalanceCheckTest extends TestCase
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
+        // naara_gift is "live" only when both admin-enabled AND its required
+        // keys are configured (FeatureFlags::enabled() checks both) — a blank
+        // CI env has neither by default, so both must be set explicitly here
+        // rather than relying on ambient .env state.
+        config(['services.reloadly.client_id' => 'id', 'services.reloadly.client_secret' => 'secret']);
         Setting::setValue('features.naara_gift.enabled', true);
         Cache::forget('features.enabled.naara_gift');
     }
