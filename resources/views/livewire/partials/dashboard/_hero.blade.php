@@ -44,14 +44,14 @@
 
     <div class="relative z-10 max-w-[60%] pt-0.5 sm:max-w-[56%]">
         <h1 class="font-display {{ $heroTitleSizeClasses }} font-extrabold leading-[1.07] tracking-[-0.025em] text-slate-900 dark:text-white">
-            {{-- from-primary to-accent (not a hardcoded teal) so the gradient
-                 repaints with the active theme — same --brand-* vars every
-                 other themed gradient on the platform already uses. --}}
+            {{-- .nx-hero-accent (not a hardcoded teal) so the gradient repaints
+                 with the active theme, and is lightened in dark mode so it
+                 stays legible under even the darkest theme presets. --}}
             @if ($heroTitleRest !== '')
                 {{ $heroTitleFirst }}<br>
-                <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{{ $heroTitleRest }}</span>
+                <span class="nx-hero-accent">{{ $heroTitleRest }}</span>
             @else
-                <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{{ $heroTitleFirst }}</span>
+                <span class="nx-hero-accent">{{ $heroTitleFirst }}</span>
             @endif
         </h1>
         <p class="mt-3.5 max-w-[16rem] text-[15px] leading-relaxed text-slate-500 dark:text-slate-300 sm:text-base">{{ $heroDesc }}</p>
@@ -68,7 +68,7 @@
             </a>
             <a href="{{ route('numbers') }}" wire:navigate
                class="group inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-bold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-[#16233d] dark:text-white sm:gap-2 sm:px-5 sm:py-3.5 sm:text-base">
-                <x-icon name="hash" class="h-4 w-4 text-primary dark:text-teal-300 sm:h-5 sm:w-5" /> Number
+                <x-icon name="hash" class="nx-icon-accent h-4 w-4 sm:h-5 sm:w-5" /> Number
                 <x-icon name="chevron-right" class="hidden h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5 sm:inline-block" />
             </a>
         </div>

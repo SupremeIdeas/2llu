@@ -146,4 +146,41 @@ class ThemePresetTest extends TestCase
         $this->assertSame('naara-official', ThemePreset::slug());
         $this->assertSame('', ThemePreset::styleCss());
     }
+
+    public function test_browser_theme_color_is_null_on_the_default_theme(): void
+    {
+        $this->assertNull(ThemePreset::browserThemeColor());
+
+        $this->seed(ThemePresetSeeder::class);
+        ThemePreset::bust();
+        $this->assertNull(ThemePreset::browserThemeColor());
+    }
+
+    public function test_browser_theme_color_follows_the_active_preset(): void
+    {
+        ThemePresetModel::create([
+            'slug' => 'aurora-shift', 'name' => 'Aurora Shift',
+            'tokens' => ['colors' => ['primary' => '59 63 140']],
+            'icon_family' => ['style' => 'sprite', 'set' => 'naara-sprite-01'],
+            'is_built_in' => false, 'sort_order' => 2,
+        ]);
+        Setting::setValue(ThemePreset::SETTING_KEY, 'aurora-shift');
+        ThemePreset::bust();
+
+        $this->assertSame('#3b3f8c', ThemePreset::browserThemeColor());
+    }
+
+    public function test_browser_theme_color_is_null_when_the_primary_token_is_invalid(): void
+    {
+        ThemePresetModel::create([
+            'slug' => 'broken-preset', 'name' => 'Broken',
+            'tokens' => ['colors' => ['primary' => 'not-a-colour']],
+            'icon_family' => ['style' => 'sprite', 'set' => 'naara-sprite-01'],
+            'is_built_in' => false, 'sort_order' => 2,
+        ]);
+        Setting::setValue(ThemePreset::SETTING_KEY, 'broken-preset');
+        ThemePreset::bust();
+
+        $this->assertNull(ThemePreset::browserThemeColor());
+    }
 }

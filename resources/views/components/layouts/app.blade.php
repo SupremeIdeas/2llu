@@ -26,7 +26,11 @@
          (admin-editable name/icon/colours). theme-color paints the mobile
          browser chrome + native WebView status bar. --}}
     <link rel="manifest" href="{{ route('manifest') }}">
-    <meta name="theme-color" content="{{ \App\Support\AppExport::get('theme_color', '#0A6E6E') }}">
+    {{-- The active Theme Preset's primary colour wins over the static App
+         Export PWA colour so the browser chrome (address bar / task switcher)
+         repaints with whichever theme is active, not just the in-app surfaces.
+         Falls back to the admin's configured PWA colour on the default theme. --}}
+    <meta name="theme-color" content="{{ \App\Support\ThemePreset::browserThemeColor() ?? \App\Support\AppExport::get('theme_color', '#0A6E6E') }}">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">

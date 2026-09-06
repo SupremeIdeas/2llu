@@ -168,6 +168,30 @@ class ThemePreset
         Cache::forget(self::CACHE_KEY);
     }
 
+    /**
+     * The browser-chrome colour (mobile address bar / task-switcher card) for
+     * the active theme, as a hex string — or null on the built-in default,
+     * where the admin's App Export `theme_color` still applies unchanged.
+     * Owner request: switching a Theme Preset should repaint the browser
+     * chrome too, not just the in-app surfaces.
+     */
+    public static function browserThemeColor(): ?string
+    {
+        $preset = self::active();
+        if ($preset['is_built_in'] || $preset['slug'] === self::DEFAULT_SLUG) {
+            return null;
+        }
+
+        $primary = $preset['tokens']['colors']['primary'] ?? null;
+        if (! self::validChannelTriple($primary)) {
+            return null;
+        }
+
+        [$r, $g, $b] = array_map('intval', explode(' ', $primary));
+
+        return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
+
     /** Every preset, for the admin picker (Batch 2). Ordered by sort_order. */
     public static function all(): Collection
     {

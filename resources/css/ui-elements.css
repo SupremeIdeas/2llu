@@ -1567,5 +1567,44 @@
     mask-image: linear-gradient(to left, #000 38%, transparent 88%);
   }
 }
+
+/* Hero headline accent (owner request — shared by the dashboard home hero and
+   the Naara Gift hero). The brand gradient reads fine in light mode against a
+   light hero, but several Theme Presets (Paperwhite, Capable, Aries…) set a
+   near-black primary/accent — unmodified, that gradient would render as
+   dark-on-dark and vanish against the dark navy hero in dark mode. In dark
+   mode only, both stops are mixed toward white so the headline stays legible
+   no matter how dark the active theme's raw brand colours are. */
+.nx-hero-accent {
+  background: linear-gradient(to right, rgb(var(--brand-primary)), rgb(var(--brand-accent)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.dark .nx-hero-accent {
+  background: linear-gradient(to right,
+    color-mix(in srgb, rgb(var(--brand-primary)) 45%, white),
+    color-mix(in srgb, rgb(var(--brand-accent)) 45%, white));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+/* Fallback for engines without color-mix: a plain, guaranteed-legible white
+   headline in dark mode rather than risking an invisible dark-on-dark one. */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .dark .nx-hero-accent {
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    color: #fff;
+  }
+}
+/* Same dark-mode legibility floor as .nx-hero-accent above, for a plain
+   (non-gradient) themed icon/label sitting on a dark surface — e.g. the hero's
+   secondary CTA icon. */
+.nx-icon-accent { color: rgb(var(--brand-primary)); }
+.dark .nx-icon-accent { color: color-mix(in srgb, rgb(var(--brand-primary)) 55%, white); }
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .dark .nx-icon-accent { color: #fff; }
+}
 .nx-header-fade > * { filter: drop-shadow(0 1px 2px rgb(15 23 42 / .12)); }
 .dark .nx-header-fade > * { filter: drop-shadow(0 1px 3px rgb(0 0 0 / .45)); }

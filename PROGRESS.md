@@ -9,6 +9,37 @@
 
 ## DONE
 
+### 🎨 Theme system: browser-chrome colour + hero contrast fix — 2026-09-06
+Owner request: switching a Theme Preset didn't repaint the mobile browser
+chrome, and the home/Naara-Gift hero's gradient headline could render as
+unreadable dark-on-dark under several presets in dark mode.
+- **`ThemePreset::browserThemeColor()`** (new): returns the active preset's
+  primary colour as hex, or `null` on the built-in default. `app.blade.php`'s
+  `<meta name="theme-color">` now prefers this over the static App Export PWA
+  colour, so the address-bar/task-switcher chrome follows whichever theme is
+  active — falls back to the admin's configured PWA colour unchanged on the
+  default theme.
+- **`.nx-hero-accent` / `.nx-icon-accent`** (new, `ui-elements.css`): several
+  presets (Paperwhite, Capable, Aries…) carry a near-black `primary`/`accent`
+  — used unmodified, the hero's `from-primary to-accent` gradient headline
+  rendered essentially invisible against the dark navy hero in dark mode.
+  Verified this concretely via Playwright with the Paperwhite preset active.
+  Both new classes keep the exact same look in light mode, but in dark mode
+  mix each brand colour toward white via `color-mix()` (with a plain-white
+  `@supports not` fallback) so the headline and the hero's secondary-CTA icon
+  stay legible under every preset, however dark its raw tokens are. Applied
+  to both the dashboard home hero and the Naara Gift hero (identical shared
+  pattern).
+- New `ThemeColorMetaTest` (2 tests) + 3 new `ThemePresetTest` cases for
+  `browserThemeColor()`. Full suite green (1491 tests).
+- **Scoped out of this pass** (tracked, not silently dropped): the codebase
+  has ~1,100+ hardcoded dark-mode hex classes (`dark:bg-[#1A2840]`,
+  `dark:text-teal-300`, etc.) across ~150 files that don't repaint with a
+  Theme Preset — some of that is deliberate (a guaranteed-legible fixed
+  accent, not a bug), but the card-container backgrounds specifically are
+  genuine "Naara official residue," and the owner has since asked for this
+  explicitly as its own site-wide pass — see NEXT.
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,
@@ -1600,7 +1631,49 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 > (loyalty milestones, travel timeline, admin-defined achievements paying
 > NaaraCredits) that used to top this list are now DONE — see DONE above.
 
-### ▶ TOP OF NEXT — Analytics blueprint is now feature-complete across both PRs; pick the next backlog item
+### ▶ TOP OF NEXT — large new owner backlog (2026-09-06), work top to bottom, one dedicated branch/PR each
+1. **Popular Destinations carousel missing from eSIM front** — regression,
+   investigate first: owner says it used to be there by default (falling back
+   to featured when there's no purchase history yet, sorted by real purchase
+   volume once there is) and now it's gone from the live `/catalogue` front.
+2. **Withdrawal/payout KYC threshold change**: bank-account setup and payout
+   configuration should be free with NO KYC gate; only prompt for KYC once a
+   user has requested 5 automated payouts. Partner/merchant payout setup must
+   stay frictionless too.
+3. **Site-wide theme card-container colour audit**: card container
+   backgrounds across ALL pages must repaint per the active Theme Preset —
+   no more Naara-official-only hardcoded card colours once another theme is
+   selected. (Builds on the browser-chrome/hero-contrast fix above — this is
+   the larger, explicitly-requested follow-up to the "scoped out" note there.)
+4. **Invoice feature**: fix the mobile layout break in the header (screenshot
+   shows the header/notification bell/wallet-pill row overlapping the balance
+   figures), then extend the invoice feature to a fuller, more sophisticated
+   merchant-v2-grade tool (their own independent client-billing layer).
+5. **Marketing page responsiveness + capability pass**: audit every marketing
+   section for overlap/width/layout breaks across breakpoints; the Apple-style
+   auto-sliding carousel's "view more" should open a per-item modal that fits
+   fully on mobile (no overflow) and lays out well on desktop; seed demo
+   images for now (owner will swap them later).
+6. **Performance/SEO pass**: owner supplied PageSpeed Insights screenshots
+   (mobile) showing poor scores — cache lifetimes, render-blocking requests,
+   image delivery, forced reflow, and a large LCP/TBT/Speed Index — read
+   those and address root causes; also fix the flagged ARIA-attribute issue
+   on the theme-toggle `<input type="checkbox">` (`aria-pressed` isn't valid
+   on a checkbox role).
+7. **Theme Preset architecture extension**: prepare presets for a much larger
+   scope — each theme gets full layout variants (heading, dashboard bottom
+   nav, More-menu style, blog layout, homepage, 3+ other page layouts) with a
+   proposed reference image per layout + a documented "shaped container"
+   style principle, all while keeping the same content/context (no breakage).
+   Presets should become individually installable from their own dedicated
+   folders, so future themes can be dropped in on demand. `naara-official`
+   remains the one source-of-truth theme; every other preset inherits its
+   capabilities with a tweaked layout on top, never a divergent one that could
+   break.
+
+Older, now-superseded framing below (analytics blueprint) kept for history.
+
+### Analytics blueprint is feature-complete across both PRs; pick the next backlog item
 The full Analytics blueprint (Part A + admin §7) is done — see DONE above and
 below. Status across the two branches this shipped on:
 1. ~~**Chart.js + real charts on My Line + Home hero**~~ — ✅ done and merged
