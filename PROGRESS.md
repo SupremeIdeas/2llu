@@ -9,6 +9,28 @@
 
 ## DONE
 
+### 🌍 Fix Popular Destinations vanishing on a fresh/early-stage catalogue — 2026-09-06
+Owner report: the eSIM front's "Popular Destinations" row (built earlier)
+had disappeared. Root cause found in `EsimCatalogue::popularDestinations()`:
+its own doc comment already promised "when there's no record just show
+popular countries by default," but the actual display-set filter only ever
+included countries that were bought OR admin-featured — with zero purchase
+history AND zero `is_featured` plans (exactly the early-launch state the
+owner described), the display set was empty and the row correctly (per the
+code) rendered nothing, reading as "it disappeared." Not a regression from
+another change — a day-one gap in the original fallback logic.
+- Fix: when the bought-or-featured set is empty, every country with an
+  active local plan becomes eligible, cheapest-first (the existing sort
+  already ranks that way once volume/featured are both zero) — so the row
+  is never empty before the first sale or the first admin featured-toggle.
+  Reuses the exact same per-country photo map (`EsimCountryImage`) as
+  before — no new images to seed.
+- Updated 3 existing tests whose assertions encoded the old (buggy) "nothing
+  shows with zero signal" behavior, isolating each with a second real-signal
+  country so their actual intent (exclusion once real signal exists
+  elsewhere) still holds; added 2 new tests for the corrected fallback.
+  `EsimPopularDestinationsTest` now 14/14, full suite green (1488).
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,

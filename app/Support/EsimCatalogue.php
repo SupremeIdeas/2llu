@@ -219,6 +219,15 @@ class EsimCatalogue
         $codes = array_values(array_filter(array_keys($teasers),
             fn ($iso) => ($volume[$iso] ?? 0) > 0 || ! empty($teasers[$iso]['featured'])));
 
+        // Day-one fallback: zero sales AND nothing admin-featured yet must still
+        // show SOMETHING (the doc block above promises exactly this) — every
+        // country with an active local plan becomes eligible, cheapest-first,
+        // rather than leaving the row silently empty until the first sale or
+        // the first admin visits the featured toggle.
+        if ($codes === []) {
+            $codes = array_keys($teasers);
+        }
+
         usort($codes, function ($a, $b) use ($teasers, $volume) {
             return ($volume[$b] ?? 0) <=> ($volume[$a] ?? 0)                       // most bought first
                 ?: (int) ($teasers[$b]['featured']) <=> (int) ($teasers[$a]['featured']) // then curated-popular
