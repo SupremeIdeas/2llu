@@ -9,6 +9,35 @@
 
 ## DONE
 
+### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
+Owner request, two related front-end asks in one pass:
+- **Journey Goals images**: admin can now attach an optional image to a goal,
+  exactly like the existing eSIM country/region image system — new
+  `journey_goals.image_path` column, `MediaStorage::storePublic()` reused
+  as-is (no new upload plumbing), a Livewire `WithFileUploads` field with
+  live preview + remove button in `Admin\JourneyGoals`, and the customer-facing
+  "My Journey" goal card now renders the image as a circular avatar in place
+  of the icon badge when one is set (falls back to the icon badge otherwise,
+  and always shows the checkmark badge once claimed — the image never hides
+  the "claimed" state). New test `admin_can_attach_and_remove_a_goal_image`.
+- **Naara Gift brand-detail sheet modernized**: restyled to match the eSIM
+  plan-detail page's visual language — bordered `rounded-3xl` panel, compact
+  rounded-2xl logo thumbnail beside a category pill + brand name (replacing
+  the old flat gradient banner), denomination buttons and required-field
+  inputs restyled as rounded-2xl fact tiles, the redemption instructions
+  `<details>` restyled to a soft rounded panel, and the buy button moved into
+  a bordered price+CTA bar with the same gradient/shadow/lift treatment used
+  on the eSIM buy button. Kept the existing modal/sheet interaction (not
+  converted to full-page navigation — out of scope for a styling ask). The
+  price bar shows the exact retail price of the currently-selected
+  denomination (via `GiftCardPricing::denominations()`), not a fixed/first
+  value.
+- Full suite green, Pint clean on all touched files, Playwright-verified:
+  opening a brand shows the modernized bordered sheet with fact-tile
+  denominations; selecting "$25" highlights that tile and correctly updates
+  the price bar to "$25.92" (the real markup-applied retail price for that
+  face value, confirmed against `GiftCardPricing`).
+
 ### 🔧 Follow-up on the payment/provider audit's 4 flagged items — 2026-09-06
 Owner decided each of the 4 items left open from the payment-gateway/provider
 audit (PRs #22/#23):

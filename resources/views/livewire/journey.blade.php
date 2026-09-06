@@ -72,9 +72,13 @@
                     @endphp
                     <div wire:key="goal-{{ $goal->id }}" class="rounded-2xl border border-slate-200 nx-glass-tile p-4 dark:border-white/10">
                         <div class="flex items-start justify-between gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $p['claimed'] ? 'bg-emerald-500 text-white' : 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300' }}">
-                                <x-icon name="{{ $p['claimed'] ? 'check' : ($goal->icon ?: 'star') }}" class="h-5 w-5" />
-                            </span>
+                            @if ($goal->image_path && ! $p['claimed'])
+                                <img src="{{ $goal->image_path }}" alt="" class="h-10 w-10 shrink-0 rounded-full object-cover">
+                            @else
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $p['claimed'] ? 'bg-emerald-500 text-white' : 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300' }}">
+                                    <x-icon name="{{ $p['claimed'] ? 'check' : ($goal->icon ?: 'star') }}" class="h-5 w-5" />
+                                </span>
+                            @endif
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center justify-between gap-2">
                                     <p class="font-semibold text-slate-900 dark:text-white">{{ $goal->title }}</p>

@@ -17,6 +17,8 @@ use App\Services\Journey\JourneyGoalService;
 use App\Support\CreditSettings;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -257,6 +259,41 @@ class JourneyGoalTest extends TestCase
 
         Livewire::actingAs($admin)->test(AdminJourneyGoals::class)->call('toggle', $goal->id);
         $this->assertFalse($goal->fresh()->is_active);
+    }
+
+    public function test_admin_can_attach_and_remove_a_goal_image(): void
+    {
+        Storage::fake('public');
+        config(['filesystems.disks.wasabi.key' => null]);
+        $this->seed(RoleSeeder::class);
+        $admin = User::factory()->create();
+        $admin->assignRole('super_admin');
+
+        Livewire::actingAs($admin)->test(AdminJourneyGoals::class)
+            ->set('title', 'Weekend Warrior')
+            ->set('description', 'Buy 3 eSIMs in a weekend')
+            ->set('metric', 'esim_purchases')
+            ->set('target', 3)
+            ->set('period_type', 'lifetime')
+            ->set('reward_credits', 20)
+            ->set('image', UploadedFile::fake()->image('goal.jpg', 200, 200))
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $goal = JourneyGoal::where('title', 'Weekend Warrior')->firstOrFail();
+        $this->assertNotNull($goal->image_path);
+
+        // The uploaded image shows on the customer-facing My Journey card.
+        $user = User::factory()->create();
+        Livewire::actingAs($user)->test(Journey::class)
+            ->call('setTab', 'goals')
+            ->assertSee($goal->image_path, false);
+
+        Livewire::actingAs($admin)->test(AdminJourneyGoals::class)
+            ->call('edit', $goal->id)
+            ->call('removeImage');
+
+        $this->assertNull($goal->fresh()->image_path);
     }
 
     public function test_a_goal_with_claims_is_paused_not_deleted(): void

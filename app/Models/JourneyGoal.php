@@ -27,7 +27,7 @@ class JourneyGoal extends Model
 
     protected $fillable = [
         'title', 'description', 'metric', 'target', 'period_type', 'starts_at', 'ends_at',
-        'reward_credits', 'audience', 'icon', 'is_active', 'created_by',
+        'reward_credits', 'audience', 'icon', 'image_path', 'is_active', 'created_by',
     ];
 
     protected function casts(): array
