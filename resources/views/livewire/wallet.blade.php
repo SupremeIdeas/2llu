@@ -26,6 +26,29 @@
         </div>
     </div>
 
+    {{-- Top-up "processing" banner (owner request): the actual credit lands
+         via a queued webhook job that can take up to ~2 minutes on shared
+         hosting's cron-drain cadence — this replaces the old "redirect back
+         to a stale balance, refresh and hope" experience. wire:poll only
+         while $pendingTopUp is set; the moment the credit lands the
+         controller clears it and the banner disappears on its own next
+         render, right as the success hero toast fires (same pattern
+         get-number.blade.php uses for an OTP "waiting" state). --}}
+    @if ($pendingTopUp)
+        <div wire:poll.5s="checkPendingTopUp"
+             class="mb-4 flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4 dark:border-teal-500/20 dark:bg-teal-500/10">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary dark:bg-teal-500/20 dark:text-teal-300">
+                <svg class="h-4.5 w-4.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            </span>
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-slate-900 dark:text-white">Processing your top-up…</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    {{ ucfirst($pendingTopUp['gateway']) }} confirmed your payment — crediting {{ $pendingTopUp['currency'] }} {{ number_format((float) $pendingTopUp['amount'], 2) }} to your wallet now. This usually takes under a minute.
+                </p>
+            </div>
+        </div>
+    @endif
+
     {{-- Balance hero: the settlement (USD) balance leads, NGN shown as a
          secondary card — no invented "total" across two real currencies.
          Quick actions switch tabs below (no fake buttons). --}}

@@ -9,6 +9,36 @@
 
 ## DONE
 
+### ⏳ Top-up pending-state UX: processing banner + auto-resolving success toast — 2026-09-06
+Owner report: after a payment gateway confirms and redirects back to /wallet,
+the actual credit lands via a queued webhook job — on shared hosting's
+`queue:work` cron-drain cadence (every-minute, `routes/console.php`) that's a
+worst case of ~2 minutes — but the wallet page showed nothing in the
+meantime, so the user had to manually refresh in a loop wondering if the
+top-up actually went through.
+- `Wallet::topUp()` now stashes a `pending_topup` marker in the session
+  (gateway, the reference the gateway's own `initialize()` generated, amount,
+  currency, started-at) right before the `redirect()->away(...)` — it
+  survives the round trip to the gateway and back.
+- On mount, and via a `wire:poll.5s`-driven `checkPendingTopUp()`, the wallet
+  page checks for the EXACT `WalletTransaction` row `CreditWalletJob` writes
+  once the credit actually lands (`topup:{gateway}:{reference}` — the same
+  reference format the job already used, no new convention invented). The
+  instant it's found, the banner disappears and the existing fintech-style
+  success hero toast fires (Livewire's proven "wire:poll disappears once
+  resolved" pattern, already used by `get-number.blade.php` for OTP waits).
+- Capped at 10 minutes — never polls forever if something never lands.
+- 6 new tests (session marker set, banner shows while pending, already-landed
+  resolves on mount, polled check clears + fires toast, still-pending check
+  is a no-op, stale marker past the timeout is cleared not shown). Full suite
+  green (1492 passed), Pint clean.
+- Playwright-verified end to end against the REAL Livewire poll cycle (not
+  just PHPUnit): banner renders with the live amount/gateway → stays up while
+  genuinely pending → the moment `WalletService::creditTopUp()` runs
+  externally, the next 5s poll tick clears it and the "Top-up successful —
+  funds are ready to spend" hero toast fires automatically, balance visibly
+  updated to $15.00 in the same frame.
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,
