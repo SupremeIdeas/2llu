@@ -57,15 +57,21 @@
                 </div>
             @endif
 
+            {{-- Icons here are white, not the theme's accent colour: they sit
+                 directly on the brand gradient (via a near-transparent
+                 bg-white/10 pill), and an accent-on-primary combination isn't
+                 guaranteed to contrast the same way in every theme. White
+                 always reads against this gradient — the balance figure and
+                 labels right above already rely on the same assumption. --}}
             <div class="mt-5 grid grid-cols-3 gap-2">
                 <button type="button" @click="tab = 'topup'" class="flex flex-col items-center gap-1.5 rounded-2xl bg-white/10 py-3 text-xs font-semibold text-white transition hover:bg-white/20">
-                    <x-icon name="zap" class="h-5 w-5 text-accent" /> Top up
+                    <x-icon name="zap" class="h-5 w-5 text-white" /> Top up
                 </button>
                 <button type="button" @click="tab = 'payout'" class="flex flex-col items-center gap-1.5 rounded-2xl bg-white/10 py-3 text-xs font-semibold text-white transition hover:bg-white/20">
-                    <x-icon name="credit-card" class="h-5 w-5 text-accent" /> Withdraw
+                    <x-icon name="credit-card" class="h-5 w-5 text-white" /> Withdraw
                 </button>
                 <button type="button" @click="tab = 'spending'" class="flex flex-col items-center gap-1.5 rounded-2xl bg-white/10 py-3 text-xs font-semibold text-white transition hover:bg-white/20">
-                    <x-icon name="signal" class="h-5 w-5 text-accent" /> Spending
+                    <x-icon name="signal" class="h-5 w-5 text-white" /> Spending
                 </button>
             </div>
         </div>
