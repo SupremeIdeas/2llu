@@ -6,18 +6,19 @@ use App\Services\GiftCards\GiftCardCatalogueSyncService;
 use Illuminate\Console\Command;
 
 /**
- * Sync the Naara Gift catalogue from Reloadly (primary) + Zendit (failover).
- * `giftcards:sync` does both; `giftcards:sync reloadly` does one.
+ * Sync the Naara Gift catalogue from every registered provider (Reloadly
+ * primary, Zendit/Bitrefill/Tillo filling gaps in priority order).
+ * `giftcards:sync` does all of them; `giftcards:sync reloadly` does one.
  */
 class GiftCardSyncCommand extends Command
 {
-    protected $signature = 'giftcards:sync {provider? : reloadly|zendit (default: both)}';
+    protected $signature = 'giftcards:sync {provider? : one registered provider key (default: all)}';
 
-    protected $description = 'Sync gift-card products from Reloadly + Zendit into the Naara Gift catalogue';
+    protected $description = 'Sync gift-card products from every registered provider into the Naara Gift catalogue';
 
     public function handle(GiftCardCatalogueSyncService $sync): int
     {
-        $providers = $this->argument('provider') ? [$this->argument('provider')] : ['reloadly', 'zendit'];
+        $providers = $this->argument('provider') ? [$this->argument('provider')] : $sync->providerKeys();
 
         foreach ($providers as $provider) {
             $n = $sync->sync($provider);

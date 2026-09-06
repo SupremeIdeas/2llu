@@ -44,27 +44,47 @@ class GiftCardPricing
         return ['type' => 'FIXED', 'options' => $options];
     }
 
-    /** The provider cost for a face value — PRIVATE (never returned to the client). */
+    /**
+     * The provider cost for a face value — PRIVATE (never returned to the
+     * client). Explicit per-provider dispatch: a provider we don't recognize
+     * throws rather than silently falling through to face=cost (money-safety
+     * rule 1 — retail must be cost+margin, and "cost" must come from a basis
+     * we've actually reasoned about for that provider, never a default).
+     */
     private function cost(GiftCardProduct $product, float $face): float
     {
         $meta = (array) $product->cost_meta;
 
-        if ($product->provider === 'reloadly') {
-            $discount = (float) ($meta['discountPercentage'] ?? 0);
-            $fee = (float) ($meta['senderFee'] ?? 0);
+        return match ($product->provider) {
+            'reloadly' => $this->reloadlyCost($product, $meta, $face),
+            // Zendit, Bitrefill, Tillo: none of the three exposes a wholesale
+            // rate distinct from the offer/package/face value in what we sync
+            // from their catalogue (unlike Reloadly's explicit
+            // discountPercentage + sender-currency map). Face value is used as
+            // the cost basis — conservative (we may under-capture margin where
+            // a provider's real wholesale cost is lower) but never unsafe
+            // (retail is always cost+margin on top of a real, chargeable
+            // amount, never below it). Revisit per-provider if/when a rate
+            // field is confirmed against their live account terms.
+            'zendit', 'bitrefill', 'tillo' => round($face, 4),
+            default => throw new \InvalidArgumentException(
+                "GiftCardPricing has no cost basis defined for provider [{$product->provider}] — add one before pricing it."
+            ),
+        };
+    }
 
-            // Base cost is in OUR (sender) currency, NEVER the recipient face — a
-            // ₦5,000 face is not a $5,000 cost. Use the recipient→sender map for
-            // FIXED and the sender range for RANGE; fall back to face only when
-            // the currencies already match (scopeStorefront withholds the rest).
-            $base = $this->senderBase($product, $meta, $face);
+    private function reloadlyCost(GiftCardProduct $product, array $meta, float $face): float
+    {
+        $discount = (float) ($meta['discountPercentage'] ?? 0);
+        $fee = (float) ($meta['senderFee'] ?? 0);
 
-            return round($base * (1 - $discount / 100) + $fee, 4);
-        }
+        // Base cost is in OUR (sender) currency, NEVER the recipient face — a
+        // ₦5,000 face is not a $5,000 cost. Use the recipient→sender map for
+        // FIXED and the sender range for RANGE; fall back to face only when
+        // the currencies already match (scopeStorefront withholds the rest).
+        $base = $this->senderBase($product, $meta, $face);
 
-        // Zendit (failover, USD-only in the storefront): the offer's scaled price
-        // is already in the charged currency, so face is the cost basis.
-        return round($face, 4);
+        return round($base * (1 - $discount / 100) + $fee, 4);
     }
 
     /** The sender-currency (USD) base amount we pay for a recipient face value. */

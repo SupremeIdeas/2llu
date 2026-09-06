@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
  * default. Money-safety: the raw cost/discount/fee stays in cost_meta (private),
  * never surfaced — the storefront prices through PricingEngine.
  */
-class ReloadlyGiftCardService implements GiftCardProviderInterface
+class ReloadlyGiftCardService implements GiftCardProviderInterface, GiftCardStatusCheckable
 {
     public function key(): string
     {
@@ -206,5 +206,34 @@ class ReloadlyGiftCardService implements GiftCardProviderInterface
         } catch (\Throwable $e) {
             throw new GiftCardProviderException('Reloadly order failed: '.$e->getMessage(), previous: $e);
         }
+    }
+
+    /**
+     * Poll a transaction that's still 'processing' — reuses the SAME
+     * /orders/transactions/{id}/cards endpoint order() already calls inline;
+     * it 404s/empties until Reloadly has the redeem code ready, at which
+     * point it returns the card. Used by the reconcile job for the case
+     * order() hit that not-ready path and no webhook ever followed up.
+     */
+    public function orderStatus(string $providerTxId): array
+    {
+        try {
+            $cards = (array) $this->client()->get("/orders/transactions/{$providerTxId}/cards")->throw()->json();
+        } catch (\Throwable) {
+            return ['status' => 'processing', 'receipt' => []];
+        }
+
+        $card = $cards[0] ?? [];
+        if (empty($card)) {
+            return ['status' => 'processing', 'receipt' => []];
+        }
+
+        return [
+            'status' => 'delivered',
+            'receipt' => array_filter([
+                'code' => $card['cardNumber'] ?? null,
+                'epin' => $card['pinCode'] ?? ($card['cardNumber'] ?? null),
+            ], fn ($v) => $v !== null),
+        ];
     }
 }

@@ -46,7 +46,51 @@ class ZenditVoucherService implements GiftCardProviderInterface
             $offset += $limit;
         } while (count($offers) === $limit && $offset <= 20480);
 
+        $this->backfillLogos($out);
+
         return $out;
+    }
+
+    /**
+     * Fills logo_url via GET /brands/{brand} — the gap the code has flagged
+     * since Phase 1 ("fetched from /brands/{brand} in a later phase"). One
+     * lookup per UNIQUE brand identifier (not per offer) to avoid N+1 against
+     * a catalogue that can carry many offers per brand; capped so one bad
+     * sync run can't balloon runtime, and any single brand's failure is
+     * swallowed rather than failing the whole sync.
+     *
+     * @param  array<int, array<string, mixed>>  $rows  mutated in place
+     */
+    private function backfillLogos(array &$rows): void
+    {
+        $cache = [];
+        $lookups = 0;
+        $cap = 500;
+
+        foreach ($rows as &$row) {
+            $brandId = $row['_brand_lookup_key'] ?? null;
+            unset($row['_brand_lookup_key']);
+            if ($brandId === null || $brandId === '') {
+                continue;
+            }
+
+            if (! array_key_exists($brandId, $cache)) {
+                if ($lookups >= $cap) {
+                    continue;
+                }
+                $lookups++;
+                try {
+                    $b = (array) $this->client()->get('/brands/'.rawurlencode($brandId))->throw()->json();
+                    $cache[$brandId] = data_get($b, 'logoUrl') ?: data_get($b, 'logo') ?: data_get($b, 'imageUrl');
+                } catch (\Throwable) {
+                    $cache[$brandId] = null; // tolerate — never blocks the sync
+                }
+            }
+
+            if ($cache[$brandId]) {
+                $row['logo_url'] = $cache[$brandId];
+            }
+        }
     }
 
     private function map(array $o): array
@@ -67,7 +111,12 @@ class ZenditVoucherService implements GiftCardProviderInterface
             'fixed_denominations' => array_map(fn ($v) => $scale($v), (array) (data_get($o, 'price.fixed') ?? [])),
             'min_amount' => $scale(data_get($o, 'price.min')),
             'max_amount' => $scale(data_get($o, 'price.max')),
-            'logo_url' => null, // fetched from /brands/{brand} in a later phase
+            'logo_url' => null, // filled by backfillLogos() after all offers are mapped
+            // Internal-only key consumed (and stripped) by backfillLogos() —
+            // never persisted, matches whichever identifier the offer actually
+            // carries for the /brands/{id} lookup (verify against a live
+            // account if brand identifiers turn out to be shaped differently).
+            '_brand_lookup_key' => (string) ($o['brand'] ?? $o['brandId'] ?? '') ?: null,
             'brand_color' => null,
             'category' => (string) ($o['subType'] ?? $o['productType'] ?? '') ?: null,
             'required_fields' => $this->fields((array) ($o['requiredFields'] ?? [])),

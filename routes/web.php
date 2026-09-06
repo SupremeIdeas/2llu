@@ -54,6 +54,7 @@ use App\Livewire\Admin\EsimHero;
 use App\Livewire\Admin\ExchangeRates;
 use App\Livewire\Admin\Features;
 use App\Livewire\Admin\Gateways;
+use App\Livewire\Admin\GiftHero;
 use App\Livewire\Admin\Guides;
 use App\Livewire\Admin\HomeMedia;
 use App\Livewire\Admin\Incidents;
@@ -224,6 +225,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/gift-cards', GiftCards::class)->name('gift-cards');
         Route::get('/gift-cards/orders', [GiftCardOrderController::class, 'index'])->name('gift-cards.orders');
         Route::get('/gift-cards/orders/{order}', [GiftCardOrderController::class, 'show'])->name('gift-cards.order');
+        Route::post('/gift-cards/orders/{order}/balance', [GiftCardOrderController::class, 'balance'])->name('gift-cards.order.balance');
         Route::get('/checkout/{plan}', Checkout::class)->name('checkout');
         Route::get('/wallet', Wallet::class)->name('wallet');
         Route::get('/numbers', GetNumber::class)->name('numbers');
@@ -401,7 +403,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/brand-directory', BrandDirectory::class)->name('brand-directory');
             Route::get('/gift-cards', App\Livewire\Admin\GiftCards::class)->name('gift-cards');
             // Naara Gift storefront hero — same system as the dashboard home hero.
-            Route::get('/gift-hero', App\Livewire\Admin\GiftHero::class)->name('gift-hero');
+            Route::get('/gift-hero', GiftHero::class)->name('gift-hero');
             Route::get('/developer-api', DeveloperApi::class)->name('developer-api');
             Route::get('/payouts', Payouts::class)->name('payouts');
             Route::get('/refunds', Refunds::class)->name('refunds');

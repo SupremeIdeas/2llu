@@ -9,6 +9,80 @@
 
 ## DONE
 
+### 🎁 Naara Gift provider expansion — Bitrefill + Tillo fully wired, reconcile + balance-check — 2026-09-06
+Owner-requested deep audit: only Reloadly + Zendit had real admin sync/controls;
+Bitrefill and Tillo were registered in code but structurally dead (four
+independent blockers stacked: admin UI hardcoded to `['reloadly','zendit']`,
+`sync()`/`preflight()` hard-422'd anything else, their `getCatalogue()` never
+set a `provider` key so `sync()` would crash if reached, `GiftCardOrderService`
+couldn't resolve them at purchase time, and — the real money-safety bug —
+`GiftCardPricing::cost()` would have priced them at face=cost with ZERO
+margin, the one thing money rule 1 forbids). Fixed all of it, end to end,
+grounded in each provider's actual documented API (Reloadly docs, Zendit,
+Bitrefill's public docs + llms.txt index, Tillo's llms.txt index) — nothing
+invented; where a field/endpoint isn't confirmable without a live account
+(Tillo's exact brand-catalogue shape, its HMAC byte-for-byte composition),
+the code says so inline instead of guessing with false confidence, same
+honesty convention the codebase already used for Tillo's signing scheme:
+- **`GiftCardPricing::cost()`** — replaced the `if (reloadly) {...} else {
+  return face; }` fallback with an explicit `match` over all 4 providers;
+  an unrecognized provider now throws instead of silently pricing at cost.
+  Reloadly/Zendit behavior is byte-identical (already correct, tested).
+- **`BitrefillService`** — real normalized catalogue (brand_key, FIXED/RANGE
+  with the real `range.step` increment captured), rich preflight shape,
+  normalized order()/receipt (code/pin/link/instructions — Bitrefill's real
+  field names), plus a new `orderStatus()` (real `/invoices/{id}` lookup).
+- **`TilloService`** — same normalization, plus three REAL Tillo capabilities
+  this repo didn't use before: **Balance Check** (an issued card's remaining
+  value — the one provider of the four that actually supports this),
+  **Check Digital Order Status by Reference**, and **Cancel/Reverse Digital
+  Code** (48h window) for admin remediation instead of always eating the
+  cost via wallet-only refund.
+- New `GiftCardStatusCheckable` / `GiftCardBalanceCheckable` marker
+  interfaces — implemented ONLY where a provider genuinely has the
+  capability (Reloadly/Bitrefill/Tillo for status; Tillo alone for balance)
+  so nothing is faked for Zendit, which has neither confirmed.
+- **`GiftCardCatalogueSyncService::recomputePrimary()`** generalized from a
+  hardcoded Reloadly-then-Zendit pair to a priority-ranked loop over all
+  registered providers — Bitrefill/Tillo can now actually become primary
+  for a brand neither Reloadly nor Zendit carries.
+- **Admin `GiftCards.php` + blade** — `sync()`/`preflight()`/the provider
+  grid/the catalogue filter dropdown all now drive off the sync service's
+  registered provider list instead of a hardcoded pair, with a Primary →
+  Secondary → Tertiary → Quaternary role label. `giftcards:sync` (the
+  scheduled command) does the same.
+- **Zendit's own flagged gap fixed** — `logo_url` was hardcoded null with a
+  comment "fetched from /brands/{brand} in a later phase"; that phase now
+  exists, one lookup per unique brand (not per offer), tolerant of failure.
+- **New `giftcards:reconcile-processing`** (scheduled every 15 min) —
+  recovery path for an order stuck 'processing' because its provider's
+  async webhook never arrived; polls the real order-status endpoint for any
+  provider that implements `GiftCardStatusCheckable` and finalizes it
+  (delivered → fills receipt; failed → refunds), same discipline as the
+  webhook controller. Registered in `SchedulerHealth::TASKS`.
+- **Webhook controller** — per-provider payload normalization (Bitrefill's
+  `external_id`/`orders.0.*`, Tillo's `client_request_id`/`data.*`) ahead of
+  the shared refund/update logic, so the already-correct Reloadly/Zendit
+  path is untouched. Added `webhook_secret` config + `ProviderKeys::schema()`
+  entries for all 4 providers (Reloadly/Zendit had NEITHER before this).
+- **"Check balance"** — a real customer-facing action on the receipt page,
+  wired through the new `GiftCardBalanceCheckable` interface. Shown only
+  for a delivered order whose provider actually supports it (Tillo) — never
+  fabricated for Reloadly/Zendit/Bitrefill's single-use redemption codes.
+- 27 new tests across 4 new files (`GiftCardReconcileTest`,
+  `GiftCardBalanceCheckTest`) plus additions to `NaaraGiftCatalogueTest`.
+  Full suite green (1500 passed), Pint clean, Playwright-verified the admin
+  panel now renders a real Tillo card ("Quaternary", Test/Sync buttons,
+  correct "needs enterprise account" messaging) where it had zero presence
+  before.
+- **Deliberately NOT done this pass** (owner chose "fix what's broken
+  first" over storefront UX): the browse-page sort/filter/compare/decision
+  flow improvements (category filter, price sort, popularity ranking,
+  compare tray) — those sit on top of a now-correct 4-provider catalogue
+  whenever picked up next.
+- Branched off `main` as `claude/giftcard-provider-expansion` (its own PR,
+  independent of any other in-flight work).
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,

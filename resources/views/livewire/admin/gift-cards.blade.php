@@ -1,8 +1,10 @@
 <div class="mx-auto max-w-5xl">
     <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Naara Gift</h1>
     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        Reloadly and Zendit run together — Reloadly is primary, Zendit fills the gaps.
+        All {{ count($providers) }} registered providers run together, ranked Primary → Secondary → Tertiary → …
+        — each fills the gaps the higher-ranked ones don't carry for a brand.
         The storefront only ever sells the primary provider per brand, and never sees cost.
+        A provider stays "Coming Soon" until its keys are added — Tillo additionally needs its enterprise account set up first.
     </p>
 
     {{-- Providers side by side --}}
@@ -142,8 +144,9 @@
         <div class="flex items-center gap-2">
             <select wire:model.live="providerFilter" class="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
                 <option value="">All providers</option>
-                <option value="reloadly">Reloadly</option>
-                <option value="zendit">Zendit</option>
+                @foreach ($providers as $p)
+                    <option value="{{ $p['key'] }}">{{ $p['label'] }}</option>
+                @endforeach
             </select>
             <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search brand…"
                    class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100" />

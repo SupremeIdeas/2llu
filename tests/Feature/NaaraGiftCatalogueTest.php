@@ -91,6 +91,38 @@ class NaaraGiftCatalogueTest extends TestCase
         $this->assertSame([25.0, 50.0], $cat[0]['fixed_denominations']); // scaled by divisor 100
     }
 
+    public function test_zendit_backfills_a_missing_logo_from_the_brands_endpoint(): void
+    {
+        $offer = $this->zenditOffer('Steam', 'US', 'z1');
+        $offer['brand'] = 'steam-brand-id';
+
+        Http::fake([
+            'test-api.zendit.io/*/vouchers/offers*' => Http::response(['list' => [$offer]]),
+            'test-api.zendit.io/*/brands/steam-brand-id' => Http::response(['logoUrl' => 'https://cdn.example/steam.png']),
+        ]);
+
+        $cat = app(ZenditVoucherService::class)->getCatalogue();
+
+        $this->assertSame('https://cdn.example/steam.png', $cat[0]['logo_url']);
+        $this->assertArrayNotHasKey('_brand_lookup_key', $cat[0]);
+    }
+
+    public function test_zendit_logo_backfill_never_fails_the_sync_on_a_bad_lookup(): void
+    {
+        $offer = $this->zenditOffer('Steam', 'US', 'z1');
+        $offer['brand'] = 'steam-brand-id';
+
+        Http::fake([
+            'test-api.zendit.io/*/vouchers/offers*' => Http::response(['list' => [$offer]]),
+            'test-api.zendit.io/*/brands/steam-brand-id' => Http::response(['error' => 'not found'], 404),
+        ]);
+
+        $cat = app(ZenditVoucherService::class)->getCatalogue();
+
+        $this->assertCount(1, $cat);
+        $this->assertNull($cat[0]['logo_url']);
+    }
+
     public function test_reloadly_wins_where_both_carry_a_brand_zendit_fills_gaps(): void
     {
         $this->fakeReloadly([$this->reloadlyProduct('Amazon', 'US', 1)]);
