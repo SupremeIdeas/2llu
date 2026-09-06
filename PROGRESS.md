@@ -9,6 +9,62 @@
 
 ## DONE
 
+### 🎨 Dark mode standardized to one shared "Apple-inspired" palette for the 19 non-default themes — 2026-09-06
+Owner course-correction on the card-container audit below, from a screenshot
+of Origin Bold's Wallet page in dark mode: the per-theme `color-mix()`
+derivation (each preset's cards tinted from its OWN `--brand-navy`) looked
+unprofessional once viewed against chrome (desktop sidebar, mobile bottom
+nav) that PR #35 never touched and that stayed hardcoded to Naara's own
+navy hex — warm-brown cards next to a navy-blue sidebar. Owner's explicit
+instruction: stop trying to derive a unique, good-looking dark mode per
+theme ("burn even higher tokens"); instead give ALL 19 non-default presets
+ONE shared, well-designed dark palette, while **naara-official's own light
+AND dark mode stay 100% untouched** ("no touching Naara own dark theme").
+Light mode for the 19 presets is unaffected — each keeps its own
+personalized colors exactly as before.
+- **`app/Support/ThemePreset.php`** — `styleCss()` now emits a SECOND rule
+  after the existing per-theme `:root{...}` (light-mode) block, scoped
+  `:root.dark body.theme-{slug}{...}`, that overrides
+  `--brand-primary`/`-primary-dark`/`--brand-accent`/`--brand-navy`/
+  `--brand-action` to one fixed "Apple-inspired" dark set (system blue
+  `10 132 255`, near-black navy `18 18 20`, systemOrange accent, systemRed
+  action). Pure CSS cascade — no JS/PHP dark-mode detection needed, since
+  `.dark` is a client-toggled class and this rule only ever wins when BOTH
+  dark mode is on AND that theme's own body class matches. naara-official
+  never reaches this code path (`styleCss()` still returns `''` for it,
+  unchanged).
+- Every card/glass surface added by the audit below (`--brand-card-dark`,
+  `-border-dark`, `-inner-dark`, `.nx-glass-tile`) already derives from
+  `rgb(var(--brand-navy))` via `color-mix()` — so they automatically pick up
+  the new shared dark navy for the 19 presets with no further changes, and
+  keep deriving from Naara's own navy (untouched) for naara-official.
+- **`resources/views/components/app-shell.blade.php`** — the desktop
+  sidebar's 3-stop dark gradient and the mobile bottom nav / Numbers nav /
+  "More" sheet's `dark:bg-[#0D1B2A]` were independently hardcoded, unrelated
+  to `--brand-navy`, so they'd still clash even after the ThemePreset fix.
+  Sidebar now keeps its exact gradient for naara-official and collapses to a
+  flat `dark:bg-navy` (no gradient layer) for the other 19; the bottom nav /
+  Numbers nav / More sheet swapped `dark:bg-[#0D1B2A]` → `dark:bg-navy`
+  outright (pixel-identical for naara-official, since `--brand-navy`
+  defaults to that exact hex; correctly themed for everyone else). The More
+  sheet's inactive item hover tint (`#1B2A44`, missed by the original audit)
+  got its own `--brand-card-hover-dark` token, same derivation pattern.
+- Verified via Playwright across all 4 combinations (naara-official
+  light/dark, Origin Bold light/dark): naara-official is pixel-unchanged;
+  Origin Bold's light mode keeps its own warm palette; Origin Bold's dark
+  mode now shows one coherent charcoal/blue look across sidebar + cards +
+  buttons instead of the previous brown-cards-on-navy-sidebar clash. Full
+  suite green (1488), 2 new `ThemePresetTest` cases covering the dark
+  override and naara-official's continued immunity to it.
+- **Follow-up, not in this pass** (logged, not forgotten): two other
+  hardcoded-navy hex families were found spreading well beyond "cards" —
+  `#16233d` used as a second, distinct card-background tone across ~17
+  customer files, `#0D1B2A` used for modal/sheet/page backgrounds in ~30
+  files, and `#243352` used for form-input/pill fills in 100+ files
+  (customer + admin). None of these were touched by PR #35 or this pass;
+  fixing them without regressing naara-official needs the same
+  naara-official-preserving treatment used here, file by file.
+
 ### 🎨 Site-wide theme card-container colour audit — 2026-09-06
 Owner request: "these themes card containers across all pages are not
 reflecting to the theme color... all card containers color must not use
