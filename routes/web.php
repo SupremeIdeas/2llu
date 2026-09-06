@@ -54,6 +54,7 @@ use App\Livewire\Admin\EsimHero;
 use App\Livewire\Admin\ExchangeRates;
 use App\Livewire\Admin\Features;
 use App\Livewire\Admin\Gateways;
+use App\Livewire\Admin\GiftHero;
 use App\Livewire\Admin\Guides;
 use App\Livewire\Admin\HomeMedia;
 use App\Livewire\Admin\Incidents;
@@ -259,9 +260,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/partner', PartnerEarnings::class)->name('partner.earnings');
 
         // Cash out withdrawable (first-referral) credits (ROADMAP §Layer 1).
-        // KYC L2 gated — unverified users are sent to /account/verify.
-        Route::get('/rewards/withdraw', Withdraw::class)
-            ->middleware('kyc:2')->name('rewards.withdraw');
+        // Browsing + payout-account setup are free (NAARA-BUILD-22 §3); KYC-L2
+        // is only enforced once the unified free-payout threshold is spent
+        // (WithdrawalService::request(), same as every other earner type).
+        Route::get('/rewards/withdraw', Withdraw::class)->name('rewards.withdraw');
 
         // Data estimator (blueprint Section 32).
         Route::get('/data-estimator', DataEstimator::class)->name('data-estimator');
@@ -401,7 +403,7 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/brand-directory', BrandDirectory::class)->name('brand-directory');
             Route::get('/gift-cards', App\Livewire\Admin\GiftCards::class)->name('gift-cards');
             // Naara Gift storefront hero — same system as the dashboard home hero.
-            Route::get('/gift-hero', App\Livewire\Admin\GiftHero::class)->name('gift-hero');
+            Route::get('/gift-hero', GiftHero::class)->name('gift-hero');
             Route::get('/developer-api', DeveloperApi::class)->name('developer-api');
             Route::get('/payouts', Payouts::class)->name('payouts');
             Route::get('/refunds', Refunds::class)->name('refunds');

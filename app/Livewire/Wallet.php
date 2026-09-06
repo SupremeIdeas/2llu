@@ -5,7 +5,7 @@ namespace App\Livewire;
 use App\Models\PayoutAccount;
 use App\Models\TopUpIntent;
 use App\Models\UserWallet;
-use App\Services\Kyc\KycService;
+use App\Services\Payouts\PayoutThreshold;
 use App\Services\Payouts\WithdrawalService;
 use App\Services\Pricing\CurrencyService;
 use App\Support\GatewayCurrencyMatrix;
@@ -175,7 +175,7 @@ class Wallet extends Component
         return redirect()->away($result['redirect_url']);
     }
 
-    public function render(WithdrawalService $withdrawals, KycService $kyc)
+    public function render(WithdrawalService $withdrawals, PayoutThreshold $threshold)
     {
         $user = auth()->user();
         $wallet = $user->wallet ?? new UserWallet(['ngn_balance' => 0, 'usd_balance' => 0]);
@@ -183,11 +183,12 @@ class Wallet extends Component
 
         // Payout/withdraw summary (owner request: surface it prominently on the
         // wallet page itself rather than only at the separate /rewards/withdraw
-        // route). KYC-gating check reuses the SAME service the route middleware
-        // uses — WithdrawalService::request() independently re-enforces KYC-L2
-        // server-side regardless, so this is a display decision, not the
-        // security boundary.
-        $kycLevel2 = $kyc->hasLevel($user, 2);
+        // route). Free-payout/KYC threshold check reuses the SAME service
+        // WithdrawalService::request() uses server-side — this is a display
+        // decision, not the security boundary. Bank-account setup below is
+        // always free; only the withdraw button itself is threshold-gated.
+        $requiresKyc = $threshold->requiresKyc($user);
+        $canWithdraw = $threshold->canWithdraw($user);
         $payoutAccount = PayoutAccount::where('user_id', $user->id)->where('is_default', true)->first();
         $withdrawableUsd = $withdrawals->availableUsd($user);
 
@@ -223,7 +224,7 @@ class Wallet extends Component
 
         return view('livewire.wallet', compact(
             'wallet', 'transactions', 'spentUsd', 'topupUsd', 'topupNgn', 'sparkline',
-            'kycLevel2', 'payoutAccount', 'withdrawableUsd'
+            'requiresKyc', 'canWithdraw', 'payoutAccount', 'withdrawableUsd'
         ) + [
             'hasSpendData' => $daily->sum() > 0,
             // Part B §3.6: only gateways that accept the CURRENTLY selected

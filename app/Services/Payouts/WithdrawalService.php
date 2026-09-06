@@ -2,12 +2,10 @@
 
 namespace App\Services\Payouts;
 
-use App\Models\KycVerification;
 use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
 use App\Models\User;
 use App\Services\Credits\CreditService;
-use App\Services\Kyc\KycService;
 use App\Services\Pricing\CurrencyService;
 use App\Support\CreditSettings;
 use App\Support\PayoutSettings;
@@ -16,7 +14,12 @@ use Illuminate\Support\Str;
 
 /**
  * NaaraCredit → cash (ROADMAP §Layer 1). Turns a user's WITHDRAWABLE credits
- * (first-referral rewards only) into a real bank transfer, gated on KYC L2.
+ * (first-referral rewards only) into a real bank transfer.
+ *
+ * KYC is gated by the unified free-payout threshold (NAARA-BUILD-22 §3, same as
+ * ReferralWithdrawalService/MerchantWithdrawalService), NOT a blanket KYC wall:
+ * setting up a payout account and the first N withdrawals need no verification,
+ * then KYC-L2 is required.
  *
  * Money-safety: the withdrawn USD was already granted as a referral bonus the
  * platform budgeted for — it never touches admin margin. The credits are HELD
@@ -30,10 +33,9 @@ class WithdrawalService
     public function __construct(
         private CreditService $credits,
         private PayoutService $payouts,
-        private KycService $kyc,
+        private PayoutThreshold $threshold,
         private CurrencyService $currency,
-    ) {
-    }
+    ) {}
 
     /** Withdrawable balance expressed in USD at the current rate. */
     public function availableUsd(User $user): float
@@ -63,8 +65,11 @@ class WithdrawalService
         if (! PayoutSettings::enabled()) {
             throw new PayoutException('Withdrawals are not available right now.');
         }
-        if (! $this->kyc->hasLevel($user, KycVerification::L2)) {
-            throw new PayoutException('Verify your identity before withdrawing.');
+        // Unified free-payout threshold (§3): first N payouts are KYC-free.
+        if (! $this->threshold->canWithdraw($user)) {
+            throw new PayoutException(
+                "You've reached your free payout limit — verify your identity to keep withdrawing."
+            );
         }
         if ($account->user_id !== $user->id || ! $account->is_verified) {
             throw new PayoutException('Choose a verified payout account.');

@@ -8,6 +8,7 @@ use App\Services\Payouts\AccountResolutionException;
 use App\Services\Payouts\PayoutAccountService;
 use App\Services\Payouts\PayoutException;
 use App\Services\Payouts\PayoutService;
+use App\Services\Payouts\PayoutThreshold;
 use App\Services\Payouts\StripeConnectService;
 use App\Services\Payouts\WithdrawalService;
 use App\Support\CreditSettings;
@@ -19,8 +20,10 @@ use Livewire\Component;
 
 /**
  * Customer cash-out (ROADMAP §Layer 1). Manage bank/payout accounts (name
- * resolved before saving) and withdraw withdrawable NaaraCredits to one. The
- * route is KYC-L2 gated (kyc:2 middleware), so only verified users reach it.
+ * resolved before saving) and withdraw withdrawable NaaraCredits to one.
+ * Browsing and payout-account setup are free (NAARA-BUILD-22 §3) — KYC-L2 is
+ * only required once the unified free-payout threshold is spent, exactly like
+ * every other earner type's payout flow.
  */
 #[Layout('components.layouts.customer')]
 class Withdraw extends Component
@@ -193,7 +196,7 @@ class Withdraw extends Component
         return ['NG' => 'NGN', 'GH' => 'GHS', 'KE' => 'KES', 'ZA' => 'ZAR'][strtoupper($country)] ?? 'USD';
     }
 
-    public function render(WithdrawalService $withdrawals, CreditService $credits, PayoutService $payouts)
+    public function render(WithdrawalService $withdrawals, CreditService $credits, PayoutService $payouts, PayoutThreshold $threshold)
     {
         $user = Auth::user();
 
@@ -208,6 +211,12 @@ class Withdraw extends Component
             'paypalAvailable' => ProviderStatus::isActive('paypal'),
             'stripeAvailable' => ProviderStatus::isActive('stripe'),
             'stripeAccount' => PayoutAccount::where('user_id', $user->id)->where('type', 'stripe')->first(),
+            // Free-payout / KYC threshold state (§3) — same positive framing as
+            // the shared PayoutDashboard for partner/merchant/referral earners.
+            'remainingFree' => $threshold->remainingFree($user),
+            'requiresKyc' => $threshold->requiresKyc($user),
+            'canWithdraw' => $threshold->canWithdraw($user),
+            'freeCount' => PayoutSettings::freePayoutCount(),
         ]);
     }
 }

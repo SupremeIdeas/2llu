@@ -9,6 +9,38 @@
 
 ## DONE
 
+### 💸 Free payout setup + unified KYC threshold on the legacy NaaraCredit withdraw flow — 2026-09-06
+Owner request: bank-account setup and payout requests should be free of KYC;
+only the 6th automated payout request onward should demand identity
+verification, and partner/merchant payout setup should be hassle-free too.
+Investigation found the unified free-payout threshold (`PayoutThreshold`,
+`PayoutSettings::freePayoutCount()`, default 5) was **already built and
+already correct** for partner/merchant/referral-earnings payouts
+(NAARA-BUILD-22 §3) — but the older NaaraCredit-to-cash flow
+(`App\Services\Payouts\WithdrawalService`, the `/rewards/withdraw` page used
+by `Withdraw.php`) was never migrated onto it:
+- The `/rewards/withdraw` route carried a blanket `kyc:2` middleware,
+  blocking the ENTIRE page — including bank-account setup, which has no KYC
+  requirement at the service layer (`PayoutAccountService`) — for any
+  unverified user. This is also the exact page `PayoutDashboard`'s "Add a
+  payout account" link sends partner/merchant/referral earners to, so it
+  silently broke "easy payout setup" for every earner type, not just direct
+  NaaraCredit withdrawals.
+- `WithdrawalService::request()` independently hard-blocked on KYC-L2 from
+  the very first withdrawal, bypassing the threshold entirely.
+- Fixed both: removed the route middleware, and swapped the blanket KYC
+  check for `PayoutThreshold::canWithdraw()` — identical to
+  `ReferralWithdrawalService`/`MerchantWithdrawalService`'s existing pattern.
+  `Withdraw.php` and the Wallet page's embedded payout tab now always show
+  bank-account setup, surfacing the same positive-framed "N of 5 free
+  withdrawals left" / "verify your identity to keep withdrawing" banner
+  `PayoutDashboard` already uses, only once the threshold is actually spent.
+- Rewrote the tests that encoded the old blanket-KYC assumption
+  (`WithdrawPageTest`, `WalletPayoutSurfaceTest`, `WithdrawalTest`) and added
+  new threshold-specific coverage. Verified live via Playwright: an
+  unverified user can fully open `/rewards/withdraw`, add a bank account, and
+  submit a withdrawal with no verification prompt. Full suite green (1490).
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,

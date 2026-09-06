@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\KycVerification;
 use App\Models\PayoutAccount;
 use App\Models\PayoutRequest;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\Credits\CreditService;
+use App\Services\Payouts\PayoutEvent;
 use App\Services\Payouts\PayoutException;
 use App\Services\Payouts\PayoutGatewayInterface;
 use App\Services\Payouts\PayoutService;
@@ -15,12 +17,14 @@ use App\Services\Payouts\WithdrawalService;
 use App\Support\PayoutSettings;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Tests\TestCase;
 
 /**
  * ROADMAP §Layer 1 — NaaraCredit → cash. Only withdrawable (first-referral)
- * credits can be cashed out, gated on KYC L2; the credits are held on request
- * and returned if the transfer fails.
+ * credits can be cashed out; KYC is gated by the unified free-payout
+ * threshold (NAARA-BUILD-22 §3), not a blanket KYC wall — the credits are
+ * held on request and returned if the transfer fails.
  */
 class WithdrawalTest extends TestCase
 {
@@ -30,7 +34,7 @@ class WithdrawalTest extends TestCase
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
-        PayoutSettings::enabled() ?: \App\Models\Setting::setValue(PayoutSettings::FLAG, true, 'payouts');
+        PayoutSettings::enabled() ?: Setting::setValue(PayoutSettings::FLAG, true, 'payouts');
     }
 
     private function credits(): CreditService
@@ -126,13 +130,34 @@ class WithdrawalTest extends TestCase
         app(WithdrawalService::class)->request($user, 100, $account);
     }
 
-    public function test_unverified_users_cannot_withdraw(): void
+    public function test_an_unverified_user_can_withdraw_within_the_free_threshold(): void
     {
         $user = User::factory()->create(['is_active' => true]);
         $this->credits()->rewardReferral($user, 1, 1000);
         $account = $this->account($user);
 
-        $this->expectException(PayoutException::class);
+        $request = app(WithdrawalService::class)->request($user, 1000, $account);
+
+        $this->assertSame(PayoutRequest::PENDING, $request->status);
+    }
+
+    public function test_a_user_past_the_free_threshold_cannot_withdraw_without_kyc(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+        $this->credits()->rewardReferral($user, 1, 5000);
+        $account = $this->account($user);
+
+        // Burn the default 5 free payouts (any bucket counts, per the unified
+        // threshold).
+        foreach (range(1, 5) as $i) {
+            PayoutRequest::create([
+                'user_id' => $user->id, 'amount' => 1, 'currency' => 'USD',
+                'source_bucket' => 'referral_earnings', 'status' => PayoutRequest::PAID,
+                'provider' => 'paystack', 'reference' => 'burn'.$i,
+            ]);
+        }
+
+        $this->expectExceptionMessage('free payout limit');
         app(WithdrawalService::class)->request($user, 1000, $account);
     }
 
@@ -161,12 +186,12 @@ class WithdrawalTest extends TestCase
                 return new PayoutTransferResult(status: 'failed', failureReason: 'Bank rejected');
             }
 
-            public function verifyWebhook(\Illuminate\Http\Request $request): bool
+            public function verifyWebhook(Request $request): bool
             {
                 return true;
             }
 
-            public function parseWebhook(\Illuminate\Http\Request $request): ?\App\Services\Payouts\PayoutEvent
+            public function parseWebhook(Request $request): ?PayoutEvent
             {
                 return null;
             }
