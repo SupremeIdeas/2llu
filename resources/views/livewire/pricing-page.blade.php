@@ -1,7 +1,7 @@
 <div class="mx-auto max-w-6xl px-4 py-16">
     {{-- Header --}}
     <div class="mx-auto max-w-2xl text-center">
-        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">Transparent Pricing</p>
+        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-dark dark:text-accent">Transparent Pricing</p>
         <h1 class="mt-3 font-display text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white">Plans That Make Sense</h1>
         <p class="mx-auto mt-4 leading-relaxed text-slate-600 dark:text-slate-300">
             No monthly fees. No contracts. Pay for exactly what you need — a short pass or a full month.

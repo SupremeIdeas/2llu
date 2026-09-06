@@ -9,6 +9,62 @@
 
 ## DONE
 
+### 🎨 color-system skill installed + accent-dark token fixes a site-wide WCAG contrast gap — 2026-09-06
+Owner installed a personal cross-project "color-system" skill (now at
+`~/.claude/skills/color-system` — palette library, contrast/legibility
+rules, semantic-token conventions, a WCAG contrast checker script) and
+asked for a full site-wide color audit ahead of extending the Theme Preset
+system from 20 to 40 themes. Running every shipped preset's `--brand-accent`
+through the checker surfaced a real, previously invisible bug: `text-accent`
+used directly as icon/text color on a white or lightly-tinted surface
+(marketing "eyebrow" labels, star ratings, badges, favourite icons) measures
+only ~1.1–3.5:1 contrast on 18 of the 20 presets — including
+**naara-official's own warm gold (2.38:1)**, well under the WCAG 4.5:1 text
+/ 3:1 UI-component floor. Root cause: `text-accent-dark` was already
+referenced in a few files (the sidebar's "Soon" badge) but `--brand-accent-
+dark` never existed as a real CSS var/Tailwind color, so those classes
+silently did nothing — the gap was masking the underlying issue.
+- **`resources/css/app.css`** — new `--brand-accent-dark` token (naara-
+  official's own gold mixed 30% toward black, clears 4.58:1 on white).
+- **`tailwind.config.js`** — `accent` is now `{ DEFAULT, dark }` (mirroring
+  how `primary`/`primary-dark` already work), so `text-accent-dark`,
+  `fill-accent-dark`, etc. are real generated utilities for the first time.
+- **`app/Support/ThemePreset.php`** — `emitVars()` now also whitelists/emits
+  `accent_dark` → `--brand-accent-dark` per theme.
+- **`database/seeders/ThemePresetSeeder.php`** — every one of the 20
+  presets now ships its own `accent_dark`, each mixed toward black until it
+  clears 4.5:1 against white (verified with the skill's `contrast_check.py`
+  — naara-official's own math confirms the fix, its brand hue is untouched).
+- **`database/migrations/2026_09_06_180000_add_theme_preset_accent_dark_
+  token.php`** — backfills the same values into an already-seeded database,
+  purely additive (never overwrites, since the key never existed before).
+- **`app/Support/ColorContrast.php`** (new) — a PHP port of the skill's
+  WCAG contrast math, so presets can be verified in CI instead of eyeballed.
+- **`tests/Feature/ThemePresetContrastTest.php`** (new) — a standing
+  guardrail asserting every seeded preset's `accent_dark` clears 4.5:1 on
+  white and every `primary` can carry white button text (≥3:1) — this will
+  automatically catch a regression in any of the 20 new presets the
+  40-theme expansion is about to add, not just today's 20.
+- Swept ~30 `text-accent`/`fill-accent` occurrences across 22 customer-
+  facing files (marketing eyebrows/hero, blog, pricing page, get-listed,
+  wallet quick-amount pill, catalogue plan badge, rewards/coupon icons,
+  contact/service-picker favourite stars, testimonial ratings, install
+  wizard) to `text-accent-dark dark:text-accent` (or an unconditional
+  `-dark` swap where the element never appears against a dark surface) —
+  every one individually confirmed to sit on a light/white background
+  first, so genuinely dark-background usages (footer, `bg-navy` sections,
+  `.nx-aurora`/`.nx-float-card` gradients, the wallet balance hero's own
+  primary-gradient icons — already fixed to white in a separate PR) were
+  deliberately left untouched.
+- **naara-official's brand hue is completely unchanged** — same warm gold,
+  same light AND dark mode; only the previously-nonexistent "safe to use as
+  text on white" variant of it was added. Verified via Playwright: the home
+  hero eyebrow and "STEP 1/2/3" labels are now clearly legible in light
+  mode; dark mode is pixel-identical to before.
+- Full suite green (1491, 3 new). This is Phase 1 of the owner's ask;
+  Phase 2 (designing 20 new presets to reach 40, using the skill's palette
+  library) is queued next.
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,

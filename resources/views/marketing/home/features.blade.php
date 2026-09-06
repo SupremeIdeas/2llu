@@ -2,7 +2,7 @@
 @php($icons = ['send', 'phone', 'globe', 'wallet', 'refresh', 'gift'])
 <section class="mx-auto max-w-6xl px-4 py-20" data-bg="light">
     <div class="text-center">
-        <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $s['eyebrow'] }}</p>
+        <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-dark dark:text-accent">{{ $s['eyebrow'] }}</p>
         <h2 data-reveal class="mt-3 text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white">{{ $s['headline'] }}</h2>
     </div>
     <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -4,7 +4,7 @@
     <div class="grid items-center gap-10 lg:grid-cols-2">
         {{-- Pitch --}}
         <div>
-            <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">On-demand, on your terms</p>
+            <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-dark dark:text-accent">On-demand, on your terms</p>
             <h2 data-reveal class="mt-3 text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white">
                 Stop juggling numbers. Just ask the Wizard.
             </h2>

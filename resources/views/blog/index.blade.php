@@ -1,7 +1,7 @@
 <x-layouts.marketing :title="\App\Support\BrandSettings::name().' — Blog'">
     <div class="mx-auto max-w-5xl px-4 py-16">
         <div class="max-w-2xl">
-            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">The {{ \App\Support\BrandSettings::name() }} Blog</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-dark dark:text-accent">The {{ \App\Support\BrandSettings::name() }} Blog</p>
             <h1 class="mt-3 font-display text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white">Travel smarter, stay connected</h1>
             <p class="mt-3 text-slate-600 dark:text-slate-300">Guides, tips and updates on eSIMs, numbers and travelling the world without roaming surprises.</p>
         </div>
@@ -33,7 +33,7 @@
                             @endif
                         </div>
                         <div class="flex flex-1 flex-col p-5">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-accent">{{ $post->category }}</span>
+                            <span class="text-xs font-semibold uppercase tracking-wide text-accent-dark dark:text-accent">{{ $post->category }}</span>
                             <h2 class="mt-2 font-display text-lg font-bold leading-snug text-slate-900 dark:text-white">{{ $post->title }}</h2>
                             @if ($post->excerpt)
                                 <p class="mt-2 flex-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ \Illuminate\Support\Str::limit($post->excerpt, 110) }}</p>

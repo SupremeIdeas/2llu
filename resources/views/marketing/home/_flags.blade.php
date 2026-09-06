@@ -6,7 +6,7 @@
     $labels = ['ng'=>'Nigeria','gh'=>'Ghana','ke'=>'Kenya','za'=>'South Africa','us'=>'USA','gb'=>'UK','ca'=>'Canada','fr'=>'France','de'=>'Germany','es'=>'Spain','ae'=>'UAE','sa'=>'Saudi Arabia','in'=>'India','jp'=>'Japan','br'=>'Brazil','au'=>'Australia','it'=>'Italy','pt'=>'Portugal','nl'=>'Netherlands','tr'=>'Türkiye','eg'=>'Egypt','ma'=>'Morocco','cn'=>'China','kr'=>'South Korea','sg'=>'Singapore','th'=>'Thailand','ph'=>'Philippines','id'=>'Indonesia','mx'=>'Mexico','ar'=>'Argentina','ch'=>'Switzerland','se'=>'Sweden'];
 @endphp
 <section data-reveal class="overflow-hidden py-14">
-    <p class="mb-8 text-center text-xs font-semibold uppercase tracking-[0.25em] text-accent">190+ countries · one eSIM · no borders</p>
+    <p class="mb-8 text-center text-xs font-semibold uppercase tracking-[0.25em] text-accent-dark dark:text-accent">190+ countries · one eSIM · no borders</p>
 
     @foreach (['A' => ['dir' => 'ltr', 'flags' => $rowA], 'B' => ['dir' => 'rtl', 'flags' => $rowB]] as $rowKey => $row)
         <div class="nx-marquee {{ $rowKey === 'B' ? 'mt-4' : '' }}">

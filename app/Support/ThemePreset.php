@@ -202,6 +202,7 @@ class ThemePreset
             'primary' => '--brand-primary',
             'primary_dark' => '--brand-primary-dark',
             'accent' => '--brand-accent',
+            'accent_dark' => '--brand-accent-dark',
             'navy' => '--brand-navy',
             'action' => '--brand-action',
         ];

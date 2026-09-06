@@ -5,7 +5,7 @@
         </div>
 
         <div class="text-center max-w-xl">
-            <p class="text-sm font-semibold uppercase tracking-widest text-accent">Supreme Ideas Agency</p>
+            <p class="text-sm font-semibold uppercase tracking-widest text-accent-dark dark:text-accent">Supreme Ideas Agency</p>
             <h1 class="mt-2 text-4xl font-bold text-primary-dark dark:text-primary">NaaraSim</h1>
             <p class="mt-3 text-lg text-slate-600 dark:text-slate-300">
                 Stay Connected. No Borders. No Swaps.

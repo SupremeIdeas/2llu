@@ -39,7 +39,7 @@
                             document.documentElement.classList.toggle('dark', dark);
                             $dispatch('theme-changed', { dark })">
                 <span class="nx-theme-scene__knob">
-                    <x-icon name="sun" class="h-3.5 w-3.5 text-accent" x-show="!dark" />
+                    <x-icon name="sun" class="h-3.5 w-3.5 text-accent-dark" x-show="!dark" />
                     <x-icon name="moon" class="h-3.5 w-3.5 text-slate-200" x-show="dark" x-cloak />
                 </span>
             </button>

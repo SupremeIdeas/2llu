@@ -3,7 +3,7 @@
      admin-swappable (Admin → Pages → Home → "Connected in Three Steps"). --}}
 <section class="mx-auto max-w-5xl px-4 py-20" data-bg="light">
     <div class="text-center">
-        <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $s['eyebrow'] }}</p>
+        <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-dark dark:text-accent">{{ $s['eyebrow'] }}</p>
         <h2 data-reveal class="mt-3 text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white">{{ $s['headline'] }}</h2>
         <p data-reveal class="mx-auto mt-3 max-w-xl text-slate-600 dark:text-slate-300">{{ $s['subtext'] }}</p>
     </div>

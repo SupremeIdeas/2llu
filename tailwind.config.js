@@ -29,7 +29,10 @@ export default {
                     DEFAULT: 'rgb(var(--brand-primary) / <alpha-value>)', // Deep Teal
                     dark: 'rgb(var(--brand-primary-dark) / <alpha-value>)',
                 },
-                accent: 'rgb(var(--brand-accent) / <alpha-value>)',   // Warm Gold
+                accent: {
+                    DEFAULT: 'rgb(var(--brand-accent) / <alpha-value>)', // Warm Gold
+                    dark: 'rgb(var(--brand-accent-dark) / <alpha-value>)', // text/icon-safe on light surfaces
+                },
                 navy: 'rgb(var(--brand-navy) / <alpha-value>)',       // Midnight Navy
                 action: 'rgb(var(--brand-action) / <alpha-value>)',   // Coral Red
                 success: '#16A34A',

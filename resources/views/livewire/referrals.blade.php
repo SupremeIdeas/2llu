@@ -22,7 +22,7 @@
             </button>
         </div>
         <div class="mt-3 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-            <x-icon name="gift" class="h-4 w-4 text-accent" /> Code: <span class="font-mono font-semibold text-slate-900 dark:text-slate-100">{{ $code }}</span>
+            <x-icon name="gift" class="h-4 w-4 text-accent-dark dark:text-accent" /> Code: <span class="font-mono font-semibold text-slate-900 dark:text-slate-100">{{ $code }}</span>
         </div>
     </div>
 

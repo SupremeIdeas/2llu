@@ -15,9 +15,9 @@
                     <figure class="flex flex-col rounded-3xl border border-slate-200/70 bg-white p-6 dark:border-white/10 dark:bg-slate-900/60">
                         @php $rating = (int) ($item['rating'] ?? 0); @endphp
                         @if ($rating > 0)
-                            <div class="mb-3 flex gap-0.5 text-accent">
+                            <div class="mb-3 flex gap-0.5 text-accent-dark dark:text-accent">
                                 @for ($i = 0; $i < 5; $i++)
-                                    <x-icon name="star" class="h-4 w-4 {{ $i < $rating ? 'text-accent' : 'text-slate-300 dark:text-white/15' }}" />
+                                    <x-icon name="star" class="h-4 w-4 {{ $i < $rating ? 'text-accent-dark dark:text-accent' : 'text-slate-300 dark:text-white/15' }}" />
                                 @endfor
                             </div>
                         @endif

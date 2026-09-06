@@ -20,7 +20,7 @@
                 </div>
             @endif
             <div class="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-20 text-center sm:pt-24">
-                <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $hero['eyebrow'] }}</p>
+                <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent-dark dark:text-accent">{{ $hero['eyebrow'] }}</p>
                 <h1 data-reveal class="mt-4 text-4xl font-bold text-slate-900 sm:text-5xl dark:text-white">{{ $hero['headline'] }}</h1>
                 <p data-reveal class="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">{{ $hero['subtext'] }}</p>
                 @if (! empty($hero['image']))
@@ -92,7 +92,7 @@
                     <img src="{{ $team['image'] }}" alt="{{ $team['founder_name'] }}" class="h-20 w-20 rounded-2xl object-cover">
                 @endif
                 <h3 class="mt-3 text-xl font-bold text-slate-900 dark:text-white">{{ $team['founder_name'] }}</h3>
-                <p class="text-sm font-medium text-accent">{{ $team['founder_title'] }}</p>
+                <p class="text-sm font-medium text-accent-dark dark:text-accent">{{ $team['founder_title'] }}</p>
                 <p class="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ $team['founder_bio'] }}</p>
                 <p class="mt-4 border-t border-slate-100 pt-4 text-xs leading-relaxed text-slate-400 dark:border-[#2D4060]">{{ $team['company'] }}</p>
             </div>

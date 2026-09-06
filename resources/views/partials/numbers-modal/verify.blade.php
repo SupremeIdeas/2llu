@@ -91,7 +91,7 @@
                 {{-- Auto / best --}}
                 <button type="button" wire:click="pickOperator('')"
                         class="flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition {{ $operator === '' ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-200 dark:border-white/10' }}">
-                    <span class="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100"><x-icon name="zap" class="h-4 w-4 text-accent" /> Auto — best network</span>
+                    <span class="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100"><x-icon name="zap" class="h-4 w-4 text-accent-dark dark:text-accent" /> Auto — best network</span>
                     <span class="text-xs text-slate-400">Recommended</span>
                 </button>
 
