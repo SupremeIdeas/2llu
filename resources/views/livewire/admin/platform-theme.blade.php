@@ -159,6 +159,58 @@
         </template>
     </div>
 
+    {{-- Card glassmorphism (owner request): how strong the .nx-glass-tile
+         surface looks wherever it's already applied (eSIM catalogue cards,
+         the desktop side menu, and similar wide containers) — NOT the More
+         menu (deliberately solid — see app-shell.blade.php), the Numbers
+         section, or the NaaraSim support widget, none of which use this
+         class. A plain server round-trip; two sliders don't need the
+         Alpine live-preview machinery above. --}}
+    <div class="mt-8 rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-base font-semibold text-slate-900 dark:text-white">Card glassmorphism</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">The translucent, blurred surface on wide card containers across the app. Tune to taste — the defaults are the shipped look.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" wire:click="resetGlass" wire:confirm="Reset card glassmorphism to the shipped default?"
+                        class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">Reset to default</button>
+                <button type="button" wire:click="saveGlass" wire:loading.attr="disabled" wire:target="saveGlass"
+                        class="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark">
+                    <span wire:loading.remove wire:target="saveGlass">Save</span>
+                    <span wire:loading wire:target="saveGlass">Saving…</span>
+                </button>
+            </div>
+        </div>
+        <div class="grid gap-6 sm:grid-cols-2">
+            <div>
+                <label class="mb-1 flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-300">
+                    <span>Opacity</span> <span x-text="$wire.glass_opacity + '%'"></span>
+                </label>
+                <input type="range" min="{{ \App\Support\GlassmorphismSettings::MIN_OPACITY }}" max="{{ \App\Support\GlassmorphismSettings::MAX_OPACITY }}"
+                       wire:model.live="glass_opacity" class="w-full accent-primary">
+                <p class="mt-1 text-[11px] text-slate-400">Lower = more see-through (more glass); higher = more solid.</p>
+            </div>
+            <div>
+                <label class="mb-1 flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-300">
+                    <span>Blur</span> <span x-text="$wire.glass_blur + 'px'"></span>
+                </label>
+                <input type="range" min="{{ \App\Support\GlassmorphismSettings::MIN_BLUR }}" max="{{ \App\Support\GlassmorphismSettings::MAX_BLUR }}"
+                       wire:model.live="glass_blur" class="w-full accent-primary">
+                <p class="mt-1 text-[11px] text-slate-400">How strongly the background behind the card is blurred.</p>
+            </div>
+        </div>
+        {{-- Live sample so the effect is judged against real page background,
+             not an isolated swatch. --}}
+        <div class="relative mt-5 overflow-hidden rounded-2xl bg-gradient-to-br from-teal-100 via-slate-100 to-amber-100 p-8 dark:from-[#16233d] dark:via-[#141f36] dark:to-[#111a2e]">
+            <div class="rounded-2xl border border-slate-200 nx-glass-tile p-4 dark:border-white/10"
+                 :style="`--nx-glass-opacity-light:${$wire.glass_opacity / 100};--nx-glass-opacity-dark:${Math.max({{ \App\Support\GlassmorphismSettings::MIN_OPACITY }}, $wire.glass_opacity - 7) / 100};--nx-glass-blur:${$wire.glass_blur}px;`">
+                <p class="text-sm font-semibold text-slate-900 dark:text-white">Sample card</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">This is how a .nx-glass-tile container looks with the current settings.</p>
+            </div>
+        </div>
+    </div>
+
     {{-- Alpine editor: owns all tuning state, drives the live preview from the
          SAME --dbg-* formula the real background uses, and hands the whole
          config to Livewire on save. --}}

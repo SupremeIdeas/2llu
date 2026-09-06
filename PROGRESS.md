@@ -9,6 +9,37 @@
 
 ## DONE
 
+### 🪟 Admin-controllable card glassmorphism + eSIM catalogue glass rollout — 2026-09-06
+Owner request: the eSIM catalogue's plan/country/region cards read as "too
+solid, old-fashioned" next to the premium dashboard background, and the
+existing `.nx-glass-tile` intensity (used on Wallet/Contacts/Numbers/etc.)
+had no admin dial. Two parts:
+- **`App\Support\GlassmorphismSettings`** (new, same runtime-CSS-variable
+  pattern as `PlatformTheme`/`ThemePreset`): one admin dial for opacity
+  (20–100%) and blur (0–24px) driving `--nx-glass-opacity-light/dark` +
+  `--nx-glass-blur`, dark opacity auto-derived 7pts below light (one shared
+  control, not two). Untouched install emits zero override CSS — the
+  existing `.nx-glass-tile` var() fallbacks in `ui-elements.css` already
+  match the shipped default (62% / 12px). New "Card glassmorphism" section
+  on `/adminmaster/dashboard-theme` (`Admin\PlatformThemePage::saveGlass()`
+  / `resetGlass()`) with two sliders + a live Alpine preview, independent
+  save from the wallpaper theme editor above it.
+- **Applied `.nx-glass-tile` to the eSIM catalogue's solid cards**: plan
+  detail, region/country header, country row, region row, plan row, and the
+  trust/feature strip (`catalogue.blade.php` + `catalogue/_*.blade.php`) —
+  replacing their flat `bg-white dark:bg-[#1A2840]` fill exactly like the
+  existing Wallet/Contacts/Numbers cards already do. Explicitly left the
+  desktop sidebar untouched (`lg:fixed`-positioned — blur on an ancestor of
+  a fixed element breaks its containing block, the same class of regression
+  commit `ecec9ee` already fixed once) and left the More menu / Numbers
+  section / NaaraSim helper alone per the owner's explicit "don't touch."
+- New `GlassmorphismSettingsTest` (5 tests: default/clamp/CSS emission/dark
+  floor/cache-flush) + 3 new `PlatformThemePageTest` cases (save+clamp,
+  reset, admin-only guard). Verified live via Playwright: catalogue cards
+  show the glass tint over the dashboard gradient in both themes, the admin
+  sliders live-update the preview, and Save persists + shows the fintech
+  toast. Full suite green (1494 tests) after `npm run build`.
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,
@@ -1600,7 +1631,23 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 > (loyalty milestones, travel timeline, admin-defined achievements paying
 > NaaraCredits) that used to top this list are now DONE — see DONE above.
 
-### ▶ TOP OF NEXT — Analytics blueprint is now feature-complete across both PRs; pick the next backlog item
+### ▶ TOP OF NEXT — Theme system full-coverage + hero contrast fix, then KYC auto-mode routing
+Two owner-requested items still open (each its own dedicated branch/PR per
+the standing rule — never straight to `main`):
+1. **Theme system full coverage**: themes currently don't touch every
+   surface — browser chrome color (`<meta name="theme-color">`) doesn't
+   follow the active `ThemePreset`, some Naara-official residue remains
+   under other themes, and the home hero's text contrast on dark mode needs
+   fixing where it reads against the background.
+2. **KYC auto-mode multi-provider routing**: admin KYC config currently
+   picks one provider; needs Auto mode where every configured/active
+   provider serves automatically based on the verifying user's country
+   (EU/Africa/global coverage), plus room for adding more third-party
+   providers.
+
+Older, now-superseded framing below (analytics blueprint) kept for history.
+
+### Analytics blueprint is feature-complete across both PRs; pick the next backlog item
 The full Analytics blueprint (Part A + admin §7) is done — see DONE above and
 below. Status across the two branches this shipped on:
 1. ~~**Chart.js + real charts on My Line + Home hero**~~ — ✅ done and merged

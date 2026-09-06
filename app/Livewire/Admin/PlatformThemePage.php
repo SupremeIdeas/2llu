@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Support\Auditor;
+use App\Support\GlassmorphismSettings;
 use App\Support\MediaStorage;
 use App\Support\PlatformTheme;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +35,13 @@ class PlatformThemePage extends Component
 
     public ?string $saved = null;
 
+    /** Card glassmorphism dial (owner request) — independent of the wallpaper
+     *  config above; a plain server round-trip, no Alpine live-preview needed
+     *  for two sliders. */
+    public int $glass_opacity = GlassmorphismSettings::DEFAULT_OPACITY;
+
+    public int $glass_blur = GlassmorphismSettings::DEFAULT_BLUR;
+
     /** Curated static/animated presets (a LIGHT tuning; dark is auto-derived). */
     public const PRESETS = [
         'signature' => ['label' => 'Signature', 'up_intensity' => 1.0, 'lo_intensity' => 1.0, 'up_feather' => 82, 'lo_feather' => 88, 'up_size' => 65, 'lo_size' => 70, 'extra_color' => 'primary', 'extra_alpha' => 0.0],
@@ -54,6 +62,37 @@ class PlatformThemePage extends Component
             // When dark equals the derived dark of light, keep them linked.
             'customize_dark' => $c['dark'] !== PlatformTheme::deriveDark($c['light']),
         ];
+
+        $glass = GlassmorphismSettings::current();
+        $this->glass_opacity = $glass['opacity'];
+        $this->glass_blur = $glass['blur'];
+    }
+
+    /** Save the card glassmorphism dial — independent of the wallpaper save()
+     *  above so tuning one never touches the other. */
+    public function saveGlass(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        $this->validate([
+            'glass_opacity' => 'required|integer|min:'.GlassmorphismSettings::MIN_OPACITY.'|max:'.GlassmorphismSettings::MAX_OPACITY,
+            'glass_blur' => 'required|integer|min:'.GlassmorphismSettings::MIN_BLUR.'|max:'.GlassmorphismSettings::MAX_BLUR,
+        ]);
+
+        GlassmorphismSettings::save($this->glass_opacity, $this->glass_blur);
+        Auditor::log('platform.glass_updated', payload: ['opacity' => $this->glass_opacity, 'blur' => $this->glass_blur]);
+        $this->dispatch('nx-toast', type: 'success', message: 'Card glassmorphism saved — live across the app.');
+    }
+
+    /** Snap the glass dial back to the shipped default. */
+    public function resetGlass(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        $this->glass_opacity = GlassmorphismSettings::DEFAULT_OPACITY;
+        $this->glass_blur = GlassmorphismSettings::DEFAULT_BLUR;
+        GlassmorphismSettings::save($this->glass_opacity, $this->glass_blur);
+        $this->dispatch('nx-toast', type: 'success', message: 'Card glassmorphism reset to default.');
     }
 
     /**

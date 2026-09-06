@@ -93,6 +93,12 @@
          BOTH the dashboard and the marketing site (which extends this layout). --}}
     @php($themeCss = \App\Support\ThemePreset::styleCss())
     @if ($themeCss)<style id="theme-preset-vars">{!! $themeCss !!}</style>@endif
+    {{-- Admin-tunable card glassmorphism intensity (owner request): controls
+         how strong .nx-glass-tile looks WHEREVER it's already applied. Empty
+         on an untouched install — the shipped CSS var() fallbacks already
+         match the default. --}}
+    @php($glassCss = \App\Support\GlassmorphismSettings::styleCss())
+    @if ($glassCss)<style id="glass-vars">{!! $glassCss !!}</style>@endif
     {{-- Site-wide font override (admin Branding page): swaps --font-display /
          --font-sans for a Google Font or an uploaded custom font. Emitted LAST
          so it wins over any theme-preset font variable — this is the single

@@ -862,12 +862,12 @@
    and anything like them) — those stay exactly as they are, no blur, no
    opacity change. This is a binary per-component flag, not a spectrum. */
 .nx-glass-tile {
-    background: rgb(255 255 255 / 0.62);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    backdrop-filter: blur(12px) saturate(140%);
+    background: rgb(255 255 255 / var(--nx-glass-opacity-light, 0.62));
+    -webkit-backdrop-filter: blur(var(--nx-glass-blur, 12px)) saturate(140%);
+    backdrop-filter: blur(var(--nx-glass-blur, 12px)) saturate(140%);
 }
 .dark .nx-glass-tile {
-    background: rgb(26 40 64 / 0.55);
+    background: rgb(26 40 64 / var(--nx-glass-opacity-dark, 0.55));
 }
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
     .nx-glass-tile { background: #ffffff; }
