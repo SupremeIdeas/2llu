@@ -92,7 +92,7 @@
     @if ($selected)
         <div class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="$wire.close()" role="dialog" aria-modal="true">
             <div class="absolute inset-0 bg-black/60" wire:click="close"></div>
-            <div class="relative w-full max-w-md overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl dark:border-[#2D4060] dark:bg-[#1A2840] sm:rounded-3xl">
+            <div class="relative w-full max-w-md overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)] sm:rounded-3xl">
                 <button type="button" wire:click="close" class="absolute right-3 top-3 z-10 rounded-full bg-black/30 p-1.5 text-white hover:bg-black/45"><x-icon name="x" class="h-4 w-4" /></button>
 
                 <div class="max-h-[80vh] overflow-y-auto p-6">
@@ -120,7 +120,7 @@
                     @if (($denominations['type'] ?? '') === 'RANGE')
                         <input type="number" wire:model="amount" min="{{ $denominations['min'] }}" max="{{ $denominations['max'] }}"
                                placeholder="{{ $denominations['min'] }} – {{ $denominations['max'] }} {{ $selected->currency }}"
-                               class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 text-sm dark:border-[#243352] dark:bg-[#152238] dark:text-slate-100">
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 text-sm dark:border-[#243352] dark:bg-[var(--brand-card-inner-dark)] dark:text-slate-100">
                         <p class="mt-1 text-xs text-slate-400">You pay retail; the exact charge is shown at checkout.</p>
                     @else
                         <div class="grid grid-cols-3 gap-2">
@@ -129,7 +129,7 @@
                                         @class([
                                             'rounded-2xl border p-3 text-center transition',
                                             'border-primary bg-primary/5 dark:bg-primary/10' => (float) $amount === $opt['face'],
-                                            'border-slate-100 bg-slate-50/70 hover:border-slate-200 dark:border-[#243352] dark:bg-[#152238] dark:hover:border-[#2D4060]' => (float) $amount !== $opt['face'],
+                                            'border-slate-100 bg-slate-50/70 hover:border-slate-200 dark:border-[#243352] dark:bg-[var(--brand-card-inner-dark)] dark:hover:border-[#2D4060]' => (float) $amount !== $opt['face'],
                                         ])>
                                     <span class="block text-sm font-bold text-slate-900 dark:text-white">{{ $selected->currency }} {{ number_format($opt['face'], 0) }}</span>
                                     <span class="block text-[11px] text-slate-400">pay ${{ number_format($opt['retail'], 2) }}</span>
@@ -146,14 +146,14 @@
                                 @php $k = $field['key'] ?? 'field'; @endphp
                                 <input type="{{ $field['type'] ?? 'text' }}" wire:model="fields.{{ $k }}"
                                        placeholder="{{ $field['label'] ?? ucfirst($k) }}"
-                                       class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 text-sm dark:border-[#243352] dark:bg-[#152238] dark:text-slate-100">
+                                       class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 text-sm dark:border-[#243352] dark:bg-[var(--brand-card-inner-dark)] dark:text-slate-100">
                             @endforeach
                         </div>
                     @endif
 
                     {{-- Redemption note --}}
                     @if ($selected->redeem_instruction)
-                        <details class="mt-4 rounded-2xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-[#152238] dark:text-slate-300">
+                        <details class="mt-4 rounded-2xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-[var(--brand-card-inner-dark)] dark:text-slate-300">
                             <summary class="cursor-pointer font-semibold">How to redeem</summary>
                             <p class="mt-1">{{ \Illuminate\Support\Str::limit(strip_tags($selected->redeem_instruction), 400) }}</p>
                         </details>
@@ -167,7 +167,7 @@
                             $selectedRetail = $selectedOpt['retail'] ?? null;
                         }
                     @endphp
-                    <div class="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5 dark:border-[#2D4060]">
+                    <div class="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5 dark:border-[var(--brand-card-border-dark)]">
                         <div>
                             <p class="text-xs uppercase tracking-wide text-slate-400">You pay</p>
                             <div class="text-2xl font-extrabold text-slate-900 dark:text-slate-100">

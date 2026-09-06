@@ -282,7 +282,7 @@
                        @class([
                            'flex rounded-2xl border transition',
                            'border-primary/30 bg-primary/10 dark:border-primary/40 dark:bg-primary/15' => $isActive($item['route']),
-                           'border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-[#2D4060] dark:bg-[#152238] dark:hover:bg-[#1B2A44]' => ! $isActive($item['route']),
+                           'border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-inner-dark)] dark:hover:bg-[#1B2A44]' => ! $isActive($item['route']),
                        ])>
                         {{-- Icon: brand teal in light mode; white on dark for contrast. --}}
                         <x-icon :name="$item['icon']" class="h-6 w-6 shrink-0 text-primary dark:text-white" />

@@ -14,17 +14,17 @@
     @endif
 
     {{-- Password ------------------------------------------------------- --}}
-    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
+    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[var(--brand-card-border-dark)]">
         <h2 class="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Change password</h2>
         <form wire:submit="updatePassword" class="space-y-3">
             <x-ui.password wire:model="current_password" placeholder="Current password" autocomplete="current-password"
-                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100" />
+                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100" />
             @error('current_password') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
             <div class="grid gap-3 sm:grid-cols-2">
                 <x-ui.password wire:model="password" placeholder="New password" autocomplete="new-password"
-                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100" />
+                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100" />
                 <x-ui.password wire:model="password_confirmation" placeholder="Confirm new password" autocomplete="new-password"
-                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100" />
+                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100" />
             </div>
             @error('password') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
             <button type="submit" wire:loading.attr="disabled" wire:target="updatePassword"
@@ -35,7 +35,7 @@
     </section>
 
     {{-- Two-factor ------------------------------------------------------ --}}
-    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
+    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[var(--brand-card-border-dark)]">
         <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Two-factor authentication</h2>
         <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">Add a one-time code from an authenticator app on top of your password.</p>
 
@@ -51,7 +51,7 @@
             @endif
             <div class="mt-4 flex flex-wrap gap-2">
                 <button wire:click="regenerateRecoveryCodes" wire:loading.attr="disabled" wire:target="regenerateRecoveryCodes"
-                        class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
+                        class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[var(--brand-card-border-dark)] dark:text-slate-200 dark:hover:bg-[#243352]">
                     <x-icon name="refresh" class="h-4 w-4" /> New recovery codes
                 </button>
                 <button wire:click="disable2fa" wire:confirm="Turn off two-factor authentication?" wire:loading.attr="disabled" wire:target="disable2fa"
@@ -67,7 +67,7 @@
                     <code class="mt-2 block break-all rounded-lg bg-slate-50 px-3 py-2 font-mono text-xs text-slate-700 dark:bg-[#243352] dark:text-slate-200">{{ $secret }}</code>
                     <form wire:submit="confirm2fa" class="mt-3 flex gap-2">
                         <input type="text" wire:model="code" inputmode="numeric" placeholder="123456"
-                               class="w-32 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                               class="w-32 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         <button type="submit" wire:loading.attr="disabled" wire:target="confirm2fa"
                                 class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">Confirm</button>
                     </form>
@@ -83,7 +83,7 @@
     </section>
 
     {{-- Email ---------------------------------------------------------- --}}
-    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
+    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[var(--brand-card-border-dark)]">
         <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Email address</h2>
         <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">
             @if ($user->email_verified_at)
@@ -95,10 +95,10 @@
         </p>
         <form wire:submit="updateEmail" class="space-y-3">
             <input type="email" wire:model="new_email" placeholder="you@example.com"
-                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
             @error('new_email') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
             <x-ui.password wire:model="email_password" placeholder="Your current password" autocomplete="current-password"
-                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100" />
+                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100" />
             @error('email_password') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
             <button type="submit" wire:loading.attr="disabled" wire:target="updateEmail"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
@@ -108,7 +108,7 @@
     </section>
 
     {{-- Connected accounts --------------------------------------------- --}}
-    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
+    <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[var(--brand-card-border-dark)]">
         <h2 class="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Connected accounts</h2>
         <div class="flex items-center justify-between gap-3">
             <span class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
@@ -117,10 +117,10 @@
             </span>
             @if ($googleLinked)
                 <button wire:click="unlinkGoogle" wire:confirm="Unlink your Google account? You can still sign in with your email and password."
-                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">Unlink</button>
+                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-300 dark:hover:bg-[#243352]">Unlink</button>
             @elseif (\App\Support\SocialLogin::googleEnabled())
                 <a href="{{ route('social.redirect', 'google') }}"
-                   class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-primary hover:bg-slate-50 dark:border-[#2D4060] dark:hover:bg-[#243352]">Link</a>
+                   class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-primary hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:hover:bg-[#243352]">Link</a>
             @else
                 <span class="text-xs text-slate-400">Not available</span>
             @endif
@@ -129,11 +129,11 @@
 
     {{-- Sessions ------------------------------------------------------- --}}
     @if ($sessions->isNotEmpty())
-        <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
+        <section class="rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[var(--brand-card-border-dark)]">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Active sessions</h2>
                 <button wire:click="signOutOtherSessions" wire:loading.attr="disabled" wire:target="signOutOtherSessions"
-                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60 dark:border-[var(--brand-card-border-dark)] dark:text-slate-300 dark:hover:bg-[#243352]">
                     Sign out other sessions
                 </button>
             </div>

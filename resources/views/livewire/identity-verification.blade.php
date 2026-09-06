@@ -32,11 +32,11 @@
             </div>
         @endif
 
-        <form wire:submit="submit" class="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <form wire:submit="submit" class="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Country</label>
-                    <select wire:model="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <select wire:model="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         <option value="NG">Nigeria</option>
                         <option value="GH">Ghana</option>
                         <option value="KE">Kenya</option>
@@ -46,7 +46,7 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">ID type</label>
-                    <select wire:model="idType" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <select wire:model="idType" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         <option value="BVN">BVN</option>
                         <option value="NIN">NIN</option>
                         <option value="PASSPORT">Passport</option>
@@ -58,7 +58,7 @@
             <div>
                 <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">ID number</label>
                 <input type="text" wire:model="idNumber" autocomplete="off"
-                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                 @error('idNumber') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
 

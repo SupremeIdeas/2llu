@@ -9,6 +9,41 @@
 
 ## DONE
 
+### 🎨 Site-wide theme card-container colour audit — 2026-09-06
+Owner request: "these themes card containers across all pages are not
+reflecting to the theme color... all card containers color must not use
+Naara official when any theme is selected too." Card fills/borders across
+the customer-facing app were hardcoded to Naara's own navy hex
+(`dark:bg-[#1A2840]`, `dark:border-[#2D4060]`, `dark:bg-[#152238]`) — 233 /
+193 / 11 occurrences respectively — so switching a Theme Preset recoloured
+buttons/gradients/icons but every card stayed frozen on the shipped navy.
+- **New derived tokens** (`resources/css/app.css`): `--brand-card-dark`,
+  `--brand-card-border-dark`, `--brand-card-inner-dark` — each a
+  `color-mix()` of the active theme's own `--brand-navy` toward white (8% /
+  18% / 4%), so every preset gets its own proportionally-elevated card tones
+  with zero per-theme authoring. Hex fallback for engines without
+  `color-mix` (same pattern as `.nx-hero-accent`). Light-mode cards
+  (`bg-white`) were already theme-neutral and untouched.
+- Replaced all three hardcoded patterns with `dark:bg-[var(--brand-card-dark)]`
+  / `dark:border-[var(--brand-card-border-dark)]` /
+  `dark:bg-[var(--brand-card-inner-dark)]` across 66 customer-facing view
+  files (livewire pages/partials, shared components, marketing, legal,
+  blog). Also fixed `.nx-glass-tile`'s dark rule (`ui-elements.css`), which
+  was tinting with a literal `rgb(26 40 64 / ...)` regardless of theme —
+  retroactively themes every one of the ~15 files already using that class
+  (Wallet, Contacts, Numbers, Security Center, etc.).
+- **Scoped out of this pass** (tracked, not silently dropped): admin
+  (`resources/views/livewire/admin/**`) carries 160 of the 393 total
+  occurrences across 48 files — left as Naara-official-only since it's the
+  operator's own internal tooling, not the customer-facing themed surface
+  the report was about, and warrants its own careful pass given the larger,
+  less-visually-tested surface.
+- Verified live via Playwright: default theme's dark-mode cards read as
+  visually unchanged; switching to Origin Bold (a dark warm-brown navy)
+  immediately recolours the wallet payout card, eSIM plan cards, and
+  feature strip to match — light mode untouched in both. Full suite green
+  (1486); no test asserted on the literal hex classes.
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,

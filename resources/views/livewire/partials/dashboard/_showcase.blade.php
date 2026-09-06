@@ -18,7 +18,7 @@
     <div class="mb-8 space-y-3">
         @foreach ($rows as [$bkey, $icon, $title, $badge, $text, $url])
             <a href="{{ $url }}" wire:navigate
-               class="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md dark:border-[#2D4060] dark:bg-[#1A2840]">
+               class="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                 <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/[0.12] to-teal-400/[0.10] text-primary dark:from-primary/25 dark:to-teal-400/15 dark:text-teal-300">
                     <x-icon name="{{ $icon }}" class="h-6 w-6" />
                 </span>

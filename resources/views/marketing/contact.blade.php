@@ -15,7 +15,7 @@
 
     <section class="mx-auto grid max-w-5xl gap-8 px-4 pb-24 lg:grid-cols-[1fr_320px]">
         @php($form = $sections['form'] ?? null)
-        <div data-reveal class="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-[#2D4060] dark:bg-[#16233d]">
+        <div data-reveal class="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-[var(--brand-card-border-dark)] dark:bg-[#16233d]">
             <h2 class="mb-5 text-xl font-bold text-slate-900 dark:text-white">{{ $form['headline'] ?? 'Send Us a Message' }}</h2>
             <livewire:contact-form />
         </div>

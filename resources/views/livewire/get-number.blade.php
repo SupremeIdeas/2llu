@@ -21,7 +21,7 @@
          in-progress number/OTP stays visible after the modal is closed. The
          order is auth-scoped in the component (IDOR-safe). --}}
     @if ($order && $modal === '')
-        <div class="mt-6 rounded-2xl border border-slate-200 nx-glass-tile p-5 shadow-sm dark:border-[#2D4060]"
+        <div class="mt-6 rounded-2xl border border-slate-200 nx-glass-tile p-5 shadow-sm dark:border-[var(--brand-card-border-dark)]"
              @if ($order->status === 'waiting') wire:poll.3s @endif>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="min-w-0">

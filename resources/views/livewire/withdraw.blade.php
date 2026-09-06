@@ -21,7 +21,7 @@
     <h2 class="mt-8 text-sm font-semibold text-slate-900 dark:text-slate-100">Your payout accounts</h2>
     <div class="mt-3 space-y-2">
         @forelse ($accounts as $acct)
-            <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3.5 dark:border-[#2D4060] dark:bg-[#1A2840]" wire:key="acct-{{ $acct->id }}">
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3.5 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]" wire:key="acct-{{ $acct->id }}">
                 <div>
                     <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {{ $acct->account_name }}
@@ -54,11 +54,11 @@
     </div>
 
     {{-- Add account --}}
-    <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
         <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Add a payout account</p>
 
         @if ($paypalAvailable || $stripeAvailable)
-            <div class="mt-3 inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-[#2D4060]">
+            <div class="mt-3 inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-[var(--brand-card-border-dark)]">
                 <button type="button" wire:click="$set('accountType', 'bank')"
                         @class(['rounded-md px-3 py-1.5 text-xs font-semibold transition', 'bg-primary text-white' => $accountType === 'bank', 'text-slate-500 dark:text-slate-400' => $accountType !== 'bank'])>
                     Bank account
@@ -87,7 +87,7 @@
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Country</label>
-                    <select wire:model.live="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <select wire:model.live="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         <option value="NG">Nigeria</option>
                         <option value="GH">Ghana</option>
                         <option value="KE">Kenya</option>
@@ -96,7 +96,7 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Bank</label>
-                    <select wire:model="bankCode" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <select wire:model="bankCode" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         <option value="">Select a bank</option>
                         @foreach ($banks as $bank)
                             <option value="{{ $bank['code'] }}">{{ $bank['name'] }}</option>
@@ -110,7 +110,7 @@
             </div>
             <div class="mt-3">
                 <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Account number</label>
-                <input type="text" wire:model="accountNumber" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                <input type="text" wire:model="accountNumber" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                 @error('accountNumber') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
             <button type="button" wire:click="addAccount" wire:loading.attr="disabled" wire:target="addAccount"
@@ -127,12 +127,12 @@
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">PayPal email</label>
-                    <input type="email" wire:model="paypalEmail" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <input type="email" wire:model="paypalEmail" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                     @error('paypalEmail') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Confirm PayPal email</label>
-                    <input type="email" wire:model="paypalEmailConfirm" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <input type="email" wire:model="paypalEmailConfirm" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                     @error('paypalEmailConfirm') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
             </div>
@@ -169,7 +169,7 @@
     </div>
 
     {{-- Withdraw --}}
-    <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
         <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Request a withdrawal</p>
 
         @if ($withdrawError)
@@ -179,7 +179,7 @@
         <div class="mt-4 grid gap-3 sm:grid-cols-2">
             <div>
                 <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">To account</label>
-                <select wire:model="accountId" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                <select wire:model="accountId" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                     <option value="">Select an account</option>
                     @foreach ($accounts as $acct)
                         <option value="{{ $acct->id }}">{{ $acct->account_name }} · {{ $acct->masked_number }}</option>
@@ -189,7 +189,7 @@
             </div>
             <div>
                 <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Amount (USD)</label>
-                <input type="number" step="0.01" min="0" wire:model="amountUsd" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                <input type="number" step="0.01" min="0" wire:model="amountUsd" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                 @error('amountUsd') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
         </div>

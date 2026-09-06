@@ -6,7 +6,7 @@
         <div class="mt-8 grid gap-3 sm:grid-cols-2">
             @foreach ($docs as $doc)
                 <a href="{{ route('legal.show', $doc['slug']) }}"
-                   class="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-primary/50 hover:shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+                   class="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-primary/50 hover:shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                     <span class="flex items-center gap-3">
                         <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300">
                             <x-icon name="file-text" class="h-5 w-5" />

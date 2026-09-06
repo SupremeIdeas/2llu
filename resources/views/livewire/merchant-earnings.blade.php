@@ -6,7 +6,7 @@
             </a>
             <h1 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">Earnings</h1>
         </div>
-        <div class="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
             @foreach ([30 => '30d', 90 => '90d', 365 => '1y'] as $days => $label)
                 <button wire:click="setPeriod({{ $days }})" class="rounded-full px-3.5 py-1.5 text-sm font-semibold transition {{ $period === $days ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-500 dark:text-slate-400' }}">{{ $label }}</button>
             @endforeach

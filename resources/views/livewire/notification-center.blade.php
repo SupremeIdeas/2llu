@@ -21,7 +21,7 @@
          never overflows off the left edge of a narrow header), right-anchored
          dropdown from sm up. --}}
     <div x-show="open" x-cloak @click.outside="open = false" x-transition
-         class="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] w-full overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-xl dark:border-[#2D4060] dark:bg-[#1B2A44]
+         class="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] w-full overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-xl dark:border-[var(--brand-card-border-dark)] dark:bg-[#1B2A44]
                 sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:mt-2 sm:w-80 sm:max-w-[92vw] sm:rounded-2xl">
         {{-- Grab handle (mobile only). --}}
         <div class="flex justify-center pt-2 sm:hidden"><span class="h-1 w-10 rounded-full bg-slate-300 dark:bg-white/20"></span></div>

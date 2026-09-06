@@ -80,7 +80,7 @@
                         <p class="text-xs text-slate-700 dark:text-slate-200">Looks like an <strong>iPhone</strong>. Most iPhones from XR/XS onward support eSIM — search your exact model below to confirm.</p>
                     </div>
                 @elseif ($detectedResult === 'unknown')
-                    <div class="mx-5 mt-3 flex items-start gap-2 rounded-xl border border-slate-300 bg-slate-50 p-3 dark:border-[#2D4060] dark:bg-[#152238]">
+                    <div class="mx-5 mt-3 flex items-start gap-2 rounded-xl border border-slate-300 bg-slate-50 p-3 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-inner-dark)]">
                         <x-icon name="help-circle" class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
                         <p class="text-xs text-slate-700 dark:text-slate-200">We detected <strong>{{ $detectedName }}</strong> but couldn’t confirm it. Use the <span class="font-mono">*#06#</span> check above, or search below.</p>
                     </div>
@@ -91,7 +91,7 @@
                     <div class="relative">
                         <x-icon name="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input type="text" wire:model.live.debounce.250ms="search" placeholder="Search your device…"
-                               class="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                               class="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                     </div>
                 </div>
 
@@ -108,7 +108,7 @@
                 {{-- Device accordions --}}
                 <div class="mt-3 flex-1 overflow-y-auto px-5 pb-5" x-data="{ openCat: null }" wire:key="cats-{{ $os }}">
                     @forelse ($grouped as $category => $devices)
-                        <div class="mt-2 overflow-hidden rounded-xl border border-slate-200 dark:border-[#2D4060]" x-data>
+                        <div class="mt-2 overflow-hidden rounded-xl border border-slate-200 dark:border-[var(--brand-card-border-dark)]" x-data>
                             <button type="button" @click="openCat = (openCat === '{{ $category }}' ? null : '{{ $category }}')"
                                     class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-slate-800 dark:text-slate-100">
                                 <span>{{ $categoryLabels[$category] ?? ucfirst($category) }} <span class="ml-1 text-xs font-normal text-slate-400">{{ $devices->count() }}</span></span>

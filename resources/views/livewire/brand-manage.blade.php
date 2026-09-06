@@ -1,5 +1,5 @@
 <div class="mx-auto max-w-2xl px-4 py-6">
-    @php($input = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100')
+    @php($input = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100')
     <div class="mb-5">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">My brand listing</h1>
         <p class="text-sm text-slate-500 dark:text-slate-300">{{ $brand->plan?->name ?? 'No plan' }} ·
@@ -51,7 +51,7 @@
             <textarea wire:model="profile.short_description" rows="2" placeholder="Short description" class="{{ $input }}"></textarea>
             <div class="flex items-center gap-3">
                 <label class="text-xs text-slate-500 dark:text-slate-400">Card colour</label>
-                <input type="color" wire:model="profile.background_color" class="h-9 w-14 rounded border border-slate-300 dark:border-[#2D4060]">
+                <input type="color" wire:model="profile.background_color" class="h-9 w-14 rounded border border-slate-300 dark:border-[var(--brand-card-border-dark)]">
                 <label class="text-xs text-slate-500 dark:text-slate-400">Hero image (1280×720)</label>
                 <input type="file" wire:model="heroImage" accept="image/*" class="text-xs">
             </div>
@@ -78,7 +78,7 @@
             <input wire:model="newHandle.handle_url" placeholder="Profile URL" class="{{ $input }} sm:col-span-2">
             <div class="sm:col-span-4">
                 @error('newHandle.handle_url')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-                <button wire:click="addHandle" class="mt-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200">Add handle</button>
+                <button wire:click="addHandle" class="mt-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-200">Add handle</button>
             </div>
         </div>
     </div>
@@ -98,7 +98,7 @@
             <div class="mt-3 grid gap-2 sm:grid-cols-4">
                 <select wire:model="newVideo.platform" class="{{ $input }}"><option value="youtube">YouTube</option><option value="vimeo">Vimeo</option></select>
                 <input wire:model="newVideo.video_url" placeholder="Video URL" class="{{ $input }} sm:col-span-2">
-                <button wire:click="addVideo" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200">Add video</button>
+                <button wire:click="addVideo" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-200">Add video</button>
             </div>
         </div>
     @endif
@@ -109,7 +109,7 @@
         <div class="flex flex-wrap gap-2">
             @foreach ($plans as $plan)
                 <button wire:click="changePlan({{ $plan->id }})"
-                        class="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition {{ $brand->current_plan_id === $plan->id ? 'border-primary bg-primary/10 text-primary dark:text-teal-300' : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300' }}">
+                        class="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition {{ $brand->current_plan_id === $plan->id ? 'border-primary bg-primary/10 text-primary dark:text-teal-300' : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-300' }}">
                     {{ $plan->name }} · ${{ number_format($plan->price_usd_per_month, 0) }}/mo
                 </button>
             @endforeach

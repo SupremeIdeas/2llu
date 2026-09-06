@@ -867,11 +867,17 @@
     backdrop-filter: blur(12px) saturate(140%);
 }
 .dark .nx-glass-tile {
-    background: rgb(26 40 64 / 0.55);
+    /* Tinted with --brand-card-dark (theme-coverage audit) rather than a
+       fixed navy, so this already-widely-applied class repaints with the
+       active Theme Preset instead of staying frozen on Naara's own tone. */
+    background: color-mix(in srgb, var(--brand-card-dark) 55%, transparent);
+}
+@supports not (color: color-mix(in srgb, red, blue)) {
+    .dark .nx-glass-tile { background: var(--brand-card-dark); }
 }
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
     .nx-glass-tile { background: #ffffff; }
-    .dark .nx-glass-tile { background: #1A2840; }
+    .dark .nx-glass-tile { background: var(--brand-card-dark); }
 }
 
 /* Pinned products crossfade (Module 27.5): panels only overlap when GSAP has
