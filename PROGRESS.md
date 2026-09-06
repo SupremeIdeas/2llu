@@ -9,6 +9,33 @@
 
 ## DONE
 
+### 🔎 Merchant V2 eSIM assign picker: search + country filter — 2026-09-06
+Owner report: assigning an eSIM to a client meant scanning a flat, unfiltered
+200-name `<select>` — no search, no country context, so finding "does any plan
+cover France" meant reading every name. Fixed by reusing the exact patterns
+already proven on the customer-facing catalogue:
+- `MerchantClients` gets `assignSearch` (live-debounced name search) and
+  `assignCountry` (real country list for the active line) — the plan query
+  is the same `whereJsonContains('countries', ...)` scope `Catalogue.php`
+  already uses for the customer country page, so results are exactly what's
+  actually assignable, not a guess.
+- The country dropdown is powered by `CountryPickerSources::options('esim',
+  ['has_voice' => ...])` — the same live, cached, real-data source behind the
+  app-wide `CountryPicker` modal — so it's never a stale/static list and
+  automatically differs between Naara Data and Naara Connect (different
+  footprints).
+- Switching the Naara Data / Naara Connect toggle clears the now-irrelevant
+  country filter and any stale plan selection (a France Data plan ID isn't a
+  valid Connect selection).
+- The single-line dropdown became a 5-row listbox so multiple matches are
+  visible at once — no need to open/scroll a closed dropdown to compare
+  options, directly answering "pop up fast for quicker assigning."
+- 6 new tests (name search, country filter, live country-list-per-line,
+  toggle-clears-stale-filter, empty-search-no-error, open-resets-filters).
+  Full suite green (1496 passed), Pint clean, Playwright-verified: filtering
+  a 4-plan list by "France" narrows it to exactly the 2 plans that actually
+  cover France.
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,

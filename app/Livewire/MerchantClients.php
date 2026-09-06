@@ -10,6 +10,8 @@ use App\Models\MerchantClientSubscription;
 use App\Services\Merchants\MerchantClientService;
 use App\Services\Merchants\MerchantException;
 use App\Services\Wallet\WalletService;
+use App\Support\CountryPickerSources;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -55,6 +57,12 @@ class MerchantClients extends Component
     public ?int $assignPlanId = null;
 
     public bool $assignForce = false;
+
+    // Assign-eSIM plan picker: search + country filter (owner request — the
+    // flat 200-row name dropdown made finding a specific country's plan slow).
+    public string $assignSearch = '';
+
+    public string $assignCountry = '';
 
     // Invoice buffer.
     public ?int $invoiceClientId = null;
@@ -172,9 +180,27 @@ class MerchantClients extends Component
 
     public function openAssign(int $clientId): void
     {
-        $this->reset('assignPlanId', 'assignForce', 'error');
+        $this->reset('assignPlanId', 'assignForce', 'error', 'assignSearch', 'assignCountry');
         $this->assignClientId = $clientId;
         $this->assignType = 'data';
+    }
+
+    /** Any filter change invalidates the currently-selected plan (it may no
+     *  longer be in the filtered list). */
+    public function updatedAssignSearch(): void
+    {
+        $this->assignPlanId = null;
+    }
+
+    public function updatedAssignCountry(): void
+    {
+        $this->assignPlanId = null;
+    }
+
+    public function updatedAssignType(): void
+    {
+        $this->assignPlanId = null;
+        $this->assignCountry = ''; // data/connect cover different countries
     }
 
     public function assign(MerchantClientService $service): void
@@ -302,6 +328,23 @@ class MerchantClients extends Component
         $this->invoiceLink = $client->whatsappLink($this->invoiceText);
     }
 
+    /**
+     * eSIM plans for the assign picker, scoped by line (data/connect) and the
+     * merchant's search/country filters — mirrors the customer-facing
+     * catalogue's country query (`whereJsonContains('countries', ...)`) so a
+     * merchant searching "France" sees every plan that actually reaches it,
+     * sorted fast, instead of scanning a flat 200-name dropdown.
+     *
+     * @return Collection<int, EsimPlan>
+     */
+    private function assignPlans(bool $hasVoice)
+    {
+        return EsimPlan::where('is_active', true)->where('has_voice', $hasVoice)
+            ->when($this->assignSearch !== '', fn ($q) => $q->where('name', 'like', '%'.$this->assignSearch.'%'))
+            ->when($this->assignCountry !== '', fn ($q) => $q->whereJsonContains('countries', $this->assignCountry))
+            ->orderBy('name')->limit(200)->get(['id', 'name']);
+    }
+
     public function render()
     {
         $merchant = $this->merchant();
@@ -334,8 +377,12 @@ class MerchantClients extends Component
             'deliverSub' => $deliverSub,
             'reserveSub' => $reserveSub,
             'maxReserveCycles' => MerchantClientSubscription::MAX_RESERVE_CYCLES,
-            'dataPlans' => EsimPlan::where('is_active', true)->where('has_voice', false)->orderBy('name')->limit(200)->get(['id', 'name']),
-            'connectPlans' => EsimPlan::where('is_active', true)->where('has_voice', true)->orderBy('name')->limit(200)->get(['id', 'name']),
+            'dataPlans' => $this->assignPlans(false),
+            'connectPlans' => $this->assignPlans(true),
+            // Real, live country list for the currently-active line (data vs
+            // connect cover different footprints) — same source the customer
+            // catalogue's country picker uses, so it's never a stale/static list.
+            'assignCountryOptions' => CountryPickerSources::options('esim', ['has_voice' => $this->assignType === 'connect']),
             'walletUsd' => round((float) ($merchant->owner->wallet?->usd_balance ?? 0), 2),
             'reservedUsd' => $wallet->reservedUsd($merchant->owner),
             'spendableUsd' => $wallet->spendableUsd($merchant->owner),
