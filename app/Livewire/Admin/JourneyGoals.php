@@ -5,9 +5,11 @@ namespace App\Livewire\Admin;
 use App\Models\JourneyGoal;
 use App\Services\Journey\JourneyGoalService;
 use App\Support\Auditor;
+use App\Support\MediaStorage;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 /**
  * Admin → Journey Goals (My Journey expansion). Define an achievement — a
@@ -19,6 +21,8 @@ use Livewire\Component;
 #[Layout('components.layouts.admin')]
 class JourneyGoals extends Component
 {
+    use WithFileUploads;
+
     public ?int $editingId = null;
 
     public string $title = '';
@@ -38,6 +42,13 @@ class JourneyGoals extends Component
     public $reward_credits = 10;
 
     public string $audience = JourneyGoal::AUDIENCE_ALL;
+
+    /** New upload for this goal's image (owner request — same pattern as
+     *  eSIM country/region images). Null while editing keeps the current one. */
+    public $image = null;
+
+    /** The current image URL, shown as a preview when editing a goal. */
+    public ?string $currentImagePath = null;
 
     public ?string $saved = null;
 
@@ -70,20 +81,26 @@ class JourneyGoals extends Component
             'ends_at' => 'nullable|required_if:period_type,campaign|date|after:starts_at',
             'reward_credits' => 'required|numeric|min:0.01|max:1000000',
             'audience' => 'required|in:all,merchant,merchant_v2',
+            'image' => 'nullable|mimes:webp,png,jpg,jpeg|max:2048',
         ]);
+
+        $data = $this->formData();
+        if ($this->image) {
+            $data['image_path'] = MediaStorage::storePublic($this->image, 'journey-goals');
+        }
 
         if ($this->editingId) {
             $goal = JourneyGoal::findOrFail($this->editingId);
-            $goal->update($this->formData());
+            $goal->update($data);
             Auditor::log('journey_goal.updated', JourneyGoal::class, $goal->id, ['title' => $goal->title]);
             $this->saved = "Goal \"{$goal->title}\" updated.";
         } else {
-            $goal = JourneyGoal::create([...$this->formData(), 'is_active' => true, 'created_by' => Auth::id()]);
+            $goal = JourneyGoal::create([...$data, 'is_active' => true, 'created_by' => Auth::id()]);
             Auditor::log('journey_goal.created', JourneyGoal::class, $goal->id, ['title' => $goal->title]);
             $this->saved = "Goal \"{$goal->title}\" created and live.";
         }
 
-        $this->reset('editingId', 'title', 'description', 'starts_at', 'ends_at');
+        $this->reset('editingId', 'title', 'description', 'starts_at', 'ends_at', 'image', 'currentImagePath');
         $this->metric = 'esim_purchases';
         $this->target = 1;
         $this->period_type = JourneyGoal::PERIOD_LIFETIME;
@@ -91,6 +108,18 @@ class JourneyGoals extends Component
         $this->audience = JourneyGoal::AUDIENCE_ALL;
         $this->dispatch('nx-toast', type: 'success', message: $this->saved);
         $this->dispatch('close-goal-sheet');
+    }
+
+    /** Clear the goal's image (while editing) — falls back to the icon badge. */
+    public function removeImage(): void
+    {
+        abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
+
+        if ($this->editingId) {
+            JourneyGoal::findOrFail($this->editingId)->update(['image_path' => null]);
+        }
+        $this->image = null;
+        $this->currentImagePath = null;
     }
 
     public function edit(int $id): void
@@ -106,11 +135,13 @@ class JourneyGoals extends Component
         $this->ends_at = $goal->ends_at?->toDateString();
         $this->reward_credits = (float) $goal->reward_credits;
         $this->audience = $goal->audience;
+        $this->currentImagePath = $goal->image_path;
+        $this->image = null;
     }
 
     public function newGoal(): void
     {
-        $this->reset('editingId', 'title', 'description', 'starts_at', 'ends_at');
+        $this->reset('editingId', 'title', 'description', 'starts_at', 'ends_at', 'image', 'currentImagePath');
         $this->metric = 'esim_purchases';
         $this->target = 1;
         $this->period_type = JourneyGoal::PERIOD_LIFETIME;

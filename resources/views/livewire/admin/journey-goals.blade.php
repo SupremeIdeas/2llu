@@ -27,6 +27,30 @@
                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
                 @error('description') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
             </div>
+            <div class="sm:col-span-2">
+                <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Goal image (optional)</label>
+                <div class="flex items-center gap-3">
+                    <div class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-[#2D4060] dark:bg-[#243352]">
+                        @if ($image)
+                            <img src="{{ $image->temporaryUrl() }}" class="h-full w-full object-cover">
+                        @elseif ($currentImagePath)
+                            <img src="{{ $currentImagePath }}" class="h-full w-full object-cover">
+                        @else
+                            <x-icon name="star" class="h-6 w-6 text-slate-300" />
+                        @endif
+                    </div>
+                    <div class="flex-1">
+                        <input type="file" wire:model="image" accept="image/webp,image/png,image/jpeg"
+                               class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary dark:text-slate-400">
+                        <p class="mt-1 text-[11px] text-slate-400">WebP, PNG or JPG, up to 2&nbsp;MB. Replaces the star icon badge on My Journey when set.</p>
+                        @error('image') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+                    </div>
+                    @if ($currentImagePath)
+                        <button type="button" wire:click="removeImage" wire:confirm="Remove this goal's image and fall back to the icon badge?"
+                                class="shrink-0 text-xs font-medium text-red-600 hover:underline">Remove</button>
+                    @endif
+                </div>
+            </div>
             <div>
                 <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Metric</label>
                 <select wire:model="metric" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">

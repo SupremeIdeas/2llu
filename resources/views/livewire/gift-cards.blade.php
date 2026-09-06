@@ -85,37 +85,52 @@
         <div class="mt-5">{{ $products->links() }}</div>
     @endif
 
-    {{-- Brand detail sheet --}}
+    {{-- Brand detail sheet — modernized to match the eSIM plan-detail card
+         treatment (owner request): bordered rounded-3xl panel, a compact logo
+         thumbnail beside the name instead of a full banner, a category pill,
+         fact-tile denomination buttons, and a bordered price+CTA bar. --}}
     @if ($selected)
         <div class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" @keydown.escape.window="$wire.close()" role="dialog" aria-modal="true">
             <div class="absolute inset-0 bg-black/60" wire:click="close"></div>
-            <div class="relative w-full max-w-md overflow-hidden rounded-t-3xl bg-white shadow-2xl dark:bg-[#0D1B2A] sm:rounded-3xl">
-                {{-- Brand banner --}}
-                <div class="relative flex h-36 items-center justify-center" style="background: linear-gradient(135deg, {{ $tint($selected) }}, #0D1B2A);">
-                    <button type="button" wire:click="close" class="absolute right-3 top-3 rounded-full bg-black/30 p-1.5 text-white"><x-icon name="x" class="h-4 w-4" /></button>
-                    @if ($selected->logo_url)
-                        <img src="{{ $selected->logo_url }}" alt="" class="max-h-16 max-w-[60%] object-contain drop-shadow">
-                    @else
-                        <span class="text-2xl font-bold text-white">{{ $selected->brand_name }}</span>
-                    @endif
-                </div>
+            <div class="relative w-full max-w-md overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl dark:border-[#2D4060] dark:bg-[#1A2840] sm:rounded-3xl">
+                <button type="button" wire:click="close" class="absolute right-3 top-3 z-10 rounded-full bg-black/30 p-1.5 text-white hover:bg-black/45"><x-icon name="x" class="h-4 w-4" /></button>
 
-                <div class="max-h-[70vh] overflow-y-auto p-5">
-                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">{{ $selected->brand_name }}</h2>
-                    <p class="text-xs text-slate-400">{{ $selected->country }} · {{ $selected->currency }}</p>
+                <div class="max-h-[80vh] overflow-y-auto p-6">
+                    {{-- Logo thumbnail beside the name — never a full-bleed banner. --}}
+                    <div class="flex items-start gap-4">
+                        <span class="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-24 sm:w-24"
+                              style="background: linear-gradient(135deg, {{ $tint($selected) }}22, {{ $tint($selected) }}55);">
+                            @if ($selected->logo_url)
+                                <img src="{{ $selected->logo_url }}" alt="{{ $selected->brand_name }}" class="h-full w-full object-contain p-3">
+                            @else
+                                <span class="text-2xl font-bold text-slate-700 dark:text-white">{{ \Illuminate\Support\Str::substr($selected->brand_name, 0, 1) }}</span>
+                            @endif
+                        </span>
+                        <div class="min-w-0 pt-1">
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary-dark dark:bg-primary/20 dark:text-primary">
+                                <x-icon name="gift" class="h-3.5 w-3.5" /> {{ $selected->category ?: 'Gift Card' }}
+                            </span>
+                            <h2 class="mt-2 text-lg font-bold text-slate-900 dark:text-white">{{ $selected->brand_name }}</h2>
+                            <p class="text-xs text-slate-400">{{ $selected->country }} · {{ $selected->currency }}</p>
+                        </div>
+                    </div>
 
-                    {{-- Denomination selector --}}
-                    <p class="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Choose an amount</p>
+                    {{-- Denomination selector, as fact tiles matching the eSIM spec grid. --}}
+                    <p class="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Choose an amount</p>
                     @if (($denominations['type'] ?? '') === 'RANGE')
                         <input type="number" wire:model="amount" min="{{ $denominations['min'] }}" max="{{ $denominations['max'] }}"
                                placeholder="{{ $denominations['min'] }} – {{ $denominations['max'] }} {{ $selected->currency }}"
-                               class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
+                               class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 text-sm dark:border-[#243352] dark:bg-[#152238] dark:text-slate-100">
                         <p class="mt-1 text-xs text-slate-400">You pay retail; the exact charge is shown at checkout.</p>
                     @else
                         <div class="grid grid-cols-3 gap-2">
                             @foreach (($denominations['options'] ?? []) as $opt)
                                 <button type="button" wire:click="$set('amount', {{ $opt['face'] }})"
-                                        @class(['rounded-xl border p-3 text-center transition', 'border-primary bg-primary/5 dark:bg-primary/10' => (float) $amount === $opt['face'], 'border-slate-200 hover:border-slate-300 dark:border-white/10' => (float) $amount !== $opt['face']])>
+                                        @class([
+                                            'rounded-2xl border p-3 text-center transition',
+                                            'border-primary bg-primary/5 dark:bg-primary/10' => (float) $amount === $opt['face'],
+                                            'border-slate-100 bg-slate-50/70 hover:border-slate-200 dark:border-[#243352] dark:bg-[#152238] dark:hover:border-[#2D4060]' => (float) $amount !== $opt['face'],
+                                        ])>
                                     <span class="block text-sm font-bold text-slate-900 dark:text-white">{{ $selected->currency }} {{ number_format($opt['face'], 0) }}</span>
                                     <span class="block text-[11px] text-slate-400">pay ${{ number_format($opt['retail'], 2) }}</span>
                                 </button>
@@ -131,25 +146,43 @@
                                 @php $k = $field['key'] ?? 'field'; @endphp
                                 <input type="{{ $field['type'] ?? 'text' }}" wire:model="fields.{{ $k }}"
                                        placeholder="{{ $field['label'] ?? ucfirst($k) }}"
-                                       class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
+                                       class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 text-sm dark:border-[#243352] dark:bg-[#152238] dark:text-slate-100">
                             @endforeach
                         </div>
                     @endif
 
                     {{-- Redemption note --}}
                     @if ($selected->redeem_instruction)
-                        <details class="mt-4 rounded-xl bg-slate-50 p-3 text-xs text-slate-500 dark:bg-white/5 dark:text-slate-400">
+                        <details class="mt-4 rounded-2xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-[#152238] dark:text-slate-300">
                             <summary class="cursor-pointer font-semibold">How to redeem</summary>
                             <p class="mt-1">{{ \Illuminate\Support\Str::limit(strip_tags($selected->redeem_instruction), 400) }}</p>
                         </details>
                     @endif
 
-                    {{-- Checkout — the money path --}}
-                    <button type="button" wire:click="buy" wire:loading.attr="disabled" wire:target="buy" @disabled(! $amount)
-                            class="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-50">
-                        <span wire:loading.remove wire:target="buy"><x-icon name="gift" class="mr-1 inline h-4 w-4" /> Buy gift card</span>
-                        <span wire:loading wire:target="buy" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Processing…</span>
-                    </button>
+                    {{-- Sticky-feel price + CTA bar, matching the eSIM detail screen. --}}
+                    @php
+                        $selectedRetail = null;
+                        if (($denominations['type'] ?? '') !== 'RANGE' && $amount) {
+                            $selectedOpt = collect($denominations['options'] ?? [])->firstWhere('face', (float) $amount);
+                            $selectedRetail = $selectedOpt['retail'] ?? null;
+                        }
+                    @endphp
+                    <div class="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5 dark:border-[#2D4060]">
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-slate-400">You pay</p>
+                            <div class="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
+                                {{ $selectedRetail !== null ? '$'.number_format((float) $selectedRetail, 2) : '—' }}
+                            </div>
+                            @if (($denominations['type'] ?? '') === 'RANGE' && $amount)
+                                <p class="text-xs text-slate-400">Exact charge shown at checkout</p>
+                            @endif
+                        </div>
+                        <button type="button" wire:click="buy" wire:loading.attr="disabled" wire:target="buy" @disabled(! $amount)
+                                class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-br from-primary via-primary-dark to-navy px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:shadow-xl disabled:pointer-events-none disabled:opacity-50 sm:flex-none">
+                            <span wire:loading.remove wire:target="buy" class="inline-flex items-center gap-1.5"><x-icon name="gift" class="h-4 w-4" /> Buy gift card</span>
+                            <span wire:loading wire:target="buy" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Processing…</span>
+                        </button>
+                    </div>
                     <p class="mt-2 text-center text-[11px] text-slate-400">Gift cards are final — no refunds once delivered.</p>
                 </div>
             </div>
