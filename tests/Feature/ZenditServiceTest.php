@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\EsimProviderException;
 use App\Services\eSIM\ZenditService;
+use App\Support\Niche\LpaActivation;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -59,7 +61,7 @@ class ZenditServiceTest extends TestCase
         // Confirmation is flattened to the top level for checkout/LpaActivation.
         $this->assertSame('8944000000000000001', $out['iccid']);
         $this->assertSame('LPA:1$smdp.zendit.io$MATCH-123', $out['activationCode']);
-        $this->assertSame(\App\Support\Niche\LpaActivation::fromPayload($out), $out['activationCode']);
+        $this->assertSame(LpaActivation::fromPayload($out), $out['activationCode']);
 
         Http::assertSent(function ($r) {
             return $r->url() === 'https://test-api.zendit.io/v1/esim/purchases'
@@ -78,5 +80,14 @@ class ZenditServiceTest extends TestCase
         ]);
 
         $this->assertSame(123.45, app(ZenditService::class)->getBalance());
+    }
+
+    public function test_a_failed_http_call_throws_a_typed_provider_exception(): void
+    {
+        Http::fake(['test-api.zendit.io/v1/balance' => Http::response(['message' => 'server error'], 500)]);
+
+        $this->expectException(EsimProviderException::class);
+
+        app(ZenditService::class)->getBalance();
     }
 }

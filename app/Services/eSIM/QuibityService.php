@@ -2,6 +2,7 @@
 
 namespace App\Services\eSIM;
 
+use App\Exceptions\EsimProviderException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -27,7 +28,7 @@ class QuibityService implements EsimProviderInterface
 
     public function getCatalogue(): array
     {
-        return $this->client()->get('/plans')->throw()->json() ?? [];
+        return $this->client()->get('/plans')->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
@@ -36,24 +37,24 @@ class QuibityService implements EsimProviderInterface
             'plan_id' => $planId,
             'quantity' => $qty,
             'customer_ref' => (string) Str::uuid(),
-        ])->throw()->json() ?? [];
+        ])->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getEsim(string $iccid): array
     {
-        return $this->client()->get("/esims/{$iccid}")->throw()->json() ?? [];
+        return $this->client()->get("/esims/{$iccid}")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getUsage(string $iccid, string $bundleName): array
     {
-        return $this->client()->get("/esims/{$iccid}")->throw()->json() ?? [];
+        return $this->client()->get("/esims/{$iccid}")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function revoke(string $iccid, string $bundleName): array
     {
         return $this->client()->post("/esims/{$iccid}/cancel", [
             'reason' => 'refund',
-        ])->throw()->json() ?? [];
+        ])->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getBalance(): float

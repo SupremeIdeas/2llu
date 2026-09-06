@@ -9,6 +9,40 @@
 
 ## DONE
 
+### 🔧 Follow-up on the payment/provider audit's 4 flagged items — 2026-09-06
+Owner decided each of the 4 items left open from the payment-gateway/provider
+audit (PRs #22/#23):
+- **Synchronous checkout — kept as-is (owner decision).** Converting
+  eSIM/Number purchase to a queued-job + polling flow would change the
+  customer's "Buy" click from an instant result to a processing state — a
+  real UX/architecture change to the core money path. Owner chose to leave it
+  synchronous rather than build that out; documented here as the settled,
+  intentional answer to the earlier "deviates from money rule #8" finding —
+  not an oversight.
+- **`wallet_transactions.reference` — DB-level unique constraint ADDED**, but
+  scoped to **`(user_id, reference)` compound, never `reference` alone**.
+  Audited every `WalletTransaction`-creating call site (~40, via
+  `WalletService::apply()` plus the one direct-create bypass in
+  `MigrateNgnToUsdCommand`): `WalletService::apply()`'s own idempotency check
+  is already scoped per-user, and several call sites (batch billing runs)
+  intentionally reuse a period-based reference ACROSS users — a global unique
+  constraint would have broken those. A compound key backs exactly what the
+  app already assumes, verified with 0 existing duplicate (user_id,
+  reference) pairs, and the migration itself refuses to run (loud error, not
+  silent skip) if it ever finds one. New migration
+  `2026_09_06_161643_add_unique_user_reference_index...`, 3 new tests.
+- **Typed exceptions for the 7 eSIM providers using bare `->throw()`**
+  (EsimGo, Airalo, Quibity, Zendit, 1GLOBAL, Monty Mobile, Gigs) — every HTTP
+  failure now throws `EsimProviderException` (via Laravel's `throw($callback)`
+  hook) instead of a raw `RequestException`, matching the two providers
+  (EsimAccess, Ubigi) that already did this. `ProviderRouter`'s existing
+  `catch (Throwable)` is unaffected — this is a pure type-narrowing, not a
+  behavior change. 2 new tests confirm the typed exception on an HTTP failure.
+- **CLAUDE.md's stale "SMS-Activate → global backup"** updated to reflect
+  what the code actually runs: HeroSMS (primary) / VirtSMS (fallback), same
+  legacy protocol, since SMS-Activate itself shut down.
+Full suite green (1485 passed).
+
 ### 🎁 Naara Gift storefront hero (same system as the dashboard home hero) — 2026-09-04
 Owner request: give the Naara Gift storefront the same hero visual treatment
 as the customer dashboard home, so it can be re-themed independently later.

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Services\Pricing\CurrencyService;
 use App\Services\Wallet\WalletService;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use RuntimeException;
@@ -202,5 +203,65 @@ class WalletServiceTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->wallet->creditTopUp($this->user(), 50, 'XYZ');
+    }
+
+    // ---- Production-readiness audit: DB-level (user_id, reference) unique
+    // constraint backing the double-credit/replay guard ---------------------
+
+    public function test_the_same_reference_for_two_different_users_is_allowed(): void
+    {
+        // The constraint is scoped per user, not global — a batch job that
+        // reuses one reference string across many users (e.g. a period-based
+        // billing reference) must never collide between different users.
+        $a = $this->user();
+        $b = $this->user();
+
+        $txnA = $this->wallet->credit($a, 10, 'USD', ['reference' => 'shared-batch-ref']);
+        $txnB = $this->wallet->credit($b, 10, 'USD', ['reference' => 'shared-batch-ref']);
+
+        $this->assertNotSame($txnA->id, $txnB->id);
+        $this->assertSame('shared-batch-ref', $txnA->reference);
+        $this->assertSame('shared-batch-ref', $txnB->reference);
+    }
+
+    /** @return array<string, mixed> */
+    private function txnRow(int $userId, ?string $reference): array
+    {
+        return [
+            'user_id' => $userId,
+            'type' => 'credit',
+            'amount' => 5,
+            'currency' => 'USD',
+            'balance_before' => 0,
+            'balance_after' => 5,
+            'reference' => $reference,
+            'status' => 'completed',
+        ];
+    }
+
+    public function test_a_duplicate_reference_for_the_same_user_is_rejected_at_the_db_level(): void
+    {
+        // WalletService::apply() already short-circuits on a matching
+        // (user_id, reference) before ever reaching a second insert, so this
+        // exercises the DB constraint directly as the last-resort backstop.
+        $user = $this->user();
+        WalletTransaction::create($this->txnRow($user->id, 'dup-ref'));
+
+        $this->expectException(QueryException::class);
+
+        WalletTransaction::create($this->txnRow($user->id, 'dup-ref'));
+    }
+
+    public function test_multiple_null_references_for_the_same_user_are_allowed(): void
+    {
+        // A unique index treats each NULL as distinct — confirms that holds
+        // here too, so any legitimate null-reference row is never blocked.
+        $user = $this->user();
+
+        WalletTransaction::create($this->txnRow($user->id, null));
+        $second = WalletTransaction::create($this->txnRow($user->id, null));
+
+        $this->assertNull($second->reference);
+        $this->assertSame(2, WalletTransaction::where('user_id', $user->id)->count());
     }
 }
