@@ -2,11 +2,11 @@
 
 namespace App\Services\eSIM;
 
+use App\Exceptions\EsimProviderException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use RuntimeException;
 
 /**
  * 1GLOBAL (Connect API) — a Full-eSIM provider for the Naara Connect line
@@ -40,11 +40,11 @@ class OneGlobalService implements EsimProviderInterface
                     'grant_type' => 'client_credentials',
                     'client_id' => config('services.oneglobal.client_id'),
                     'client_secret' => config('services.oneglobal.client_secret'),
-                ])->throw()->json();
+                ])->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json();
 
             $token = $response['access_token'] ?? null;
             if (! $token) {
-                throw new RuntimeException('1GLOBAL token request returned no access_token.');
+                throw new EsimProviderException('1GLOBAL token request returned no access_token.');
             }
 
             return $token;
@@ -63,7 +63,7 @@ class OneGlobalService implements EsimProviderInterface
 
     public function getCatalogue(): array
     {
-        return $this->client()->get('/plans', ['limit' => 500])->throw()->json() ?? [];
+        return $this->client()->get('/plans', ['limit' => 500])->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
@@ -74,27 +74,27 @@ class OneGlobalService implements EsimProviderInterface
             'quantity' => $qty,
             'iccid' => $iccid,
             'reference' => 'naara-'.Str::uuid()->toString(),
-        ]))->throw()->json() ?? [];
+        ]))->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getEsim(string $iccid): array
     {
-        return $this->client()->get("/esims/{$iccid}")->throw()->json() ?? [];
+        return $this->client()->get("/esims/{$iccid}")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getUsage(string $iccid, string $bundleName): array
     {
-        return $this->client()->get("/esims/{$iccid}/usage")->throw()->json() ?? [];
+        return $this->client()->get("/esims/{$iccid}/usage")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function revoke(string $iccid, string $bundleName): array
     {
-        return $this->client()->delete("/esims/{$iccid}")->throw()->json() ?? [];
+        return $this->client()->delete("/esims/{$iccid}")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getBalance(): float
     {
-        $b = $this->client()->get('/account/balance')->throw()->json() ?? [];
+        $b = $this->client()->get('/account/balance')->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
 
         return (float) ($b['balance'] ?? $b['available'] ?? 0);
     }

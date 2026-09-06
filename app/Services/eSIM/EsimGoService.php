@@ -2,6 +2,7 @@
 
 namespace App\Services\eSIM;
 
+use App\Exceptions\EsimProviderException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 
@@ -27,7 +28,7 @@ class EsimGoService implements EsimProviderInterface
 
     public function getCatalogue(): array
     {
-        return $this->client()->get('/catalogue')->throw()->json() ?? [];
+        return $this->client()->get('/catalogue')->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
@@ -38,27 +39,27 @@ class EsimGoService implements EsimProviderInterface
             'quantity' => $qty,
             'assign' => ! is_null($iccid),
             'iccids' => $iccid ? [$iccid] : [],
-        ])->throw()->json() ?? [];
+        ])->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getEsim(string $iccid): array
     {
-        return $this->client()->get("/esims/{$iccid}")->throw()->json() ?? [];
+        return $this->client()->get("/esims/{$iccid}")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getUsage(string $iccid, string $bundleName): array
     {
-        return $this->client()->get("/esims/{$iccid}/bundles/{$bundleName}")->throw()->json() ?? [];
+        return $this->client()->get("/esims/{$iccid}/bundles/{$bundleName}")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function revoke(string $iccid, string $bundleName): array
     {
-        return $this->client()->delete("/esims/{$iccid}/bundles/{$bundleName}")->throw()->json() ?? [];
+        return $this->client()->delete("/esims/{$iccid}/bundles/{$bundleName}")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getBalance(): float
     {
-        $org = $this->client()->get('/organisation')->throw()->json() ?? [];
+        $org = $this->client()->get('/organisation')->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
 
         return (float) ($org['balance'] ?? 0);
     }

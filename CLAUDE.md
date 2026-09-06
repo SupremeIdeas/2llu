@@ -49,7 +49,7 @@ Brand: Deep Teal `#0A6E6E`, Warm Gold `#D4A017`, Midnight Navy `#0D1B2A`.
 **Numbers (NOT interchangeable -> capability routing by country + type, never blind failover):**
 - Getatext -> US (SMS/OTP + long rental)
 - 5sim -> GLOBAL, 180+ countries incl. Nigeria/Ghana/Kenya/South Africa (activation + hosting; rating discipline required)
-- SMS-Activate -> global backup · Telnyx -> permanent/voice backup
+- HeroSMS (primary) / VirtSMS (fallback) -> global backup, same legacy handler_api.php protocol (SMS-Activate shut down 2025-12-29 and was replaced by these two) · Telnyx -> permanent/voice backup
 - Twilio -> permanent numbers + voice (PRIMARY for calls)
 - **Lane rule:** match country+type to the owning provider; fall back only WITHIN the same lane. Never cross lanes.
 

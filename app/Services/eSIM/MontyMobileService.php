@@ -2,6 +2,7 @@
 
 namespace App\Services\eSIM;
 
+use App\Exceptions\EsimProviderException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -31,7 +32,7 @@ class MontyMobileService implements EsimProviderInterface
 
     public function getCatalogue(): array
     {
-        return $this->client()->get('/rsp/v1/plans', ['pageSize' => 500])->throw()->json() ?? [];
+        return $this->client()->get('/rsp/v1/plans', ['pageSize' => 500])->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
@@ -41,27 +42,27 @@ class MontyMobileService implements EsimProviderInterface
             'quantity' => $qty,
             'iccid' => $iccid,
             'externalRef' => 'naara-'.Str::uuid()->toString(),
-        ]))->throw()->json() ?? [];
+        ]))->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getEsim(string $iccid): array
     {
-        return $this->client()->get("/rsp/v1/esims/{$iccid}")->throw()->json() ?? [];
+        return $this->client()->get("/rsp/v1/esims/{$iccid}")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getUsage(string $iccid, string $bundleName): array
     {
-        return $this->client()->get("/rsp/v1/esims/{$iccid}/usage")->throw()->json() ?? [];
+        return $this->client()->get("/rsp/v1/esims/{$iccid}/usage")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function revoke(string $iccid, string $bundleName): array
     {
-        return $this->client()->delete("/rsp/v1/esims/{$iccid}")->throw()->json() ?? [];
+        return $this->client()->delete("/rsp/v1/esims/{$iccid}")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getBalance(): float
     {
-        $b = $this->client()->get('/rsp/v1/account/balance')->throw()->json() ?? [];
+        $b = $this->client()->get('/rsp/v1/account/balance')->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
 
         return (float) ($b['balance'] ?? $b['availableBalance'] ?? 0);
     }

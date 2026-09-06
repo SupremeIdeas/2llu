@@ -2,6 +2,7 @@
 
 namespace App\Services\eSIM;
 
+use App\Exceptions\EsimProviderException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -44,7 +45,7 @@ class ZenditService implements EsimProviderInterface
             $page = $this->client()->get('/esim/offers', [
                 '_limit' => self::PAGE_SIZE,
                 '_offset' => $offset,
-            ])->throw()->json() ?? [];
+            ])->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
 
             $rows = $page['list'] ?? [];
             $all = array_merge($all, $rows);
@@ -71,14 +72,14 @@ class ZenditService implements EsimProviderInterface
             'transactionId' => $transactionId,
             'offerId' => $planId,
             'iccid' => $iccid,
-        ]))->throw();
+        ]))->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e));
 
         // Read the purchase back for the activation confirmation. Flatten the
         // nested `confirmation` block to the top level so LpaActivation and the
         // checkout's data_get() lookups (iccid / activationCode / smdpAddress /
         // qrCodeUrl) find it regardless of nesting.
         $purchase = $this->client()->get("/esim/purchases/{$transactionId}")
-            ->throw()->json() ?? [];
+            ->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
 
         $confirmation = $purchase['confirmation'] ?? [];
 
@@ -91,13 +92,13 @@ class ZenditService implements EsimProviderInterface
 
     public function getEsim(string $iccid): array
     {
-        return $this->client()->get("/esim/{$iccid}/plans")->throw()->json() ?? [];
+        return $this->client()->get("/esim/{$iccid}/plans")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getUsage(string $iccid, string $bundleName): array
     {
         // Zendit exposes remaining plans/usage per ICCID (no per-bundle path).
-        return $this->client()->get("/esim/{$iccid}/plans")->throw()->json() ?? [];
+        return $this->client()->get("/esim/{$iccid}/plans")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     /**
@@ -108,12 +109,12 @@ class ZenditService implements EsimProviderInterface
     public function revoke(string $iccid, string $bundleName): array
     {
         return $this->client()->post("/esim/purchases/{$iccid}/refund")
-            ->throw()->json() ?? [];
+            ->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getBalance(): float
     {
-        $b = $this->client()->get('/balance')->throw()->json() ?? [];
+        $b = $this->client()->get('/balance')->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
         $divisor = (int) ($b['currencyDivisor'] ?? 1) ?: 1;
 
         return (float) ($b['availableBalance'] ?? 0) / $divisor;

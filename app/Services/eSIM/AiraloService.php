@@ -2,10 +2,10 @@
 
 namespace App\Services\eSIM;
 
+use App\Exceptions\EsimProviderException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
 
 /**
  * Airalo — SECONDARY provider (blueprint Section 5.3).
@@ -40,12 +40,12 @@ class AiraloService implements EsimProviderInterface
                     'client_secret' => config('services.airalo.client_secret'),
                     'grant_type' => 'client_credentials',
                 ])
-                ->throw()
+                ->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))
                 ->json();
 
             $token = $response['data']['access_token'] ?? null;
             if (! $token) {
-                throw new RuntimeException('Airalo token request returned no access_token.');
+                throw new EsimProviderException('Airalo token request returned no access_token.');
             }
 
             return $token;
@@ -65,13 +65,13 @@ class AiraloService implements EsimProviderInterface
     /** Raw /packages data (country → operators → packages). Mapped on sync. */
     public function getCatalogue(): array
     {
-        return $this->client()->get('/packages', ['limit' => 500])->throw()->json('data') ?? [];
+        return $this->client()->get('/packages', ['limit' => 500])->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json('data') ?? [];
     }
 
     /** Exchange rates (used for NGN display in CurrencyService). */
     public function getExchangeRates(): array
     {
-        return $this->client()->get('/exchange-rates')->throw()->json() ?? [];
+        return $this->client()->get('/exchange-rates')->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
@@ -81,24 +81,24 @@ class AiraloService implements EsimProviderInterface
             'package_id' => $planId,
             'quantity' => $qty,
             'type' => 'sim',
-        ])->throw()->json() ?? [];
+        ])->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getEsim(string $iccid): array
     {
-        return $this->client()->get("/sims/{$iccid}")->throw()->json() ?? [];
+        return $this->client()->get("/sims/{$iccid}")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getUsage(string $iccid, string $bundleName): array
     {
-        return $this->client()->get("/sims/{$iccid}/usage")->throw()->json() ?? [];
+        return $this->client()->get("/sims/{$iccid}/usage")->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function revoke(string $iccid, string $bundleName): array
     {
         // Airalo has no self-serve API revoke; refunds go through partner
         // support. ProviderRouter refunds via the wallet, not this path.
-        throw new RuntimeException('Airalo does not support API-side revoke; handle refunds via partner support.');
+        throw new EsimProviderException('Airalo does not support API-side revoke; handle refunds via partner support.');
     }
 
     public function getBalance(): float

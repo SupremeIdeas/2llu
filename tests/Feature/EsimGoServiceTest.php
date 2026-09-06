@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\EsimProviderException;
 use App\Services\eSIM\EsimGoService;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -56,5 +57,14 @@ class EsimGoServiceTest extends TestCase
         app(EsimGoService::class)->getCatalogue();
 
         Http::assertSent(fn ($request) => ! $request->hasHeader('x-sandbox'));
+    }
+
+    public function test_a_failed_http_call_throws_a_typed_provider_exception(): void
+    {
+        Http::fake(['api.esim-go.com/v2.5/catalogue' => Http::response(['message' => 'unauthorized'], 401)]);
+
+        $this->expectException(EsimProviderException::class);
+
+        app(EsimGoService::class)->getCatalogue();
     }
 }

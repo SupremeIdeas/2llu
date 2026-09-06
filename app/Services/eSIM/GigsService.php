@@ -2,6 +2,7 @@
 
 namespace App\Services\eSIM;
 
+use App\Exceptions\EsimProviderException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -37,7 +38,7 @@ class GigsService implements EsimProviderInterface
     public function getCatalogue(): array
     {
         return $this->client()->get("/projects/{$this->project()}/plans", ['limit' => 500])
-            ->throw()->json() ?? [];
+            ->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function orderBundle(string $planId, int $qty = 1, ?string $iccid = null): array
@@ -48,26 +49,26 @@ class GigsService implements EsimProviderInterface
             'plan' => $planId,
             'iccid' => $iccid,
             'metadata' => ['reference' => 'naara-'.Str::uuid()->toString()],
-        ]))->throw()->json() ?? [];
+        ]))->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getEsim(string $iccid): array
     {
         return $this->client()->get("/projects/{$this->project()}/sims/{$iccid}")
-            ->throw()->json() ?? [];
+            ->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getUsage(string $iccid, string $bundleName): array
     {
         return $this->client()->get("/projects/{$this->project()}/sims/{$iccid}/usageRecords")
-            ->throw()->json() ?? [];
+            ->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function revoke(string $iccid, string $bundleName): array
     {
         // $iccid carries the subscription id for Gigs (what an order stores).
         return $this->client()->post("/projects/{$this->project()}/subscriptions/{$iccid}/cancel")
-            ->throw()->json() ?? [];
+            ->throw(fn ($r, $e) => throw new EsimProviderException($e->getMessage(), previous: $e))->json() ?? [];
     }
 
     public function getBalance(): float
