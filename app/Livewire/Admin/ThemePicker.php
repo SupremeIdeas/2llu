@@ -7,6 +7,7 @@ use App\Models\ThemePreset as ThemePresetModel;
 use App\Support\Auditor;
 use App\Support\LandingHeroLibrary;
 use App\Support\MediaStorage;
+use App\Support\ThemePageLibrary;
 use App\Support\ThemePreset;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -100,6 +101,31 @@ class ThemePicker extends Component
 
     /** Single image upload slot — blank leaves the saved image untouched (same partial-update discipline as hero images). */
     public $landing_image_upload = null;
+
+    /**
+     * Per-theme content-page editor — About / How It Works / Contact
+     * (owner request, 2026-09-07: "for each theme, will and must carry its
+     * own homepage, about us page, and 3 extra important page layouts...
+     * our editor extended for super tweek as we are training it to have
+     * this extended feature"). Same exact pattern as the landing editor
+     * above, generalized across ThemePageLibrary::PAGES instead of a single
+     * page — a future 4th/5th themed page needs no admin-UI code change,
+     * only a new registry entry.
+     */
+    public bool $showPageModal = false;
+
+    public ?string $pageEditingSlug = null;
+
+    public string $pageEditingName = '';
+
+    /** Which of ThemePageLibrary::PAGES is open — decides the field schema and the toast/audit copy. */
+    public string $pageEditingPage = 'about_page';
+
+    /** Which style is assigned to that page for the theme being edited — decides which fields render. */
+    public string $pageEditingStyle = 'default';
+
+    /** Current field values, keyed exactly like that page+style's field schema. */
+    public array $pageValues = [];
 
     public function mount(): void
     {
@@ -429,6 +455,110 @@ class ThemePicker extends Component
 
         $this->dispatch('nx-toast', type: 'success', message: $this->landingEditingName.' landing page saved.');
         $this->showLandingModal = false;
+    }
+
+    /**
+     * Open the content-page editor for one theme + page key. Only
+     * meaningful once a custom style is assigned via Sections above — a
+     * page still on 'default' uses the existing site-wide content
+     * (SiteContent/PageBuilder) instead, so there is nothing here to edit.
+     */
+    public function editPage(string $slug, string $page): void
+    {
+        $this->gate();
+
+        if (! in_array($page, ThemePageLibrary::PAGES, true)) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown page.');
+
+            return;
+        }
+
+        $row = ThemePresetModel::where('slug', $slug)->first();
+        if ($row === null) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown theme.');
+
+            return;
+        }
+
+        $sections = is_array($row->section_styles) ? $row->section_styles : [];
+        $style = $sections[$page] ?? 'default';
+
+        if ($style === 'default' || ! ThemePageLibrary::has($page, $style)) {
+            $this->dispatch('nx-toast', type: 'error', message: $row->name.' doesn\'t have a custom page here yet — assign one under Sections first.');
+
+            return;
+        }
+
+        $saved = is_array($row->page_content) ? ($row->page_content[$page] ?? []) : [];
+        $this->pageEditingSlug = $slug;
+        $this->pageEditingName = $row->name;
+        $this->pageEditingPage = $page;
+        $this->pageEditingStyle = $style;
+        $this->pageValues = [];
+        foreach (ThemePageLibrary::fieldsFor($page, $style) as $field) {
+            $this->pageValues[$field['key']] = $saved[$field['key']] ?? $field['default'];
+        }
+        $this->resetErrorBag();
+        $this->showPageModal = true;
+    }
+
+    /** The field schema for the theme+page currently open in the page editor — drives the dynamic form. */
+    public function pageFields(): array
+    {
+        return ThemePageLibrary::fieldsFor($this->pageEditingPage, $this->pageEditingStyle);
+    }
+
+    /**
+     * Persist the page-content field values, re-validating every one
+     * against its OWN field schema (never trust the posted value) — same
+     * discipline as saveLanding(), nested one level deeper by page key.
+     */
+    public function savePage(): void
+    {
+        $this->gate();
+
+        if ($this->pageEditingSlug === null || ! ThemePageLibrary::has($this->pageEditingPage, $this->pageEditingStyle)) {
+            return;
+        }
+
+        $fields = ThemePageLibrary::fieldsFor($this->pageEditingPage, $this->pageEditingStyle);
+        $rules = [];
+        foreach ($fields as $field) {
+            $key = 'pageValues.'.$field['key'];
+            $rules[$key] = match ($field['type']) {
+                'select' => ['required', 'in:'.implode(',', array_keys($field['options'] ?? []))],
+                'image' => ['nullable'],
+                default => ['required', 'string', 'max:'.($field['max'] ?? 255)],
+            };
+        }
+        $this->validate($rules, [], collect($fields)->mapWithKeys(fn ($f) => ['pageValues.'.$f['key'] => $f['label']])->all());
+
+        $row = ThemePresetModel::where('slug', $this->pageEditingSlug)->first();
+        if ($row === null) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown theme.');
+            $this->showPageModal = false;
+
+            return;
+        }
+
+        $allPages = is_array($row->page_content) ? $row->page_content : [];
+        $content = $allPages[$this->pageEditingPage] ?? [];
+        foreach ($fields as $field) {
+            $content[$field['key']] = $this->pageValues[$field['key']];
+        }
+        $allPages[$this->pageEditingPage] = $content;
+        $row->page_content = $allPages;
+        $row->save();
+
+        ThemePreset::bust(); // only matters if this is the active theme
+        Auditor::log('theme.page_updated', ThemePresetModel::class, $row->id, [
+            'slug' => $this->pageEditingSlug,
+            'page' => $this->pageEditingPage,
+            'style' => $this->pageEditingStyle,
+        ]);
+
+        $this->dispatch('nx-toast', type: 'success', message: $this->pageEditingName.' page saved.');
+        $this->showPageModal = false;
     }
 
     /**

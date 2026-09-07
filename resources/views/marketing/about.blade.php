@@ -1,4 +1,11 @@
 <x-layouts.marketing :title="\App\Support\BrandSettings::name().' — About Us'">
+    {{-- Per-theme custom About page (owner request, 2026-09-07): a theme
+         with its own hand-built About layout takes over completely,
+         before the Section Builder / SiteContent flow below ever runs. --}}
+    @php($themeAboutStyle = \App\Support\ThemePreset::sectionStyle('about_page'))
+    @if ($themeAboutStyle !== 'default' && \App\Support\ThemePageLibrary::has('about_page', $themeAboutStyle))
+        @include(\App\Support\ThemePageLibrary::bladeFor('about_page', $themeAboutStyle), ['content' => \App\Support\ThemePreset::pageContent('about_page')])
+    @else
     {{-- Section Builder output wins when published; else the existing content (BUILD-6 §B). --}}
     @php($builtSections = \App\Support\PageSections::live('about'))
     @if (! empty($builtSections))
@@ -99,5 +106,6 @@
         </section>
     @endif
     @include('marketing._reused-sections')
+    @endif
     @endif
 </x-layouts.marketing>

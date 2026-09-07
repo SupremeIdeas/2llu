@@ -64,6 +64,18 @@
                             <x-icon name="file-text" class="h-4 w-4" /> Landing page
                         </button>
                     @endif
+                    @foreach ([
+                        ['about_page', 'About page'],
+                        ['how_it_works_page', 'How It Works page'],
+                        ['contact_page', 'Contact page'],
+                    ] as [$pageKey, $pageLabel])
+                        @if (\App\Support\ThemePageLibrary::has($pageKey, $p['section_styles'][$pageKey] ?? 'default'))
+                            <button type="button" wire:click="editPage('{{ $p['slug'] }}', '{{ $pageKey }}')"
+                                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                                <x-icon name="file-text" class="h-4 w-4" /> {{ $pageLabel }}
+                            </button>
+                        @endif
+                    @endforeach
                 </div>
                 <span class="mt-2 text-[11px] uppercase tracking-wide text-slate-400">{{ str_replace('_', ' ', $p['icon_family']['style'] ?? 'sprite') }} icons</span>
             </div>
@@ -229,6 +241,51 @@
             <button type="button" wire:click="saveLanding" wire:loading.attr="disabled" wire:target="saveLanding"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                 <x-icon name="badge-check" class="h-4 w-4" /> Save landing page
+            </button>
+        </div>
+    </x-ui.modal>
+
+    {{-- Per-theme content-page editor — About / How It Works / Contact
+         (owner request): entirely schema-driven off ThemePageLibrary, same
+         pattern as the landing editor above, so a future themed page needs
+         no change here, only a new registry entry. --}}
+    <x-ui.modal wire="showPageModal" title="{{ $pageEditingName }} — page content" max-width="lg">
+        <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">
+            This theme has its own unique layout for this page — edit its text here.
+        </p>
+
+        <div class="space-y-4">
+            @foreach ($this->pageFields() as $field)
+                <div>
+                    <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">{{ $field['label'] }}</label>
+
+                    @if ($field['type'] === 'textarea')
+                        <textarea wire:model="pageValues.{{ $field['key'] }}" rows="3" maxlength="{{ $field['max'] }}"
+                                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100"></textarea>
+                    @elseif ($field['type'] === 'select')
+                        <select wire:model="pageValues.{{ $field['key'] }}"
+                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            @foreach ($field['options'] as $key => $optionLabel)
+                                <option value="{{ $key }}">{{ $optionLabel }}</option>
+                            @endforeach
+                        </select>
+                    @else
+                        <input type="text" wire:model="pageValues.{{ $field['key'] }}" maxlength="{{ $field['max'] }}"
+                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @endif
+                    @error('pageValues.'.$field['key']) <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-5 flex justify-end gap-2">
+            <button type="button" @click="open = false"
+                    class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                Cancel
+            </button>
+            <button type="button" wire:click="savePage" wire:loading.attr="disabled" wire:target="savePage"
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                <x-icon name="badge-check" class="h-4 w-4" /> Save page
             </button>
         </div>
     </x-ui.modal>

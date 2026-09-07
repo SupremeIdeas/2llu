@@ -9,6 +9,65 @@
 
 ## DONE
 
+### 🗂️ Full per-theme page suite — About / How It Works / Contact, first two themes — 2026-09-07
+Owner request: "for each theme, will and must carry its own homepage,
+about us page, and 3 extra important page layouts styles that will all
+be unique and our editor extended for super tweek... start the full solid
+build now for existing expansion" — this completes neon-vertex and
+midnight-signal's full page suite (landing page already shipped above),
+matching the real content depth of naara-official's own about/how-it-
+works/contact pages, not stub pages. Pricing is deliberately excluded —
+it's a live Livewire component (`Admin\PricingPage`) with real pricing
+logic, not a content page, so forking it per theme is a materially
+bigger, riskier change than a content-page reskin.
+- **`ThemePageLibrary`** (new registry, generalized sibling of
+  `LandingHeroLibrary`): `PAGES` const lists `about_page`,
+  `how_it_works_page`, `contact_page`; `registry()` maps page => style =>
+  blade + field schema, same `has()`/`fieldsFor()`/`bladeFor()`/
+  `defaultsFor()` shape parametrized by page. Adding a 4th/5th themed page
+  later is one more top-level key here — no admin-UI code change needed.
+- **6 new blade partials** under `marketing/theme-pages/{neon-vertex,
+  midnight-signal}/{about,how-it-works,contact}.blade.php`, each carrying
+  the same persona/curve/gradient language already established on that
+  theme's landing hero and login screen (neon-vertex: gradient blobs,
+  rounded-[2.5rem] cards, gradient-badge numerals; midnight-signal: dark
+  navy/cyan HUD radar-ring motif, data-readout cards) — real content
+  depth per page (About: hero + mission/vision band + 3-card values grid
+  + founder card with bio; How It Works: hero + 4-step numbered flow +
+  device-compatibility callout; Contact: hero + the real
+  `<livewire:contact-form />` + channels sidebar), not generic stubs.
+  Fully responsive, browser-verified at mobile + desktop for both themes.
+- **New `page_content` json column** on `theme_presets` (nested by page
+  key: `{about_page: {...}, how_it_works_page: {...}, ...}`) +
+  `ThemePreset::pageContent(string $page)` resolver — same re-validation
+  discipline as `landingContent()` (image/select/text each checked against
+  their own field schema), deliberately kept as a separate method rather
+  than refactored together, to avoid risking already-shipped code.
+  Wired at the very top of `about.blade.php` / `how-it-works.blade.php` /
+  `contact.blade.php`: a theme's custom page style takes over before the
+  existing Section Builder / SiteContent flow ever runs — 'default' (every
+  other theme) is completely unaffected.
+- **Admin editor generalized**: `Admin\ThemePicker::editPage()`/
+  `pageFields()`/`savePage()` — schema-driven off `ThemePageLibrary`
+  exactly like the landing editor, one shared modal handles all 3 page
+  types via a `$pageEditingPage` selector. 3 new per-theme buttons ("About
+  page" / "How It Works page" / "Contact page") appear only once that
+  page has a real custom style assigned via Sections.
+- 4 new icons added to the shared SVG sprite (`target`, `sparkles`,
+  `clock`, `smartphone`) — the UI rule is inline-sprite-only, no emoji, so
+  these were added properly rather than substituting a mismatched
+  existing glyph.
+- Migration `2026_09_07_161000_assign_theme_full_page_suite_styles` +
+  matching seeder inline assignment (`ThemePresetSeeder::
+  batch1SectionStyles()`) — additive only, identical values both paths,
+  same discipline as every prior batch-1 backfill.
+- Tests: `ThemeFullPageSuiteStylesMigrationTest` (3),
+  `ThemeFullPageSuiteTest` (16 — page rendering per theme, content
+  isolation between page keys, admin editor incl. rejecting a theme still
+  on 'default', rejecting an unknown page key, cross-page isolation on
+  save, max-length validation, non-admin blocked). Full suite
+  1567/1567, Pint clean.
+
 ### 🖼️ Per-theme custom landing pages — first two, mimicking real reference layouts — 2026-09-07
 Owner correction to the earlier "don't duplicate the page-builder" call:
 "those pages I uploaded... were supposed to be a unique preset style
@@ -2032,7 +2091,32 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 > (loyalty milestones, travel timeline, admin-defined achievements paying
 > NaaraCredits) that used to top this list are now DONE — see DONE above.
 
-### ▶ TOP OF NEXT — Analytics blueprint is now feature-complete across both PRs; pick the next backlog item
+### ▶ TOP OF NEXT — Theme visual rebuild: bring 5 more themes to full-suite status (batch 2 of 8, "5 to make it 10")
+Owner instruction (2026-09-07, verbatim excerpt): "start the full solid
+build now for existing expansion and next batch 5 to make it 10, we will
+continue until we finish batch by batch till all 40 themes are completed."
+"Existing expansion" (neon-vertex + midnight-signal's full page suite —
+About/How It Works/Contact) is now DONE — see the DONE entry above. The
+immediate next step is picking 5 more themes from the batch-1-of-8 set
+(aries-contrast, paperwhite, origin-bold — the ones with header/login/
+bottom_nav already but no landing_hero/page suite yet) or the next 5 of
+the remaining ~35 unbuilt personas, and building each one's **full
+suite**: unique header + bottom nav + login (+ login_bg effect) + landing
+page (homepage) + About + How It Works + Contact, at the same real
+content depth as naara-official and the neon-vertex/midnight-signal
+pattern just shipped. For each: extend `LandingHeroLibrary` +
+`ThemePageLibrary` with that theme's blade partials + field schemas
+(no other code change needed — both registries are schema-driven), add
+the matching additive migration + seeder assignment, write tests
+mirroring `ThemeLandingPageTest`/`ThemeFullPageSuiteTest`, run full
+suite + Pint, and browser-verify every new page at mobile + desktop
+before moving to the next theme. Research real dribbble/awwwwards/behance
+hero patterns per theme persona (owner: "no hype just the real build with
+real exactly layout") rather than reusing a generic template across
+themes — each theme's landing hero and page suite should read as a
+genuinely distinct design, not a recolour of the same layout.
+
+### ▶ Analytics blueprint is now feature-complete across both PRs; pick the next backlog item
 The full Analytics blueprint (Part A + admin §7) is done — see DONE above and
 below. Status across the two branches this shipped on:
 1. ~~**Chart.js + real charts on My Line + Home hero**~~ — ✅ done and merged

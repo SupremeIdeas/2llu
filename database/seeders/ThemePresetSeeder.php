@@ -266,6 +266,16 @@ class ThemePresetSeeder extends Seeder
             default => null,
         };
 
+        // The full page suite (owner request, 2026-09-07: "for each theme...
+        // homepage, about us page, and 3 extra important page layouts") — so
+        // far only neon-vertex and midnight-signal carry hand-built
+        // about/how-it-works/contact pages; every other theme stays on the
+        // shared default content until its own suite is built.
+        $fullSuitePage = match ($slug) {
+            'neon-vertex', 'midnight-signal' => $slug,
+            default => null,
+        };
+
         return match ($slug) {
             'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold' => array_filter([
                 'header' => $slug,
@@ -273,6 +283,9 @@ class ThemePresetSeeder extends Seeder
                 'bottom_nav' => $slug,
                 'login_bg' => $loginBg,
                 'landing_hero' => $landingHero,
+                'about_page' => $fullSuitePage,
+                'how_it_works_page' => $fullSuitePage,
+                'contact_page' => $fullSuitePage,
             ], fn ($v) => $v !== null),
             default => [],
         };

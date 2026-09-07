@@ -1,4 +1,11 @@
 <x-layouts.marketing :title="\App\Support\BrandSettings::name().' — How It Works'">
+    {{-- Per-theme custom How It Works page (owner request, 2026-09-07): a theme
+         with its own hand-built layout takes over completely, before the
+         Section Builder / SiteContent flow below ever runs. --}}
+    @php($themeHowStyle = \App\Support\ThemePreset::sectionStyle('how_it_works_page'))
+    @if ($themeHowStyle !== 'default' && \App\Support\ThemePageLibrary::has('how_it_works_page', $themeHowStyle))
+        @include(\App\Support\ThemePageLibrary::bladeFor('how_it_works_page', $themeHowStyle), ['content' => \App\Support\ThemePreset::pageContent('how_it_works_page')])
+    @else
     {{-- Section Builder output wins when published; else the existing content (BUILD-6 §B). --}}
     @php($builtSections = \App\Support\PageSections::live('how-it-works'))
     @if (! empty($builtSections))
@@ -76,5 +83,6 @@
         </section>
     @endif
     @include('marketing._reused-sections')
+    @endif
     @endif
 </x-layouts.marketing>

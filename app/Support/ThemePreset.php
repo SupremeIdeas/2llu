@@ -82,6 +82,18 @@ class ThemePreset
         // LandingHeroLibrary. 'default' keeps using the existing site-wide
         // homepage content (SiteContent/PageBuilder), untouched.
         'landing_hero' => ['default', 'neon-vertex', 'midnight-signal'],
+        // The rest of a theme's "full suite" (owner request, 2026-09-07):
+        // About, How It Works, Contact — each theme's own version of these
+        // pages, at the same content depth as naara-official's own (hero +
+        // several full sections, not a stub), registered in
+        // ThemePageLibrary. Pricing is deliberately NOT themed here — it's a
+        // real Livewire component with live pricing logic
+        // (Admin\PricingPage), not a content page, so forking its whole
+        // layout per theme is a much bigger, riskier undertaking than a
+        // content page reskin.
+        'about_page' => ['default', 'neon-vertex', 'midnight-signal'],
+        'how_it_works_page' => ['default', 'neon-vertex', 'midnight-signal'],
+        'contact_page' => ['default', 'neon-vertex', 'midnight-signal'],
     ];
 
     /**
@@ -129,6 +141,7 @@ class ThemePreset
                     'layout_variants' => self::decode($row->layout_variants),
                     'section_styles' => self::decode($row->section_styles ?? null),
                     'landing_content' => self::decode($row->landing_content ?? null),
+                    'page_content' => self::decode($row->page_content ?? null),
                     'is_built_in' => (bool) $row->is_built_in,
                 ];
             } catch (\Throwable) {
@@ -241,6 +254,44 @@ class ThemePreset
         $content = [];
 
         foreach (LandingHeroLibrary::fieldsFor($style) as $field) {
+            $key = $field['key'];
+            $value = $saved[$key] ?? null;
+
+            $content[$key] = match ($field['type']) {
+                'image' => (is_string($value) && $value !== '' && preg_match('#^(/[\w./-]+|https?://[\w./:?=&%-]+)$#', $value) === 1)
+                    ? $value : $field['default'],
+                'select' => (is_string($value) && array_key_exists($value, $field['options'] ?? []))
+                    ? $value : $field['default'],
+                default => (is_string($value) && $value !== '') ? $value : $field['default'],
+            };
+        }
+
+        return $content;
+    }
+
+    /**
+     * The active theme's content for one of the OTHER full-suite pages
+     * (about_page/how_it_works_page/contact_page — owner request,
+     * 2026-09-07), generalized off ThemePageLibrary the same way
+     * landingContent() is generalized off LandingHeroLibrary. Kept as a
+     * separate method (rather than refactoring landingContent() to share
+     * this one) deliberately — landingContent() already shipped and is
+     * covered by its own tests; duplicating ~15 lines here is a much safer
+     * trade than touching working, tested code under this scope of change.
+     *
+     * @return array<string, mixed>
+     */
+    public static function pageContent(string $page): array
+    {
+        $style = self::sectionStyle($page);
+        if ($style === 'default') {
+            return [];
+        }
+
+        $saved = self::active()['page_content'][$page] ?? [];
+        $content = [];
+
+        foreach (ThemePageLibrary::fieldsFor($page, $style) as $field) {
             $key = $field['key'];
             $value = $saved[$key] ?? null;
 
@@ -427,6 +478,7 @@ class ThemePreset
             'layout_variants' => [],
             'section_styles' => [],
             'landing_content' => [],
+            'page_content' => [],
             'is_built_in' => true,
         ];
     }

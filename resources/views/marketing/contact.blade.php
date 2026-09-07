@@ -1,4 +1,11 @@
 <x-layouts.marketing :title="\App\Support\BrandSettings::name().' — Contact'">
+    {{-- Per-theme custom Contact page (owner request, 2026-09-07): a theme
+         with its own hand-built layout takes over completely, before the
+         Section Builder / SiteContent flow below ever runs. --}}
+    @php($themeContactStyle = \App\Support\ThemePreset::sectionStyle('contact_page'))
+    @if ($themeContactStyle !== 'default' && \App\Support\ThemePageLibrary::has('contact_page', $themeContactStyle))
+        @include(\App\Support\ThemePageLibrary::bladeFor('contact_page', $themeContactStyle), ['content' => \App\Support\ThemePreset::pageContent('contact_page')])
+    @else
     {{-- Section Builder output wins when published; else the existing content (BUILD-6 §B). --}}
     @php($builtSections = \App\Support\PageSections::live('contact'))
     @if (! empty($builtSections))
@@ -53,5 +60,6 @@
         @endif
     </section>
     @include('marketing._reused-sections')
+    @endif
     @endif
 </x-layouts.marketing>
