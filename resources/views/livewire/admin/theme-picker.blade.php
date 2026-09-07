@@ -54,6 +54,10 @@
                             class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
                         <x-icon name="image" class="h-4 w-4" /> Hero images
                     </button>
+                    <button type="button" wire:click="editSections('{{ $p['slug'] }}')"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                        <x-icon name="layers" class="h-4 w-4" /> Sections
+                    </button>
                 </div>
                 <span class="mt-2 text-[11px] uppercase tracking-wide text-slate-400">{{ str_replace('_', ' ', $p['icon_family']['style'] ?? 'sprite') }} icons</span>
             </div>
@@ -115,6 +119,50 @@
             <button type="button" wire:click="saveHero" wire:loading.attr="disabled" wire:target="saveHero"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                 <x-icon name="badge-check" class="h-4 w-4" /> Save hero images
+            </button>
+        </div>
+    </x-ui.modal>
+
+    {{-- Swappable-section editor (owner request): any theme — INCLUDING Naara
+         Official — can point its header, bottom nav, or login screen at any
+         OTHER theme's style family. The dropdown lists every whitelisted key
+         across all 40 presets, not just this theme's own, so picking
+         "Aries" here for Naara Official's header really does swap it in. --}}
+    <x-ui.modal wire="showSectionsModal" title="{{ $sectionEditingName }} — sections" max-width="md">
+        <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">
+            Swap this theme's header, bottom nav, or login screen for a style built for
+            <strong>any</strong> theme — including borrowing one from a completely different persona.
+            Colours, radius and typography stay <strong>{{ $sectionEditingName }}</strong>'s own; only that
+            section's layout changes. Anything left on "Default" keeps today's shared look.
+        </p>
+
+        <div class="space-y-4">
+            @foreach ([
+                ['header', 'Header'],
+                ['bottom_nav', 'Bottom nav'],
+                ['login', 'Login screen'],
+                ['login_bg', 'Login background effect'],
+            ] as [$section, $label])
+                <div>
+                    <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">{{ $label }}</label>
+                    <select wire:model="sectionStyles.{{ $section }}"
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        @foreach ($this->sectionStyleOptions()[$section] as $key => $optionLabel)
+                            <option value="{{ $key }}">{{ $optionLabel }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-5 flex justify-end gap-2">
+            <button type="button" @click="open = false"
+                    class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                Cancel
+            </button>
+            <button type="button" wire:click="saveSections" wire:loading.attr="disabled" wire:target="saveSections"
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                <x-icon name="badge-check" class="h-4 w-4" /> Save sections
             </button>
         </div>
     </x-ui.modal>

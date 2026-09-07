@@ -244,10 +244,26 @@ class ThemePresetSeeder extends Seeder
      */
     private function batch1SectionStyles(string $slug): array
     {
+        // login_bg is independent of login STRUCTURE — chosen per persona
+        // rather than tied 1:1 to the slug (owner request: "some login bg
+        // will have custom unique dot grid... mesh grain on some, Aurora
+        // bg"). Paperwhite deliberately gets 'none' — its whole persona is
+        // "zero noise," and origin-bold sharing 'dot-grid' with aries-
+        // contrast demonstrates a style family reused across two themes.
+        $loginBg = match ($slug) {
+            'aries-contrast', 'origin-bold' => 'dot-grid',
+            'midnight-signal' => 'mesh-grain',
+            'neon-vertex' => 'aurora',
+            'paperwhite' => 'none',
+            default => null,
+        };
+
         return match ($slug) {
             'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold' => [
                 'header' => $slug,
                 'login' => $slug,
+                'bottom_nav' => $slug,
+                'login_bg' => $loginBg,
             ],
             default => [],
         };

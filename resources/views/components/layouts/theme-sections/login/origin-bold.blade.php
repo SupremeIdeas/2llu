@@ -39,8 +39,9 @@
         </div>
 
         {{-- Form column (leads on desktop, 60% width) --}}
-        <div class="flex flex-1 items-center justify-center bg-[#F8F9FA] px-4 py-10 dark:bg-navy lg:w-3/5">
-            <div class="w-full max-w-md">
+        <div class="relative flex flex-1 items-center justify-center overflow-hidden bg-[#F8F9FA] px-4 py-10 dark:bg-navy lg:w-3/5">
+            <x-theme-sections.login-bg :effect="\App\Support\ThemePreset::sectionStyle('login_bg')" />
+            <div class="relative z-10 w-full max-w-md">
                 <div class="mb-6 flex items-center justify-between">
                     <a href="{{ route('home') }}"><x-brand-logo variant="family" size="lg" fallback-icon="signal" /></a>
                     <x-theme-toggle />

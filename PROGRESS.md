@@ -9,6 +9,76 @@
 
 ## DONE
 
+### 🧩 Swappable sections completed: bottom nav extracted, admin picker UI, login background effects — 2026-09-07
+Owner follow-up: "make sure admin with the Naara official theme can basically
+swap any header he likes to their existing theme header and also bottom
+nav" + "some login bg will have custom unique dot grid material effects
+and mesh grain on some, Aurora bg." This closes the swappable-section
+architecture's last two open items from the earlier entries below.
+- **Bottom nav extracted** (the piece deliberately deferred earlier —
+  shared Alpine state with the "More" sheet made it the riskiest
+  extraction). `components/app-shell.blade.php`'s global bottom nav now
+  resolves through `ThemePreset::sectionStyle('bottom_nav')` exactly like
+  header/login; the Numbers-section mutual-exclusivity gate
+  (`@unless($inNumbers)`) stays in the parent view, untouched, so no style
+  family can ever appear alongside the Numbers nav. 5 new bottom-nav style
+  families ship for the batch-1 themes (sharp square "More" button for
+  Aries, glass ring for Midnight Signal, gradient glow for Neon Vertex,
+  flat hairline dock for Paperwhite, colour-block square button for
+  Origin Bold) — real options for the admin picker below, not just
+  "Default."
+- **Admin "Sections" picker — the actual cross-theme swap mechanism.**
+  New modal on the Theme page (`Admin\ThemePicker::editSections()`/
+  `saveSections()`): three dropdowns (Header / Bottom nav / Login screen)
+  listing **every** whitelisted style key across all 40 presets — not
+  scoped to "this theme's own styles" — so picking "Origin Bold" for
+  **Naara Official's** header really does borrow it, while colours/radius/
+  typography stay Naara Official's own. Server-revalidates every selection
+  against the exact same `SECTION_STYLE_ALLOW` whitelist the resolver
+  uses; a value outside it is rejected, never written. **Browser-verified
+  live**: set Naara Official's header to Origin Bold via the admin UI,
+  confirmed the dashboard renders Origin Bold's colour-block header
+  structure recoloured in Naara's own teal/gold — the literal owner ask,
+  proven working end to end, not just asserted in a test.
+- **Login background effects** (new `login_bg` section, independent of
+  login STRUCTURE): `<x-theme-sections.login-bg>` renders one of `none` /
+  `dot-grid` / `mesh-grain` / `aurora` as a pure-CSS decorative layer any
+  login style can drop behind its form column — no images, no JS, works
+  identically on mobile. Wired into all 6 login partials (default + the
+  5 batch-1 styles). Assigned per persona: Aries and Origin Bold share
+  `dot-grid` (proving the "shared style family across themes" design
+  intent, not just 1:1 slug-keyed styles), Midnight Signal gets
+  `mesh-grain`, Neon Vertex gets `aurora`, and Paperwhite deliberately
+  gets `none` — its whole persona is "zero noise," so adding texture
+  would contradict it. Browser-verified all three effects live.
+  4th admin dropdown ("Login background effect") added to the same
+  Sections modal, with its own human labels (not theme names, since these
+  aren't theme-slug-keyed).
+- `ThemePreset::sectionStyle()` fallback fixed to use each section's own
+  neutral value (`SECTION_STYLE_ALLOW[$section][0]`) instead of a
+  hardcoded `'default'` string — matters for `login_bg`, whose neutral
+  value is `'none'`, not `'default'`.
+- **Landing-page image/title/description customization — investigated,
+  deliberately NOT built as a new system.** The owner asked for admin-
+  editable images/titles/descriptions with border-radius/position control
+  on each theme's landing page. Found an existing, fully-built page-
+  builder (`PageBuilderService` + `SectionLibrary`, a `hero` section type
+  with image/title/body already, plus versioning/publish/rollback) that
+  already delivers this exact capability for the marketing homepage —
+  just not scoped per-theme. Building a second, parallel per-theme
+  image/title/description store would directly violate the owner's own
+  "no duplicate" instruction from the earlier readiness-audit round.
+  Flagged back to the owner as a real fork: extend the existing page-
+  builder to be theme-scoped (correct, bigger — touches `PageSection`/
+  `PageSectionVersion` and the publish/rollback lifecycle) vs. a
+  lightweight per-theme hero override sitting alongside it (smaller,
+  faster, but a second content source). Not started pending that answer.
+- New tests: `ThemeBatch1BottomNavStylesMigrationTest` (4),
+  `ThemeBatch1LoginBgStylesMigrationTest` (4), 6 new `ThemePickerTest`
+  cases (incl. the Naara-Official-borrows-Origin-Bold's-header case and a
+  whitelist-rejection case), `ThemeBatch1VisualRebuildTest` extended with
+  login_bg coverage. Full suite 1533/1533, Pint clean.
+
 ### 🎨 Theme visual rebuild — Batch 1 of 8: 5 themes get unique header + login screens — 2026-09-07
 Owner request: "start batch 1 now" — the first 5 of the 40 presets get a
 genuinely structurally-unique header + login screen instead of the shared

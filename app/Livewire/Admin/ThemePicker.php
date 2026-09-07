@@ -53,6 +53,30 @@ class ThemePicker extends Component
 
     private const SURFACES = ['dashboard', 'esim', 'numbers'];
 
+    /**
+     * Swappable-section editor (owner request, 2026-09-07): "admin ... can
+     * basically swap any header he likes to their existing theme ... and
+     * also bottom nav." Entangled to <x-ui.modal> the same way as
+     * $showHeroModal above.
+     */
+    public bool $showSectionsModal = false;
+
+    public ?string $sectionEditingSlug = null;
+
+    public string $sectionEditingName = '';
+
+    /** Selected style key per swappable section, keyed exactly like SECTION_STYLE_ALLOW. */
+    public array $sectionStyles = [
+        'header' => 'default', 'bottom_nav' => 'default', 'login' => 'default', 'login_bg' => 'none',
+    ];
+
+    private const EDITABLE_SECTIONS = ['header', 'bottom_nav', 'login', 'login_bg'];
+
+    /** Human labels for the non-theme-keyed login_bg effect values. */
+    private const LOGIN_BG_LABELS = [
+        'none' => 'None', 'dot-grid' => 'Dot grid', 'mesh-grain' => 'Mesh grain', 'aurora' => 'Aurora',
+    ];
+
     public function mount(): void
     {
         $this->gate();
@@ -173,6 +197,107 @@ class ThemePicker extends Component
         ThemePreset::bust();
         Auditor::log('theme.hero_removed', ThemePresetModel::class, $row->id, ['slug' => $this->editingSlug, 'surface' => $surface]);
         $this->dispatch('nx-toast', type: 'success', message: ucfirst($surface).' hero image removed for '.$this->editingName.'.');
+    }
+
+    /**
+     * Open the swappable-section editor for one theme, seeding it with
+     * what's saved (defaulting any unset section to 'default').
+     */
+    public function editSections(string $slug): void
+    {
+        $this->gate();
+
+        $row = ThemePresetModel::where('slug', $slug)->first();
+        if ($row === null) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown theme.');
+
+            return;
+        }
+
+        $saved = is_array($row->section_styles) ? $row->section_styles : [];
+        $this->sectionEditingSlug = $slug;
+        $this->sectionEditingName = $row->name;
+        foreach (self::EDITABLE_SECTIONS as $section) {
+            $neutral = ThemePreset::SECTION_STYLE_ALLOW[$section][0] ?? 'default';
+            $this->sectionStyles[$section] = $saved[$section] ?? $neutral;
+        }
+        $this->showSectionsModal = true;
+    }
+
+    /**
+     * Every style key a section may be set to, for the admin dropdown — this
+     * IS the cross-theme swap: any theme (including naara-official) can
+     * point its header/bottom_nav/login at ANY other theme's style family,
+     * since the whitelist is a flat namespace shared across all 40 presets,
+     * not scoped to "your own theme's styles only."
+     *
+     * @return array<string, array<string, string>> section => [key => label]
+     */
+    public function sectionStyleOptions(): array
+    {
+        $names = ThemePreset::all()->pluck('name', 'slug');
+        $options = [];
+
+        foreach (self::EDITABLE_SECTIONS as $section) {
+            if ($section === 'login_bg') {
+                $options[$section] = self::LOGIN_BG_LABELS;
+
+                continue;
+            }
+            $options[$section] = collect(ThemePreset::SECTION_STYLE_ALLOW[$section] ?? ['default'])
+                ->mapWithKeys(fn ($key) => [$key => $key === 'default' ? 'Default' : ($names[$key] ?? ucfirst($key))])
+                ->all();
+        }
+
+        return $options;
+    }
+
+    /**
+     * Persist the selected style per section. Server-side re-validated
+     * against the SAME whitelist the resolver uses — a posted value outside
+     * SECTION_STYLE_ALLOW[$section] is rejected, never written, exactly the
+     * "never trust the posted value" discipline apply() already follows.
+     */
+    public function saveSections(): void
+    {
+        $this->gate();
+
+        if ($this->sectionEditingSlug === null) {
+            return;
+        }
+
+        foreach (self::EDITABLE_SECTIONS as $section) {
+            $allow = ThemePreset::SECTION_STYLE_ALLOW[$section] ?? ['default'];
+            if (! in_array($this->sectionStyles[$section] ?? $allow[0], $allow, true)) {
+                $this->dispatch('nx-toast', type: 'error', message: 'Invalid section style selected.');
+
+                return;
+            }
+        }
+
+        $row = ThemePresetModel::where('slug', $this->sectionEditingSlug)->first();
+        if ($row === null) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown theme.');
+            $this->showSectionsModal = false;
+
+            return;
+        }
+
+        $saved = is_array($row->section_styles) ? $row->section_styles : [];
+        foreach (self::EDITABLE_SECTIONS as $section) {
+            $saved[$section] = $this->sectionStyles[$section];
+        }
+        $row->section_styles = $saved;
+        $row->save();
+
+        ThemePreset::bust(); // only matters if this is the active theme
+        Auditor::log('theme.sections_updated', ThemePresetModel::class, $row->id, [
+            'slug' => $this->sectionEditingSlug,
+            'sections' => $saved,
+        ]);
+
+        $this->dispatch('nx-toast', type: 'success', message: $this->sectionEditingName.' section styles saved.');
+        $this->showSectionsModal = false;
     }
 
     /**

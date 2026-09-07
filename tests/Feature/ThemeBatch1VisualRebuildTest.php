@@ -43,6 +43,17 @@ class ThemeBatch1VisualRebuildTest extends TestCase
         ];
     }
 
+    public static function batch1ThemesWithLoginBg(): array
+    {
+        return [
+            'aries-contrast' => ['aries-contrast', 'dot-grid'],
+            'midnight-signal' => ['midnight-signal', 'mesh-grain'],
+            'neon-vertex' => ['neon-vertex', 'aurora'],
+            'paperwhite' => ['paperwhite', 'none'],
+            'origin-bold' => ['origin-bold', 'dot-grid'],
+        ];
+    }
+
     #[DataProvider('batch1Themes')]
     public function test_theme_resolves_its_own_header_and_login_style(string $slug): void
     {
@@ -51,9 +62,18 @@ class ThemeBatch1VisualRebuildTest extends TestCase
 
         $this->assertSame($slug, ThemePreset::sectionStyle('header'));
         $this->assertSame($slug, ThemePreset::sectionStyle('login'));
-        // Sections not part of batch 1 are untouched — still the shared default.
-        $this->assertSame('default', ThemePreset::sectionStyle('bottom_nav'));
+        $this->assertSame($slug, ThemePreset::sectionStyle('bottom_nav'));
+        // landing_hero isn't part of batch 1 yet — still the shared default.
         $this->assertSame('default', ThemePreset::sectionStyle('landing_hero'));
+    }
+
+    #[DataProvider('batch1ThemesWithLoginBg')]
+    public function test_theme_resolves_its_assigned_login_background_effect(string $slug, string $loginBg): void
+    {
+        Setting::setValue(ThemePreset::SETTING_KEY, $slug);
+        ThemePreset::bust();
+
+        $this->assertSame($loginBg, ThemePreset::sectionStyle('login_bg'));
     }
 
     #[DataProvider('batch1Themes')]
@@ -82,5 +102,7 @@ class ThemeBatch1VisualRebuildTest extends TestCase
         $this->assertSame('naara-official', ThemePreset::slug());
         $this->assertSame('default', ThemePreset::sectionStyle('header'));
         $this->assertSame('default', ThemePreset::sectionStyle('login'));
+        $this->assertSame('default', ThemePreset::sectionStyle('bottom_nav'));
+        $this->assertSame('none', ThemePreset::sectionStyle('login_bg'));
     }
 }

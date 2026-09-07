@@ -6,8 +6,9 @@
      under the heading — the whole page ignores $panel/$useMedia/$useWebgl
      entirely (no media panel exists in this persona). Inherits the same
      variables as login/default.blade.php: $heading, $subheading, $slot. --}}
-<div class="flex min-h-screen flex-col bg-white dark:bg-black">
-    <div class="flex flex-1 items-center justify-center px-4 py-10">
+<div class="relative flex min-h-screen flex-col overflow-hidden bg-white dark:bg-black">
+    <x-theme-sections.login-bg :effect="\App\Support\ThemePreset::sectionStyle('login_bg')" />
+    <div class="relative z-10 flex flex-1 items-center justify-center px-4 py-10">
         <div class="w-full max-w-sm border border-accent bg-white p-8 dark:bg-black">
             <div class="mb-8 flex items-center justify-between">
                 <a href="{{ route('home') }}"><x-brand-logo variant="family" size="md" fallback-icon="signal" /></a>

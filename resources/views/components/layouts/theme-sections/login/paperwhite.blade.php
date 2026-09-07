@@ -6,8 +6,9 @@
      mast-head feel rather than a travel-brand visual. $panel/$useMedia/
      $useWebgl are unused here by design. Inherits $heading, $subheading,
      $slot from login/default.blade.php's contract. --}}
-<div class="flex min-h-screen flex-col bg-[#F8F9FA] dark:bg-navy">
-    <div class="flex flex-1 items-center justify-center px-6 py-16">
+<div class="relative flex min-h-screen flex-col overflow-hidden bg-[#F8F9FA] dark:bg-navy">
+    <x-theme-sections.login-bg :effect="\App\Support\ThemePreset::sectionStyle('login_bg')" />
+    <div class="relative z-10 flex flex-1 items-center justify-center px-6 py-16">
         <div class="w-full max-w-md">
             <div class="mb-10 flex items-center justify-between">
                 <a href="{{ route('home') }}"><x-brand-logo variant="family" size="md" fallback-icon="signal" /></a>

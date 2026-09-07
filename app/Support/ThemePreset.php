@@ -61,11 +61,21 @@ class ThemePreset
             // "very unique, don't look identical" variety).
             'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold',
         ],
-        'bottom_nav' => ['default'],
+        'bottom_nav' => [
+            'default',
+            'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold',
+        ],
         'login' => [
             'default',
             'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold',
         ],
+        // A decorative layer independent of login STRUCTURE (owner request:
+        // "some login bg will have custom unique dot grid material effects
+        // and mesh grain on some, Aurora bg") — any login style family,
+        // including 'default', can be paired with any of these. 'none' is
+        // the only default so every existing theme keeps today's exact
+        // background until an admin deliberately assigns an effect.
+        'login_bg' => ['none', 'dot-grid', 'mesh-grain', 'aurora'],
         'landing_hero' => ['default'],
     ];
 
@@ -178,22 +188,26 @@ class ThemePreset
 
     /**
      * Which named style family a swappable chrome SECTION uses under the
-     * active theme (see SECTION_STYLE_ALLOW). Defaults to 'default' — the
-     * unmodified, currently-shipped markup — for any section/theme
+     * active theme (see SECTION_STYLE_ALLOW). Falls back to that section's
+     * own neutral value — by convention always the FIRST entry in its
+     * SECTION_STYLE_ALLOW array ('default' for structural sections,
+     * 'none' for the decorative login_bg layer) — for any section/theme
      * combination not explicitly assigned, or any value outside that
      * section's whitelist, so a missing or tampered key never 500s and
-     * never reaches an @include with unvalidated input.
+     * never reaches an @include with unvalidated input. An unrecognised
+     * $section (not in SECTION_STYLE_ALLOW at all) falls back to the
+     * literal 'default', since it has no array of its own to draw from.
      */
     public static function sectionStyle(string $section): string
     {
         $allow = self::SECTION_STYLE_ALLOW[$section] ?? null;
-        if ($allow === null) {
+        if ($allow === null || $allow === []) {
             return 'default';
         }
 
         $pick = self::active()['section_styles'][$section] ?? null;
 
-        return in_array($pick, $allow, true) ? $pick : 'default';
+        return in_array($pick, $allow, true) ? $pick : $allow[0];
     }
 
     /**

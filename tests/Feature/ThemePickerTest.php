@@ -194,4 +194,79 @@ class ThemePickerTest extends TestCase
         // independently guarded, not just mount().
         Livewire::actingAs($staff)->test(ThemePicker::class)->assertStatus(403);
     }
+
+    // ---- Swappable-section editor (owner request) --------------------------
+
+    public function test_edit_sections_opens_the_editor_seeded_with_saved_styles(): void
+    {
+        ThemePresetModel::where('slug', 'aries-contrast')->update([
+            'section_styles' => ['header' => 'neon-vertex'],
+        ]);
+
+        Livewire::actingAs($this->admin())->test(ThemePicker::class)
+            ->call('editSections', 'aries-contrast')
+            ->assertSet('showSectionsModal', true)
+            ->assertSet('sectionEditingSlug', 'aries-contrast')
+            ->assertSet('sectionStyles.header', 'neon-vertex')
+            // Unset sections default to 'default', not null/blank.
+            ->assertSet('sectionStyles.bottom_nav', 'default')
+            ->assertSet('sectionStyles.login', 'default');
+    }
+
+    public function test_save_sections_lets_naara_official_borrow_another_themes_header(): void
+    {
+        // The literal owner ask: naara-official swaps in a completely
+        // different theme's header while staying naara-official otherwise.
+        Livewire::actingAs($this->admin())->test(ThemePicker::class)
+            ->call('editSections', 'naara-official')
+            ->set('sectionStyles.header', 'origin-bold')
+            ->call('saveSections')
+            ->assertSet('showSectionsModal', false);
+
+        $sections = ThemePresetModel::where('slug', 'naara-official')->value('section_styles');
+        $this->assertSame('origin-bold', $sections['header']);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'theme.sections_updated']);
+
+        // Live-resolves immediately if naara-official is the active theme.
+        Setting::setValue(ThemePreset::SETTING_KEY, 'naara-official');
+        ThemePreset::bust();
+        $this->assertSame('origin-bold', ThemePreset::sectionStyle('header'));
+    }
+
+    public function test_save_sections_rejects_a_value_outside_the_whitelist(): void
+    {
+        $component = Livewire::actingAs($this->admin())->test(ThemePicker::class)
+            ->call('editSections', 'paperwhite')
+            ->set('sectionStyles.login', 'javascript:alert(1)')
+            ->call('saveSections');
+
+        $component->assertSet('showSectionsModal', true); // never closed — rejected
+
+        $sections = ThemePresetModel::where('slug', 'paperwhite')->value('section_styles');
+        $this->assertNotSame('javascript:alert(1)', $sections['login'] ?? null);
+    }
+
+    public function test_save_sections_partial_update_never_clears_other_sections(): void
+    {
+        ThemePresetModel::where('slug', 'midnight-signal')->update([
+            'section_styles' => ['header' => 'midnight-signal', 'login' => 'midnight-signal', 'bottom_nav' => 'midnight-signal'],
+        ]);
+
+        Livewire::actingAs($this->admin())->test(ThemePicker::class)
+            ->call('editSections', 'midnight-signal')
+            ->set('sectionStyles.header', 'default')
+            ->call('saveSections');
+
+        $sections = ThemePresetModel::where('slug', 'midnight-signal')->value('section_styles');
+        $this->assertSame('default', $sections['header']);
+        $this->assertSame('midnight-signal', $sections['login']);
+        $this->assertSame('midnight-signal', $sections['bottom_nav']);
+    }
+
+    public function test_a_non_admin_cannot_edit_or_save_sections(): void
+    {
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)->test(ThemePicker::class)->assertStatus(403);
+    }
 }

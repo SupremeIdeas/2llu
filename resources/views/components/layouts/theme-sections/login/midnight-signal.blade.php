@@ -45,8 +45,9 @@
         </div>
 
         {{-- Form column --}}
-        <div class="flex flex-1 items-center justify-center bg-[#F8F9FA] px-4 py-10 dark:bg-black lg:w-1/2">
-            <div class="w-full max-w-sm rounded-2xl border border-primary/15 bg-white p-6 dark:border-primary/20 dark:bg-navy/60">
+        <div class="relative flex flex-1 items-center justify-center overflow-hidden bg-[#F8F9FA] px-4 py-10 dark:bg-black lg:w-1/2">
+            <x-theme-sections.login-bg :effect="\App\Support\ThemePreset::sectionStyle('login_bg')" />
+            <div class="relative z-10 w-full max-w-sm rounded-2xl border border-primary/15 bg-white p-6 dark:border-primary/20 dark:bg-navy/60">
                 <div class="mb-6 flex items-center justify-between lg:hidden">
                     <a href="{{ route('home') }}"><x-brand-logo variant="family" size="md" fallback-icon="signal" /></a>
                     <x-theme-toggle />
