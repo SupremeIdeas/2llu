@@ -265,6 +265,12 @@ class ThemePresetSeeder extends Seeder
             'paperwhite' => 'none',
             'solar-flare' => 'dot-grid',
             'noir-reserve' => 'mesh-grain',
+            // Batch 3 (2026-09-07).
+            'aurora-shift' => 'aurora',
+            'sunset-transit' => 'mesh-grain',
+            'fintra-clean' => 'none',
+            'capable-mono' => 'dot-grid',
+            'waitlisty-soft' => 'aurora',
             default => null,
         };
 
@@ -272,7 +278,8 @@ class ThemePresetSeeder extends Seeder
         // landing page get one (owner request, 2026-09-07) — not every
         // persona has one yet, unlike header/login/bottom_nav.
         $landingHero = match ($slug) {
-            'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve' => $slug,
+            'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve',
+            'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft' => $slug,
             default => null,
         };
 
@@ -282,12 +289,14 @@ class ThemePresetSeeder extends Seeder
         // about/how-it-works/contact pages; every other theme stays on the
         // shared default content until its own suite is built.
         $fullSuitePage = match ($slug) {
-            'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve' => $slug,
+            'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve',
+            'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft' => $slug,
             default => null,
         };
 
         return match ($slug) {
-            'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve' => array_filter([
+            'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve',
+            'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft' => array_filter([
                 'header' => $slug,
                 'login' => $slug,
                 'bottom_nav' => $slug,

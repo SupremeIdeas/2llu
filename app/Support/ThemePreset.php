@@ -79,6 +79,13 @@ class ThemePreset
         'origin-bold' => 0,
         'solar-flare' => 0,
         'noir-reserve' => 12,
+        // Batch 3 (2026-09-07): none of these 5 personas ship with a
+        // hardcoded backdrop-blur — an admin can still dial one in.
+        'aurora-shift' => 0,
+        'sunset-transit' => 0,
+        'fintra-clean' => 0,
+        'capable-mono' => 0,
+        'waitlisty-soft' => 0,
     ];
 
     /** The three structural layout partials a page may pick between. */
@@ -108,16 +115,20 @@ class ThemePreset
             // Batch 2 (2026-09-07): 2 brand-new personas join with their own
             // header, alongside batch 1's 3 completing their full suite below.
             'solar-flare', 'noir-reserve',
+            // Batch 3 (2026-09-07): 5 brand-new personas, built from scratch.
+            'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft',
         ],
         'bottom_nav' => [
             'default',
             'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold',
             'solar-flare', 'noir-reserve',
+            'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft',
         ],
         'login' => [
             'default',
             'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold',
             'solar-flare', 'noir-reserve',
+            'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft',
         ],
         // A decorative layer independent of login STRUCTURE (owner request:
         // "some login bg will have custom unique dot grid material effects
@@ -134,7 +145,7 @@ class ThemePreset
         // Batch 2 (2026-09-07): aries-contrast/paperwhite/origin-bold
         // complete their full suite (they already have header/bottom_nav/
         // login from batch 1); solar-flare/noir-reserve are brand new.
-        'landing_hero' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve'],
+        'landing_hero' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve', 'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft'],
         // The rest of a theme's "full suite" (owner request, 2026-09-07):
         // About, How It Works, Contact — each theme's own version of these
         // pages, at the same content depth as naara-official's own (hero +
@@ -144,9 +155,9 @@ class ThemePreset
         // (Admin\PricingPage), not a content page, so forking its whole
         // layout per theme is a much bigger, riskier undertaking than a
         // content page reskin.
-        'about_page' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve'],
-        'how_it_works_page' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve'],
-        'contact_page' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve'],
+        'about_page' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve', 'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft'],
+        'how_it_works_page' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve', 'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft'],
+        'contact_page' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve', 'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft'],
         // Footer (owner request, 2026-09-07: "please all themes too should
         // have unique footer too... not always we get a straight line
         // footer"). Chrome-only, like header/bottom_nav — no editable
@@ -154,7 +165,7 @@ class ThemePreset
         // functional content (SiteChrome columns/legal, socials, app-export
         // slot). 'default' keeps today's exact shared footer everywhere
         // else, including naara-official.
-        'footer' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve'],
+        'footer' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve', 'aurora-shift', 'sunset-transit', 'fintra-clean', 'capable-mono', 'waitlisty-soft'],
     ];
 
     /**

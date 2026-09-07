@@ -143,6 +143,77 @@ class LandingHeroLibrary
                     ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Destinations, discreetly covered'],
                 ],
             ],
+            // Batch 3 (2026-09-07): 5 brand-new personas, built from scratch.
+            'aurora-shift' => [
+                'blade' => 'marketing.theme-landing.aurora-shift',
+                'fields' => [
+                    ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'REAL-TIME · 190+ MARKETS'],
+                    ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Connectivity, priced like capital.'],
+                    ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'One wallet, live rates, zero markup surprises — the same discipline you expect from your bank, applied to data and numbers.'],
+                    ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Open your wallet'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/earth-space.webp')],
+                    ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'md'],
+                    ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'right'],
+                    ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '190+'],
+                    ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Markets, one live rate card'],
+                ],
+            ],
+            'sunset-transit' => [
+                'blade' => 'marketing.theme-landing.sunset-transit',
+                'fields' => [
+                    ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'NOW BOARDING · 190+ COUNTRIES'],
+                    ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Your connection, cleared for departure.'],
+                    ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'Data and a real number, ready before wheels-up — no gate-side scramble, no roaming surprise on arrival.'],
+                    ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Check in your plan'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/phone-screen.webp')],
+                    ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'md'],
+                    ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'right'],
+                    ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => 'ON TIME'],
+                    ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Activation status, every trip'],
+                ],
+            ],
+            'fintra-clean' => [
+                'blade' => 'marketing.theme-landing.fintra-clean',
+                'fields' => [
+                    ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'AUDITED · 190+ COUNTRIES'],
+                    ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Every charge, itemised. Every time.'],
+                    ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'A single ledger for data and numbers across 190+ countries — the rate you were quoted is the rate on the receipt.'],
+                    ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'View the rate card'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/coworking-desk.webp')],
+                    ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'none'],
+                    ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'right'],
+                    ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '0'],
+                    ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Hidden line items, ever'],
+                ],
+            ],
+            'capable-mono' => [
+                'blade' => 'marketing.theme-landing.capable-mono',
+                'fields' => [
+                    ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'CAPABLE · 190+ COUNTRIES'],
+                    ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Quiet by day. Unstoppable by night.'],
+                    ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'One wallet for data and numbers, built to disappear into the background until the exact moment you need it.'],
+                    ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Get capable'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/phone-screen.webp')],
+                    ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'md'],
+                    ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'right'],
+                    ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '190+'],
+                    ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Countries, one capable app'],
+                ],
+            ],
+            'waitlisty-soft' => [
+                'blade' => 'marketing.theme-landing.waitlisty-soft',
+                'fields' => [
+                    ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => "You're going to love this"],
+                    ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Connected, the friendly way.'],
+                    ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'Data and a real number for 190+ countries, set up in a few taps — no jargon, no fine print, just a warm "you\'re online."'],
+                    ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Say hello to Naara'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/team-coworking.webp')],
+                    ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'full'],
+                    ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'right'],
+                    ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '190+'],
+                    ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Countries to say hi from'],
+                ],
+            ],
         ];
     }
 

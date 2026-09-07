@@ -120,6 +120,72 @@ class ThemePageLibrary
                         ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank built NaaraSim on a simple standard: the best connectivity is the kind you never have to mention. Quiet, consistent, and always there.'],
                     ],
                 ],
+                // Batch 3 (2026-09-07): 5 brand-new personas, built from scratch.
+                'aurora-shift' => [
+                    'blade' => 'marketing.theme-pages.aurora-shift.about',
+                    'fields' => [
+                        ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'THE THESIS'],
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Connectivity, underwritten like capital.'],
+                        ['key' => 'intro', 'type' => 'textarea', 'label' => 'Intro paragraph', 'max' => 320, 'default' => 'Roaming has always been priced like a black box. NaaraSim applies the same rate discipline a trading desk expects to data and numbers — one live rate, published, held.'],
+                        ['key' => 'mission', 'type' => 'textarea', 'label' => 'Mission statement', 'max' => 260, 'default' => 'Price connectivity with the same discipline as capital markets — transparent, live, never marked up in the dark.'],
+                        ['key' => 'vision', 'type' => 'textarea', 'label' => 'Vision statement', 'max' => 260, 'default' => 'A single rate card for the whole continent\'s connectivity, updated in real time, trusted like a ticker.'],
+                        ['key' => 'founder_name', 'type' => 'text', 'label' => 'Founder name', 'max' => 60, 'default' => 'Frank Charles Ebubedike'],
+                        ['key' => 'founder_title', 'type' => 'text', 'label' => 'Founder title', 'max' => 60, 'default' => 'Founder, Supreme Ideas Agency'],
+                        ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank spent years watching roaming margins hide behind vague "up to" pricing. NaaraSim is the rate card he wished existed — live, published, and held to.'],
+                    ],
+                ],
+                'sunset-transit' => [
+                    'blade' => 'marketing.theme-pages.sunset-transit.about',
+                    'fields' => [
+                        ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'FLIGHT LOG'],
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Built at the gate, for the gate.'],
+                        ['key' => 'intro', 'type' => 'textarea', 'label' => 'Intro paragraph', 'max' => 320, 'default' => 'NaaraSim started on a departures board — watching travellers scramble for a local SIM with ten minutes to boarding. We built the version that\'s already ready before you land.'],
+                        ['key' => 'mission', 'type' => 'textarea', 'label' => 'Mission statement', 'max' => 260, 'default' => 'Make the layover-to-landing gap the most boring part of any trip — connectivity that\'s simply already there.'],
+                        ['key' => 'vision', 'type' => 'textarea', 'label' => 'Vision statement', 'max' => 260, 'default' => 'Every traveller touching down already connected, the way a ticket is already confirmed before you reach the gate.'],
+                        ['key' => 'founder_name', 'type' => 'text', 'label' => 'Founder name', 'max' => 60, 'default' => 'Frank Charles Ebubedike'],
+                        ['key' => 'founder_title', 'type' => 'text', 'label' => 'Founder title', 'max' => 60, 'default' => 'Founder, Supreme Ideas Agency'],
+                        ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank missed one too many gate announcements hunting for a SIM kiosk. NaaraSim is the fix: connectivity cleared for departure before you\'ve even packed.'],
+                    ],
+                ],
+                'fintra-clean' => [
+                    'blade' => 'marketing.theme-pages.fintra-clean.about',
+                    'fields' => [
+                        ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'THE LEDGER'],
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Reconciled before you even ask.'],
+                        ['key' => 'intro', 'type' => 'textarea', 'label' => 'Intro paragraph', 'max' => 320, 'default' => 'Roaming bills read like a bank statement nobody double-checks. NaaraSim keeps one clean ledger for data and numbers — every entry matching the quote, every time.'],
+                        ['key' => 'mission', 'type' => 'textarea', 'label' => 'Mission statement', 'max' => 260, 'default' => 'A ledger any accountant would sign off on — no rounding tricks, no unexplained line items.'],
+                        ['key' => 'vision', 'type' => 'textarea', 'label' => 'Vision statement', 'max' => 260, 'default' => 'Connectivity billing so clean it never needs a dispute.'],
+                        ['key' => 'founder_name', 'type' => 'text', 'label' => 'Founder name', 'max' => 60, 'default' => 'Frank Charles Ebubedike'],
+                        ['key' => 'founder_title', 'type' => 'text', 'label' => 'Founder title', 'max' => 60, 'default' => 'Founder, Supreme Ideas Agency'],
+                        ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank reconciled one too many roaming invoices that didn\'t match the quote. NaaraSim keeps the books clean from the first charge.'],
+                    ],
+                ],
+                'capable-mono' => [
+                    'blade' => 'marketing.theme-pages.capable-mono.about',
+                    'fields' => [
+                        ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'THE BUILD'],
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Restrained by design, capable on demand.'],
+                        ['key' => 'intro', 'type' => 'textarea', 'label' => 'Intro paragraph', 'max' => 320, 'default' => 'Most connectivity apps shout for attention. NaaraSim was built to stay out of the way — until the exact second you need data or a number, then it simply delivers.'],
+                        ['key' => 'mission', 'type' => 'textarea', 'label' => 'Mission statement', 'max' => 260, 'default' => 'Do the one job — data and numbers, anywhere — without asking for a second of attention it hasn\'t earned.'],
+                        ['key' => 'vision', 'type' => 'textarea', 'label' => 'Vision statement', 'max' => 260, 'default' => 'An app so quiet you forget it\'s there, and so capable you never doubt it.'],
+                        ['key' => 'founder_name', 'type' => 'text', 'label' => 'Founder name', 'max' => 60, 'default' => 'Frank Charles Ebubedike'],
+                        ['key' => 'founder_title', 'type' => 'text', 'label' => 'Founder title', 'max' => 60, 'default' => 'Founder, Supreme Ideas Agency'],
+                        ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank wanted one app that just worked, without a dashboard demanding attention. NaaraSim is built to disappear into the background — capable the instant it\'s needed.'],
+                    ],
+                ],
+                'waitlisty-soft' => [
+                    'blade' => 'marketing.theme-pages.waitlisty-soft.about',
+                    'fields' => [
+                        ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'Nice to meet you'],
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'We just want travel to feel easier.'],
+                        ['key' => 'intro', 'type' => 'textarea', 'label' => 'Intro paragraph', 'max' => 320, 'default' => 'NaaraSim started as a favour for a friend stuck without data on a layover. It grew into an app for every traveller who\'d rather things just work — warmly, without the jargon.'],
+                        ['key' => 'mission', 'type' => 'textarea', 'label' => 'Mission statement', 'max' => 260, 'default' => 'Make staying connected feel like a small kindness, not a technical chore.'],
+                        ['key' => 'vision', 'type' => 'textarea', 'label' => 'Vision statement', 'max' => 260, 'default' => 'A connectivity app every traveller recommends to a friend, the way you\'d share a good find.'],
+                        ['key' => 'founder_name', 'type' => 'text', 'label' => 'Founder name', 'max' => 60, 'default' => 'Frank Charles Ebubedike'],
+                        ['key' => 'founder_title', 'type' => 'text', 'label' => 'Founder title', 'max' => 60, 'default' => 'Founder, Supreme Ideas Agency'],
+                        ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank built NaaraSim after helping one too many friends untangle a confusing SIM situation abroad. He wanted the next favour to be an app, not a phone call.'],
+                    ],
+                ],
             ],
             'how_it_works_page' => [
                 'neon-vertex' => [
@@ -171,6 +237,42 @@ class ThemePageLibrary
                         ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'Four steps, handled discreetly, before you\'ve had time to notice them.'],
                     ],
                 ],
+                // Batch 3 (2026-09-07).
+                'aurora-shift' => [
+                    'blade' => 'marketing.theme-pages.aurora-shift.how-it-works',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'The rate, locked in 4 steps'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'From quote to activation, the number never moves.'],
+                    ],
+                ],
+                'sunset-transit' => [
+                    'blade' => 'marketing.theme-pages.sunset-transit.how-it-works',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Boarding process: 4 steps'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'Cleared for departure before you reach the gate.'],
+                    ],
+                ],
+                'fintra-clean' => [
+                    'blade' => 'marketing.theme-pages.fintra-clean.how-it-works',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Four entries, one clean ledger'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'Every step recorded, nothing reconciled after the fact.'],
+                    ],
+                ],
+                'capable-mono' => [
+                    'blade' => 'marketing.theme-pages.capable-mono.how-it-works',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Four steps. Then it just works.'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'No dashboard to babysit — set it once, forget it\'s there.'],
+                    ],
+                ],
+                'waitlisty-soft' => [
+                    'blade' => 'marketing.theme-pages.waitlisty-soft.how-it-works',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Four easy steps, promise'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'No jargon, no fine print — just you, connected.'],
+                    ],
+                ],
             ],
             'contact_page' => [
                 'neon-vertex' => [
@@ -220,6 +322,42 @@ class ThemePageLibrary
                     'fields' => [
                         ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'A quiet word, whenever you need it'],
                         ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'A brief note reaches a real person — considered replies, usually within the hour.'],
+                    ],
+                ],
+                // Batch 3 (2026-09-07).
+                'aurora-shift' => [
+                    'blade' => 'marketing.theme-pages.aurora-shift.contact',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Talk to the desk'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'Questions about a rate, a plan, or your wallet? A real answer, fast.'],
+                    ],
+                ],
+                'sunset-transit' => [
+                    'blade' => 'marketing.theme-pages.sunset-transit.contact',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Reach the gate desk'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'A quick note lands with a real person — usually within the hour.'],
+                    ],
+                ],
+                'fintra-clean' => [
+                    'blade' => 'marketing.theme-pages.fintra-clean.contact',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Query the ledger'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'A charge, a plan, a rate — ask, and we\'ll square it away fast.'],
+                    ],
+                ],
+                'capable-mono' => [
+                    'blade' => 'marketing.theme-pages.capable-mono.contact',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Say what you need'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'No hold music, no runaround — a real answer, fast.'],
+                    ],
+                ],
+                'waitlisty-soft' => [
+                    'blade' => 'marketing.theme-pages.waitlisty-soft.contact',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'We\'d love to hear from you'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'A friendly human reads every message — usually within the hour.'],
                     ],
                 ],
             ],
