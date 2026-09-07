@@ -144,7 +144,7 @@ class ThemeFullPageSuiteTest extends TestCase
     public function test_edit_page_is_rejected_for_a_theme_still_on_default(): void
     {
         Livewire::actingAs($this->admin())->test(ThemePicker::class)
-            ->call('editPage', 'aries-contrast', 'about_page')
+            ->call('editPage', 'verdant-pulse', 'about_page')
             ->assertSet('showPageModal', false);
     }
 

@@ -13,11 +13,13 @@ use Tests\TestCase;
 /**
  * Swappable FOOTER section (owner request, 2026-09-07: "please all themes
  * too should have unique footer too... not always we get a straight line
- * footer, then footer swappable too"). neon-vertex and midnight-signal are
- * the first two themes with a hand-built footer, mirroring the header/
- * bottom_nav pattern exactly — chrome-only, no editable content fields, same
- * functional links/columns as the shared default footer. Every other theme,
- * including naara-official, keeps using today's exact shared footer.
+ * footer, then footer swappable too"). neon-vertex and midnight-signal were
+ * the first two themes with a hand-built footer; batch 2 (2026-09-07) added
+ * 5 more (aries-contrast, paperwhite, origin-bold, solar-flare, noir-reserve)
+ * — all mirroring the header/bottom_nav pattern exactly: chrome-only, no
+ * editable content fields, same functional links/columns as the shared
+ * default footer. Every other theme, including naara-official, keeps using
+ * today's exact shared footer.
  */
 class ThemeFooterStylesTest extends TestCase
 {
@@ -35,6 +37,11 @@ class ThemeFooterStylesTest extends TestCase
         return [
             'neon-vertex' => ['neon-vertex'],
             'midnight-signal' => ['midnight-signal'],
+            'aries-contrast' => ['aries-contrast'],
+            'paperwhite' => ['paperwhite'],
+            'origin-bold' => ['origin-bold'],
+            'solar-flare' => ['solar-flare'],
+            'noir-reserve' => ['noir-reserve'],
         ];
     }
 
@@ -61,7 +68,7 @@ class ThemeFooterStylesTest extends TestCase
 
     public function test_every_other_seeded_theme_stays_on_the_default_footer(): void
     {
-        foreach (['aries-contrast', 'paperwhite', 'origin-bold'] as $slug) {
+        foreach (['verdant-pulse', 'cobalt-frost', 'mango-burst'] as $slug) {
             Setting::setValue(ThemePreset::SETTING_KEY, $slug);
             ThemePreset::bust();
 

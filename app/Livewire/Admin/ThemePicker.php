@@ -127,6 +127,34 @@ class ThemePicker extends Component
     /** Current field values, keyed exactly like that page+style's field schema. */
     public array $pageValues = [];
 
+    /**
+     * Advanced colour override editor (owner request, 2026-09-07): "admin
+     * Also change color pallet any any theme he picks... advance settings
+     * to change each color with color code and save to override each
+     * color then with a reset to default color." Works on ANY theme
+     * (including naara-official) — colours are the one token family
+     * already stored separately from section styles, so this is its own
+     * modal rather than folding into Sections above.
+     */
+    public bool $showColorsModal = false;
+
+    public ?string $colorEditingSlug = null;
+
+    public string $colorEditingName = '';
+
+    /** Hex strings keyed by ThemePreset::COLOR_KEYS — the CURRENT EFFECTIVE colour (override if set, else the seeded default), for the form. */
+    public array $colorValues = [];
+
+    /** Human labels for the admin form, in ThemePreset::COLOR_KEYS order. */
+    private const COLOR_LABELS = [
+        'primary' => 'Primary',
+        'primary_dark' => 'Primary (dark)',
+        'accent' => 'Accent',
+        'accent_dark' => 'Accent (dark)',
+        'navy' => 'Navy / dark surface',
+        'action' => 'Action (destructive)',
+    ];
+
     public function mount(): void
     {
         $this->gate();
@@ -559,6 +587,152 @@ class ThemePicker extends Component
 
         $this->dispatch('nx-toast', type: 'success', message: $this->pageEditingName.' page saved.');
         $this->showPageModal = false;
+    }
+
+    /**
+     * Open the advanced colour editor for one theme, seeding every field
+     * with the CURRENT EFFECTIVE colour — an existing override if one is
+     * saved, otherwise the theme's own seeded default — converted to hex
+     * for the `<input type="color">` / text pairing in the form.
+     */
+    public function editColors(string $slug): void
+    {
+        $this->gate();
+
+        $row = ThemePresetModel::where('slug', $slug)->first();
+        if ($row === null) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown theme.');
+
+            return;
+        }
+
+        $tokenColors = (is_array($row->tokens) ? $row->tokens['colors'] ?? [] : []);
+        $overrides = is_array($row->color_overrides) ? $row->color_overrides : [];
+
+        $this->colorEditingSlug = $slug;
+        $this->colorEditingName = $row->name;
+        $this->colorValues = [];
+        foreach (ThemePreset::COLOR_KEYS as $key) {
+            $effective = $overrides[$key] ?? $tokenColors[$key] ?? null;
+            $this->colorValues[$key] = is_string($effective) ? ThemePreset::channelTripleToHex($effective) : '#000000';
+        }
+        $this->resetErrorBag();
+        $this->showColorsModal = true;
+    }
+
+    /** Human labels for the colour form, in display order — schema-driven like every other editor here. */
+    public function colorLabels(): array
+    {
+        return self::COLOR_LABELS;
+    }
+
+    /**
+     * Persist every submitted colour as an override, re-validating each as
+     * a strict 6-digit hex value server-side (never trust the posted
+     * value) before converting to the "R G B" channel-triple format every
+     * other colour token is stored in. Since the form always submits all
+     * 6 whitelisted keys, this is a full replace of color_overrides, not a
+     * partial merge — there is no other key that could exist there.
+     */
+    public function saveColors(): void
+    {
+        $this->gate();
+
+        if ($this->colorEditingSlug === null) {
+            return;
+        }
+
+        $rules = collect(ThemePreset::COLOR_KEYS)
+            ->mapWithKeys(fn ($key) => ['colorValues.'.$key => ['required', 'regex:/^#[0-9a-fA-F]{6}$/']])
+            ->all();
+        $this->validate($rules, [], collect(self::COLOR_LABELS)->mapWithKeys(fn ($label, $key) => ['colorValues.'.$key => $label])->all());
+
+        $row = ThemePresetModel::where('slug', $this->colorEditingSlug)->first();
+        if ($row === null) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown theme.');
+            $this->showColorsModal = false;
+
+            return;
+        }
+
+        // Only persist keys that actually differ from the theme's own seeded
+        // default — otherwise a no-op save (or a reflexive Save click right
+        // after "Reset all to default") would re-flag the theme as
+        // customized and pin it to today's default value forever, even
+        // though nothing was really changed.
+        $tokenColors = is_array($row->tokens) ? $row->tokens['colors'] ?? [] : [];
+        $overrides = [];
+        foreach (ThemePreset::COLOR_KEYS as $key) {
+            $triple = ThemePreset::hexToChannelTriple($this->colorValues[$key]);
+            if ($triple !== null && $triple !== ($tokenColors[$key] ?? null)) {
+                $overrides[$key] = $triple;
+            }
+        }
+
+        $row->color_overrides = $overrides;
+        $row->save();
+
+        ThemePreset::bust(); // only matters if this is the active theme
+        Auditor::log('theme.colors_updated', ThemePresetModel::class, $row->id, [
+            'slug' => $this->colorEditingSlug,
+        ]);
+
+        $this->dispatch('nx-toast', type: 'success', message: $this->colorEditingName.' colours saved.');
+        $this->showColorsModal = false;
+    }
+
+    /** Reset one colour back to the theme's seeded default — removes just that key from color_overrides. */
+    public function resetColor(string $key): void
+    {
+        $this->gate();
+
+        if ($this->colorEditingSlug === null || ! in_array($key, ThemePreset::COLOR_KEYS, true)) {
+            return;
+        }
+
+        $row = ThemePresetModel::where('slug', $this->colorEditingSlug)->first();
+        if ($row === null) {
+            return;
+        }
+
+        $overrides = is_array($row->color_overrides) ? $row->color_overrides : [];
+        unset($overrides[$key]);
+        $row->color_overrides = $overrides;
+        $row->save();
+
+        $tokenColors = is_array($row->tokens) ? $row->tokens['colors'] ?? [] : [];
+        $this->colorValues[$key] = isset($tokenColors[$key]) ? ThemePreset::channelTripleToHex($tokenColors[$key]) : '#000000';
+
+        ThemePreset::bust();
+        Auditor::log('theme.color_reset', ThemePresetModel::class, $row->id, ['slug' => $this->colorEditingSlug, 'key' => $key]);
+        $this->dispatch('nx-toast', type: 'success', message: self::COLOR_LABELS[$key].' reset to default for '.$this->colorEditingName.'.');
+    }
+
+    /** Reset every colour on the theme being edited back to its seeded defaults in one action. */
+    public function resetAllColors(): void
+    {
+        $this->gate();
+
+        if ($this->colorEditingSlug === null) {
+            return;
+        }
+
+        $row = ThemePresetModel::where('slug', $this->colorEditingSlug)->first();
+        if ($row === null) {
+            return;
+        }
+
+        $row->color_overrides = [];
+        $row->save();
+
+        $tokenColors = is_array($row->tokens) ? $row->tokens['colors'] ?? [] : [];
+        foreach (ThemePreset::COLOR_KEYS as $key) {
+            $this->colorValues[$key] = isset($tokenColors[$key]) ? ThemePreset::channelTripleToHex($tokenColors[$key]) : '#000000';
+        }
+
+        ThemePreset::bust();
+        Auditor::log('theme.colors_reset', ThemePresetModel::class, $row->id, ['slug' => $this->colorEditingSlug]);
+        $this->dispatch('nx-toast', type: 'success', message: 'All colours reset to default for '.$this->colorEditingName.'.');
     }
 
     /**

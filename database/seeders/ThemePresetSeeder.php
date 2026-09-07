@@ -240,7 +240,9 @@ class ThemePresetSeeder extends Seeder
      * upgrading gets the same values from
      * 2026_09_07_110000_assign_theme_batch1_section_styles.php instead —
      * the values must stay identical between the two, exactly like
-     * accent_dark above.
+     * accent_dark above. Kept its original name for a minimal diff even
+     * though it now also seeds batch 2's slugs (2026-09-07) — see the
+     * batch-2-specific comments inline below.
      */
     private function batch1SectionStyles(string $slug): array
     {
@@ -250,34 +252,42 @@ class ThemePresetSeeder extends Seeder
         // bg"). Paperwhite deliberately gets 'none' — its whole persona is
         // "zero noise," and origin-bold sharing 'dot-grid' with aries-
         // contrast demonstrates a style family reused across two themes.
+        // Batch 2 (2026-09-07) extends every match below with 2 brand-new
+        // personas (solar-flare, noir-reserve) plus completes the 3 batch-1
+        // themes that only had header/login/bottom_nav until now
+        // (aries-contrast, paperwhite, origin-bold) — same additive
+        // discipline, matching values kept identical with
+        // 2026_09_07_163000_assign_theme_batch2_section_styles.php.
         $loginBg = match ($slug) {
             'aries-contrast', 'origin-bold' => 'dot-grid',
             'midnight-signal' => 'mesh-grain',
             'neon-vertex' => 'aurora',
             'paperwhite' => 'none',
+            'solar-flare' => 'dot-grid',
+            'noir-reserve' => 'mesh-grain',
             default => null,
         };
 
         // landing_hero: only themes with a genuinely unique, hand-built
-        // landing page get one (owner request, 2026-09-07) — not all 5
-        // batch-1 personas have one yet, unlike header/login/bottom_nav.
+        // landing page get one (owner request, 2026-09-07) — not every
+        // persona has one yet, unlike header/login/bottom_nav.
         $landingHero = match ($slug) {
-            'neon-vertex', 'midnight-signal' => $slug,
+            'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve' => $slug,
             default => null,
         };
 
         // The full page suite (owner request, 2026-09-07: "for each theme...
-        // homepage, about us page, and 3 extra important page layouts") — so
-        // far only neon-vertex and midnight-signal carry hand-built
+        // homepage, about us page, and 3 extra important page layouts") —
+        // every theme with a landing_hero above also carries hand-built
         // about/how-it-works/contact pages; every other theme stays on the
         // shared default content until its own suite is built.
         $fullSuitePage = match ($slug) {
-            'neon-vertex', 'midnight-signal' => $slug,
+            'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve' => $slug,
             default => null,
         };
 
         return match ($slug) {
-            'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold' => array_filter([
+            'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve' => array_filter([
                 'header' => $slug,
                 'login' => $slug,
                 'bottom_nav' => $slug,

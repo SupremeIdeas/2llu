@@ -29,4 +29,5 @@
             <p class="mt-8 text-center text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-600">Supreme Ideas Agency</p>
         </div>
     </div>
+    <x-site-footer variant="slim" />
 </div>

@@ -54,6 +54,72 @@ class ThemePageLibrary
                         ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank built the first version of this "signal room" for himself, tracking carrier quality across his own routes through Africa by hand. NaaraSim turns that same discipline into a product every traveller can lean on.'],
                     ],
                 ],
+                // Batch 2 (2026-09-07).
+                'aries-contrast' => [
+                    'blade' => 'marketing.theme-pages.aries-contrast.about',
+                    'fields' => [
+                        ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'THE RECORD'],
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Built on hard numbers, not hype.'],
+                        ['key' => 'intro', 'type' => 'textarea', 'label' => 'Intro paragraph', 'max' => 320, 'default' => 'No soft-pedalling, no "up to" pricing. NaaraSim exists because roaming has always hidden its real cost — we put every number on the record instead.'],
+                        ['key' => 'mission', 'type' => 'textarea', 'label' => 'Mission statement', 'max' => 260, 'default' => 'Every price shown is the price charged — no fine print, no surprise line items, no exceptions.'],
+                        ['key' => 'vision', 'type' => 'textarea', 'label' => 'Vision statement', 'max' => 260, 'default' => 'A connectivity market you can verify yourself, not one you\'re asked to trust.'],
+                        ['key' => 'founder_name', 'type' => 'text', 'label' => 'Founder name', 'max' => 60, 'default' => 'Frank Charles Ebubedike'],
+                        ['key' => 'founder_title', 'type' => 'text', 'label' => 'Founder title', 'max' => 60, 'default' => 'Founder, Supreme Ideas Agency'],
+                        ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank got tired of roaming bills that never matched what he was quoted. NaaraSim is the correction: every rate locked and shown before you pay, every time.'],
+                    ],
+                ],
+                'paperwhite' => [
+                    'blade' => 'marketing.theme-pages.paperwhite.about',
+                    'fields' => [
+                        ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'Our story'],
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Built quietly, on purpose.'],
+                        ['key' => 'intro', 'type' => 'textarea', 'label' => 'Intro paragraph', 'max' => 320, 'default' => 'We didn\'t set out to make travel connectivity loud. We set out to make it disappear — one wallet, one app, nothing left to think about.'],
+                        ['key' => 'mission', 'type' => 'textarea', 'label' => 'Mission statement', 'max' => 260, 'default' => 'To make the moment you land the least eventful part of your trip.'],
+                        ['key' => 'vision', 'type' => 'textarea', 'label' => 'Vision statement', 'max' => 260, 'default' => 'Connectivity so quiet you forget it\'s there — until you need it.'],
+                        ['key' => 'founder_name', 'type' => 'text', 'label' => 'Founder name', 'max' => 60, 'default' => 'Frank Charles Ebubedike'],
+                        ['key' => 'founder_title', 'type' => 'text', 'label' => 'Founder title', 'max' => 60, 'default' => 'Founder, Supreme Ideas Agency'],
+                        ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank built NaaraSim after one too many trips spent fighting with a local SIM counter. The goal was never more features — it was less friction.'],
+                    ],
+                ],
+                'origin-bold' => [
+                    'blade' => 'marketing.theme-pages.origin-bold.about',
+                    'fields' => [
+                        ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'NO SMALL PLANS'],
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'We build loud, so you can travel free.'],
+                        ['key' => 'intro', 'type' => 'textarea', 'label' => 'Intro paragraph', 'max' => 320, 'default' => 'NaaraSim was built to be impossible to miss — one wallet, one app, data and numbers across 190+ countries, stated plainly.'],
+                        ['key' => 'mission', 'type' => 'textarea', 'label' => 'Mission statement', 'max' => 260, 'default' => 'Make the biggest, boldest connectivity platform on the continent — and price it fairly, every time.'],
+                        ['key' => 'vision', 'type' => 'textarea', 'label' => 'Vision statement', 'max' => 260, 'default' => 'A single, unmistakable app every African traveller reaches for first.'],
+                        ['key' => 'founder_name', 'type' => 'text', 'label' => 'Founder name', 'max' => 60, 'default' => 'Frank Charles Ebubedike'],
+                        ['key' => 'founder_title', 'type' => 'text', 'label' => 'Founder title', 'max' => 60, 'default' => 'Founder, Supreme Ideas Agency'],
+                        ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank founded Supreme Ideas Agency in Onitsha with one bold bet: that African travellers deserved a platform built at the same scale as the trips they take.'],
+                    ],
+                ],
+                'solar-flare' => [
+                    'blade' => 'marketing.theme-pages.solar-flare.about',
+                    'fields' => [
+                        ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'ON THE RECORD'],
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Built for travellers who don\'t wait.'],
+                        ['key' => 'intro', 'type' => 'textarea', 'label' => 'Intro paragraph', 'max' => 320, 'default' => 'Every second between landing and connecting is a second lost. NaaraSim exists to close that gap to zero, every trip, every country.'],
+                        ['key' => 'mission', 'type' => 'textarea', 'label' => 'Mission statement', 'max' => 260, 'default' => 'Real-time coverage, real-time pricing — no waiting for a signal to catch up to you.'],
+                        ['key' => 'vision', 'type' => 'textarea', 'label' => 'Vision statement', 'max' => 260, 'default' => 'A connectivity platform that moves as fast as the traveller using it.'],
+                        ['key' => 'founder_name', 'type' => 'text', 'label' => 'Founder name', 'max' => 60, 'default' => 'Frank Charles Ebubedike'],
+                        ['key' => 'founder_title', 'type' => 'text', 'label' => 'Founder title', 'max' => 60, 'default' => 'Founder, Supreme Ideas Agency'],
+                        ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank built NaaraSim to close the gap between touchdown and being online — because for a travelling founder, every minute offline is a minute of momentum lost.'],
+                    ],
+                ],
+                'noir-reserve' => [
+                    'blade' => 'marketing.theme-pages.noir-reserve.about',
+                    'fields' => [
+                        ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'Quiet, by design'],
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Built for those who prefer not to be told twice.'],
+                        ['key' => 'intro', 'type' => 'textarea', 'label' => 'Intro paragraph', 'max' => 320, 'default' => 'NaaraSim was built for travellers who expect things to simply work — one wallet, one number, one quiet standard of reliability.'],
+                        ['key' => 'mission', 'type' => 'textarea', 'label' => 'Mission statement', 'max' => 260, 'default' => 'To be the connectivity a discerning traveller never has to think twice about.'],
+                        ['key' => 'vision', 'type' => 'textarea', 'label' => 'Vision statement', 'max' => 260, 'default' => 'Understated reliability, extended to 190+ countries.'],
+                        ['key' => 'founder_name', 'type' => 'text', 'label' => 'Founder name', 'max' => 60, 'default' => 'Frank Charles Ebubedike'],
+                        ['key' => 'founder_title', 'type' => 'text', 'label' => 'Founder title', 'max' => 60, 'default' => 'Founder, Supreme Ideas Agency'],
+                        ['key' => 'founder_bio', 'type' => 'textarea', 'label' => 'Founder bio', 'max' => 320, 'default' => 'Frank built NaaraSim on a simple standard: the best connectivity is the kind you never have to mention. Quiet, consistent, and always there.'],
+                    ],
+                ],
             ],
             'how_it_works_page' => [
                 'neon-vertex' => [
@@ -70,6 +136,41 @@ class ThemePageLibrary
                         ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'From the moment you buy to the moment you land, here\'s exactly what happens.'],
                     ],
                 ],
+                'aries-contrast' => [
+                    'blade' => 'marketing.theme-pages.aries-contrast.how-it-works',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'The process. No surprises.'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'Four steps, every one of them verifiable — nothing happens off the record.'],
+                    ],
+                ],
+                'paperwhite' => [
+                    'blade' => 'marketing.theme-pages.paperwhite.how-it-works',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'How it works'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'Four steps. Nothing more to explain.'],
+                    ],
+                ],
+                'origin-bold' => [
+                    'blade' => 'marketing.theme-pages.origin-bold.how-it-works',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Four big steps. Zero small print.'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'From download to connected — stated plainly, delivered boldly.'],
+                    ],
+                ],
+                'solar-flare' => [
+                    'blade' => 'marketing.theme-pages.solar-flare.how-it-works',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'The play, step by step'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'From kickoff to touchdown — here\'s exactly how you get on the board.'],
+                    ],
+                ],
+                'noir-reserve' => [
+                    'blade' => 'marketing.theme-pages.noir-reserve.how-it-works',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'A quiet, considered process'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'Four steps, handled discreetly, before you\'ve had time to notice them.'],
+                    ],
+                ],
             ],
             'contact_page' => [
                 'neon-vertex' => [
@@ -84,6 +185,41 @@ class ThemePageLibrary
                     'fields' => [
                         ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Talk to the signal room'],
                         ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'Real humans, real answers — usually within the hour.'],
+                    ],
+                ],
+                'aries-contrast' => [
+                    'blade' => 'marketing.theme-pages.aries-contrast.contact',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Put it on the record'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'A question about a plan, a number, or a charge? Ask it straight — we answer the same way.'],
+                    ],
+                ],
+                'paperwhite' => [
+                    'blade' => 'marketing.theme-pages.paperwhite.contact',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Get in touch'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'A short message reaches a real person, quickly.'],
+                    ],
+                ],
+                'origin-bold' => [
+                    'blade' => 'marketing.theme-pages.origin-bold.contact',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Say it loud, we\'ll answer fast'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'Questions about a plan, a number, or your wallet? We reply fast, no hedging.'],
+                    ],
+                ],
+                'solar-flare' => [
+                    'blade' => 'marketing.theme-pages.solar-flare.contact',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Get us on the line'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'Fast answers, live — usually within the hour.'],
+                    ],
+                ],
+                'noir-reserve' => [
+                    'blade' => 'marketing.theme-pages.noir-reserve.contact',
+                    'fields' => [
+                        ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'A quiet word, whenever you need it'],
+                        ['key' => 'subtext', 'type' => 'textarea', 'label' => 'Subtext', 'max' => 200, 'default' => 'A brief note reaches a real person — considered replies, usually within the hour.'],
                     ],
                 ],
             ],

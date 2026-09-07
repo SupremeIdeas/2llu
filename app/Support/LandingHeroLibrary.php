@@ -69,6 +69,80 @@ class LandingHeroLibrary
                     ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Coverage predicted before you land'],
                 ],
             ],
+            // Batch 2 (2026-09-07): 3 batch-1 themes complete their full
+            // suite (aries-contrast, paperwhite, origin-bold already have
+            // their own header/bottom_nav/login), 2 brand-new personas join
+            // (solar-flare, noir-reserve).
+            'aries-contrast' => [
+                'blade' => 'marketing.theme-landing.aries-contrast',
+                'fields' => [
+                    ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'LIVE · 190+ MARKETS'],
+                    ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Your signal. Zero downtime.'],
+                    ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'Data and a real number, priced and delivered with no fine print — built for travellers who don\'t wait.'],
+                    ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Lock in your plan'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/phone-screen.webp')],
+                    ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'none'],
+                    ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'right'],
+                    ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '00:02:14'],
+                    ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Average activation time'],
+                ],
+            ],
+            'paperwhite' => [
+                'blade' => 'marketing.theme-landing.paperwhite',
+                'fields' => [
+                    ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'A quieter way to travel'],
+                    ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Connectivity, without the noise.'],
+                    ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'One app, one wallet, 190+ countries — nothing to configure, nothing to explain.'],
+                    ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Begin'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/coworking-desk.webp')],
+                    ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'none'],
+                    ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'center'],
+                    ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '190+'],
+                    ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Countries, quietly covered'],
+                ],
+            ],
+            'origin-bold' => [
+                'blade' => 'marketing.theme-landing.origin-bold',
+                'fields' => [
+                    ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'BUILT BOLD'],
+                    ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Big signal. Bigger confidence.'],
+                    ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'One wallet for data and numbers across 190+ countries — no small print, no soft edges.'],
+                    ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Get loud, get connected'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/earth-space.webp')],
+                    ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'none'],
+                    ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'right'],
+                    ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '2 min'],
+                    ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'To full activation'],
+                ],
+            ],
+            'solar-flare' => [
+                'blade' => 'marketing.theme-landing.solar-flare',
+                'fields' => [
+                    ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'LIVE · ON THE BOARD'],
+                    ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Never miss the connection.'],
+                    ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'Real-time coverage, real-time pricing — get on the board the moment you land, in 190+ countries.'],
+                    ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Get in the game'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/team-coworking.webp')],
+                    ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'none'],
+                    ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'right'],
+                    ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '190+'],
+                    ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Networks on the board'],
+                ],
+            ],
+            'noir-reserve' => [
+                'blade' => 'marketing.theme-landing.noir-reserve',
+                'fields' => [
+                    ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Eyebrow tag', 'max' => 40, 'default' => 'Quiet, by design'],
+                    ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Connectivity, reserved for those who notice.'],
+                    ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'A single quiet wallet for data and numbers across 190+ countries — considered, not shouted about.'],
+                    ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Reserve your line'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/coworking-desk.webp')],
+                    ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'xl'],
+                    ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'left'],
+                    ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '190+'],
+                    ['key' => 'stat_label', 'type' => 'text', 'label' => 'Stat label', 'max' => 40, 'default' => 'Destinations, discreetly covered'],
+                ],
+            ],
         ];
     }
 

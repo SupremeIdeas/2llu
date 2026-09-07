@@ -36,6 +36,16 @@ class ThemePreset
     /** The permanent default + fallback slug — its CSS override is always empty. */
     public const DEFAULT_SLUG = 'naara-official';
 
+    /**
+     * Every colour token an admin may override (owner request, 2026-09-07:
+     * "advance settings to change each color with color code... reset to
+     * default color"). Same 6 keys emitVars() already knows how to turn
+     * into CSS custom properties — this constant is the shared whitelist
+     * between the resolver (merging overrides into tokens.colors) and the
+     * admin editor (which fields to render, in this order).
+     */
+    public const COLOR_KEYS = ['primary', 'primary_dark', 'accent', 'accent_dark', 'navy', 'action'];
+
     /** The three structural layout partials a page may pick between. */
     public const VARIANTS = ['variant-a', 'variant-b', 'variant-c'];
 
@@ -60,14 +70,19 @@ class ThemePreset
             // style; batch 1 gives each its own to maximise the requested
             // "very unique, don't look identical" variety).
             'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold',
+            // Batch 2 (2026-09-07): 2 brand-new personas join with their own
+            // header, alongside batch 1's 3 completing their full suite below.
+            'solar-flare', 'noir-reserve',
         ],
         'bottom_nav' => [
             'default',
             'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold',
+            'solar-flare', 'noir-reserve',
         ],
         'login' => [
             'default',
             'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold',
+            'solar-flare', 'noir-reserve',
         ],
         // A decorative layer independent of login STRUCTURE (owner request:
         // "some login bg will have custom unique dot grid material effects
@@ -81,7 +96,10 @@ class ThemePreset
         // with its own admin-editable content fields registered in
         // LandingHeroLibrary. 'default' keeps using the existing site-wide
         // homepage content (SiteContent/PageBuilder), untouched.
-        'landing_hero' => ['default', 'neon-vertex', 'midnight-signal'],
+        // Batch 2 (2026-09-07): aries-contrast/paperwhite/origin-bold
+        // complete their full suite (they already have header/bottom_nav/
+        // login from batch 1); solar-flare/noir-reserve are brand new.
+        'landing_hero' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve'],
         // The rest of a theme's "full suite" (owner request, 2026-09-07):
         // About, How It Works, Contact — each theme's own version of these
         // pages, at the same content depth as naara-official's own (hero +
@@ -91,9 +109,9 @@ class ThemePreset
         // (Admin\PricingPage), not a content page, so forking its whole
         // layout per theme is a much bigger, riskier undertaking than a
         // content page reskin.
-        'about_page' => ['default', 'neon-vertex', 'midnight-signal'],
-        'how_it_works_page' => ['default', 'neon-vertex', 'midnight-signal'],
-        'contact_page' => ['default', 'neon-vertex', 'midnight-signal'],
+        'about_page' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve'],
+        'how_it_works_page' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve'],
+        'contact_page' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve'],
         // Footer (owner request, 2026-09-07: "please all themes too should
         // have unique footer too... not always we get a straight line
         // footer"). Chrome-only, like header/bottom_nav — no editable
@@ -101,7 +119,7 @@ class ThemePreset
         // functional content (SiteChrome columns/legal, socials, app-export
         // slot). 'default' keeps today's exact shared footer everywhere
         // else, including naara-official.
-        'footer' => ['default', 'neon-vertex', 'midnight-signal'],
+        'footer' => ['default', 'neon-vertex', 'midnight-signal', 'aries-contrast', 'paperwhite', 'origin-bold', 'solar-flare', 'noir-reserve'],
     ];
 
     /**
@@ -143,7 +161,7 @@ class ThemePreset
                     'slug' => (string) $row->slug,
                     'name' => (string) $row->name,
                     'persona' => $row->persona,
-                    'tokens' => self::decode($row->tokens),
+                    'tokens' => self::mergeColorOverrides(self::decode($row->tokens), self::decode($row->color_overrides ?? null)),
                     'icon_family' => self::decode($row->icon_family),
                     'hero_assets' => self::decode($row->hero_assets),
                     'layout_variants' => self::decode($row->layout_variants),
@@ -372,7 +390,8 @@ class ThemePreset
                     'slug' => (string) $r->slug,
                     'name' => (string) $r->name,
                     'persona' => $r->persona,
-                    'tokens' => self::decode($r->tokens),
+                    'tokens' => self::mergeColorOverrides(self::decode($r->tokens), self::decode($r->color_overrides ?? null)),
+                    'color_overrides' => self::decode($r->color_overrides ?? null),
                     'icon_family' => self::decode($r->icon_family),
                     'section_styles' => self::decode($r->section_styles ?? null),
                     'is_built_in' => (bool) $r->is_built_in,
@@ -487,7 +506,62 @@ class ThemePreset
             'section_styles' => [],
             'landing_content' => [],
             'page_content' => [],
+            'color_overrides' => [],
             'is_built_in' => true,
         ];
+    }
+
+    /**
+     * Overlay an admin's colour overrides onto the theme's seeded palette —
+     * only whitelisted COLOR_KEYS are considered, and each override must
+     * still pass the same validChannelTriple() check emitVars() uses, so a
+     * corrupt/tampered override can never inject an arbitrary CSS value any
+     * more than a corrupt seeded token could. Never mutates the original
+     * default: an override missing/invalid for a key just leaves that
+     * key's seeded value in place — "reset to default" is simply removing
+     * the key from color_overrides upstream, nothing to reverse here.
+     */
+    private static function mergeColorOverrides(array $tokens, array $overrides): array
+    {
+        foreach (self::COLOR_KEYS as $key) {
+            $override = $overrides[$key] ?? null;
+            if (self::validChannelTriple($override)) {
+                $tokens['colors'][$key] = $override;
+            }
+        }
+
+        return $tokens;
+    }
+
+    /**
+     * Hex ("#rrggbb" or "rrggbb") -> the "R G B" channel-triple format every
+     * colour token is stored in. Returns null for anything that isn't a
+     * strict 6-digit hex colour — the admin editor's own input validation,
+     * independent of (and in addition to) mergeColorOverrides()'s own check
+     * on the way back out.
+     */
+    public static function hexToChannelTriple(string $hex): ?string
+    {
+        $hex = ltrim(trim($hex), '#');
+        if (preg_match('/^[0-9a-fA-F]{6}$/', $hex) !== 1) {
+            return null;
+        }
+
+        return implode(' ', [
+            hexdec(substr($hex, 0, 2)),
+            hexdec(substr($hex, 2, 2)),
+            hexdec(substr($hex, 4, 2)),
+        ]);
+    }
+
+    /** The reverse of hexToChannelTriple() — for pre-filling the admin editor's colour inputs. */
+    public static function channelTripleToHex(string $triple): string
+    {
+        $parts = array_map('intval', explode(' ', $triple));
+        if (count($parts) !== 3) {
+            return '#000000';
+        }
+
+        return '#'.implode('', array_map(fn ($n) => str_pad(dechex(max(0, min(255, $n))), 2, '0', STR_PAD_LEFT), $parts));
     }
 }

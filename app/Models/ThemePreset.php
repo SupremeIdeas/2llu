@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 class ThemePreset extends Model
 {
     protected $fillable = [
-        'slug', 'name', 'persona', 'tokens', 'icon_family',
+        'slug', 'name', 'persona', 'tokens', 'color_overrides', 'icon_family',
         'hero_assets', 'layout_variants', 'section_styles', 'landing_content', 'page_content', 'is_built_in', 'sort_order',
     ];
 
@@ -21,6 +21,7 @@ class ThemePreset extends Model
     {
         return [
             'tokens' => 'array',
+            'color_overrides' => 'array',
             'icon_family' => 'array',
             'hero_assets' => 'array',
             'layout_variants' => 'array',

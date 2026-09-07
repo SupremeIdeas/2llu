@@ -9,6 +9,86 @@
 
 ## DONE
 
+### 🎨 Theme visual rebuild batch 2 (5 more themes to full-suite) + admin colour overrides — 2026-09-07
+Continuation of the batch-1 arc, per "start the next batch to powerfuly
+build for next 5 themes with entirely different unique styles... no
+bloating," plus a mid-turn feature request: "admin Also change color
+pallet any any theme he picks... advance settings to change each color
+with color code and save to override each color then with a reset to
+default color."
+- **5 themes brought to full-suite status**: aries-contrast, paperwhite,
+  origin-bold (already had header/login/bottom_nav from batch 1, now
+  gained landing_hero + about/how-it-works/contact + footer), and
+  solar-flare + noir-reserve (brand new personas, built from scratch —
+  header, bottom nav, login, login_bg, landing page, full page suite,
+  footer). Each is a genuinely distinct structural composition, not a
+  recolour: aries-contrast (black/white/gold, sharp corners, live-odds
+  scoreboard motif with a numbered ledger about page), paperwhite
+  (quiet editorial serif, single-column pull-quotes, hairline dividers),
+  origin-bold (construction-orange/graphite colour-block sections with
+  giant ghost numerals), solar-flare (amber/crimson sports-broadcast —
+  diagonal clip-path dividers throughout, skewed parallelogram step
+  cards on desktop with a snap-scroll carousel fallback on mobile,
+  bento-grid about page with stat cards), noir-reserve (warm cream/
+  espresso "quiet luxury" — asymmetric single-rounded-corner section
+  seams, Roman-numeral vertical timeline, full-bleed photo split login).
+  `LandingHeroLibrary` + `ThemePageLibrary` extended with 5 new
+  top-level/nested entries each (schema-driven, no other code change);
+  `SECTION_STYLE_ALLOW` extended; additive migration
+  `2026_09_07_163000_assign_theme_batch2_section_styles.php`; all 5
+  themes reuse the existing `public/images/themes/shared/*.webp` pool
+  (no new photos needed this batch). Built via 2 sequential infra passes
+  (registries/migration/seeder, done by the orchestrator) then 5 parallel
+  background agents each writing only their own theme's blade files —
+  zero file conflicts.
+- **Admin colour overrides** (new feature, same batch): any admin can
+  now open a theme card's new "Colours" button and override any of 6
+  brand colours (primary, primary_dark, accent, accent_dark, navy,
+  action) with a hex code, independent of the theme's seeded palette —
+  same additive-column pattern as `landing_content`/`page_content`.
+  New `color_overrides` json column on `theme_presets`
+  (`2026_09_07_170000_add_color_overrides_to_theme_presets.php`);
+  `ThemePreset::mergeColorOverrides()` overlays validated overrides onto
+  `tokens['colors']` at read time in both `active()` and `all()`, with
+  `validChannelTriple()` as a second defense-in-depth layer against a
+  directly-tampered DB row; `hexToChannelTriple()`/`channelTripleToHex()`
+  convert between admin-facing hex and the internal "R G B" storage
+  format. `Admin\ThemePicker` gained `editColors()`/`saveColors()`/
+  `resetColor()`/`resetAllColors()` + a modal (6 hex-input rows with
+  swatch + text field + per-row Reset, plus Reset-all/Cancel/Save) —
+  works on every theme including naara-official, and "reset to default"
+  can never lose the original since overrides live in a separate column.
+  19 tests, full round-trip browser-verified (edit → save → swatch/dot
+  update on the card → reset-all → dot clears).
+- **Real bugs found and fixed during browser verification** (not just
+  visual — re-screenshotted after each fix to confirm):
+  1. aries-contrast's login partial (built in batch 1, before footer
+     swappability existed) was the only one of 7 login partials missing
+     `<x-site-footer variant="slim" />` entirely — added it.
+  2. solar-flare's footer used one `[clip-path]` diagonal-slant rule for
+     both the `full` and `slim` variants; the `full` variant has enough
+     top padding (`pt-16`) to clear the 40px diagonal cut, but the `slim`
+     variant (used on login pages) jumps straight to the copyright row
+     with far less headroom, so the diagonal sliced through the "© 2026
+     NaaraSim..." text on the left edge. Fixed: `slim` now gets a flat
+     `border-t-2 border-accent` instead of the clip-path.
+  3. `saveColors()` unconditionally wrote all 6 colours into
+     `color_overrides` even when a value matched the theme's own seeded
+     default — so a no-op Save (or the natural "Reset all" → reflexive
+     Save click, since Reset-all leaves the modal open) would re-flag a
+     visually-untouched theme as customized and permanently pin it to
+     today's default value, silently breaking any future retune of that
+     theme's base palette. Fixed: only keys that actually differ from
+     the seeded default are persisted as overrides; 3 new regression
+     tests cover the no-op-save, partial-change, and reset-then-save
+     cases.
+- Full suite green throughout: 1621 passed, 0 failed. `npm run build`
+  re-run after every batch of new arbitrary-value Tailwind classes
+  (skewed clip-paths, asymmetric rounded corners, snap-scroll utilities).
+  Every new page browser-verified at 1440×1000 and 390×844 (Playwright,
+  headless Chromium) — home/about/how-it-works/contact/login × 5 themes,
+  plus the admin colour-editor round trip.
+
 ### 🖼️🦶 Local image pipeline + swappable footer + no-flat-dividers rule — 2026-09-07
 Owner follow-up after the page-suite rework above: "give our agents in
 parallel to use perfect tools to remove bg for any image that needs bg
@@ -2275,30 +2355,49 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 > (loyalty milestones, travel timeline, admin-defined achievements paying
 > NaaraCredits) that used to top this list are now DONE — see DONE above.
 
-### ▶ TOP OF NEXT — Theme visual rebuild: bring 5 more themes to full-suite status (batch 2 of 8, "5 to make it 10")
-Owner instruction (2026-09-07, verbatim excerpt): "start the full solid
-build now for existing expansion and next batch 5 to make it 10, we will
-continue until we finish batch by batch till all 40 themes are completed."
-"Existing expansion" (neon-vertex + midnight-signal's full page suite —
-About/How It Works/Contact) is now DONE — see the DONE entry above. The
-immediate next step is picking 5 more themes from the batch-1-of-8 set
-(aries-contrast, paperwhite, origin-bold — the ones with header/login/
-bottom_nav already but no landing_hero/page suite yet) or the next 5 of
-the remaining ~35 unbuilt personas, and building each one's **full
-suite**: unique header + bottom nav + login (+ login_bg effect) + landing
-page (homepage) + About + How It Works + Contact, at the same real
-content depth as naara-official and the neon-vertex/midnight-signal
-pattern just shipped. For each: extend `LandingHeroLibrary` +
-`ThemePageLibrary` with that theme's blade partials + field schemas
-(no other code change needed — both registries are schema-driven), add
-the matching additive migration + seeder assignment, write tests
-mirroring `ThemeLandingPageTest`/`ThemeFullPageSuiteTest`, run full
-suite + Pint, and browser-verify every new page at mobile + desktop
-before moving to the next theme. Research real dribbble/awwwwards/behance
-hero patterns per theme persona (owner: "no hype just the real build with
-real exactly layout") rather than reusing a generic template across
-themes — each theme's landing hero and page suite should read as a
-genuinely distinct design, not a recolour of the same layout.
+### ▶ TOP OF NEXT — Theme visual rebuild: batch 3 of 8 (next 5 themes to full-suite status, "10 to make it 15")
+Batches 1 and 2 are DONE (10 themes now at full-suite status: neon-vertex,
+midnight-signal, aries-contrast, paperwhite, origin-bold, solar-flare,
+noir-reserve — plus naara-official's own built-in suite). Continuing the
+owner's "batch by batch till all 40 themes are completed" instruction:
+pick the next 5 personas from the ~30 remaining unbuilt themes (see the
+full 40-theme roster in `ThemePresetSeeder`) and give each the same
+full-suite treatment — unique header + bottom nav + login (+ login_bg
+effect) + landing page + About + How It Works + Contact + footer, at the
+same real content depth as the 10 already shipped.
+Master the durable rules codified in this file's THEME VISUAL REBUILD
+RULES section before touching a single blade file — they came from
+direct owner correction and apply from the first commit of every future
+batch, not as a later cleanup pass:
+1. No shared section skeleton across themes — research a real reference
+   (Dribbble/Behance/Awwwards-calibre) per persona, don't recolour a
+   layout that already exists on another theme.
+2. No empty image placeholders — pick a real on-brand stock photo (or
+   reuse an existing `public/images/themes/shared/*.webp` asset if it
+   genuinely fits) for every image slot.
+3. Images are committed WebP assets under `public/images/themes/{slug}/`
+   or `.../shared/`, never live hotlinks — verify actual photo content
+   before wiring it in, not just the source description.
+4. Footer is swappable too, on the same `SECTION_STYLE_ALLOW` pattern —
+   never leave a themed suite on the shared straight-line default footer.
+5. No flat straight-line section dividers — pick a `-mt-8
+   rounded-t-[30px]` sheet overlap or another deliberate, persona-fitting
+   shape per theme. **Caution (learned the hard way this batch)**: if a
+   divider treatment uses `clip-path` on a section that also renders in
+   a short "slim" variant (e.g. a login-page footer), check that the
+   slim variant has enough padding to clear the cut, or it will slice
+   through real content — give slim variants a different, non-clipping
+   treatment instead of reusing the full variant's clip-path.
+6. Run `npm run build` before any screenshot pass (new arbitrary-value
+   Tailwind classes silently no-op in a stale build) and browser-verify
+   every new page at both mobile and desktop before calling a batch done.
+Parallel-agent pattern that worked cleanly in batches 1 and 2: do ALL
+shared-file infrastructure (registries, migration, seeder) sequentially
+first as the orchestrator, then parallelize only the non-overlapping
+per-theme blade-file work across background agents with a highly
+detailed brief each (persona, exact file paths, exact registry fields,
+divider treatment, image-reuse rules, icon rules, "don't touch any .php
+file").
 
 ### ▶ Analytics blueprint is now feature-complete across both PRs; pick the next backlog item
 The full Analytics blueprint (Part A + admin §7) is done — see DONE above and

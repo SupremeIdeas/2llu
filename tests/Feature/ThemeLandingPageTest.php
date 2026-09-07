@@ -114,7 +114,7 @@ class ThemeLandingPageTest extends TestCase
     public function test_edit_landing_is_rejected_for_a_theme_still_on_default(): void
     {
         Livewire::actingAs($this->admin())->test(ThemePicker::class)
-            ->call('editLanding', 'aries-contrast')
+            ->call('editLanding', 'verdant-pulse')
             ->assertSet('showLandingModal', false);
     }
 

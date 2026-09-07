@@ -58,6 +58,13 @@
                             class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
                         <x-icon name="layers" class="h-4 w-4" /> Sections
                     </button>
+                    <button type="button" wire:click="editColors('{{ $p['slug'] }}')"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                        <x-icon name="settings" class="h-4 w-4" /> Colours
+                        @if (! empty($p['color_overrides']))
+                            <span class="ml-0.5 h-1.5 w-1.5 rounded-full bg-primary" title="Custom colours applied"></span>
+                        @endif
+                    </button>
                     @if (\App\Support\LandingHeroLibrary::has($p['section_styles']['landing_hero'] ?? 'default'))
                         <button type="button" wire:click="editLanding('{{ $p['slug'] }}')"
                                 class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
@@ -183,6 +190,58 @@
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                 <x-icon name="badge-check" class="h-4 w-4" /> Save sections
             </button>
+        </div>
+    </x-ui.modal>
+
+    {{-- Advanced colour override editor (owner request, 2026-09-07): works
+         on ANY theme, including Naara Official — each of the 6 brand
+         colour tokens gets its own hex swatch + text input, pre-filled
+         with the current effective colour (an override if one is saved,
+         otherwise the theme's own seeded default), with a per-colour
+         "Reset" back to that seeded default plus one "Reset all". Saving
+         never touches the seeded palette itself — only the separate
+         color_overrides layer — so a reset can never lose the original. --}}
+    <x-ui.modal wire="showColorsModal" title="{{ $colorEditingName }} — colours" max-width="md">
+        <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">
+            Override any of this theme's brand colours with your own hex code. Radius and typography stay
+            <strong>{{ $colorEditingName }}</strong>'s own — only these 6 colours change. "Reset" returns a
+            colour to the theme's original default at any time.
+        </p>
+
+        <div class="space-y-3">
+            @foreach ($this->colorLabels() as $key => $label)
+                <div class="flex items-center gap-3">
+                    <input type="color" wire:model="colorValues.{{ $key }}"
+                           class="h-10 w-10 shrink-0 cursor-pointer rounded-lg border border-slate-300 bg-white p-0.5 dark:border-[#2D4060] dark:bg-[#243352]">
+                    <div class="min-w-0 flex-1">
+                        <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">{{ $label }}</label>
+                        <input type="text" wire:model="colorValues.{{ $key }}" maxlength="7" placeholder="#000000"
+                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        @error('colorValues.'.$key) <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <button type="button" wire:click="resetColor('{{ $key }}')"
+                            class="shrink-0 text-[11px] font-medium text-slate-500 hover:text-primary hover:underline dark:text-slate-400">
+                        Reset
+                    </button>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-5 flex items-center justify-between gap-2">
+            <button type="button" wire:click="resetAllColors" wire:confirm="Reset every colour on {{ $colorEditingName }} back to its default?"
+                    class="text-xs font-medium text-slate-500 hover:text-red-600 hover:underline dark:text-slate-400">
+                Reset all to default
+            </button>
+            <div class="flex gap-2">
+                <button type="button" @click="open = false"
+                        class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                    Cancel
+                </button>
+                <button type="button" wire:click="saveColors" wire:loading.attr="disabled" wire:target="saveColors"
+                        class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                    <x-icon name="badge-check" class="h-4 w-4" /> Save colours
+                </button>
+            </div>
         </div>
     </x-ui.modal>
 
