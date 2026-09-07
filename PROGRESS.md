@@ -9,6 +9,48 @@
 
 ## DONE
 
+### 🎨 Theme visual rebuild batch 3 (5 brand-new themes, built from scratch) — 2026-09-07
+Continuation of the batch-by-batch arc, per "let us move to the Next batch
+after you have finished batch 2." Unlike batches 1-2 (which mixed
+finishing partial themes with new ones), all 5 of these are new personas
+built from nothing directly to full-suite status in one pass.
+- **5 new themes at full-suite status**: aurora-shift ("Indigo Current" —
+  fintech-terminal, hex-node connectors, live-rate-ticker login panel,
+  SVG sine-wave dividers reused at page-section boundaries), sunset-transit
+  ("Boarding Pass" — airline-ticket motif, login page renders as a literal
+  boarding pass with barcode + coupon/stub split that stacks vertically on
+  mobile, footer divider is punched circular perforations via a CSS
+  `mask-image` radial-gradient), fintra-clean ("Ledger" — accounting-
+  statement aesthetic, tabular rate-card pricing, footer divider is a
+  tear-off statement perforation), capable-mono ("Capable" — monochrome +
+  neon-lime restraint, every section is a literal terminal/README window
+  including the login card, footer divider is a single 1px neon-lime
+  hairline), waitlisty-soft ("Horizon" — warm rounded consumer, circular
+  photo crops, full-bleed gradient hero banners, soft SVG wave-crest
+  dividers). `SECTION_STYLE_ALLOW`, `LandingHeroLibrary`, and
+  `ThemePageLibrary` extended with 5 new slugs each; additive migration
+  `2026_09_07_190000_assign_theme_batch3_section_styles.php`; built via
+  the same proven pattern — orchestrator does all PHP/registry
+  infrastructure sequentially first, then 5 parallel background agents
+  each write only their own theme's 8 blade files, zero conflicts (aside
+  from 3 agents hitting a transient session rate-limit on the first wave,
+  cleanly retried once the reset window passed).
+- **Real bug found and fixed during verification**: fintra-clean's login
+  page had its decorative "statement mock" card dead-centered over the
+  whole media panel (`absolute inset-0 flex items-center justify-center`),
+  landing exactly on top of the headline/subtext block, which also lands
+  at the panel's vertical centre via the content layer's 3-child
+  `justify-between` flex column. Fixed by anchoring the mock to the
+  upper-right instead of dead centre — confirmed clear on a fresh
+  screenshot at both viewports.
+- 41 new tests (`ThemeBatch3VisualRebuildTest`) + `ThemeFooterStylesTest`
+  extended with the 5 new slugs (50 tests total); full suite green
+  throughout (1714 passed). Browser-verified every one of home/about/
+  how-it-works/contact/login at both 1440×1000 desktop and 390×844 mobile
+  for all 5 themes — only the pre-existing, harmless floating-bottom-nav-
+  overlap artifact from `fullPage` screenshot capture was seen elsewhere,
+  confirmed unrelated to this batch.
+
 ### 🎛️ Admin header editor — colour, corner curve, glassmorphism depth — 2026-09-07
 Owner request (verbatim excerpt): "add a global header editor were we can
 change header color to match any color we want and even to match the
@@ -2424,16 +2466,17 @@ Rate limits (Section 19.2): `api` limiter 300/min auth · 60/min public (on `rou
 > (loyalty milestones, travel timeline, admin-defined achievements paying
 > NaaraCredits) that used to top this list are now DONE — see DONE above.
 
-### ▶ TOP OF NEXT — Theme visual rebuild: batch 3 of 8 (next 5 themes to full-suite status, "10 to make it 15")
-Batches 1 and 2 are DONE (10 themes now at full-suite status: neon-vertex,
+### ▶ TOP OF NEXT — Theme visual rebuild: batch 4 of 8 (next 5 themes to full-suite status)
+Batches 1-3 are DONE (15 themes now at full-suite status: neon-vertex,
 midnight-signal, aries-contrast, paperwhite, origin-bold, solar-flare,
-noir-reserve — plus naara-official's own built-in suite). Continuing the
+noir-reserve, aurora-shift, sunset-transit, fintra-clean, capable-mono,
+waitlisty-soft — plus naara-official's own built-in suite). Continuing the
 owner's "batch by batch till all 40 themes are completed" instruction:
-pick the next 5 personas from the ~30 remaining unbuilt themes (see the
+pick the next 5 personas from the ~25 remaining unbuilt themes (see the
 full 40-theme roster in `ThemePresetSeeder`) and give each the same
 full-suite treatment — unique header + bottom nav + login (+ login_bg
 effect) + landing page + About + How It Works + Contact + footer, at the
-same real content depth as the 10 already shipped.
+same real content depth as the 15 already shipped.
 Master the durable rules codified in this file's THEME VISUAL REBUILD
 RULES section before touching a single blade file — they came from
 direct owner correction and apply from the first commit of every future
