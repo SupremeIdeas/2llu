@@ -49,7 +49,7 @@
                                         class="shrink-0 rounded-full p-1"
                                         :class="view === 'grid' && 'absolute top-1 right-1'">
                                     <x-icon name="star" class="h-4 w-4"
-                                            ::class="isFav('{{ $opt['slug'] }}') ? 'text-accent fill-accent' : 'text-slate-300 dark:text-slate-600'" />
+                                            ::class="isFav('{{ $opt['slug'] }}') ? 'text-accent-dark fill-accent-dark dark:text-accent dark:fill-accent' : 'text-slate-300 dark:text-slate-600'" />
                                 </button>
                             </button>
                         @endforeach

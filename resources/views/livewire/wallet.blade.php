@@ -135,7 +135,7 @@
                             <button type="button" wire:key="quick-{{ $currency }}-{{ $quick }}" wire:click="$set('amount', {{ $quick }})"
                                     @class([
                                         'rounded-xl border px-1 py-2 text-xs font-bold transition',
-                                        'border-accent bg-accent/15 text-accent' => (string) $amount === (string) $quick,
+                                        'border-accent bg-accent/15 text-accent-dark dark:text-accent' => (string) $amount === (string) $quick,
                                         'border-slate-200 text-slate-600 hover:border-accent/60 hover:bg-accent/10 dark:border-[var(--brand-card-border-dark)] dark:text-slate-300' => (string) $amount !== (string) $quick,
                                     ])>
                                 {{ $currency === 'NGN' ? '₦'.number_format($quick) : '$'.$quick }}

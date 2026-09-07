@@ -97,7 +97,7 @@
          --font-sans for a Google Font or an uploaded custom font. Emitted LAST
          so it wins over any theme-preset font variable — this is the single
          authoritative source for the platform's rendered font, regardless of
-         which of the 20 themes is active. Empty on an unconfigured install, so
+         which of the 40 themes is active. Empty on an unconfigured install, so
          the shipped Naara fonts (Supreme Display / Didact Gothic) are untouched. --}}
     @php($fontCss = \App\Support\BrandSettings::fontCss())
     @if ($fontCss)<style id="brand-font-vars">{!! $fontCss !!}</style>@endif

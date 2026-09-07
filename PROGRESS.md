@@ -9,6 +9,103 @@
 
 ## DONE
 
+### 🎨 Theme Preset expansion: 20 → 40 presets (Phase 2 of the color-system audit) — 2026-09-06
+Owner's follow-up to the accent-dark contrast fix: "extend the themes preset
+to 40 so that we will have a powerful solid theme documentary." Added 20
+new presets (rows 21–40) via a new `ThemePresetSeeder::phase2Presets()`,
+each inspired by one of the color-system skill's curated palettes
+(`04-palette-library.md` mood picks + named production palettes — Cobalt
+Essence, Lemonade → "Electric Ledger", Starlight, Dusk Navy-Orange →
+"Dusk Route", Lavender Ink, Signal Red → "Signal Grey" — renamed where a
+literal name would collide with an existing persona) plus 3 original
+combinations chosen to fill hue gaps the other 39 didn't cover (icy
+frost-blue, industrial copper, northern-lights teal/violet).
+- **Every single one of the 20 new palettes was validated BEFORE being
+  written**, not after: `primary` clears >=3:1 white-text contrast (the
+  same bar the existing 20 hold) and the new `accent_dark` token clears
+  >=4.5:1 on white — computed with the skill's own `contrast_check.py`,
+  darkening only as much as each color actually needed (0–50% toward
+  black depending on the starting hue) rather than one blanket formula.
+  `ThemePresetContrastTest` (added in the prior PR) now runs against all
+  40 and passes with zero exceptions — this is a real, enforced guardrail,
+  not a claim.
+- New personas: Solar Flare, Frostbite, Cocoa Dust, Neon Vertex, Canopy,
+  Noir Reserve, Communal, Blush Editorial, Heirloom, Founding, Afterdark,
+  Cobalt Essence, Electric Ledger, Starlight, Dusk Route, Lavender Ink,
+  Signal Grey, Copper Line, Aurora Borealis, Sandstone Route — each with
+  its own radius/typography/shadow/border-opacity personality, not just a
+  recoloured copy of an existing template.
+- No new hero images or fonts were introduced: hero art reuses the
+  existing 8-image set (same reuse discipline as rows 2–20) and typography
+  stays within the existing `Supreme Display` / `Figtree` / `Didact
+  Gothic` allow-list — extending either would need real asset work this
+  pass deliberately didn't scope in.
+- Dark mode needed **zero per-theme authoring** for any of the 20 new
+  presets — they automatically inherit the shared "Apple-inspired" dark
+  palette from `ThemePreset::styleCss()` (the fix from the theme
+  card-container-audit PR), so this pass only had to get each preset's
+  light-mode identity right.
+- `ThemePickerTest`/`ThemePresetTest` count assertions updated from 20 →
+  40; stale "20 themes" comments in `ThemePicker.php` and `app.blade.php`
+  corrected. Full suite green (1491). Verified live via Playwright across
+  4 of the 20 new presets (Solar Flare, Frostbite, Neon Vertex, Electric
+  Ledger) in both light and dark mode.
+
+### 🎨 color-system skill installed + accent-dark token fixes a site-wide WCAG contrast gap — 2026-09-06
+Owner installed a personal cross-project "color-system" skill (now at
+`~/.claude/skills/color-system` — palette library, contrast/legibility
+rules, semantic-token conventions, a WCAG contrast checker script) and
+asked for a full site-wide color audit ahead of extending the Theme Preset
+system from 20 to 40 themes. Running every shipped preset's `--brand-accent`
+through the checker surfaced a real, previously invisible bug: `text-accent`
+used directly as icon/text color on a white or lightly-tinted surface
+(marketing "eyebrow" labels, star ratings, badges, favourite icons) measures
+only ~1.1–3.5:1 contrast on 18 of the 20 presets — including
+**naara-official's own warm gold (2.38:1)**, well under the WCAG 4.5:1 text
+/ 3:1 UI-component floor. Root cause: `text-accent-dark` was already
+referenced in a few files (the sidebar's "Soon" badge) but `--brand-accent-
+dark` never existed as a real CSS var/Tailwind color, so those classes
+silently did nothing — the gap was masking the underlying issue.
+- **`resources/css/app.css`** — new `--brand-accent-dark` token (naara-
+  official's own gold mixed 30% toward black, clears 4.58:1 on white).
+- **`tailwind.config.js`** — `accent` is now `{ DEFAULT, dark }` (mirroring
+  how `primary`/`primary-dark` already work), so `text-accent-dark`,
+  `fill-accent-dark`, etc. are real generated utilities for the first time.
+- **`app/Support/ThemePreset.php`** — `emitVars()` now also whitelists/emits
+  `accent_dark` → `--brand-accent-dark` per theme.
+- **`database/seeders/ThemePresetSeeder.php`** — every one of the 20
+  presets now ships its own `accent_dark`, each mixed toward black until it
+  clears 4.5:1 against white (verified with the skill's `contrast_check.py`
+  — naara-official's own math confirms the fix, its brand hue is untouched).
+- **`database/migrations/2026_09_06_180000_add_theme_preset_accent_dark_
+  token.php`** — backfills the same values into an already-seeded database,
+  purely additive (never overwrites, since the key never existed before).
+- **`app/Support/ColorContrast.php`** (new) — a PHP port of the skill's
+  WCAG contrast math, so presets can be verified in CI instead of eyeballed.
+- **`tests/Feature/ThemePresetContrastTest.php`** (new) — a standing
+  guardrail asserting every seeded preset's `accent_dark` clears 4.5:1 on
+  white and every `primary` can carry white button text (≥3:1) — this will
+  automatically catch a regression in any of the 20 new presets the
+  40-theme expansion is about to add, not just today's 20.
+- Swept ~30 `text-accent`/`fill-accent` occurrences across 22 customer-
+  facing files (marketing eyebrows/hero, blog, pricing page, get-listed,
+  wallet quick-amount pill, catalogue plan badge, rewards/coupon icons,
+  contact/service-picker favourite stars, testimonial ratings, install
+  wizard) to `text-accent-dark dark:text-accent` (or an unconditional
+  `-dark` swap where the element never appears against a dark surface) —
+  every one individually confirmed to sit on a light/white background
+  first, so genuinely dark-background usages (footer, `bg-navy` sections,
+  `.nx-aurora`/`.nx-float-card` gradients, the wallet balance hero's own
+  primary-gradient icons — already fixed to white in a separate PR) were
+  deliberately left untouched.
+- **naara-official's brand hue is completely unchanged** — same warm gold,
+  same light AND dark mode; only the previously-nonexistent "safe to use as
+  text on white" variant of it was added. Verified via Playwright: the home
+  hero eyebrow and "STEP 1/2/3" labels are now clearly legible in light
+  mode; dark mode is pixel-identical to before.
+- Full suite green (1491, 3 new). This is Phase 1 of the owner's ask;
+  Phase 2 (designing 20 new presets to reach 40, using the skill's palette
+  library) is queued next.
 ### 🎨 Dark mode standardized to one shared "Apple-inspired" palette for the 19 non-default themes — 2026-09-06
 Owner course-correction on the card-container audit below, from a screenshot
 of Origin Bold's Wallet page in dark mode: the per-theme `color-mix()`

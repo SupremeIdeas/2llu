@@ -31,7 +31,7 @@
         <div class="flex shrink-0 items-center gap-1">
             <button type="button" wire:click="toggleFavorite({{ $c->id }})" aria-label="Favourite {{ $c->name }}"
                     class="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-slate-100 dark:hover:bg-white/10">
-                <x-icon name="star" class="h-4 w-4 {{ $c->is_favorite ? 'text-accent fill-accent' : 'text-slate-300 dark:text-slate-600' }}" />
+                <x-icon name="star" class="h-4 w-4 {{ $c->is_favorite ? 'text-accent-dark fill-accent-dark dark:text-accent dark:fill-accent' : 'text-slate-300 dark:text-slate-600' }}" />
             </button>
             <a href="{{ route('numbers.dialer', ['to' => $c->phone_number]) }}" wire:navigate aria-label="Call {{ $c->name }}"
                class="flex h-9 w-9 items-center justify-center rounded-full bg-green-50 text-green-600 transition hover:bg-green-100 dark:bg-green-950/40 dark:text-green-300">

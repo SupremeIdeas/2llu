@@ -26,7 +26,11 @@
         <x-flag-orbit tone="light" class="z-[1]" />
     @endif
     <div class="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-16 text-center sm:pt-24 {{ ! empty($s['image']) ? 'text-white' : '' }}">
-        <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] text-accent">{{ $s['eyebrow'] }}</p>
+        {{-- Admin image branch sits on a dark navy scrim regardless of the
+             site's own light/dark mode, so accent (not accent-dark) is the
+             right pick there; the WebGL/no-image branch's scrim follows the
+             site's mode, so it needs the usual light/dark pairing. --}}
+        <p data-reveal class="text-xs font-semibold uppercase tracking-[0.25em] {{ ! empty($s['image']) ? 'text-accent' : 'text-accent-dark dark:text-accent' }}">{{ $s['eyebrow'] }}</p>
         @php
             // Accent only the LAST word of the headline with the gradient — the
             // rest stays solid so it reads clean and professional.

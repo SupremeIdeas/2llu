@@ -25,7 +25,7 @@
             <p class="pr-6 text-[13px] font-semibold uppercase tracking-wide text-primary dark:text-teal-300">{{ $gName }}</p>
             <p class="mt-0.5 text-[15px] font-bold text-slate-900 dark:text-slate-100">{{ $greeting }} <span class="font-normal text-slate-500 dark:text-slate-400">— {{ $greetingAsk }}</span></p>
             <p class="mt-1.5 flex items-start gap-1.5 text-sm text-slate-600 dark:text-slate-300">
-                <x-icon name="zap" class="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                <x-icon name="zap" class="mt-0.5 h-4 w-4 shrink-0 text-accent-dark dark:text-accent" />
                 <span><span class="font-semibold text-slate-700 dark:text-slate-200">Did you know?</span> {{ $factOfTheDay }}</span>
             </p>
         </div>

@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-4xl px-4 py-8">
     <div class="text-center">
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-accent">For businesses</p>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-accent-dark dark:text-accent">For businesses</p>
         <h1 class="mt-3 text-3xl font-bold text-slate-900 sm:text-4xl dark:text-white">Grow your following. List your brand on {{ \App\Support\BrandSettings::name() }}.</h1>
         <p class="mx-auto mt-4 max-w-2xl text-slate-600 dark:text-slate-300">Real {{ \App\Support\BrandSettings::name() }} users actively follow brands to earn credit — genuine engagement from people already motivated to follow, not passive impressions. You get real follows and subscribers on the exact handles you list, plus (on eligible plans) real watch-time on a featured video.</p>
     </div>

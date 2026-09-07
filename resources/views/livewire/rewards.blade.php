@@ -87,7 +87,7 @@
 
             {{-- Referrals --}}
             <div class="nx-card flex flex-col">
-                <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/15 text-accent"><x-icon name="gift" class="h-5 w-5" /></span>
+                <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/15 text-accent-dark dark:text-accent"><x-icon name="gift" class="h-5 w-5" /></span>
                 <h3 class="mt-4 font-bold text-slate-900 dark:text-white">Invite friends</h3>
                 <p class="mt-1.5 flex-1 text-sm text-slate-600 dark:text-slate-300">Share your link — when a friend joins and buys, you earn a reward.</p>
                 <a href="{{ route('referrals') }}" class="nx-btn nx-btn--ghost mt-4 justify-center">Get my link</a>

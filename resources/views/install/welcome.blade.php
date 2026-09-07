@@ -3,7 +3,7 @@
         <div class="text-center">
             <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Welcome</h2>
             <div class="my-6 flex justify-center">
-                <x-icon name="zap" class="h-12 w-12 text-accent" />
+                <x-icon name="zap" class="h-12 w-12 text-accent-dark dark:text-accent" />
             </div>
             <h3 class="text-3xl font-extrabold text-slate-900 dark:text-slate-100">Let’s start.</h3>
             <p class="mx-auto mt-4 max-w-sm text-slate-500 dark:text-slate-400">

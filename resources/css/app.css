@@ -43,6 +43,18 @@
     --brand-primary: 10 110 110;      /* Deep Teal   #0A6E6E */
     --brand-primary-dark: 8 85 85;    /* Teal Dark   #085555 */
     --brand-accent: 212 160 23;       /* Warm Gold   #D4A017 */
+    /* Text/icon-safe darkened accent (color-system skill, §05 "Badges, tags
+       and status pills"): the raw accent value is tuned to look good as a
+       FILL (buttons, gradient orbs, hero glows), not as small text or an
+       icon directly on a white/near-white surface — measured contrast for
+       --brand-accent on white is ~2.4:1, well under the WCAG 4.5:1 text /
+       3:1 UI-component floor. --brand-accent-dark is the same hue mixed
+       toward black until it clears 4.5:1 on white (30% for the shipped
+       gold); every `text-accent`/`fill-accent` instance that sits on a
+       plain or lightly-tinted light surface should use `-dark` instead,
+       reserving the bare accent for use on dark/saturated backgrounds
+       (navy cards, primary gradients) where it already contrasts well. */
+    --brand-accent-dark: 148 112 16;
     --brand-navy: 13 27 42;           /* Midnight Navy #0D1B2A */
     --brand-action: 232 65 42;        /* Coral Red   #E8412A */
     --brand-radius: 0.5rem;           /* default control roundness */

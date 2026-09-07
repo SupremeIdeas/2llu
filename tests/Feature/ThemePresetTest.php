@@ -136,13 +136,13 @@ class ThemePresetTest extends TestCase
         $this->assertSame('variant-a', ThemePreset::layoutVariant('nonexistent_page'));
     }
 
-    public function test_seeder_creates_all_twenty_presets(): void
+    public function test_seeder_creates_all_forty_presets(): void
     {
         $this->seed(ThemePresetSeeder::class);
         ThemePreset::bust();
 
         $all = ThemePreset::all();
-        $this->assertCount(20, $all);
+        $this->assertCount(40, $all);
         // Exactly one built-in, and it is naara-official at sort_order 1.
         $builtIns = $all->where('is_built_in', true);
         $this->assertCount(1, $builtIns);
@@ -172,7 +172,7 @@ class ThemePresetTest extends TestCase
         $row = ThemePresetModel::where('slug', 'aurora-shift')->first();
         $this->assertSame('1 2 3', $row->tokens['colors']['primary']);
         // …but the built-in is always re-asserted authoritatively.
-        $this->assertSame(20, ThemePresetModel::count());
+        $this->assertSame(40, ThemePresetModel::count());
     }
 
     public function test_missing_active_row_falls_back_without_blanking(): void

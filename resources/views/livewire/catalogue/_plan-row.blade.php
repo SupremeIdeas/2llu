@@ -11,7 +11,7 @@
             </span>
             <span class="text-sm text-slate-500 dark:text-slate-400">· {{ $plan->validity_days ? $plan->validity_days.' days' : 'flexible' }}</span>
             @if ($plan->is_featured)
-                <span class="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase text-accent">
+                <span class="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase text-accent-dark dark:text-accent">
                     <x-icon name="zap" class="h-3 w-3" /> Popular
                 </span>
             @endif
