@@ -20,9 +20,13 @@ use Tests\TestCase;
  * request). One shared layout across every theme. A destination shows when it
  * is EITHER actually bought (eSIM orders on the active line) OR admin-featured
  * (is_featured), ranked by purchase volume first and the featured flag as the
- * default when there are no sales yet. Its photo is the pre-existing
- * admin-editable per-country image (EsimCountryImage.detail_image_path, set in
- * Admin → eSIM Control Center) — no new admin uploader.
+ * default when there are no sales yet. When NEITHER exists anywhere in the
+ * catalogue (a brand-new install, before the first sale or the first admin
+ * featured-toggle) every country with an active local plan becomes eligible,
+ * cheapest-first — the row is never silently empty on day one. Its photo is
+ * the pre-existing admin-editable per-country image
+ * (EsimCountryImage.detail_image_path, set in Admin → eSIM Control Center) —
+ * no new admin uploader.
  */
 class EsimPopularDestinationsTest extends TestCase
 {
@@ -62,12 +66,30 @@ class EsimPopularDestinationsTest extends TestCase
             ->assertSee("openCountry('FR')", false);
     }
 
-    public function test_a_country_with_no_featured_plan_is_excluded(): void
+    public function test_a_country_with_no_featured_plan_still_shows_as_the_day_one_fallback(): void
     {
+        // Zero purchases anywhere AND nothing admin-featured yet (a brand-new
+        // install) must still show something — the row is never silently
+        // empty just because no admin has visited the featured toggle yet.
         $this->plan(['is_featured' => false]);
 
         Livewire::actingAs(User::factory()->create())->test(Catalogue::class)
-            ->assertDontSee('Popular Destinations');
+            ->assertSee('Popular Destinations')
+            ->assertSee(CountryNames::name('FR'));
+    }
+
+    public function test_an_unfeatured_unbought_country_is_excluded_once_another_has_real_signal(): void
+    {
+        // FR is featured (real signal exists elsewhere), so the day-one
+        // fallback no longer applies — NG (neither bought nor featured) drops
+        // out of the row exactly as before.
+        $this->plan(['countries' => ['FR'], 'is_featured' => true]);
+        $this->plan(['countries' => ['NG'], 'is_featured' => false]);
+        EsimCatalogue::flush();
+
+        $codes = collect(EsimCatalogue::popularDestinations(false))->pluck('code');
+        $this->assertTrue($codes->contains('FR'));
+        $this->assertFalse($codes->contains('NG'));
     }
 
     public function test_a_multi_country_or_global_featured_plan_is_excluded(): void
@@ -118,15 +140,23 @@ class EsimPopularDestinationsTest extends TestCase
     public function test_toggling_featured_off_removes_the_destination_without_a_manual_cache_flush(): void
     {
         $this->seed(RoleSeeder::class);
+        // A second, always-featured country (GB) keeps real signal in the
+        // catalogue throughout, so toggling FR off tests FR's own exclusion
+        // rather than tripping the day-one empty-catalogue fallback.
+        $this->plan(['countries' => ['GB']]);
         $plan = $this->plan();
         $admin = User::factory()->create();
         $admin->assignRole('admin');
 
-        Livewire::actingAs(User::factory()->create())->test(Catalogue::class)->assertSee('Popular Destinations');
+        Livewire::actingAs(User::factory()->create())->test(Catalogue::class)
+            ->assertSee('Popular Destinations')
+            ->assertSee("openCountry('FR')", false);
 
         Livewire::actingAs($admin)->test(EsimControlCenter::class)->call('togglePopular', $plan->id);
 
-        Livewire::actingAs(User::factory()->create())->test(Catalogue::class)->assertDontSee('Popular Destinations');
+        Livewire::actingAs(User::factory()->create())->test(Catalogue::class)
+            ->assertSee('Popular Destinations')
+            ->assertDontSee("openCountry('FR')", false);
     }
 
     public function test_the_full_line_and_data_line_are_scoped_independently(): void
@@ -156,6 +186,10 @@ class EsimPopularDestinationsTest extends TestCase
 
     public function test_a_failed_or_cancelled_order_does_not_count_as_bought(): void
     {
+        // FR keeps real signal (featured) in the catalogue throughout, so
+        // NG's failed/cancelled orders are tested in isolation from the
+        // day-one empty-catalogue fallback.
+        $this->plan(['countries' => ['FR'], 'is_featured' => true]);
         $ng = $this->plan(['countries' => ['NG'], 'is_featured' => false]);
         $this->order($ng, 'failed');
         $this->order($ng, 'cancelled');
@@ -192,5 +226,19 @@ class EsimPopularDestinationsTest extends TestCase
         $codes = collect(EsimCatalogue::popularDestinations(false))->pluck('code');
         $this->assertTrue($codes->contains('FR'));
         $this->assertTrue($codes->contains('GB'));
+    }
+
+    public function test_with_no_sales_and_nothing_featured_it_falls_back_to_every_country_cheapest_first(): void
+    {
+        // Day-one state (owner's real report): a brand-new catalogue with zero
+        // orders AND zero admin-featured plans must still populate the row,
+        // ranked cheapest-first — not sit empty until the first sale or the
+        // first admin visits the featured toggle.
+        $this->plan(['countries' => ['FR'], 'is_featured' => false, 'computed_retail_usd' => 9]);
+        $this->plan(['countries' => ['GB'], 'is_featured' => false, 'computed_retail_usd' => 3]);
+        EsimCatalogue::flush();
+
+        $codes = collect(EsimCatalogue::popularDestinations(false))->pluck('code')->all();
+        $this->assertSame(['GB', 'FR'], $codes);
     }
 }
