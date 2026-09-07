@@ -94,7 +94,7 @@
                 <h3 class="mt-3 text-xl font-bold text-slate-900 dark:text-white">{{ $team['founder_name'] }}</h3>
                 <p class="text-sm font-medium text-accent-dark dark:text-accent">{{ $team['founder_title'] }}</p>
                 <p class="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ $team['founder_bio'] }}</p>
-                <p class="mt-4 border-t border-slate-100 pt-4 text-xs leading-relaxed text-slate-400 dark:border-[#2D4060]">{{ $team['company'] }}</p>
+                <p class="mt-4 border-t border-slate-100 pt-4 text-xs leading-relaxed text-slate-400 dark:border-[var(--brand-card-border-dark)]">{{ $team['company'] }}</p>
             </div>
         </section>
     @endif

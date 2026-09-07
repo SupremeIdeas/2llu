@@ -6,7 +6,7 @@
     <div class="space-y-2">
         @foreach ($providers as $key => $meta)
             <a href="{{ route('social.redirect', $key) }}" wire:navigate.ignore
-               class="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100 dark:hover:bg-[#2A3A56]">
+               class="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100 dark:hover:bg-[#2A3A56]">
                 <x-service-icon :slug="$meta['icon']" class="h-5 w-5" />
                 Continue with {{ $meta['label'] }}
             </a>

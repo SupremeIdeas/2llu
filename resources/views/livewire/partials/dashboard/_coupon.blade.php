@@ -10,7 +10,7 @@
                 <p class="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{{ $couponNudge['message'] }}</p>
             </div>
             <div class="flex items-center gap-3">
-                <span class="rounded-lg border border-dashed border-accent/50 bg-white px-3 py-1.5 font-mono text-sm font-bold tracking-wider text-accent-dark dark:bg-[#1A2840] dark:text-accent">{{ $couponNudge['code'] }}</span>
+                <span class="rounded-lg border border-dashed border-accent/50 bg-white px-3 py-1.5 font-mono text-sm font-bold tracking-wider text-accent-dark dark:bg-[var(--brand-card-dark)] dark:text-accent">{{ $couponNudge['code'] }}</span>
                 <a href="{{ route('catalogue') }}" wire:navigate class="nx-btn nx-btn--primary !px-4 !py-2 text-sm">
                     {{ $couponNudge['cta'] }} <x-icon name="chevron-right" class="h-4 w-4" />
                 </a>

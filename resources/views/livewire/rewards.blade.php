@@ -31,7 +31,7 @@
     </div>
 
     @unless ($enabled)
-        <div class="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-400 dark:border-[#2D4060] dark:text-slate-500">
+        <div class="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-400 dark:border-[var(--brand-card-border-dark)] dark:text-slate-500">
             The rewards programme is currently paused. Check back soon.
         </div>
     @else
@@ -132,7 +132,7 @@
 
         {{-- Ledger --}}
         <h2 class="mb-3 mt-8 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Credit history</h2>
-        <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-[#2D4060]">
+        <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-[var(--brand-card-border-dark)]">
             <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50 text-slate-500 dark:bg-[#243352] dark:text-slate-400">
                     <tr>
@@ -142,7 +142,7 @@
                         <th class="px-4 py-2 font-medium">When</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white dark:divide-[#243352] dark:bg-[#1A2840]">
+                <tbody class="divide-y divide-slate-100 bg-white dark:divide-[#243352] dark:bg-[var(--brand-card-dark)]">
                     @forelse ($ledger as $row)
                         <tr wire:key="cl-{{ $row->id }}" class="text-slate-700 dark:text-slate-200">
                             <td class="px-4 py-2 capitalize">{{ $row->description ?? str_replace('_', ' ', $row->source) }}</td>

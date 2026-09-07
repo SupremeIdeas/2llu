@@ -34,15 +34,15 @@
 
     {{-- Stat cards --}}
     <div class="grid grid-cols-3 gap-3">
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
             <p class="text-xs text-slate-500 dark:text-slate-400">Customers</p>
             <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{{ $customerCount }}</p>
         </div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
             <p class="text-xs text-slate-500 dark:text-slate-400">Available</p>
             <p class="mt-1 text-2xl font-bold text-primary dark:text-teal-300">${{ number_format($balance, 2) }}</p>
         </div>
-        <a href="{{ route('merchant.earnings') }}" wire:navigate class="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-primary/40 hover:shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <a href="{{ route('merchant.earnings') }}" wire:navigate class="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-primary/40 hover:shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
             <p class="text-xs text-slate-500 dark:text-slate-400">Lifetime earned</p>
             <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">${{ number_format($lifetime, 2) }}</p>
             <span class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary dark:text-teal-300">View analytics <x-icon name="chevron-right" class="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" /></span>
@@ -52,11 +52,11 @@
     {{-- Merchant V2 --}}
     @if ($merchant->isV2())
         <div class="mt-6 grid gap-3 sm:grid-cols-2">
-            <a href="{{ route('merchant.clients') }}" wire:navigate class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-primary/40 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <a href="{{ route('merchant.clients') }}" wire:navigate class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-primary/40 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                 <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300"><x-icon name="users" class="h-5 w-5" /></span>
                 <div><p class="font-semibold text-slate-900 dark:text-white">Clients</p><p class="text-xs text-slate-400">Manage eSIMs for people without an account</p></div>
             </a>
-            <a href="{{ route('developer') }}" wire:navigate class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-primary/40 dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <a href="{{ route('developer') }}" wire:navigate class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-primary/40 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                 <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300"><x-icon name="key" class="h-5 w-5" /></span>
                 <div><p class="font-semibold text-slate-900 dark:text-white">Developer portal</p><p class="text-xs text-slate-400">API keys &amp; docs — first-class access</p></div>
             </a>
@@ -78,13 +78,13 @@
     @endif
 
     {{-- Invite link --}}
-    <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]"
+    <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]"
          x-data="{ copied: false, copy() { navigator.clipboard.writeText('{{ $inviteUrl }}').then(() => { this.copied = true; setTimeout(() => this.copied = false, 1500); }); } }">
         <h2 class="mb-1 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"><x-icon name="link" class="h-4 w-4" /> Your invite link</h2>
         <p class="mb-3 text-xs text-slate-500 dark:text-slate-400">Share this — anyone who signs up through it becomes your customer, and you earn on every purchase they make.</p>
         <div class="flex items-center gap-2">
             <input type="text" readonly value="{{ $inviteUrl }}"
-                   class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-200">
+                   class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-200">
             <button type="button" x-on:click="copy()"
                     class="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-dark">
                 <x-icon name="copy" class="h-4 w-4" /> <span x-text="copied ? 'Copied' : 'Copy'"></span>
@@ -100,7 +100,7 @@
         <p class="mb-3 text-xs text-slate-500 dark:text-slate-400">Know a business that should resell on {{ \App\Support\BrandSettings::name() }}? Share this — when they join and become a merchant, you get a <strong>one-time bonus</strong>. (This is a one-off reward, not a cut of their sales.)</p>
         <div class="flex items-center gap-2">
             <input type="text" readonly value="{{ $merchantInvite }}"
-                   class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-200">
+                   class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-200">
             <button type="button" x-on:click="copy()"
                     class="flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-navy hover:brightness-105">
                 <x-icon name="copy" class="h-4 w-4" /> <span x-text="copied ? 'Copied' : 'Copy'"></span>
@@ -109,19 +109,19 @@
     </div>
 
     {{-- Storefront branding --}}
-    <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
         <h2 class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"><x-icon name="image" class="h-4 w-4" /> Storefront</h2>
         <div class="grid gap-3 sm:grid-cols-2">
             <div>
                 <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Business name</label>
-                <input type="text" wire:model="businessName" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                <input type="text" wire:model="businessName" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                 @error('businessName') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
             <div>
                 <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Brand colour</label>
                 <div class="flex items-center gap-2">
-                    <input type="color" wire:model="brandColor" class="h-9 w-12 shrink-0 rounded border border-slate-300 dark:border-[#2D4060]">
-                    <input type="text" wire:model="brandColor" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <input type="color" wire:model="brandColor" class="h-9 w-12 shrink-0 rounded border border-slate-300 dark:border-[var(--brand-card-border-dark)]">
+                    <input type="text" wire:model="brandColor" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                 </div>
                 @error('brandColor') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
@@ -140,7 +140,7 @@
     </div>
 
     {{-- Withdraw earnings --}}
-    <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
         <h2 class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"><x-icon name="wallet" class="h-4 w-4" /> Withdraw earnings</h2>
         {{-- §5.1: explain the identity gate up front, before they hit it. --}}
         <x-kyc-gate-notice :level="2" action="withdraw your earnings" class="mb-3" />
@@ -157,7 +157,7 @@
             <div class="grid gap-3 sm:grid-cols-2">
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">To account</label>
-                    <select wire:model="accountId" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    <select wire:model="accountId" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         @foreach ($accounts as $acct)
                             <option value="{{ $acct->id }}">{{ $acct->bank_name ?? $acct->bank_code }} · {{ $acct->account_name }}</option>
                         @endforeach
@@ -166,7 +166,7 @@
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Amount (USD)</label>
                     <input type="number" step="0.01" min="0" wire:model="amountUsd" placeholder="0.00"
-                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                 </div>
             </div>
             <button type="button" wire:click="withdraw" wire:loading.attr="disabled" wire:target="withdraw"
@@ -180,7 +180,7 @@
     @if ($ledger->isNotEmpty())
         <div class="mt-6">
             <h2 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Recent earnings</h2>
-            <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-[#243352] dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-[#243352] dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                 @foreach ($ledger as $row)
                     <div class="flex items-center justify-between px-4 py-3 text-sm" wire:key="earn-{{ $row->id }}">
                         <div>
@@ -202,7 +202,7 @@
     @if ($customers->isNotEmpty())
         <div class="mt-6">
             <h2 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Your customers</h2>
-            <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-[#243352] dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-[#243352] dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                 @foreach ($customers as $customer)
                     <div class="flex items-center gap-3 px-4 py-3 text-sm" wire:key="cust-{{ $customer->id }}">
                         <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold uppercase text-primary dark:bg-primary/20 dark:text-teal-300">{{ \Illuminate\Support\Str::of($customer->name)->trim()->substr(0, 1) }}</span>

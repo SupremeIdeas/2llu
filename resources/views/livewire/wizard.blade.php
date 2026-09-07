@@ -142,7 +142,7 @@
                             <div class="flex items-center gap-2">
                                 <input type="text" wire:model="freeText" wire:keydown.enter="interpret"
                                        placeholder="Tell me in your words…"
-                                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                       class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                                 <button type="button" wire:click="interpret" wire:loading.attr="disabled" wire:target="interpret"
                                         aria-label="Ask"
                                         class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white transition hover:bg-primary-dark disabled:opacity-60">
@@ -161,7 +161,7 @@
 
                         @forelse ($this->purposes as $p)
                             <button type="button" wire:click="choosePurpose('{{ $p['key'] }}')" wire:key="purpose-{{ $p['key'] }}"
-                                    class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-primary hover:bg-primary/5 dark:border-[#2D4060] dark:bg-[#182742] dark:hover:border-primary">
+                                    class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-primary hover:bg-primary/5 dark:border-[var(--brand-card-border-dark)] dark:bg-[#182742] dark:hover:border-primary">
                                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary/20">
                                     <x-icon name="{{ $p['icon'] }}" class="h-5 w-5" />
                                 </span>
@@ -187,13 +187,13 @@
                                 </button>
                             </div>
                             <input type="text" x-model="cq" placeholder="Search countries…"
-                                   class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                   class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                             <div class="mt-2 grid max-h-56 grid-cols-1 gap-2 overflow-y-auto pr-1">
                                 @foreach ($countries as $slug => $label)
                                     <button type="button" wire:click="chooseCountry('{{ $slug }}')" wire:key="country-{{ $slug }}"
                                             wire:loading.attr="disabled"
                                             x-show="cq === '' || '{{ Str::lower($label) }}'.includes(cq.toLowerCase())"
-                                            class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left text-sm text-slate-800 transition hover:border-primary hover:bg-primary/5 disabled:opacity-60 dark:border-[#2D4060] dark:bg-[#182742] dark:text-slate-100 dark:hover:border-primary">
+                                            class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left text-sm text-slate-800 transition hover:border-primary hover:bg-primary/5 disabled:opacity-60 dark:border-[var(--brand-card-border-dark)] dark:bg-[#182742] dark:text-slate-100 dark:hover:border-primary">
                                         <x-country-flag :country="$slug" class="h-4 w-6 shrink-0" wire:key="wflag-{{ $slug }}" />
                                         {{ $label }}
                                     </button>
@@ -212,13 +212,13 @@
                                 </button>
                             </div>
                             <input type="text" x-model="sq" placeholder="Search services…"
-                                   class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                   class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                             <div class="mt-2 grid max-h-56 grid-cols-3 gap-2 overflow-y-auto pr-1">
                                 @foreach ($services as $svc)
                                     <button type="button" wire:click="chooseService('{{ $svc }}')" wire:key="svc-{{ $svc }}"
                                             wire:loading.attr="disabled"
                                             x-show="sq === '' || '{{ Str::lower(\App\Support\NumberCatalogue::serviceLabel($svc)) }}'.includes(sq.toLowerCase())"
-                                            class="flex flex-col items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-3 text-center text-[11px] font-medium leading-tight text-slate-700 transition hover:border-primary hover:bg-primary/5 disabled:opacity-50 dark:border-[#2D4060] dark:bg-[#182742] dark:text-slate-200 dark:hover:border-primary">
+                                            class="flex flex-col items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-3 text-center text-[11px] font-medium leading-tight text-slate-700 transition hover:border-primary hover:bg-primary/5 disabled:opacity-50 dark:border-[var(--brand-card-border-dark)] dark:bg-[#182742] dark:text-slate-200 dark:hover:border-primary">
                                         <x-service-icon :slug="$svc" class="h-5 w-5" />
                                         <span class="line-clamp-2">{{ \App\Support\NumberCatalogue::serviceLabel($svc) }}</span>
                                     </button>
@@ -238,9 +238,9 @@
                             <x-icon name="shield" class="h-3.5 w-3.5 shrink-0" /> We check this before you pay — no surprises.
                         </p>
                         <input type="text" wire:model="device" placeholder="e.g. iPhone 14, Galaxy S22"
-                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         <button type="button" wire:click="checkDevice" wire:loading.attr="disabled"
-                                class="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
+                                class="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-200 dark:hover:bg-[#243352]">
                             <x-icon name="search" class="h-4 w-4" /> Check my device
                         </button>
                         @if ($deviceResult === true)
@@ -268,14 +268,14 @@
                         <p class="text-sm text-slate-600 dark:text-slate-300">Want a number with certain digits? Type a few (e.g. from your own number) and we’ll find the closest.</p>
                         <input type="text" wire:model="matchDigits" inputmode="numeric" placeholder="e.g. 1234"
                                wire:keydown.enter="findNumbers"
-                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button" wire:click="$set('matchPosition', 'ends')"
-                                    class="rounded-lg border px-3 py-2 text-xs font-semibold transition {{ $matchPosition === 'ends' ? 'border-primary bg-primary/10 text-primary-dark dark:text-primary' : 'border-slate-200 text-slate-600 dark:border-[#2D4060] dark:text-slate-300' }}">
+                                    class="rounded-lg border px-3 py-2 text-xs font-semibold transition {{ $matchPosition === 'ends' ? 'border-primary bg-primary/10 text-primary-dark dark:text-primary' : 'border-slate-200 text-slate-600 dark:border-[var(--brand-card-border-dark)] dark:text-slate-300' }}">
                                 Ends with
                             </button>
                             <button type="button" wire:click="$set('matchPosition', 'contains')"
-                                    class="rounded-lg border px-3 py-2 text-xs font-semibold transition {{ $matchPosition === 'contains' ? 'border-primary bg-primary/10 text-primary-dark dark:text-primary' : 'border-slate-200 text-slate-600 dark:border-[#2D4060] dark:text-slate-300' }}">
+                                    class="rounded-lg border px-3 py-2 text-xs font-semibold transition {{ $matchPosition === 'contains' ? 'border-primary bg-primary/10 text-primary-dark dark:text-primary' : 'border-slate-200 text-slate-600 dark:border-[var(--brand-card-border-dark)] dark:text-slate-300' }}">
                                 Contains
                             </button>
                         </div>
@@ -306,7 +306,7 @@
                         @foreach ($candidates as $c)
                             <button type="button" wire:click="provisionPermanent('{{ $c['number'] }}')" wire:key="cand-{{ $c['number'] }}"
                                     wire:loading.attr="disabled" wire:target="provisionPermanent"
-                                    class="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left transition hover:border-primary hover:bg-primary/5 disabled:opacity-50 dark:border-[#2D4060] dark:bg-[#182742] dark:hover:border-primary">
+                                    class="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left transition hover:border-primary hover:bg-primary/5 disabled:opacity-50 dark:border-[var(--brand-card-border-dark)] dark:bg-[#182742] dark:hover:border-primary">
                                 <span class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                     <x-icon name="phone" class="h-4 w-4 text-primary" /> {{ $c['number'] }}
                                 </span>
@@ -318,7 +318,7 @@
                                 <button type="button" wire:click="showAnyNumber"
                                         class="rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark">Show any number</button>
                                 <button type="button" wire:click="$set('step', 'country')"
-                                        class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">Try another country</button>
+                                        class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-200 dark:hover:bg-[#243352]">Try another country</button>
                             </div>
                         @endif
                         <div wire:loading wire:target="provisionPermanent" class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -350,7 +350,7 @@
                                     <span class="font-semibold text-slate-900 dark:text-slate-100">${{ number_format($this->wizardFee, 2) }}</span>
                                 </div>
                             @endif
-                            <div class="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 text-sm dark:border-[#2D4060]">
+                            <div class="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 text-sm dark:border-[var(--brand-card-border-dark)]">
                                 <span class="text-slate-500 dark:text-slate-400">Total</span>
                                 <span class="text-right">
                                     <span class="text-lg font-bold text-primary-dark dark:text-primary">${{ number_format($__total, 2) }}</span>
@@ -423,7 +423,7 @@
                         @endif
 
                         <a href="{{ route('dashboard') }}" wire:navigate
-                           class="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
+                           class="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-200 dark:hover:bg-[#243352]">
                             View on dashboard
                         </a>
                         <button type="button" wire:click="restart"
@@ -475,7 +475,7 @@
 
                             <div class="grid grid-cols-2 gap-2">
                                 <button type="button" wire:click="anotherOtp"
-                                        class="flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
+                                        class="flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-200 dark:hover:bg-[#243352]">
                                     <x-icon name="refresh" class="h-4 w-4" /> Another code
                                 </button>
                                 <button type="button" wire:click="dismissOtp"

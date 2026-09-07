@@ -12,7 +12,7 @@
                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold',
                     'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100' => $n === $step,
                     'border-green-500 bg-green-500 text-white' => $n < $step,
-                    'border-slate-300 text-slate-400 dark:border-[#2D4060] dark:text-slate-500' => $n > $step,
+                    'border-slate-300 text-slate-400 dark:border-[var(--brand-card-border-dark)] dark:text-slate-500' => $n > $step,
                 ])>
                     @if ($n < $step) <x-icon name="check" class="h-4 w-4" /> @else {{ $n }} @endif
                 </span>
@@ -28,7 +28,7 @@
         @endforeach
     </ol>
 
-    <div class="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <div class="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
         {{ $slot }}
     </div>
 </div>

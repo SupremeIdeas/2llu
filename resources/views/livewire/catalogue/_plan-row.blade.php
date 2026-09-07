@@ -3,7 +3,7 @@
      plan-detail view. Expects: $plan, $fmt. --}}
 @php($price = $fmt((float) $plan->final_retail_usd))
 <div wire:key="plan-{{ $plan->id }}" wire:click="openPlan({{ $plan->id }})" role="button" tabindex="0"
-     class="group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#1A2840]">
+     class="group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
     <div class="min-w-0">
         <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span class="text-lg font-bold text-slate-900 dark:text-slate-100">
@@ -25,7 +25,7 @@
                         <x-icon name="info" class="h-3.5 w-3.5" />
                     </button>
                     <span x-show="open" x-cloak x-transition
-                          class="absolute left-0 top-6 z-10 w-56 rounded-lg border border-slate-200 bg-white p-3 text-left text-xs leading-relaxed text-slate-600 shadow-lg dark:border-[#2D4060] dark:bg-[#1A2840] dark:text-slate-300">
+                          class="absolute left-0 top-6 z-10 w-56 rounded-lg border border-slate-200 bg-white p-3 text-left text-xs leading-relaxed text-slate-600 shadow-lg dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)] dark:text-slate-300">
                         {{ $plan->display_tooltip }}
                     </span>
                 </span>

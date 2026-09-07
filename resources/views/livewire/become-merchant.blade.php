@@ -9,7 +9,7 @@
     {{-- V1 vs V2 plan comparison (BUILD-4 §3.1), live from MerchantSettings so a
          prospective merchant sees what each tier unlocks and its price up front. --}}
     <div class="mt-6 grid gap-3 sm:grid-cols-2">
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
             <div class="flex items-center justify-between">
                 <p class="font-bold text-slate-900 dark:text-slate-100">Merchant V1</p>
                 <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-300">Standard</span>
@@ -55,7 +55,7 @@
         </ol>
 
         {{-- Deferred-verification note (§1): no KYB up front. --}}
-        <div class="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500 dark:border-[#2D4060] dark:bg-[#152238] dark:text-slate-400">
+        <div class="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-inner-dark)] dark:text-slate-400">
             <x-icon name="shield" class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <span>No verification needed to start. You'll confirm your identity later — only when you first cash out your earnings.</span>
         </div>
@@ -79,7 +79,7 @@
                 @endif
 
                 {{-- Path 1: spend --}}
-                <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $eligibility['spend']['met'] ? 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300' : 'bg-slate-100 text-slate-400 dark:bg-white/5' }}">
                         <x-icon name="{{ $eligibility['spend']['met'] ? 'badge-check' : 'credit-card' }}" class="h-4 w-4" />
                     </span>
@@ -90,7 +90,7 @@
                 </div>
 
                 {{-- Path 2: fast-route enrollment --}}
-                <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $eligibility['enrollment']['met'] ? 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300' : 'bg-accent/15 text-accent-dark dark:text-accent' }}">
                         <x-icon name="{{ $eligibility['enrollment']['met'] ? 'badge-check' : 'zap' }}" class="h-4 w-4" />
                     </span>
@@ -106,7 +106,7 @@
                 </div>
 
                 {{-- Path 3: referrals --}}
-                <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $eligibility['referrals']['met'] ? 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300' : 'bg-slate-100 text-slate-400 dark:bg-white/5' }}">
                         <x-icon name="{{ $eligibility['referrals']['met'] ? 'badge-check' : 'link' }}" class="h-4 w-4" />
                     </span>
@@ -118,7 +118,7 @@
             </div>
         @else
             {{-- Stage 3: application --}}
-            <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                 <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Set up your storefront</p>
                 <p class="mt-0.5 text-xs text-green-600 dark:text-green-400">Membership unlocked — one last step.</p>
                 @if ($error)
@@ -127,12 +127,12 @@
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Business name</label>
-                        <input type="text" wire:model="businessName" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <input type="text" wire:model="businessName" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         @error('businessName') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Brand colour</label>
-                        <input type="color" wire:model="brandColor" class="h-10 w-full rounded-lg border border-slate-300 bg-white dark:border-[#2D4060] dark:bg-[#243352]">
+                        <input type="color" wire:model="brandColor" class="h-10 w-full rounded-lg border border-slate-300 bg-white dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352]">
                     </div>
                 </div>
                 <button type="button" wire:click="apply" wire:loading.attr="disabled" wire:target="apply"
@@ -146,7 +146,7 @@
              a merchant can verify now or later at payout. Data-driven country +
              registration-type selects (worldwide), replacing the old hardcoded
              4-country / CAC-TIN form. --}}
-        <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
             <div class="flex items-center justify-between">
                 <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Business verification <span class="font-normal text-slate-400">(optional now)</span></p>
                 @if ($kybVerified)
@@ -166,7 +166,7 @@
                 <div class="mt-4 grid gap-3 sm:grid-cols-3">
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Country</label>
-                        <select wire:model.live="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <select wire:model.live="country" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                             @foreach ($countries as $code => $name)
                                 <option value="{{ $code }}">{{ $name }}</option>
                             @endforeach
@@ -174,7 +174,7 @@
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Reg. type</label>
-                        <select wire:model="regType" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <select wire:model="regType" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                             @foreach ($regTypes as $type)
                                 <option value="{{ $type['code'] }}">{{ $type['label'] }}</option>
                             @endforeach
@@ -183,7 +183,7 @@
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Reg. number</label>
-                        <input type="text" wire:model="regNumber" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                        <input type="text" wire:model="regNumber" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         @error('regNumber') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                     </div>
                 </div>

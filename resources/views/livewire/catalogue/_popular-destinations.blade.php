@@ -22,7 +22,7 @@
                 @php($teaser = $d['from_usd'] !== null ? $fmt((float) $d['from_usd']) : null)
                 @php($dataLabel = $d['data_mb'] ? (($d['data_mb'] >= 1024) ? round($d['data_mb'] / 1024, 1).'GB' : $d['data_mb'].'MB') : null)
                 <button type="button" wire:click="openCountry('{{ $d['code'] }}')" wire:key="popular-dest-{{ $d['code'] }}"
-                        class="group relative h-40 w-32 shrink-0 overflow-hidden rounded-2xl border border-slate-200 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] sm:h-44 sm:w-36">
+                        class="group relative h-40 w-32 shrink-0 overflow-hidden rounded-2xl border border-slate-200 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-[var(--brand-card-border-dark)] sm:h-44 sm:w-36">
                     @if ($d['photo'])
                         <img src="{{ $d['photo'] }}" alt="{{ $d['name'] }}" loading="lazy"
                              class="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105">

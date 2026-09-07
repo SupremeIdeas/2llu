@@ -53,7 +53,7 @@
     <div x-cloak x-show="open"
          x-transition.origin.top
          x-on:click.outside="open = false"
-         class="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-[#2D4060] dark:bg-[#1A2840]"
+         class="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]"
          role="menu">
 
         {{-- Native share sheet — mobile / supported browsers only. --}}

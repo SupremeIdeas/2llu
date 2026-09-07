@@ -5,12 +5,12 @@
              settlement currency; this only changes what prices are SHOWN in. --}}
         <div class="relative" x-data="{ open: false }">
             <button type="button" x-on:click="open = !open" x-on:click.outside="open = false"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-200">
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-200">
                 <x-icon name="globe" class="h-3.5 w-3.5" /> {{ $displayCurrency }}
                 <x-icon name="chevron-right" class="h-3 w-3 rotate-90" />
             </button>
             <div x-show="open" x-cloak x-transition
-                 class="absolute right-0 z-20 mt-1 max-h-64 w-48 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-[#2D4060] dark:bg-[#1A2840]">
+                 class="absolute right-0 z-20 mt-1 max-h-64 w-48 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                 @foreach ($currencyOptions as $code => $meta)
                     <button type="button" wire:key="cur-{{ $code }}" x-on:click="open = false" wire:click="setCurrency('{{ $code }}')"
                             @class([
@@ -57,15 +57,21 @@
                 </div>
             @endif
 
+            {{-- Icons here are white, not the theme's accent colour: they sit
+                 directly on the brand gradient (via a near-transparent
+                 bg-white/10 pill), and an accent-on-primary combination isn't
+                 guaranteed to contrast the same way in every theme. White
+                 always reads against this gradient — the balance figure and
+                 labels right above already rely on the same assumption. --}}
             <div class="mt-5 grid grid-cols-3 gap-2">
                 <button type="button" @click="tab = 'topup'" class="flex flex-col items-center gap-1.5 rounded-2xl bg-white/10 py-3 text-xs font-semibold text-white transition hover:bg-white/20">
-                    <x-icon name="zap" class="h-5 w-5 text-accent" /> Top up
+                    <x-icon name="zap" class="h-5 w-5 text-white" /> Top up
                 </button>
                 <button type="button" @click="tab = 'payout'" class="flex flex-col items-center gap-1.5 rounded-2xl bg-white/10 py-3 text-xs font-semibold text-white transition hover:bg-white/20">
-                    <x-icon name="credit-card" class="h-5 w-5 text-accent" /> Withdraw
+                    <x-icon name="credit-card" class="h-5 w-5 text-white" /> Withdraw
                 </button>
                 <button type="button" @click="tab = 'spending'" class="flex flex-col items-center gap-1.5 rounded-2xl bg-white/10 py-3 text-xs font-semibold text-white transition hover:bg-white/20">
-                    <x-icon name="signal" class="h-5 w-5 text-accent" /> Spending
+                    <x-icon name="signal" class="h-5 w-5 text-white" /> Spending
                 </button>
             </div>
         </div>
@@ -73,7 +79,7 @@
 
     {{-- Tabbed navigation (owner request): the page was too long as one long
          scroll — Top Up / Payout / Spending each get their own tab instead. --}}
-    <div class="mt-6 inline-flex w-full rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-[#2D4060] dark:bg-[#1A2840]">
+    <div class="mt-6 inline-flex w-full rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
         <button type="button" @click="tab = 'topup'"
                 :class="tab === 'topup' ? 'bg-white text-primary shadow-sm dark:bg-[#243352] dark:text-teal-300' : 'text-slate-500 dark:text-slate-400'"
                 class="flex-1 rounded-full px-3 py-2 text-sm font-semibold transition">Top Up</button>
@@ -90,7 +96,7 @@
         {{-- Top up (Module 32 pick — Na3ar-17 payment card, made functional):
              payment-method radios, quick-cash blocks — all wired to the real
              gateway initialisation. --}}
-        <div class="rounded-2xl border border-slate-200 nx-glass-tile p-5 dark:border-[#2D4060]">
+        <div class="rounded-2xl border border-slate-200 nx-glass-tile p-5 dark:border-[var(--brand-card-border-dark)]">
             @if ($error)
                 <div class="mb-3 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
                     <x-icon name="x" class="mt-0.5 h-4 w-4 shrink-0" /> <span>{{ $error }}</span>
@@ -108,7 +114,7 @@
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Top up in</label>
                     <select wire:model.live="currency"
-                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                         @foreach ($payCurrencyOptions as $cur => $curLabel)
                             <option value="{{ $cur }}" @selected($currency === $cur)>{{ $curLabel }} ({{ $cur }})</option>
                         @endforeach
@@ -130,7 +136,7 @@
                                     @class([
                                         'rounded-xl border px-1 py-2 text-xs font-bold transition',
                                         'border-accent bg-accent/15 text-accent-dark dark:text-accent' => (string) $amount === (string) $quick,
-                                        'border-slate-200 text-slate-600 hover:border-accent/60 hover:bg-accent/10 dark:border-[#2D4060] dark:text-slate-300' => (string) $amount !== (string) $quick,
+                                        'border-slate-200 text-slate-600 hover:border-accent/60 hover:bg-accent/10 dark:border-[var(--brand-card-border-dark)] dark:text-slate-300' => (string) $amount !== (string) $quick,
                                     ])>
                                 {{ $currency === 'NGN' ? '₦'.number_format($quick) : '$'.$quick }}
                             </button>
@@ -141,7 +147,7 @@
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Amount</label>
                     <input type="number" step="0.01" min="1" wire:model="amount" placeholder="{{ $currency === 'NGN' ? '5000' : '20' }}"
-                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                     @error('amount') <span class="mt-1 block text-xs text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
                 </div>
 
@@ -149,7 +155,7 @@
                 <div>
                     <label class="mb-1.5 block text-xs font-medium text-slate-500 dark:text-slate-400">Pay with</label>
                     @if (empty($gateways))
-                        <div class="rounded-xl border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500 dark:border-[#2D4060] dark:text-slate-400">
+                        <div class="rounded-xl border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500 dark:border-[var(--brand-card-border-dark)] dark:text-slate-400">
                             Online top-up is being set up. Please check back shortly.
                         </div>
                     @else
@@ -159,7 +165,7 @@
                                        @class([
                                            'flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition',
                                            'border-primary bg-primary/5 shadow-sm dark:bg-primary/15' => $gateway === $gw,
-                                           'border-slate-200 hover:border-primary/40 dark:border-[#2D4060]' => $gateway !== $gw,
+                                           'border-slate-200 hover:border-primary/40 dark:border-[var(--brand-card-border-dark)]' => $gateway !== $gw,
                                        ])>
                                     <input type="radio" wire:model.live="gateway" value="{{ $gw }}" class="text-primary focus:ring-primary/40">
                                     <x-payment-icon :slug="$gw" class="h-9" />
@@ -207,7 +213,7 @@
              account is verified against its actual payout provider BEFORE it
              is ever saved (PayoutAccountService::addAccount()) — a
              mistyped/unconfirmable account is refused outright, never stored. --}}
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
             <div class="mb-4 flex items-center gap-3">
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300">
                     <x-icon name="credit-card" class="h-5 w-5" />
@@ -291,7 +297,7 @@
         <h2 class="mb-3 mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Recent transactions</h2>
         <div class="space-y-2">
             @forelse ($transactions as $txn)
-                <div wire:key="txn-{{ $txn->id }}" class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                <div wire:key="txn-{{ $txn->id }}" class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                     <span @class([
                         'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl',
                         'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400' => in_array($txn->type, ['debit', 'withdrawal']),
@@ -314,7 +320,7 @@
                     ])>{{ in_array($txn->type, ['debit', 'withdrawal']) ? '−' : '+' }}{{ $txn->currency }} {{ number_format((float) $txn->amount, 2) }}</span>
                 </div>
             @empty
-                <div class="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400 dark:border-[#2D4060] dark:text-slate-500">No transactions yet.</div>
+                <div class="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400 dark:border-[var(--brand-card-border-dark)] dark:text-slate-500">No transactions yet.</div>
             @endforelse
         </div>
     </div>

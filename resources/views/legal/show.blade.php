@@ -10,7 +10,7 @@
 
         <x-prose :body="$doc['body']" class="mt-8" />
 
-        <p class="mt-10 border-t border-slate-200 pt-6 text-xs text-slate-400 dark:border-[#2D4060] dark:text-slate-500">
+        <p class="mt-10 border-t border-slate-200 pt-6 text-xs text-slate-400 dark:border-[var(--brand-card-border-dark)] dark:text-slate-500">
             {{ \App\Support\BrandSettings::name() }} is a product of Supreme Ideas Agency. These policies are provided in good faith and are not a substitute for legal advice.
         </p>
     </article>

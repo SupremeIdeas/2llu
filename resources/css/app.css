@@ -64,6 +64,31 @@
        the quoted names match the @font-face declarations above exactly. */
     --font-display: 'Supreme Display';
     --font-sans: 'Didact Gothic';
+
+    /* Dark-mode card-surface tones (theme-coverage audit, owner request: card
+       containers site-wide must repaint with the active theme instead of
+       staying frozen on Naara's own navy). Each is one step lighter than
+       --brand-navy for visual elevation against the page background — fixed
+       hex fallback for engines without color-mix, overridden below on ones
+       that support it. These derive from --brand-navy rather than carrying
+       their own hex so they automatically follow whatever navy is active:
+       Naara Official's own navy here, or the one shared dark palette every
+       other preset collapses to in dark mode (ThemePreset::styleCss()) — so
+       card surfaces always match the sidebar/nav chrome instead of clashing
+       with it. Approximate, not pixel-identical to the original hex — see
+       .nx-hero-accent for the same documented tradeoff. */
+    --brand-card-dark: #1A2840;         /* card fill, was dark:bg-[#1A2840] */
+    --brand-card-border-dark: #2D4060;  /* card border, was dark:border-[#2D4060] */
+    --brand-card-inner-dark: #152238;   /* nested/inner tile, was dark:bg-[#152238] */
+    --brand-card-hover-dark: #1B2A44;   /* hover tint, was dark:hover:bg-[#1B2A44] */
+}
+@supports (color: color-mix(in srgb, red, blue)) {
+    :root {
+        --brand-card-dark: color-mix(in srgb, rgb(var(--brand-navy)) 92%, white 8%);
+        --brand-card-border-dark: color-mix(in srgb, rgb(var(--brand-navy)) 82%, white 18%);
+        --brand-card-inner-dark: color-mix(in srgb, rgb(var(--brand-navy)) 96%, white 4%);
+        --brand-card-hover-dark: color-mix(in srgb, rgb(var(--brand-navy)) 89%, white 11%);
+    }
 }
 
 @tailwind base;

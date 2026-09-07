@@ -4,7 +4,7 @@
 @props(['count' => 6, 'columns' => 'sm:grid-cols-2 lg:grid-cols-3'])
 <div {{ $attributes->merge(['class' => 'grid gap-5 '.$columns]) }} aria-hidden="true">
     @for ($i = 0; $i < (int) $count; $i++)
-        <div class="rounded-2xl border border-slate-200 p-5 dark:border-[#2D4060]">
+        <div class="rounded-2xl border border-slate-200 p-5 dark:border-[var(--brand-card-border-dark)]">
             <div class="flex items-center gap-3">
                 <x-ui.skeleton class="h-10 w-10 shrink-0 rounded-xl" />
                 <div class="flex-1 space-y-2">

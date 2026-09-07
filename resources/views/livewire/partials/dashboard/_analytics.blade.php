@@ -5,7 +5,7 @@
 @if ($showAnalyticsHero)
     <a href="{{ route('numbers.lines') }}" wire:navigate
        class="group mb-8 grid gap-4 sm:grid-cols-2">
-        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition group-hover:border-primary/40 group-hover:shadow-md dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition group-hover:border-primary/40 group-hover:shadow-md dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
             <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 <x-icon name="signal" class="h-4 w-4" /> Data used this week
             </p>
@@ -34,7 +34,7 @@
             </div>
         </div>
 
-        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition group-hover:border-primary/40 group-hover:shadow-md dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition group-hover:border-primary/40 group-hover:shadow-md dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
             <div class="flex items-center justify-between">
                 <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     <x-icon name="wallet" class="h-4 w-4" /> Cash flow (30d)

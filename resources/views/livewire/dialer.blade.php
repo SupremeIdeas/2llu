@@ -33,7 +33,7 @@
          narrow centred column. Stacks back to one column on mobile. --}}
     <div class="lg:grid lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
     <div>{{-- left column: dial card --}}
-    <div class="rounded-3xl border border-slate-200 bg-white px-5 py-6 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]"
+    <div class="rounded-3xl border border-slate-200 bg-white px-5 py-6 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]"
          x-data="{
             hold: null, held: false,
             cc: @js($defaultCountry), ccOpen: false, ccQuery: '',
@@ -74,17 +74,17 @@
         <div class="mb-3 flex items-center justify-between gap-2">
             <div class="relative" x-on:keydown.escape.window="ccOpen = false">
                 <button type="button" x-on:click="ccOpen = ! ccOpen" aria-haspopup="listbox" x-bind:aria-expanded="ccOpen"
-                        class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-2 pr-2.5 text-sm font-semibold text-slate-700 transition hover:border-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-200">
+                        class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-2 pr-2.5 text-sm font-semibold text-slate-700 transition hover:border-primary/40 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-200">
                     <span class="inline-block h-4 w-6 rounded-[3px] bg-cover shadow-sm ring-1 ring-black/10"
                           role="img" x-bind:class="cc ? 'fi fi-' + cc.iso : ''" x-bind:aria-label="cc ? cc.name : ''"></span>
                     <span x-text="cc ? '+' + cc.code : 'Country'"></span>
                     <x-icon name="chevron-right" class="h-3.5 w-3.5 text-slate-400 transition-transform" x-bind:class="ccOpen ? '-rotate-90' : 'rotate-90'" />
                 </button>
                 <div x-show="ccOpen" x-cloak x-transition x-on:click.outside="ccOpen = false"
-                     class="absolute left-0 z-30 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-[#2D4060] dark:bg-[#1A2840]">
+                     class="absolute left-0 z-30 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                     <div class="border-b border-slate-100 p-2 dark:border-[#243352]">
                         <input type="text" x-model="ccQuery" x-ref="ccSearch" placeholder="Search country or code"
-                               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-0 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-0 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                     </div>
                     <ul class="max-h-64 overflow-y-auto py-1" role="listbox">
                         @foreach ($dialCountries as $c)
@@ -201,7 +201,7 @@
                 @foreach ($contacts as $contact)
                     <button type="button" wire:key="dc-{{ $contact->id }}"
                             x-on:click="fill('{{ $contact->phone_number }}')"
-                            class="flex shrink-0 flex-col items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2.5 text-center transition hover:border-primary/40 hover:bg-slate-50 dark:border-[#2D4060] dark:hover:bg-[#243352]">
+                            class="flex shrink-0 flex-col items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2.5 text-center transition hover:border-primary/40 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:hover:bg-[#243352]">
                         @include('partials.contact-avatar', ['contact' => $contact, 'size' => 'h-9 w-9 text-xs'])
                         <span class="max-w-[4.5rem] truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">{{ $contact->name }}</span>
                     </button>
@@ -214,7 +214,7 @@
     @if ($recent->isNotEmpty())
         <div class="mt-8 lg:mt-6">
             <h2 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Recent calls</h2>
-            <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-[#243352] dark:border-[#2D4060] dark:bg-[#1A2840]">
+            <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-[#243352] dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                 @foreach ($recent as $call)
                     <div class="flex items-center justify-between px-4 py-3 text-sm" wire:key="call-{{ $call->id }}">
                         <div class="flex items-center gap-2">
