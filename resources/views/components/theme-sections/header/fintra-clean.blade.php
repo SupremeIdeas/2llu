@@ -12,7 +12,7 @@
      phones as the persona's one piece of flavour text. Same inherited
      variables as header/default.blade.php: $brandRoute, $headerBrand,
      $brandIcon, $headerActions (optional slot). --}}
-<header data-header-root class="relative sticky top-0 z-30 flex items-center justify-between bg-white px-4 pb-2.5 pt-3 lg:hidden dark:bg-navy">
+<header data-header-root class="sticky top-0 z-30 flex items-center justify-between bg-white px-4 pb-2.5 pt-3 lg:hidden dark:bg-navy">
     <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex min-w-0 items-center gap-2.5">
         <x-brand-logo :variant="$headerBrand['variant']" :label="$headerBrand['label']" size="md" :fallback-icon="$brandIcon" />
         <span class="hidden shrink-0 items-center gap-1 rounded-md border border-primary/15 bg-primary/5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary sm:inline-flex dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
