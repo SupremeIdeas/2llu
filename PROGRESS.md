@@ -9,6 +9,75 @@
 
 ## DONE
 
+### 🎛️ Admin header editor — colour, corner curve, glassmorphism depth — 2026-09-07
+Owner request (verbatim excerpt): "add a global header editor were we can
+change header color to match any color we want and even to match the
+chrome browser of its unique colors... controls to set the buttum left
+and buttum right to curve 10px–40px range... the official Naara theme
+has a unique header that no other theme has, please its own header must
+have its own unique settings but not buttom left and right curve...
+because of the fade transparent sleek blur it has, we can only change
+the color and also give it its glassmorism depth like the rest but not
+buttom left and right curve." Works per-theme (including naara-official),
+same additive-column discipline as the colour-override feature.
+- **New `header_settings` json column** on `theme_presets`
+  (`2026_09_07_180000_add_header_settings_to_theme_presets.php`).
+  `ThemePreset::resolveHeaderSettings()` is the single resolver shared by
+  both the runtime CSS emitter and the admin editor — bg is a validated
+  channel-triple (or null = theme's own default), radius_bl/radius_br are
+  clamped 10-40px and ALWAYS forced to 0 for the 'default' header style
+  (naara-official's fade/blur bar has no bottom edge to round), blur
+  falls back to a new `HEADER_BLUR_DEFAULTS` per-style map (matching each
+  theme's existing built-in Tailwind blur — 8px for midnight-signal/
+  neon-vertex, 12px for noir-reserve, 0 for the rest) so shipping this is
+  a zero-regression change.
+- **Separate CSS emitter** (`ThemePreset::headerStyleCss()`) — NOT
+  `styleCss()`, which deliberately emits nothing for naara-official; the
+  header editor must still work on it. Every header partial's
+  background-carrying element now carries a `data-header-root` attribute
+  (the inner div for solar-flare, whose background sits on a div nested
+  inside `<header>`, not the header element itself); the 3 partials that
+  had a hardcoded `backdrop-blur`/`backdrop-blur-md` class had it removed
+  in favour of the CSS-var-free, directly-baked `backdrop-filter` rule.
+- **Admin-panel exclusion**: `app-shell.blade.php` (and therefore every
+  swappable header partial) is shared verbatim between the customer and
+  admin layouts — there is no separate admin header component. Every
+  header-editor CSS rule is scoped `body:not(.is-admin-surface)
+  [data-header-root]`; `app.blade.php` stamps `is-admin-surface` on
+  `<body>` via `request()->is(config('admin.path'),
+  config('admin.path').'/*')` — **both** patterns are required, since
+  `is('adminmaster/*')` alone does not match the bare `/adminmaster`
+  dashboard route itself (only matches segments below it), a real bug
+  caught by test before it ever reached a browser.
+- **`<meta name="theme-color">` now syncs** to the header's colour
+  override (`ThemePreset::headerColorHex()`) when one is set, falling
+  back to the existing admin-configured App Export colour otherwise — a
+  custom header colour now extends to the mobile browser's own chrome.
+- **`Admin\ThemePicker` gains a "Header" editor**, mirroring the Colours
+  modal exactly: colour swatch+hex, a "Round the bottom corners" toggle
+  gating two 10-40px sliders (hidden entirely for a theme whose header
+  style is 'default'), a glassmorphism-depth slider (0-24px, available
+  on every theme including naara-official), per-field Reset + Reset-all,
+  same gate/bust/Auditor/toast discipline as every other editor here.
+  `saveHeader()` only persists a field that actually differs from that
+  theme's own default (same no-op-safe discipline the colour-override
+  bugfix established), so opening the editor and saving without changing
+  anything — or unchecking the corner-radius toggle — never leaves a
+  phantom override behind. New `i-panel-top` sprite icon (verified no
+  existing icon fit before adding one, lucide-style stroke paths).
+- 32 new tests + 3 regression-style no-op-save tests; full suite green
+  throughout (1653 passed). Browser-verified end-to-end on the actual
+  authenticated dashboard app (`/dashboard`, the layout `app-shell.blade.php`
+  governs) — **not** the public marketing homepage, which is a wholly
+  separate header system from batches 1-2 (an early verification pass
+  mistakenly checked `/` and found nothing changed, which is correct: the
+  owner's request was specifically about "this header of our dashboard").
+  Confirmed live: aries-contrast's header takes a custom teal colour +
+  30px rounded bottom corners with zero code change to that theme's own
+  files; naara-official takes a custom colour with no rounding control
+  offered; `/adminmaster`'s own header stays completely unaffected by an
+  active override on any theme.
+
 ### 🎨 Theme visual rebuild batch 2 (5 more themes to full-suite) + admin colour overrides — 2026-09-07
 Continuation of the batch-1 arc, per "start the next batch to powerfuly
 build for next 5 themes with entirely different unique styles... no

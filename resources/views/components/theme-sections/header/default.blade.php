@@ -6,8 +6,14 @@
      file must accept the same inherited variables: $brandRoute, $headerBrand,
      $brandIcon, $headerActions (optional slot). This is the STANDARD brand
      header only — the /numbers/* wallet-bar header is page-specific chrome,
-     not part of this swappable section. --}}
-<header class="nx-header-fade sticky top-0 z-30 flex items-center justify-between px-4 py-3 lg:hidden">
+     not part of this swappable section.
+
+     `data-header-root` (header editor, 2026-09-07): every header style
+     partial marks its actual background-carrying element with this
+     attribute — ThemePreset::headerStyleCss() targets it to apply an
+     admin's colour/corner-radius/glass-depth override, scoped to exclude
+     /adminmaster (see that method's docblock). --}}
+<header data-header-root class="nx-header-fade sticky top-0 z-30 flex items-center justify-between px-4 py-3 lg:hidden">
     <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex items-center">
         <x-brand-logo :variant="$headerBrand['variant']" :label="$headerBrand['label']" size="md" :fallback-icon="$brandIcon" />
     </a>

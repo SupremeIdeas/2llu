@@ -8,7 +8,9 @@
      blocks, no sharp angles, no pulsing badges — the quietest header in
      the batch. Same inherited variables as header/default.blade.php:
      $brandRoute, $headerBrand, $brandIcon, $headerActions (optional slot). --}}
-<header class="sticky top-0 z-30 flex items-center justify-between bg-[#F7F1EA]/85 px-5 py-3.5 backdrop-blur-md lg:hidden dark:bg-navy/80">
+{{-- Blur is admin-controllable (header editor, 2026-09-07) — see the note
+     in header/midnight-signal.blade.php. --}}
+<header data-header-root class="sticky top-0 z-30 flex items-center justify-between bg-[#F7F1EA]/85 px-5 py-3.5 lg:hidden dark:bg-navy/80">
     {{-- Fading hairline instead of a hard border-bottom. --}}
     <span class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/35 to-transparent" aria-hidden="true"></span>
 

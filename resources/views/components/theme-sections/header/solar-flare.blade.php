@@ -8,7 +8,11 @@
      header/default.blade.php: $brandRoute, $headerBrand, $brandIcon,
      $headerActions (optional slot). --}}
 <header class="sticky top-0 z-30 lg:hidden">
-    <div class="flex items-center justify-between gap-2 bg-navy px-4 py-2.5">
+    {{-- data-header-root sits on this inner div, not the outer <header> —
+         it's the element that actually carries the persona's background
+         (see the note in header/default.blade.php for what this attribute
+         is for). --}}
+    <div data-header-root class="flex items-center justify-between gap-2 bg-navy px-4 py-2.5">
         <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex min-w-0 items-center gap-2.5">
             {{-- Skewed parallelogram brand badge — the header's signature cut. --}}
             <span class="flex h-9 shrink-0 items-center bg-gradient-to-br from-primary to-primary-dark px-3 shadow-[0_4px_14px_-4px_rgb(var(--brand-primary)/0.7)] [clip-path:polygon(12%_0,100%_0,88%_100%,0_100%)]">

@@ -3,7 +3,7 @@
      luxury-travel energy." No glass/blur, no rounded corners, a thin gold
      rule instead of a soft fade, and a small live-status pulse by the
      wordmark. Same inherited variables as header/default.blade.php. --}}
-<header class="sticky top-0 z-30 flex items-center justify-between border-b-2 border-accent bg-white px-4 py-3 lg:hidden dark:bg-black">
+<header data-header-root class="sticky top-0 z-30 flex items-center justify-between border-b-2 border-accent bg-white px-4 py-3 lg:hidden dark:bg-black">
     <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex items-center gap-2">
         <span class="relative flex h-2 w-2 shrink-0" aria-hidden="true">
             <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>

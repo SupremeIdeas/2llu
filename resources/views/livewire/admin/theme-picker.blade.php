@@ -65,6 +65,13 @@
                             <span class="ml-0.5 h-1.5 w-1.5 rounded-full bg-primary" title="Custom colours applied"></span>
                         @endif
                     </button>
+                    <button type="button" wire:click="editHeader('{{ $p['slug'] }}')"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                        <x-icon name="panel-top" class="h-4 w-4" /> Header
+                        @if (! empty($p['header_settings']))
+                            <span class="ml-0.5 h-1.5 w-1.5 rounded-full bg-primary" title="Custom header applied"></span>
+                        @endif
+                    </button>
                     @if (\App\Support\LandingHeroLibrary::has($p['section_styles']['landing_hero'] ?? 'default'))
                         <button type="button" wire:click="editLanding('{{ $p['slug'] }}')"
                                 class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
@@ -240,6 +247,102 @@
                 <button type="button" wire:click="saveColors" wire:loading.attr="disabled" wire:target="saveColors"
                         class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                     <x-icon name="badge-check" class="h-4 w-4" /> Save colours
+                </button>
+            </div>
+        </div>
+    </x-ui.modal>
+
+    {{-- Header editor (owner request, 2026-09-07): "full control" over the
+         header — a colour independent of this theme's own brand colours (it
+         even syncs the mobile browser chrome tint), bottom-corner curve, and
+         glassmorphism depth. Works on naara-official too, but that theme's
+         own header (the fade/blur bar, no bottom edge to round) never gets
+         the curve controls — see the @unless below. --}}
+    <x-ui.modal wire="showHeaderModal" title="{{ $headerEditingName }} — header" max-width="md">
+        <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">
+            Override this theme's header — independent of its brand colours. A custom colour also tints the
+            mobile browser's own address bar. "Reset" returns any field to <strong>{{ $headerEditingName }}</strong>'s
+            own default at any time.
+        </p>
+
+        <div class="space-y-5">
+            <div class="flex items-center gap-3">
+                <input type="color" wire:model="headerBg" value="{{ $headerBg ?: '#0a6e6e' }}"
+                       class="h-10 w-10 shrink-0 cursor-pointer rounded-lg border border-slate-300 bg-white p-0.5 dark:border-[#2D4060] dark:bg-[#243352]">
+                <div class="min-w-0 flex-1">
+                    <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Header colour</label>
+                    <input type="text" wire:model="headerBg" maxlength="7" placeholder="Theme default"
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @error('headerBg') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <button type="button" wire:click="resetHeaderField('bg')"
+                        class="shrink-0 text-[11px] font-medium text-slate-500 hover:text-primary hover:underline dark:text-slate-400">
+                    Reset
+                </button>
+            </div>
+
+            @unless ($headerEditingStyle === 'default')
+                <div>
+                    <label class="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <input type="checkbox" wire:model.live="headerRoundBottom"
+                               class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40 dark:border-[#2D4060]">
+                        Round the bottom corners
+                    </label>
+
+                    @if ($headerRoundBottom)
+                        <div class="mt-3 space-y-3 pl-6">
+                            <div>
+                                <div class="mb-1 flex items-center justify-between">
+                                    <label class="text-xs text-slate-500 dark:text-slate-400">Bottom-left curve — {{ $headerRadiusBl }}px</label>
+                                </div>
+                                <input type="range" wire:model="headerRadiusBl" min="{{ \App\Support\ThemePreset::HEADER_RADIUS_MIN }}" max="{{ \App\Support\ThemePreset::HEADER_RADIUS_MAX }}"
+                                       class="w-full accent-primary">
+                                @error('headerRadiusBl') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <div class="mb-1 flex items-center justify-between">
+                                    <label class="text-xs text-slate-500 dark:text-slate-400">Bottom-right curve — {{ $headerRadiusBr }}px</label>
+                                </div>
+                                <input type="range" wire:model="headerRadiusBr" min="{{ \App\Support\ThemePreset::HEADER_RADIUS_MIN }}" max="{{ \App\Support\ThemePreset::HEADER_RADIUS_MAX }}"
+                                       class="w-full accent-primary">
+                                @error('headerRadiusBr') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                    @endif
+                    <button type="button" wire:click="resetHeaderField('radius')"
+                            class="mt-2 text-[11px] font-medium text-slate-500 hover:text-primary hover:underline dark:text-slate-400">
+                        Reset
+                    </button>
+                </div>
+            @endunless
+
+            <div>
+                <div class="mb-1 flex items-center justify-between">
+                    <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">Glassmorphism depth — {{ $headerBlur }}px blur</label>
+                    <button type="button" wire:click="resetHeaderField('blur')"
+                            class="text-[11px] font-medium text-slate-500 hover:text-primary hover:underline dark:text-slate-400">
+                        Reset
+                    </button>
+                </div>
+                <input type="range" wire:model="headerBlur" min="{{ \App\Support\ThemePreset::HEADER_BLUR_MIN }}" max="{{ \App\Support\ThemePreset::HEADER_BLUR_MAX }}"
+                       class="w-full accent-primary">
+                @error('headerBlur') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+        </div>
+
+        <div class="mt-5 flex items-center justify-between gap-2">
+            <button type="button" wire:click="resetAllHeader" wire:confirm="Reset the whole header on {{ $headerEditingName }} back to its default?"
+                    class="text-xs font-medium text-slate-500 hover:text-red-600 hover:underline dark:text-slate-400">
+                Reset all to default
+            </button>
+            <div class="flex gap-2">
+                <button type="button" @click="open = false"
+                        class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                    Cancel
+                </button>
+                <button type="button" wire:click="saveHeader" wire:loading.attr="disabled" wire:target="saveHeader"
+                        class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                    <x-icon name="badge-check" class="h-4 w-4" /> Save header
                 </button>
             </div>
         </div>

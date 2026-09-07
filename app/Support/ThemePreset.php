@@ -46,6 +46,41 @@ class ThemePreset
      */
     public const COLOR_KEYS = ['primary', 'primary_dark', 'accent', 'accent_dark', 'navy', 'action'];
 
+    /**
+     * Header editor (owner request, 2026-09-07: "full control" over the
+     * header — colour, corner curve, glass depth, independent of the
+     * theme's own brand colours). Bottom-corner radius is 10-40px, clamped
+     * server-side; it never applies to the 'default' header style (the
+     * naara-official fade/blur bar has no bottom edge to round). Blur
+     * ("glassmorphism depth") applies to every header including 'default',
+     * so naara-official can gain glass depth it never shipped with.
+     */
+    public const HEADER_RADIUS_MIN = 10;
+
+    public const HEADER_RADIUS_MAX = 40;
+
+    public const HEADER_BLUR_MIN = 0;
+
+    public const HEADER_BLUR_MAX = 24;
+
+    /**
+     * Each header style's built-in blur (Tailwind's own scale: plain
+     * `backdrop-blur`=8px, `backdrop-blur-md`=12px) — the value a header
+     * keeps rendering until an admin actually dials the glass-depth slider,
+     * so shipping this feature is a zero-regression change for every
+     * existing theme.
+     */
+    private const HEADER_BLUR_DEFAULTS = [
+        'default' => 0,
+        'aries-contrast' => 0,
+        'midnight-signal' => 8,
+        'neon-vertex' => 8,
+        'paperwhite' => 0,
+        'origin-bold' => 0,
+        'solar-flare' => 0,
+        'noir-reserve' => 12,
+    ];
+
     /** The three structural layout partials a page may pick between. */
     public const VARIANTS = ['variant-a', 'variant-b', 'variant-c'];
 
@@ -168,6 +203,7 @@ class ThemePreset
                     'section_styles' => self::decode($row->section_styles ?? null),
                     'landing_content' => self::decode($row->landing_content ?? null),
                     'page_content' => self::decode($row->page_content ?? null),
+                    'header_settings' => self::decode($row->header_settings ?? null),
                     'is_built_in' => (bool) $row->is_built_in,
                 ];
             } catch (\Throwable) {
@@ -245,12 +281,26 @@ class ThemePreset
      */
     public static function sectionStyle(string $section): string
     {
+        return self::sectionStyleFor(self::active()['section_styles'], $section);
+    }
+
+    /**
+     * The same whitelist resolution as sectionStyle(), but for an arbitrary
+     * (already-decoded) section_styles bag rather than the cached active
+     * theme — lets the admin header editor resolve "what header style does
+     * THIS theme card use" for any theme, not just whichever one happens to
+     * be active right now.
+     *
+     * @param  array<string, mixed>  $sectionStyles
+     */
+    public static function sectionStyleFor(array $sectionStyles, string $section): string
+    {
         $allow = self::SECTION_STYLE_ALLOW[$section] ?? null;
         if ($allow === null || $allow === []) {
             return 'default';
         }
 
-        $pick = self::active()['section_styles'][$section] ?? null;
+        $pick = $sectionStyles[$section] ?? null;
 
         return in_array($pick, $allow, true) ? $pick : $allow[0];
     }
@@ -376,6 +426,100 @@ class ThemePreset
         return $css;
     }
 
+    /**
+     * The header editor's runtime <style> body — deliberately a SEPARATE
+     * emitter from styleCss(), which early-returns '' for naara-official.
+     * The header editor must work on naara-official too (owner request:
+     * "its own header must have its own unique settings... we can only
+     * change the color and also give it its glassmorism depth like the
+     * rest but not buttom left and right curve"), so this method never
+     * early-returns on is_built_in/DEFAULT_SLUG.
+     *
+     * Scoped with `body:not(.is-admin-surface)` — app-shell.blade.php (and
+     * therefore every header/{style}.blade.php partial) is shared between
+     * the customer layout and the admin panel layout, so without this
+     * scope a header override would leak into /adminmaster's own chrome.
+     * Specificity of that scope (0,2,1) already beats every existing
+     * header background rule (plain classes at (0,1,0), dark: compounds at
+     * (0,2,0)), so no `!important` is needed.
+     */
+    public static function headerStyleCss(): string
+    {
+        $preset = self::active();
+        $style = self::sectionStyle('header');
+        $settings = self::resolveHeaderSettings($preset['header_settings'] ?? [], $style);
+
+        $scope = 'body:not(.is-admin-surface) [data-header-root]';
+        $rules = ["backdrop-filter:blur({$settings['blur']}px)"];
+        if ($style !== 'default') {
+            $rules[] = "border-bottom-left-radius:{$settings['radius_bl']}px";
+            $rules[] = "border-bottom-right-radius:{$settings['radius_br']}px";
+        }
+        $css = $scope.'{'.implode(';', $rules).'}';
+
+        if ($settings['bg'] !== null) {
+            $css .= $scope.'{background:rgb('.$settings['bg'].')}';
+            $css .= '.dark '.$scope.'{background:rgb('.$settings['bg'].')}';
+        }
+
+        return $css;
+    }
+
+    /**
+     * The header colour override, as a hex string, or null when the header
+     * is using its own theme's default background — used to also sync
+     * `<meta name="theme-color">` (the mobile browser chrome tint) so a
+     * custom header colour extends all the way to the OS status bar, not
+     * just the in-page header.
+     */
+    public static function headerColorHex(): ?string
+    {
+        $preset = self::active();
+        $style = self::sectionStyle('header');
+        $bg = self::resolveHeaderSettings($preset['header_settings'] ?? [], $style)['bg'];
+
+        return $bg === null ? null : self::channelTripleToHex($bg);
+    }
+
+    /**
+     * Resolve a theme's raw stored header_settings into effective, bounded
+     * values — the single source of truth shared by headerStyleCss() (for
+     * the active theme) and the admin editor (for whichever theme card is
+     * being edited, active or not). Never trusts the stored bag: every
+     * field is re-validated against its own bounds here, exactly like
+     * mergeColorOverrides()'s discipline for colour overrides.
+     *
+     * @param  array<string, mixed>  $stored
+     * @return array{bg: ?string, radius_bl: int, radius_br: int, blur: int}
+     */
+    public static function resolveHeaderSettings(array $stored, string $headerStyle): array
+    {
+        $bg = $stored['bg'] ?? null;
+        $bg = self::validChannelTriple($bg) ? $bg : null;
+
+        $radiusBl = 0;
+        $radiusBr = 0;
+        if ($headerStyle !== 'default') {
+            $radiusBl = self::validHeaderRadius($stored['radius_bl'] ?? null) ? (int) $stored['radius_bl'] : 0;
+            $radiusBr = self::validHeaderRadius($stored['radius_br'] ?? null) ? (int) $stored['radius_br'] : 0;
+        }
+
+        $blurDefault = self::HEADER_BLUR_DEFAULTS[$headerStyle] ?? 0;
+        $blur = self::validHeaderBlur($stored['blur'] ?? null) ? (int) $stored['blur'] : $blurDefault;
+
+        return ['bg' => $bg, 'radius_bl' => $radiusBl, 'radius_br' => $radiusBr, 'blur' => $blur];
+    }
+
+    private static function validHeaderRadius(mixed $v): bool
+    {
+        return is_numeric($v) && (int) $v >= self::HEADER_RADIUS_MIN && (int) $v <= self::HEADER_RADIUS_MAX;
+    }
+
+    private static function validHeaderBlur(mixed $v): bool
+    {
+        return is_numeric($v) && (int) $v >= self::HEADER_BLUR_MIN && (int) $v <= self::HEADER_BLUR_MAX;
+    }
+
     public static function bust(): void
     {
         Cache::forget(self::CACHE_KEY);
@@ -392,6 +536,7 @@ class ThemePreset
                     'persona' => $r->persona,
                     'tokens' => self::mergeColorOverrides(self::decode($r->tokens), self::decode($r->color_overrides ?? null)),
                     'color_overrides' => self::decode($r->color_overrides ?? null),
+                    'header_settings' => self::decode($r->header_settings ?? null),
                     'icon_family' => self::decode($r->icon_family),
                     'section_styles' => self::decode($r->section_styles ?? null),
                     'is_built_in' => (bool) $r->is_built_in,
@@ -507,6 +652,7 @@ class ThemePreset
             'landing_content' => [],
             'page_content' => [],
             'color_overrides' => [],
+            'header_settings' => [],
             'is_built_in' => true,
         ];
     }

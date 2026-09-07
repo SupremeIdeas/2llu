@@ -26,7 +26,12 @@
          (admin-editable name/icon/colours). theme-color paints the mobile
          browser chrome + native WebView status bar. --}}
     <link rel="manifest" href="{{ route('manifest') }}">
-    <meta name="theme-color" content="{{ \App\Support\AppExport::get('theme_color', '#0A6E6E') }}">
+    {{-- The header editor's own colour override (when set) extends all the
+         way to the mobile browser chrome / native status bar, so a themed
+         header reads as one continuous surface instead of stopping at the
+         page edge. Falls back to the existing admin-configured App Export
+         colour when the header is using its theme's own default. --}}
+    <meta name="theme-color" content="{{ \App\Support\ThemePreset::headerColorHex() ?? \App\Support\AppExport::get('theme_color', '#0A6E6E') }}">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -93,6 +98,13 @@
          BOTH the dashboard and the marketing site (which extends this layout). --}}
     @php($themeCss = \App\Support\ThemePreset::styleCss())
     @if ($themeCss)<style id="theme-preset-vars">{!! $themeCss !!}</style>@endif
+    {{-- Header editor (owner request, 2026-09-07): a SEPARATE emitter from
+         styleCss() above, since that one is deliberately empty for
+         naara-official — the header editor must still work on it. Scoped
+         to exclude /adminmaster's own chrome inside the CSS itself (see
+         ThemePreset::headerStyleCss()), since app-shell.blade.php's header
+         is shared by both the customer and admin layouts. --}}
+    <style id="theme-header-vars">{!! \App\Support\ThemePreset::headerStyleCss() !!}</style>
     {{-- Site-wide font override (admin Branding page): swaps --font-display /
          --font-sans for a Google Font or an uploaded custom font. Emitted LAST
          so it wins over any theme-preset font variable — this is the single
@@ -104,7 +116,16 @@
     @stack('head')
     @include('partials.tracking')
 </head>
-<body class="min-h-screen text-[#0F172A] antialiased dark:text-slate-100 {{ \App\Support\ThemePreset::bodyClass() }} {{ $bodyClass ?? 'bg-[#F8F9FA] dark:bg-navy' }}">
+{{--
+    is-admin-surface (header editor, 2026-09-07): app-shell.blade.php's
+    swappable header is @include()'d identically for both the customer
+    layout and the admin panel layout — there is no separate admin header
+    component. This class is how ThemePreset::headerStyleCss() keeps a
+    theme's header colour/radius/blur customization from leaking into
+    /adminmaster's own chrome (see the `body:not(.is-admin-surface)` scope
+    in that method).
+--}}
+<body class="min-h-screen text-[#0F172A] antialiased dark:text-slate-100 {{ \App\Support\ThemePreset::bodyClass() }} {{ $bodyClass ?? 'bg-[#F8F9FA] dark:bg-navy' }} {{ request()->is(config('admin.path'), config('admin.path').'/*') ? 'is-admin-surface' : '' }}">
     @include('partials.icon-sprite')
     @include('partials.service-icon-sprite')
     <x-brand-preloader :page-type="$pageType" />

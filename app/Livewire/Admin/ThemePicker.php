@@ -155,6 +155,44 @@ class ThemePicker extends Component
         'action' => 'Action (destructive)',
     ];
 
+    /**
+     * Header editor (owner request, 2026-09-07): "full control" over the
+     * header — a colour independent of the theme's own brand colours,
+     * bottom-corner curve (10-40px), and glassmorphism depth — for ANY
+     * theme, same "works on naara-official too" discipline as Colours
+     * above. Same modal/property shape as Colours, so admins already
+     * familiar with that editor recognise this one immediately.
+     */
+    public bool $showHeaderModal = false;
+
+    public ?string $headerEditingSlug = null;
+
+    public string $headerEditingName = '';
+
+    /** The theme's resolved header style (e.g. 'default', 'aries-contrast') — decides whether the radius fields render at all. */
+    public string $headerEditingStyle = 'default';
+
+    /** '' means "no override, use this theme's own default header colour". */
+    public string $headerBg = '';
+
+    /**
+     * The radius sliders only cover the valid 10-40px override range, so
+     * "no override" (radius 0) can never be a slider POSITION — this
+     * separate toggle is the actual on/off switch. Unchecked always omits
+     * both radius keys on save, regardless of where the sliders sit.
+     * headerBlur needs no equivalent: its full 0-24 range is meaningful
+     * (0 is a real "no blur" choice, not a floor being clamped away), so
+     * "leave it at this theme's own built-in default" is directly
+     * reachable by leaving the slider where it started.
+     */
+    public bool $headerRoundBottom = false;
+
+    public int $headerRadiusBl = ThemePreset::HEADER_RADIUS_MIN;
+
+    public int $headerRadiusBr = ThemePreset::HEADER_RADIUS_MIN;
+
+    public int $headerBlur = 0;
+
     public function mount(): void
     {
         $this->gate();
@@ -733,6 +771,155 @@ class ThemePicker extends Component
         ThemePreset::bust();
         Auditor::log('theme.colors_reset', ThemePresetModel::class, $row->id, ['slug' => $this->colorEditingSlug]);
         $this->dispatch('nx-toast', type: 'success', message: 'All colours reset to default for '.$this->colorEditingName.'.');
+    }
+
+    /** Open the header editor for one theme, seeding it with the current effective values. */
+    public function editHeader(string $slug): void
+    {
+        $this->gate();
+
+        $row = ThemePresetModel::where('slug', $slug)->first();
+        if ($row === null) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown theme.');
+
+            return;
+        }
+
+        $style = ThemePreset::sectionStyleFor(is_array($row->section_styles) ? $row->section_styles : [], 'header');
+        $settings = ThemePreset::resolveHeaderSettings(is_array($row->header_settings) ? $row->header_settings : [], $style);
+
+        $this->headerEditingSlug = $slug;
+        $this->headerEditingName = $row->name;
+        $this->headerEditingStyle = $style;
+        $this->headerBg = $settings['bg'] !== null ? ThemePreset::channelTripleToHex($settings['bg']) : '';
+        $this->headerRoundBottom = $settings['radius_bl'] > 0 || $settings['radius_br'] > 0;
+        $this->headerRadiusBl = $settings['radius_bl'] > 0 ? $settings['radius_bl'] : ThemePreset::HEADER_RADIUS_MIN;
+        $this->headerRadiusBr = $settings['radius_br'] > 0 ? $settings['radius_br'] : ThemePreset::HEADER_RADIUS_MIN;
+        $this->headerBlur = $settings['blur'];
+        $this->resetErrorBag();
+        $this->showHeaderModal = true;
+    }
+
+    /**
+     * Persist the header form. Only writes a key that actually differs from
+     * that theme's own default — same no-op-safe discipline as
+     * saveColors(), so opening this editor and saving without changing
+     * anything (or unchecking "round the bottom corners") never leaves a
+     * phantom override behind.
+     */
+    public function saveHeader(): void
+    {
+        $this->gate();
+
+        if ($this->headerEditingSlug === null) {
+            return;
+        }
+
+        $rules = ['headerBg' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/']];
+        if ($this->headerRoundBottom) {
+            $rules['headerRadiusBl'] = ['required', 'integer', 'min:'.ThemePreset::HEADER_RADIUS_MIN, 'max:'.ThemePreset::HEADER_RADIUS_MAX];
+            $rules['headerRadiusBr'] = ['required', 'integer', 'min:'.ThemePreset::HEADER_RADIUS_MIN, 'max:'.ThemePreset::HEADER_RADIUS_MAX];
+        }
+        $rules['headerBlur'] = ['required', 'integer', 'min:'.ThemePreset::HEADER_BLUR_MIN, 'max:'.ThemePreset::HEADER_BLUR_MAX];
+        $this->validate($rules, [], [
+            'headerBg' => 'header colour', 'headerRadiusBl' => 'bottom-left curve', 'headerRadiusBr' => 'bottom-right curve', 'headerBlur' => 'glass depth',
+        ]);
+
+        $row = ThemePresetModel::where('slug', $this->headerEditingSlug)->first();
+        if ($row === null) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown theme.');
+            $this->showHeaderModal = false;
+
+            return;
+        }
+
+        $settings = [];
+        if ($this->headerBg !== '') {
+            $settings['bg'] = ThemePreset::hexToChannelTriple($this->headerBg);
+        }
+        if ($this->headerRoundBottom) {
+            $settings['radius_bl'] = $this->headerRadiusBl;
+            $settings['radius_br'] = $this->headerRadiusBr;
+        }
+        $blurDefault = ThemePreset::resolveHeaderSettings([], $this->headerEditingStyle)['blur'];
+        if ($this->headerBlur !== $blurDefault) {
+            $settings['blur'] = $this->headerBlur;
+        }
+
+        $row->header_settings = $settings;
+        $row->save();
+
+        ThemePreset::bust();
+        Auditor::log('theme.header_updated', ThemePresetModel::class, $row->id, ['slug' => $this->headerEditingSlug]);
+        $this->dispatch('nx-toast', type: 'success', message: $this->headerEditingName.' header saved.');
+        $this->showHeaderModal = false;
+    }
+
+    /** Reset a single header field ('bg'|'radius'|'blur') back to this theme's own default. */
+    public function resetHeaderField(string $field): void
+    {
+        $this->gate();
+
+        if ($this->headerEditingSlug === null || ! in_array($field, ['bg', 'radius', 'blur'], true)) {
+            return;
+        }
+
+        $row = ThemePresetModel::where('slug', $this->headerEditingSlug)->first();
+        if ($row === null) {
+            return;
+        }
+
+        $settings = is_array($row->header_settings) ? $row->header_settings : [];
+        if ($field === 'radius') {
+            unset($settings['radius_bl'], $settings['radius_br']);
+            $this->headerRoundBottom = false;
+            $this->headerRadiusBl = ThemePreset::HEADER_RADIUS_MIN;
+            $this->headerRadiusBr = ThemePreset::HEADER_RADIUS_MIN;
+        } else {
+            unset($settings[$field]);
+            $resolved = ThemePreset::resolveHeaderSettings([], $this->headerEditingStyle);
+            if ($field === 'bg') {
+                $this->headerBg = '';
+            } else {
+                $this->headerBlur = $resolved['blur'];
+            }
+        }
+
+        $row->header_settings = $settings;
+        $row->save();
+
+        ThemePreset::bust();
+        Auditor::log('theme.header_field_reset', ThemePresetModel::class, $row->id, ['slug' => $this->headerEditingSlug, 'field' => $field]);
+        $this->dispatch('nx-toast', type: 'success', message: 'Reset to default for '.$this->headerEditingName.'.');
+    }
+
+    /** Reset every header field on the theme being edited back to its defaults in one action. */
+    public function resetAllHeader(): void
+    {
+        $this->gate();
+
+        if ($this->headerEditingSlug === null) {
+            return;
+        }
+
+        $row = ThemePresetModel::where('slug', $this->headerEditingSlug)->first();
+        if ($row === null) {
+            return;
+        }
+
+        $row->header_settings = [];
+        $row->save();
+
+        $resolved = ThemePreset::resolveHeaderSettings([], $this->headerEditingStyle);
+        $this->headerBg = '';
+        $this->headerRoundBottom = false;
+        $this->headerRadiusBl = ThemePreset::HEADER_RADIUS_MIN;
+        $this->headerRadiusBr = ThemePreset::HEADER_RADIUS_MIN;
+        $this->headerBlur = $resolved['blur'];
+
+        ThemePreset::bust();
+        Auditor::log('theme.header_reset', ThemePresetModel::class, $row->id, ['slug' => $this->headerEditingSlug]);
+        $this->dispatch('nx-toast', type: 'success', message: 'Header reset to default for '.$this->headerEditingName.'.');
     }
 
     /**
