@@ -12,6 +12,7 @@ use App\Services\Support\Contracts\ChatModel;
 use App\Services\Support\NaaraCareAgent;
 use App\Services\Support\SupportTools;
 use App\Support\SupportGuard;
+use App\Support\SupportReplyGuard;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -103,6 +104,42 @@ class SupportAgentTest extends TestCase
 
         $this->assertTrue($result['escalated']);
         $this->assertTrue($conv->fresh()->escalated);
+    }
+
+    public function test_reply_guard_passes_through_a_normal_reply(): void
+    {
+        $reply = SupportReplyGuard::sanitize('Your iPhone 14 Pro supports eSIM.', false);
+        $this->assertSame('Your iPhone 14 Pro supports eSIM.', $reply);
+    }
+
+    public function test_reply_guard_blocks_an_unverified_refund_claim(): void
+    {
+        $reply = SupportReplyGuard::sanitize("I've refunded you $10 for the failed order.", false);
+        $this->assertStringNotContainsString('refunded', $reply);
+        $this->assertStringContainsString('human', $reply);
+    }
+
+    public function test_reply_guard_allows_the_claim_when_the_action_actually_succeeded(): void
+    {
+        $reply = SupportReplyGuard::sanitize('Your goodwill credit has been applied — sorry for the trouble!', true);
+        $this->assertStringContainsString('goodwill credit has been applied', $reply);
+    }
+
+    public function test_agent_escalates_and_rewrites_a_hallucinated_refund_claim(): void
+    {
+        $user = User::factory()->create();
+        $conv = $this->conversation($user);
+
+        // The model claims a refund in plain text without ever calling a tool
+        // that actually moves money — the guard must catch this on the way out.
+        $fake = new FakeChatModel([
+            FakeChatModel::text("I've refunded you $10 for the failed order."),
+        ]);
+
+        $result = (new NaaraCareAgent($fake))->respond($user, $conv, 'My order failed, can I get my money back?');
+
+        $this->assertStringNotContainsString('refunded', $result['reply']);
+        $this->assertTrue($result['escalated']);
     }
 
     public function test_navigation_tool_surfaces_a_link(): void

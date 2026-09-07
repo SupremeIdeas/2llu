@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\AlertAdminJob;
+use App\Jobs\RecomputePlanPricingJob;
 use App\Livewire\Admin\ApiGuideModal;
 use App\Livewire\Admin\ErrorLogViewer;
 use App\Livewire\Admin\Pricing;
-use App\Models\EsimPlan;
 use App\Models\ErrorLog;
+use App\Models\EsimPlan;
 use App\Models\PricingEngineLog;
 use App\Models\Setting;
 use App\Models\User;
@@ -81,7 +83,7 @@ class AdminPanelTest extends TestCase
             ->assertSet('saved', 'Global pricing saved — all plans are being repriced.');
 
         $this->assertSame(55.0, (float) Setting::getValue('pricing.default_markup_pct'));
-        Queue::assertPushed(\App\Jobs\RecomputePlanPricingJob::class);
+        Queue::assertPushed(RecomputePlanPricingJob::class);
         $this->assertDatabaseHas('audit_logs', ['action' => 'pricing.global_updated']);
     }
 
@@ -129,6 +131,22 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['action' => 'pricing.plan_updated', 'model_id' => $plan->id]);
     }
 
+    public function test_saving_a_plan_override_flushes_the_storefront_teaser_cache(): void
+    {
+        // Readiness-audit fix (2026-09-07): a manual price override used to
+        // leave the storefront's "from $X" grid cached at the old price
+        // forever, since only catalogue-sync/feature-toggle actions flushed it.
+        Cache::forever('esim.nav.grid.v1:data', ['stale' => true]);
+        $plan = $this->plan();
+
+        Livewire::actingAs($this->admin())->test(Pricing::class)
+            ->call('editPlan', $plan->id)
+            ->set('manual_retail_usd', 25)
+            ->call('savePlan');
+
+        $this->assertFalse(Cache::has('esim.nav.grid.v1:data'));
+    }
+
     public function test_api_guide_modal_opens_with_the_right_content(): void
     {
         Livewire::actingAs($this->admin())->test(ApiGuideModal::class)
@@ -166,6 +184,6 @@ class AdminPanelTest extends TestCase
         $health = Cache::get('providers:health');
         $this->assertSame('low', $health['esimgo']['status']);
         $this->assertSame('coming_soon', $health['getatext']['status']); // no key
-        Queue::assertPushed(\App\Jobs\AlertAdminJob::class);
+        Queue::assertPushed(AlertAdminJob::class);
     }
 }

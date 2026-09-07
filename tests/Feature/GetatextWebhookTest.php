@@ -42,10 +42,12 @@ class GetatextWebhookTest extends TestCase
 
     public function test_valid_webhook_stores_code_completes_order_and_broadcasts(): void
     {
+        config(['services.getatext.webhook_token' => 'shhh']);
         Event::fake([OtpReceived::class]);
         $order = $this->pendingOrder();
 
-        $this->postJson('/webhooks/getatext', $this->payload())
+        $this->withHeaders(['X-Webhook-Token' => 'shhh'])
+            ->postJson('/webhooks/getatext', $this->payload())
             ->assertOk()
             ->assertJson(['ok' => true]);
 
@@ -61,11 +63,12 @@ class GetatextWebhookTest extends TestCase
 
     public function test_repeat_delivery_is_idempotent(): void
     {
+        config(['services.getatext.webhook_token' => 'shhh']);
         Event::fake([OtpReceived::class]);
         $this->pendingOrder();
 
-        $this->postJson('/webhooks/getatext', $this->payload())->assertOk();
-        $this->postJson('/webhooks/getatext', $this->payload())->assertOk();
+        $this->withHeaders(['X-Webhook-Token' => 'shhh'])->postJson('/webhooks/getatext', $this->payload())->assertOk();
+        $this->withHeaders(['X-Webhook-Token' => 'shhh'])->postJson('/webhooks/getatext', $this->payload())->assertOk();
 
         // Code broadcast exactly once despite two deliveries.
         Event::assertDispatchedTimes(OtpReceived::class, 1);
@@ -94,5 +97,19 @@ class GetatextWebhookTest extends TestCase
             ->assertOk();
 
         $this->assertSame('completed', $order->fresh()->status);
+    }
+
+    public function test_no_secret_configured_fails_closed_not_open(): void
+    {
+        // Readiness-audit fix (2026-09-07): an unconfigured secret must
+        // reject every request, never silently "verify" them.
+        config(['services.getatext.webhook_token' => '']);
+        Event::fake([OtpReceived::class]);
+        $order = $this->pendingOrder();
+
+        $this->postJson('/webhooks/getatext', $this->payload())->assertStatus(401);
+
+        $this->assertSame('waiting', $order->fresh()->status);
+        Event::assertNotDispatched(OtpReceived::class);
     }
 }

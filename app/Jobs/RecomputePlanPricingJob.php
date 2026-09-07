@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\EsimPlan;
 use App\Services\Pricing\PricingEngine;
+use App\Support\EsimCatalogue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -17,9 +18,7 @@ class RecomputePlanPricingJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public ?string $provider = null)
-    {
-    }
+    public function __construct(public ?string $provider = null) {}
 
     public function handle(PricingEngine $engine): void
     {
@@ -30,5 +29,11 @@ class RecomputePlanPricingJob implements ShouldQueue
                     $engine->recompute($plan);
                 }
             });
+
+        // Readiness-audit fix (2026-09-07): a global markup/floor change must
+        // invalidate the storefront's cached "from $X" teaser grid once, after
+        // every plan's price has actually changed — not leave it serving the
+        // pre-markup-change prices until an unrelated catalogue action flushes it.
+        EsimCatalogue::flush();
     }
 }
