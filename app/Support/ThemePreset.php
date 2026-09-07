@@ -94,6 +94,14 @@ class ThemePreset
         'about_page' => ['default', 'neon-vertex', 'midnight-signal'],
         'how_it_works_page' => ['default', 'neon-vertex', 'midnight-signal'],
         'contact_page' => ['default', 'neon-vertex', 'midnight-signal'],
+        // Footer (owner request, 2026-09-07: "please all themes too should
+        // have unique footer too... not always we get a straight line
+        // footer"). Chrome-only, like header/bottom_nav — no editable
+        // content fields, just a visual/structural reskin of the SAME
+        // functional content (SiteChrome columns/legal, socials, app-export
+        // slot). 'default' keeps today's exact shared footer everywhere
+        // else, including naara-official.
+        'footer' => ['default', 'neon-vertex', 'midnight-signal'],
     ];
 
     /**

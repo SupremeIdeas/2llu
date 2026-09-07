@@ -7,7 +7,11 @@
      icon-service strip along the bottom (Cmouse's Hairdressing/Massage/
      Eye Care/Nail Beauty row) instead of a vertical sidebar stack. The
      real `<livewire:contact-form />` component sits inside a light inner
-     card so its fields keep proper contrast on the gradient panel. --}}
+     card so its fields keep proper contrast on the gradient panel. Photo
+     is a real, locally-committed WebP under public/images/themes/ (owner
+     rule: no live external hotlinks, no empty placeholders) — a real
+     support-team photo fits "real humans, real answers" better than a
+     device shot here. --}}
 <section class="bg-navy px-4 pb-4 pt-16 sm:pt-20">
     <div class="mx-auto grid max-w-5xl gap-6 overflow-hidden rounded-[2.5rem] lg:grid-cols-2">
         <div class="rounded-[2.5rem] bg-gradient-to-br from-primary-dark to-primary p-6 sm:p-10 lg:rounded-r-none">
@@ -25,7 +29,7 @@
         </div>
 
         <div class="relative overflow-hidden rounded-[2.5rem] lg:rounded-l-none">
-            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=900&auto=format&fit=crop"
+            <img src="{{ asset('images/themes/shared/team-coworking.webp') }}"
                  alt="" class="h-64 w-full object-cover lg:h-full">
             <div class="absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/10 to-transparent"></div>
 

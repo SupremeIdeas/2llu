@@ -160,6 +160,7 @@
                 ['bottom_nav', 'Bottom nav'],
                 ['login', 'Login screen'],
                 ['login_bg', 'Login background effect'],
+                ['footer', 'Footer'],
             ] as [$section, $label])
                 <div>
                     <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">{{ $label }}</label>

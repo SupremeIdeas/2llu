@@ -60,8 +60,10 @@
     </div>
 </section>
 
-{{-- Compatibility — circular quick-link buttons, restyled dark/cyan. --}}
-<section class="bg-[#F8F9FA] px-4 py-20 text-center dark:bg-[#0c1220]">
+{{-- Compatibility — circular quick-link buttons, restyled dark/cyan. Pulled
+     up over the navy steps section above with a 30px rounded-top "sheet"
+     edge instead of a flat seam. --}}
+<section class="relative -mt-8 rounded-t-[30px] bg-[#F8F9FA] px-4 py-20 text-center dark:bg-[#0c1220]">
     <h2 class="font-display text-xl font-bold text-slate-900 dark:text-white">Check your phone supports eSIM first</h2>
     <p class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600 dark:text-slate-300">Most phones from the last 4 years do — we check automatically before you pay, so there's never a wasted purchase.</p>
 

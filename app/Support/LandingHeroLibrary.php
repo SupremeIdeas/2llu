@@ -43,10 +43,12 @@ class LandingHeroLibrary
                     ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'The all-in-one app to get data and a real number in 190+ countries, faster than ever.'],
                     ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Start roaming'],
                     // Owner rule (2026-09-07): "no place will be empty" — every
-                    // image slot ships with a real photo by default (a stable,
-                    // properly-licensed stock shot) rather than an empty
-                    // gradient placeholder, until the admin uploads the real one.
-                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=1200&auto=format&fit=crop'],
+                    // image slot ships with a real photo by default rather than
+                    // an empty gradient placeholder, until the admin uploads the
+                    // real one. Owner rule, follow-up: that photo is downloaded
+                    // once, converted to WebP, and committed under
+                    // public/images/themes/ — never a live external hotlink.
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/phone-screen.webp')],
                     ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'xl'],
                     ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'right'],
                     ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '190+'],
@@ -60,7 +62,7 @@ class LandingHeroLibrary
                     ['key' => 'headline', 'type' => 'text', 'label' => 'Headline', 'max' => 80, 'default' => 'Stay connected on every trip'],
                     ['key' => 'description', 'type' => 'textarea', 'label' => 'Description', 'max' => 220, 'default' => 'Get the cheapest local data and a real number, the moment you land — no roaming shock, no SIM swap.'],
                     ['key' => 'cta_label', 'type' => 'text', 'label' => 'Primary button label', 'max' => 30, 'default' => 'Search plans now'],
-                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop'],
+                    ['key' => 'image', 'type' => 'image', 'label' => 'Feature image', 'default' => asset('images/themes/shared/earth-space.webp')],
                     ['key' => 'image_radius', 'type' => 'select', 'label' => 'Image corner style', 'options' => self::IMAGE_RADIUS_OPTIONS, 'default' => 'md'],
                     ['key' => 'image_position', 'type' => 'select', 'label' => 'Image position', 'options' => self::IMAGE_POSITION_OPTIONS, 'default' => 'center'],
                     ['key' => 'stat_value', 'type' => 'text', 'label' => 'Stat value', 'max' => 12, 'default' => '94%'],

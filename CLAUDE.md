@@ -88,6 +88,85 @@ Brand: Deep Teal `#0A6E6E`, Warm Gold `#D4A017`, Midnight Navy `#0D1B2A`.
 
 ---
 
+## THEME VISUAL REBUILD RULES (non-negotiable — every batch, every theme)
+
+The platform is mid-way through giving each of the 40 theme presets its own
+full "swappable section" suite (header, bottom nav, login, login_bg, footer,
+landing page, about/how-it-works/contact pages — see `App\Support\ThemePreset`
+`SECTION_STYLE_ALLOW`, `LandingHeroLibrary`, `ThemePageLibrary`). These rules
+came from direct owner correction after an early batch shipped a recolour
+instead of a redesign — read them before touching ANY theme batch, and apply
+them from the first commit, not as a later cleanup pass.
+
+1. **No shared section skeleton across themes.** Never reuse the same
+   section arrangement (e.g. "2-card band → 3-card grid → centred card")
+   recoloured for a different theme. Each theme's header/footer/landing
+   page/about/how-it-works/contact must be a genuinely different structural
+   composition — research a real reference (Dribbble/Behance/Awwwards-
+   calibre layout patterns; browser-fetch and look at actual pages, don't
+   guess from memory) and adapt ITS layout DNA to NaaraSim's content, not a
+   generic template. If two themes end up sharing a pattern, recolour is not
+   enough — vary the arrangement, not just the palette.
+2. **No empty image placeholders, ever.** If a themed section calls for an
+   image and no real asset exists yet, pick a real, on-brand stock photo —
+   never ship a bare gradient box or an obviously blank slot "to fill in
+   later." Exception: a placeholder that stands in for a SPECIFIC named
+   real person (e.g. the owner) without a real photo on file — use an
+   initials avatar or similar honest placeholder instead of a stock photo
+   of a stranger mislabelled with their name.
+3. **Images are committed assets, never live hotlinks.** Download the
+   chosen photo once (through whatever network path actually works in the
+   current environment — verify with `curl` first), evaluate whether it
+   needs background removal (only for cutout/isolated-subject use, e.g. a
+   floating mascot or device cutout with no card frame around it — a normal
+   photo shown inside a rounded card frame does NOT need bg removal), fit
+   it to brand messaging (does the actual photo content match what the
+   copy/section is about — verify by looking at the downloaded image, not
+   just the source description), convert to WebP, and commit it under
+   `public/images/themes/{theme-slug}/...` (or `public/images/themes/shared/`
+   for a photo reused by more than one theme) — same convention as the
+   existing `public/images/audiences/` and `public/images/steps/` assets.
+   Target similar file sizes (tens of KB, not hundreds) via reasonable
+   width caps and WebP quality ~80. Reference the committed file with
+   `asset('images/themes/...')`, never an external URL, so no page ever
+   depends on a third-party host being reachable — "so we don't see a
+   stale section ignorantly seeing blank areas." `rembg` (Python) is
+   installed in dev environments for background removal when a cutout
+   actually needs it; Pillow handles the WebP conversion. For a batch with
+   many images, parallelize the fetch/process step (e.g. one agent or one
+   script pass per theme) rather than doing it one photo at a time.
+4. **Footer is swappable too, like header/bottom_nav.** Every full-suite
+   theme gets its own footer treatment via the same `SECTION_STYLE_ALLOW`
+   pattern (`'footer' => ['default', 'theme-slug', ...]`) — never assume
+   the shared straight default footer is "good enough" once a theme has a
+   custom header/landing page/page suite. Same content (brand blurb,
+   product/company link columns, legal links), reskinned to match that
+   theme's persona.
+5. **No flat straight-line section dividers.** Wherever two stacked
+   sections meet with genuinely different background colours, give that
+   boundary either (a) a ~30px rounded-top-corner "sheet" treatment
+   (`rounded-t-[30px]` on the later section, pulled up with a small
+   negative top margin, e.g. `-mt-8`, so the curve reveals the earlier
+   section's colour underneath) or (b) another deliberate divider shape
+   (wave, angled cut, notch) — pick whichever fits that theme's persona.
+   A plain flush line where two different-coloured sections touch reads as
+   generic and is not acceptable. (Sections that already share the same
+   background colour have no seam to decorate — don't invent one.)
+6. **Use the actual tooling, don't guess.** Verify a candidate image's
+   real content by opening it (not just trusting the source URL's
+   description), verify a candidate icon exists in
+   `resources/views/partials/icon-sprite.blade.php` before referencing it
+   (add it properly, lucide-style stroke paths, if it doesn't — never
+   substitute a mismatched icon or emoji), and run `npm run build` before
+   any final screenshot verification pass — Tailwind only compiles
+   classes present in blade files at the moment of the build, so a brand
+   new arbitrary-value class (e.g. `grid-cols-[1fr_260px]`) silently does
+   nothing in a stale build and can look exactly like a real layout bug.
+   Browser-verify every new page at both mobile and desktop viewports
+   before calling a batch done.
+
+---
+
 ## Graphify Rules
 
 Graphify maps this codebase into a queryable knowledge graph under `graphify-out/`

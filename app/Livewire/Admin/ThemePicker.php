@@ -69,10 +69,10 @@ class ThemePicker extends Component
 
     /** Selected style key per swappable section, keyed exactly like SECTION_STYLE_ALLOW. */
     public array $sectionStyles = [
-        'header' => 'default', 'bottom_nav' => 'default', 'login' => 'default', 'login_bg' => 'none',
+        'header' => 'default', 'bottom_nav' => 'default', 'login' => 'default', 'login_bg' => 'none', 'footer' => 'default',
     ];
 
-    private const EDITABLE_SECTIONS = ['header', 'bottom_nav', 'login', 'login_bg'];
+    private const EDITABLE_SECTIONS = ['header', 'bottom_nav', 'login', 'login_bg', 'footer'];
 
     /** Human labels for the non-theme-keyed login_bg effect values. */
     private const LOGIN_BG_LABELS = [

@@ -9,6 +9,76 @@
 
 ## DONE
 
+### 🖼️🦶 Local image pipeline + swappable footer + no-flat-dividers rule — 2026-09-07
+Owner follow-up after the page-suite rework above: "give our agents in
+parallel to use perfect tools to remove bg for any image that needs bg
+removal and... make sure the images fits to our brand massaging, then
+please convert the Images to .webp before wiring... lightweight, stored
+in our GitHub repo so we don't see a stale section... blank areas...
+this is footer, please all themes too should have unique footer too...
+footer swappable too... sections should have either top left and top
+right 30px radius edge to edge, or any other unique dividers, they must
+not always be straight line devider because it will feel generic."
+Ran two workstreams in parallel: a background agent built the swappable
+footer architecture while the main session ran the image pipeline and
+section-divider redesign — both independent file sets, integrated and
+verified together at the end.
+- **Local image pipeline**: every photo used by neon-vertex/midnight-
+  signal (previously hotlinked to Unsplash) is now downloaded once,
+  content-verified by actually opening the file (2 of 4 original guesses
+  turned out to be the wrong photo entirely once actually viewed — e.g.
+  an assumed "astronaut" was really a coworking-team photo — reassigned
+  each to the use case it actually fits: a clean phone-screen shot for
+  device/annotation callouts, a coworking-desk shot for the "built by
+  travellers" hero break, a team-coworking shot for "real humans, real
+  answers" contact imagery, Earth-from-space for the global-signal
+  motifs), converted to WebP via Pillow, and committed under
+  `public/images/themes/{shared,neon-vertex}/*.webp` (48–68 KB each,
+  in line with the existing `public/images/audiences/` convention) —
+  referenced via `asset(...)`, never a live external URL. `rembg`
+  installed for background removal on a future cutout-style asset (none
+  of these four needed it — they're photo-card content, not isolated
+  subjects). `LandingHeroLibrary`'s two `image` field defaults updated
+  the same way; `ThemeLandingPageTest`'s non-URL-rejection test updated
+  to assert the new local-path default instead of `null`.
+- **Swappable `footer` section** (background agent): `SECTION_STYLE_ALLOW`
+  gets `'footer' => ['default', 'neon-vertex', 'midnight-signal']`,
+  mirroring the header/bottom_nav chrome-only pattern exactly (no content
+  registry needed — same real links/columns as the shared footer, just
+  reskinned). `resources/views/components/site-footer.blade.php` resolves
+  the style before falling back to the untouched shared footer, for both
+  its `full` (marketing layout) and `slim` (login pages) variants. Real
+  content preserved verbatim (`SiteChrome::footerColumns()`/
+  `footerLegal()`, `BrandSettings::name()`, `SocialLinks::forFooter()`,
+  the app-download slot). Additive migration + seeder entry, `'footer'`
+  added to `Admin\ThemePicker`'s `EDITABLE_SECTIONS` and Sections modal.
+  15 new tests (resolver, migration up/down/never-overwrite, real
+  page-render assertions for both layout variants, legal-link survival).
+- **No flat straight-line section dividers**: applied a ~30px
+  rounded-top "sheet" overlap (`rounded-t-[30px]` + `-mt-8` pulling the
+  later section up so its curve reveals the earlier section's colour)
+  at every real colour seam in midnight-signal's about/how-it-works pages
+  (hero→mission-band, mission-band→values, values→founder-band,
+  steps→compatibility) — neon-vertex's pages share one background
+  throughout so had no seam to decorate there. The two new footers each
+  got a genuinely different divider treatment instead of reusing one
+  shape: neon-vertex = smooth `rounded-t-[2.5rem]` corners; midnight-
+  signal = an angular `clip-path` "signal pulse" notch — deliberately not
+  the same shape recoloured, per the "no place should feel generic" rule.
+- **Owner preferences codified in `CLAUDE.md`** under a new "THEME VISUAL
+  REBUILD RULES" section — no shared section skeleton across themes, no
+  empty image placeholders, images as committed WebP assets (never
+  hotlinks), footer swappable like every other chrome section, no flat
+  dividers, and "verify by actually looking, don't guess" (image content,
+  icon existence, and a fresh `npm run build` before any screenshot
+  verification pass) — so every future theme batch follows these from
+  its first commit instead of needing the same correction twice.
+- Full suite 1582/1582 (1567 baseline + 15 new footer tests), Pint clean
+  on every touched/created PHP file, assets rebuilt, browser-verified at
+  desktop + mobile for both themes' home/about/how-it-works/contact pages
+  plus both footers; confirmed naara-official and every other theme
+  completely unaffected.
+
 ### 🔧 Full page suite rework — genuinely distinct layouts + real images (owner rejected first pass) — 2026-09-07
 Owner feedback, verbatim: "you just still only duplicate but didn't even
 research on changing the layouts section arrangement and sections

@@ -286,6 +286,10 @@ class ThemePresetSeeder extends Seeder
                 'about_page' => $fullSuitePage,
                 'how_it_works_page' => $fullSuitePage,
                 'contact_page' => $fullSuitePage,
+                // Footer (owner request, 2026-09-07): same two themes as the
+                // full page suite above — a hand-built footer ships together
+                // with the rest of that theme's persona.
+                'footer' => $fullSuitePage,
             ], fn ($v) => $v !== null),
             default => [],
         };

@@ -15,11 +15,19 @@
        - Founder: a dark statement band with a pull-quote over a duotone
          Earth backdrop (Payrot's "grow beyond borders" band) instead of a
          centred card.
-     Every decorative photo slot ships with a real, stably-hosted stock
-     shot (owner rule: "no place will be empty... pick one from the
-     Internet"). The founder avatar stays initials-only — no photo of him
-     is on file, and a stock photo mislabelled with his name would
-     misrepresent a real person. --}}
+     Every decorative photo slot ships with a real photo (owner rule: "no
+     place will be empty... pick one from the Internet"), downloaded once
+     and committed as WebP under public/images/themes/ rather than a live
+     external hotlink (owner rule, follow-up: "lightweight, stored in our
+     GitHub repo so we don't see a stale section... blank areas"). The
+     founder avatar stays initials-only — no photo of him is on file, and
+     a stock photo mislabelled with his name would misrepresent a real
+     person. Section boundaries between different-coloured bands use a
+     30px rounded-top "sheet" overlap (owner rule: never a flat straight
+     divider between sections — "it will feel generic") instead of a flush
+     line; sections that already share a colour (e.g. the hero and its own
+     annotated-diagram row, both bg-navy) don't need one, since there's no
+     seam to soften. --}}
 <section class="relative overflow-hidden bg-navy">
     <div class="pointer-events-none absolute inset-0" aria-hidden="true">
         <span class="absolute left-1/2 top-0 h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/3 rounded-full bg-primary/20 blur-3xl"></span>
@@ -50,7 +58,7 @@
         </div>
 
         <div class="relative shrink-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
-            <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=700&auto=format&fit=crop" alt="" class="h-72 w-56 object-cover">
+            <img src="{{ asset('images/themes/shared/phone-screen.webp') }}" alt="" class="h-72 w-56 object-cover">
             <div class="absolute inset-0 bg-gradient-to-t from-navy via-navy/40 to-primary/20 mix-blend-multiply"></div>
         </div>
 
@@ -77,8 +85,10 @@
     </div>
 </section>
 
-{{-- Mission / Vision — one bold statement band with a globe photo, not two side-by-side cards. --}}
-<section class="relative overflow-hidden bg-gradient-to-br from-primary-dark to-primary px-4 py-16 sm:py-20">
+{{-- Mission / Vision — one bold statement band with a globe photo, not two
+     side-by-side cards. Pulled up over the hero's navy with a 30px
+     rounded-top "sheet" edge instead of a flat seam. --}}
+<section class="relative -mt-8 overflow-hidden rounded-t-[30px] bg-gradient-to-br from-primary-dark to-primary px-4 py-16 sm:py-20">
     <div class="mx-auto grid max-w-5xl items-center gap-8 sm:grid-cols-[1fr_260px]">
         <div>
             <p class="text-xs font-semibold uppercase tracking-widest text-white/70">Mission</p>
@@ -87,13 +97,14 @@
             <p class="mt-2 text-base leading-relaxed text-white/90">{{ $content['vision'] }}</p>
         </div>
         <div class="mx-auto overflow-hidden rounded-[2.5rem] shadow-2xl sm:mx-0">
-            <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=700&auto=format&fit=crop" alt="" class="h-56 w-56 object-cover">
+            <img src="{{ asset('images/themes/shared/earth-space.webp') }}" alt="" class="h-56 w-56 object-cover">
         </div>
     </div>
 </section>
 
-{{-- Values — horizontal snap-scroll rail. --}}
-<section class="bg-[#F8F9FA] py-16 dark:bg-[#0c1220] sm:py-20">
+{{-- Values — horizontal snap-scroll rail. Same 30px rounded-top overlap
+     onto the gradient band above it. --}}
+<section class="relative -mt-8 rounded-t-[30px] bg-[#F8F9FA] py-16 dark:bg-[#0c1220] sm:py-20">
     <h2 class="px-4 text-center font-display text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">How we hold the signal</h2>
     <div class="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:justify-center">
         @foreach ([
@@ -112,9 +123,10 @@
     </div>
 </section>
 
-{{-- Founder — dark pull-quote band over a duotone Earth backdrop. --}}
-<section class="relative overflow-hidden bg-navy px-4 py-20 text-center">
-    <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop" alt=""
+{{-- Founder — dark pull-quote band over a duotone Earth backdrop. Same
+     30px rounded-top overlap onto the light values band above it. --}}
+<section class="relative -mt-8 overflow-hidden rounded-t-[30px] bg-navy px-4 py-20 text-center">
+    <img src="{{ asset('images/themes/shared/earth-space.webp') }}" alt=""
          class="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-15">
     <div class="relative mx-auto max-w-xl">
         <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-lg font-bold text-primary">

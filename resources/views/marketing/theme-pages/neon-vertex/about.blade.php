@@ -18,13 +18,17 @@
          Listings" rail) instead of a static grid.
        - Founder: a colour-block split card (Payrot/Cmouse's panel+photo
          halves) instead of one centred stack.
-     Every decorative photo slot ships with a real, stably-hosted stock
-     shot (owner rule, 2026-09-07: "no place will be empty... pick one
-     from the Internet... we will change the images later") — never an
-     empty gradient box. The founder avatar stays initials-only: he has no
-     photo on file yet, and a stock photo of a stranger labelled with his
-     name would misrepresent a real person, which the "no empty" rule
-     isn't asking for. --}}
+     Every decorative photo slot ships with a real photo (owner rule,
+     2026-09-07: "no place will be empty... pick one from the
+     Internet... we will change the images later") — never an empty
+     gradient box. Photos are downloaded once, converted to WebP, and
+     committed under public/images/themes/ (owner rule, follow-up:
+     "lightweight, stored in our GitHub repo so we don't see a stale
+     section... blank areas") — never a live external hotlink, so the
+     page never depends on a third-party host being reachable. The
+     founder avatar stays initials-only: he has no photo on file yet, and
+     a stock photo of a stranger labelled with his name would misrepresent
+     a real person, which the "no empty" rule isn't asking for. --}}
 @php
     $words = preg_split('/\s+/', trim($content['headline']));
     $mid = max(1, (int) ceil(count($words) / 2));
@@ -47,7 +51,7 @@
                 {{ $headlineLine1 }}
             </h1>
             <div class="relative z-10 mx-auto my-3 w-32 rotate-[-5deg] sm:my-4 sm:w-44">
-                <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=800&auto=format&fit=crop"
+                <img src="{{ asset('images/themes/shared/coworking-desk.webp') }}"
                      alt="" class="w-full rounded-[1.75rem] object-cover shadow-2xl ring-4 ring-white dark:ring-navy">
             </div>
             <h1 class="font-display font-black uppercase leading-[0.85] tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" style="font-size: clamp(2.5rem, 10vw, 5.5rem);">
@@ -78,7 +82,7 @@
         </div>
 
         <div class="relative shrink-0">
-            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=700&auto=format&fit=crop"
+            <img src="{{ asset('images/themes/shared/phone-screen.webp') }}"
                  alt="" class="h-72 w-56 rounded-[2.5rem] object-cover shadow-2xl">
         </div>
 
