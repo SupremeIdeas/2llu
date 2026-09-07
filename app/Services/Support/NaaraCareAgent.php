@@ -5,6 +5,7 @@ namespace App\Services\Support;
 use App\Models\SupportConversation;
 use App\Models\User;
 use App\Services\Support\Contracts\ChatModel;
+use App\Support\SupportReplyGuard;
 use App\Support\SupportSettings;
 
 /**
@@ -13,6 +14,9 @@ use App\Support\SupportSettings;
  * THIS user), see the user's real situation, and reply with a human-toned answer
  * + optionally a navigation shortcut, or escalate to a human. It never sees
  * another user's data, cost/profit, or any secret (SupportTools + SupportGuard).
+ * Its own reply text is screened by SupportReplyGuard before it reaches the
+ * user (readiness-audit fix, 2026-09-07) — the model claiming a refund/
+ * account change it never actually performed is caught on the way out.
  */
 class NaaraCareAgent
 {
@@ -56,6 +60,7 @@ class NaaraCareAgent
 
         $nav = null;
         $escalated = false;
+        $moneyOrAccountActionSucceeded = false;
 
         for ($step = 0; $step < self::MAX_STEPS; $step++) {
             $response = $this->model->reply($system, $messages, $schemas);
@@ -63,7 +68,16 @@ class NaaraCareAgent
             $messages[] = ['role' => 'assistant', 'content' => $content];
 
             if (($response['stop_reason'] ?? 'end_turn') !== 'tool_use') {
-                return ['reply' => $this->extractText($content), 'nav' => $nav, 'escalated' => $escalated || $conversation->escalated];
+                $raw = $this->extractText($content);
+                $reply = SupportReplyGuard::sanitize($raw, $moneyOrAccountActionSucceeded);
+
+                return [
+                    'reply' => $reply,
+                    'nav' => $nav,
+                    // The guard rewriting the reply means the model claimed an
+                    // unverified money/account action — hand it to a human too.
+                    'escalated' => $escalated || $conversation->escalated || $reply !== $raw,
+                ];
             }
 
             // Run every tool the model asked for and feed the results back.
@@ -79,6 +93,9 @@ class NaaraCareAgent
                 }
                 if ($block['name'] === 'escalate_to_human') {
                     $escalated = true;
+                }
+                if ($block['name'] === 'grant_goodwill_credit' && ($result['done'] ?? false) === true) {
+                    $moneyOrAccountActionSucceeded = true;
                 }
 
                 $toolResults[] = [

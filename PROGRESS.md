@@ -54,16 +54,25 @@ duplicated here.
   fail-closed-not-open regression test), 4 new
   `ThrottleUnprotectedAuthRoutesTest` tests, 2 new cache-flush regression
   tests. All 31 targeted tests green; Pint clean on every touched file.
-- **Deferred, not forgotten** (confirmed genuinely new by the 6-agent
-  audit, not yet fixed): admin 2FA is opt-in not mandatory-by-default;
-  Sentry DSN is blank in `.env` (error tracking not actually wired);
-  eSIM/number provider purchase calls run synchronously inside the
-  Livewire action rather than as queued Horizon jobs (contradicts
-  `laravel-readiness-audit-v2.md`'s claim that every provider call is
-  queued — needs an owner decision: fix the docs, or refactor to async);
-  the Capacitor `package.json` has a gap; a dead timezone field exists
-  somewhere in settings; there's no output-side AI response screening.
-  These need a synthesis pass before the next round of fixes.
+- **Full synthesis written up:** `docs/laravel-readiness-audit-v3.md` —
+  every new (non-duplicate) finding from the 6-agent audit, verified
+  against the actual code (not just summarized), with a recommended
+  priority order. Two items need an owner decision (admin-2FA-mandatory
+  default; sync-vs-queued provider calls doc-correction-or-refactor) and
+  three are either shipped or clear no-decision-needed follow-ups
+  (Sentry DSN is config-only; Capacitor packages only matter if that
+  track is active; the dead `timezone` column is cosmetic).
+- **Output-side AI reply screening — shipped.** New `SupportReplyGuard`
+  (`app/Support/SupportReplyGuard.php`) sits between the NaaraCare agent's
+  raw model output and the customer: `SupportGuard` already stopped
+  cost/secret data flowing IN to the model, but nothing stopped the model's
+  own free-text reply claiming a money/account action it never actually
+  performed — a plain-English hallucination like "I've refunded you $10"
+  isn't caught by any tool schema. `NaaraCareAgent::respond()` now tracks
+  whether `grant_goodwill_credit` actually succeeded this turn and runs
+  the final reply through the guard: an unverified refund/credit/account-
+  change claim is replaced with a safe human-hand-off message and the
+  turn is force-escalated. 4 new tests (12/12 `SupportAgentTest` green).
 
 ### 🎨 Theme Preset expansion: 20 → 40 presets (Phase 2 of the color-system audit) — 2026-09-06
 Owner's follow-up to the accent-dark contrast fix: "extend the themes preset
