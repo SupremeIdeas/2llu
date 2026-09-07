@@ -20,9 +20,9 @@
             @foreach ($plans as $plan)
                 @php($ref = (string) $plan->id)
                 <div wire:key="plan-{{ $plan->id }}" @class([
-                    'relative flex flex-col rounded-3xl border bg-white p-6 transition dark:bg-[#1A2840]',
+                    'relative flex flex-col rounded-3xl border bg-white p-6 transition dark:bg-[var(--brand-card-dark)]',
                     'border-primary shadow-xl shadow-primary/10 dark:border-primary' => $plan->is_featured,
-                    'border-slate-200 dark:border-[#2D4060]' => ! $plan->is_featured,
+                    'border-slate-200 dark:border-[var(--brand-card-border-dark)]' => ! $plan->is_featured,
                 ])>
                     @if ($plan->is_featured)
                         <span class="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Most popular</span>
@@ -66,9 +66,9 @@
             @foreach ($tiers as $i => $tier)
                 @php($ref = 'e'.$i)
                 <div wire:key="tier-{{ $i }}" @class([
-                    'relative flex flex-col rounded-3xl border bg-white p-6 dark:bg-[#1A2840]',
+                    'relative flex flex-col rounded-3xl border bg-white p-6 dark:bg-[var(--brand-card-dark)]',
                     'border-primary shadow-xl shadow-primary/10 dark:border-primary' => $i === 1,
-                    'border-slate-200 dark:border-[#2D4060]' => $i !== 1,
+                    'border-slate-200 dark:border-[var(--brand-card-border-dark)]' => $i !== 1,
                 ])>
                     @if ($i === 1)
                         <span class="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Most popular</span>

@@ -1,7 +1,7 @@
 {{-- Trust/feature strip (reference footer row): four honest platform promises,
      shown at the foot of the eSIM front. Static, brand-safe copy — no invented
      provider claims. One shared partial, identical across every theme. --}}
-<div class="mt-8 grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840] sm:grid-cols-4">
+<div class="mt-8 grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)] sm:grid-cols-4">
     @foreach ([
         ['zap', 'Instant Activation', 'Online in seconds'],
         ['shield-check', 'Secure & Private', 'Your data, protected'],

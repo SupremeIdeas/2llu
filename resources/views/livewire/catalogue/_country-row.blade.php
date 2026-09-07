@@ -3,7 +3,7 @@
      fallback) on the right, then a chevron. Expects: $t (grid row), $fmt. --}}
 @php($teaser = $t['from_usd'] !== null ? $fmt((float) $t['from_usd']) : null)
 <button type="button" wire:click="openCountry('{{ $t['code'] }}')"
-        class="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        class="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
     <div class="min-w-0 flex-1 pl-1">
         <p class="text-[11px] font-bold uppercase tracking-wider text-primary dark:text-teal-300">Explore</p>
         <p class="truncate text-base font-bold text-slate-900 dark:text-slate-100">{{ $t['name'] }}</p>

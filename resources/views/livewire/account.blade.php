@@ -48,7 +48,7 @@
 
     {{-- Bottom navigation style (owner request) — Floating (rounded pill lifted
          off the edge) or Docked (flush). Client-side preference, applied live. --}}
-    <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1B2A44] lg:hidden"
+    <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-[var(--brand-card-border-dark)] dark:bg-[#1B2A44] lg:hidden"
              x-data="{ floating: localStorage.getItem('nx_nav_floating') !== '0' }">
         <div class="flex items-center justify-between gap-4">
             <div>
@@ -86,7 +86,7 @@
     @endif
 
     {{-- Account status: pause / resume --}}
-    <section class="mb-5 rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
+    <section class="mb-5 rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[var(--brand-card-border-dark)]">
         <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
             <x-icon name="pause" class="h-4 w-4 text-primary" /> Account status
         </h2>
@@ -101,7 +101,7 @@
             <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Your account is <span class="font-semibold text-green-600 dark:text-green-400">active</span>. Pausing hides your account and stops new purchases — nothing is deleted, and you can resume any time.</p>
             <button type="button" wire:click="deactivate" wire:loading.attr="disabled" wire:target="deactivate"
                     wire:confirm="Pause your account? You can reactivate any time by logging back in."
-                    class="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
+                    class="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[var(--brand-card-border-dark)] dark:text-slate-200 dark:hover:bg-[#243352]">
                 <span wire:loading.remove wire:target="deactivate" class="inline-flex items-center gap-2"><x-icon name="pause" class="h-4 w-4" /> Pause my account</span>
                 <span wire:loading wire:target="deactivate" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Pausing…</span>
             </button>
@@ -109,7 +109,7 @@
     </section>
 
     {{-- Data export --}}
-    <section class="mb-5 rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[#2D4060]">
+    <section class="mb-5 rounded-2xl border border-slate-200 nx-glass-tile p-6 dark:border-[var(--brand-card-border-dark)]">
         <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
             <x-icon name="download" class="h-4 w-4 text-primary" /> Download your data
         </h2>
@@ -117,7 +117,7 @@
 
         <div class="mt-4 flex flex-wrap items-center gap-3">
             <button type="button" wire:click="requestExport" wire:loading.attr="disabled" wire:target="requestExport"
-                    class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
+                    class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[var(--brand-card-border-dark)] dark:text-slate-200 dark:hover:bg-[#243352]">
                 <span wire:loading.remove wire:target="requestExport" class="inline-flex items-center gap-2"><x-icon name="refresh" class="h-4 w-4" /> Prepare my export</span>
                 <span wire:loading wire:target="requestExport" class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Requesting…</span>
             </button>
@@ -139,7 +139,7 @@
         @if ($user->hasPendingDeletion())
             <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Your deletion request is <span class="font-semibold text-red-600 dark:text-red-400">awaiting review</span>. A super admin must approve it before anything is erased. You can still cancel.</p>
             <button type="button" wire:click="cancelDeletion" wire:loading.attr="disabled" wire:target="cancelDeletion"
-                    class="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[#2D4060] dark:text-slate-200 dark:hover:bg-[#243352]">
+                    class="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-[var(--brand-card-border-dark)] dark:text-slate-200 dark:hover:bg-[#243352]">
                 <x-icon name="x" class="h-4 w-4" /> Cancel deletion request
             </button>
         @else

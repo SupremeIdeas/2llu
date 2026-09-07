@@ -82,6 +82,44 @@ class ThemePresetTest extends TestCase
         $this->assertStringNotContainsString('body{', $css);
     }
 
+    public function test_a_custom_theme_also_emits_the_shared_dark_standard_override(): void
+    {
+        ThemePresetModel::create([
+            'slug' => 'aurora-shift',
+            'name' => 'Aurora Shift',
+            'tokens' => ['colors' => ['primary' => '30 64 175']],
+            'icon_family' => ['style' => 'sprite', 'set' => 'naara-sprite-01'],
+            'is_built_in' => false,
+            'sort_order' => 2,
+        ]);
+        Setting::setValue(ThemePreset::SETTING_KEY, 'aurora-shift');
+        ThemePreset::bust();
+
+        $css = ThemePreset::styleCss();
+
+        // Non-default themes never author their own dark palette — dark mode
+        // always collapses to the one shared standard, scoped tight enough
+        // (root.dark + this theme's own body class) that it only overrides
+        // when BOTH dark mode is on AND this preset is active.
+        $this->assertStringContainsString(':root.dark body.theme-aurora-shift{', $css);
+        $this->assertStringContainsString('--brand-navy:18 18 20', $css);
+        $this->assertStringContainsString('--brand-primary:10 132 255', $css);
+        $this->assertStringContainsString('--brand-primary-dark:4 94 199', $css);
+        $this->assertStringContainsString('--brand-accent:255 159 10', $css);
+        $this->assertStringContainsString('--brand-action:255 69 58', $css);
+    }
+
+    public function test_naara_official_never_gets_a_dark_standard_override(): void
+    {
+        $this->seed(ThemePresetSeeder::class);
+        ThemePreset::bust();
+
+        // The king theme keeps its own light AND dark mode exactly as shipped
+        // — styleCss() returns '' entirely, so the shared dark palette other
+        // presets fall back to never reaches naara-official's page.
+        $this->assertSame('', ThemePreset::styleCss());
+    }
+
     public function test_layout_variant_defaults_to_variant_a(): void
     {
         ThemePresetModel::create([

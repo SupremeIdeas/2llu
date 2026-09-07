@@ -54,7 +54,7 @@
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="translate-y-6 opacity-0 sm:scale-95"
          x-transition:enter-end="translate-y-0 opacity-100 sm:scale-100"
-         class="relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-slate-200 bg-white p-6 shadow-xl outline-none dark:border-[#2D4060] dark:bg-[#1A2840] sm:w-full {{ $widths[$maxWidth] ?? $widths['lg'] }} sm:rounded-2xl">
+         class="relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-slate-200 bg-white p-6 shadow-xl outline-none dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)] sm:w-full {{ $widths[$maxWidth] ?? $widths['lg'] }} sm:rounded-2xl">
         <div class="flex items-start justify-between gap-4">
             <h2 id="{{ $id }}-title" class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ $title }}</h2>
             <button type="button" @click="open = false" aria-label="Close"

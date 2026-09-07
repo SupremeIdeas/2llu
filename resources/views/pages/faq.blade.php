@@ -16,7 +16,7 @@
 
         <div class="mt-8 space-y-4">
             @foreach ($faqs as [$q, $a])
-                <details class="group rounded-xl border border-slate-200 bg-white p-5 dark:border-[#2D4060] dark:bg-[#1A2840]">
+                <details class="group rounded-xl border border-slate-200 bg-white p-5 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
                     <summary class="flex cursor-pointer items-center justify-between font-semibold text-slate-900 dark:text-slate-100">
                         {{ $q }}
                         <x-icon name="chevron-right" class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-90" />

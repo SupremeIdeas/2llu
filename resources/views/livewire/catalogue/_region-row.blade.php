@@ -3,8 +3,8 @@
      Expects: $t (grid region row), $fmt. --}}
 @php($teaser = $t['from_usd'] !== null ? $fmt((float) $t['from_usd']) : null)
 <button type="button" wire:click="openRegion('{{ $t['slug'] }}')"
-        class="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#1A2840]">
-    <span class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 dark:bg-[#152238]">
+        class="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
+    <span class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 dark:bg-[var(--brand-card-inner-dark)]">
         @if (! empty($t['icon']))
             <img src="{{ $t['icon'] }}" alt="{{ $t['label'] }}" loading="lazy" class="h-full w-full object-cover">
         @else

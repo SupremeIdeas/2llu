@@ -54,7 +54,7 @@
                                  from the LPA so a scannable code always exists. --}}
                             @if ($esim->qr_code_url || $esim->lpa_string)
                                 <div class="flex flex-col items-center">
-                                    <img src="{{ $esim->qr_code_url ?: route('esim.qr', $esim) }}" alt="eSIM QR code" class="h-40 w-40 rounded-lg border border-slate-200 bg-white p-1 dark:border-[#2D4060]">
+                                    <img src="{{ $esim->qr_code_url ?: route('esim.qr', $esim) }}" alt="eSIM QR code" class="h-40 w-40 rounded-lg border border-slate-200 bg-white p-1 dark:border-[var(--brand-card-border-dark)]">
                                     <span class="mt-1 text-xs text-slate-400">Scan to install</span>
                                 </div>
                             @endif
@@ -66,7 +66,7 @@
                                     <div class="mt-1 flex items-center gap-2" x-data="{ copied: false }">
                                         <code class="min-w-0 flex-1 break-all rounded-lg bg-slate-100 px-2 py-1.5 font-mono text-[11px] text-slate-800 dark:bg-[#243352] dark:text-slate-200">{{ $esim->lpa_string }}</code>
                                         <button type="button" @click="navigator.clipboard.writeText(@js($esim->lpa_string)); copied = true; setTimeout(() => copied = false, 1500)"
-                                                class="shrink-0 rounded-lg border border-slate-300 p-1.5 text-slate-500 hover:bg-slate-50 dark:border-[#2D4060] dark:hover:bg-[#243352]" aria-label="Copy activation code">
+                                                class="shrink-0 rounded-lg border border-slate-300 p-1.5 text-slate-500 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:hover:bg-[#243352]" aria-label="Copy activation code">
                                             <x-icon name="copy" class="h-4 w-4" x-show="! copied" />
                                             <x-icon name="check" class="h-4 w-4 text-green-500" x-show="copied" x-cloak />
                                         </button>
@@ -120,7 +120,7 @@
                 </div>
             @empty
                 @if ($esimsArchived->isEmpty())
-                    <div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400 dark:border-[#2D4060] dark:text-slate-500">
+                    <div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400 dark:border-[var(--brand-card-border-dark)] dark:text-slate-500">
                         No eSIMs yet. <a href="{{ route('catalogue') }}" class="text-primary hover:underline">Browse plans</a>.
                     </div>
                 @endif
@@ -130,7 +130,7 @@
         {{-- Archive: expired eSIMs, tucked away so the active view stays clean. --}}
         @if ($esimsArchived->isNotEmpty())
             <div x-data="{ open: false }" class="mt-3">
-                <button type="button" @click="open = ! open" class="flex w-full items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-400 dark:hover:bg-[#243352]">
+                <button type="button" @click="open = ! open" class="flex w-full items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-400 dark:hover:bg-[#243352]">
                     <span class="inline-flex items-center gap-1.5"><x-icon name="package" class="h-3.5 w-3.5" /> Archive ({{ $esimsArchived->count() }} expired)</span>
                     <x-icon name="chevron-right" class="h-3.5 w-3.5 transition-transform" ::class="open && 'rotate-90'" />
                 </button>
@@ -207,7 +207,7 @@
             </div>
         @empty
             @if ($numbersArchived->isEmpty())
-                <div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400 dark:border-[#2D4060] dark:text-slate-500">
+                <div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400 dark:border-[var(--brand-card-border-dark)] dark:text-slate-500">
                     No numbers yet. <a href="{{ route('numbers') }}" class="text-primary hover:underline">Get one</a>.
                 </div>
             @endif
@@ -216,7 +216,7 @@
         {{-- Archive: cancelled / expired / refunded numbers. --}}
         @if ($numbersArchived->isNotEmpty())
             <div x-data="{ open: false }" class="mt-1">
-                <button type="button" @click="open = ! open" class="flex w-full items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-400 dark:hover:bg-[#243352]">
+                <button type="button" @click="open = ! open" class="flex w-full items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-400 dark:hover:bg-[#243352]">
                     <span class="inline-flex items-center gap-1.5"><x-icon name="hash" class="h-3.5 w-3.5" /> Archive ({{ $numbersArchived->count() }})</span>
                     <x-icon name="chevron-right" class="h-3.5 w-3.5 transition-transform" ::class="open && 'rotate-90'" />
                 </button>

@@ -23,7 +23,7 @@
         <div class="mt-6 space-y-3">
             @foreach ($numbers as $number)
                 @php($rule = $rules[$number->id] ?? null)
-                <div class="rounded-2xl border border-slate-200 nx-glass-tile p-5 shadow-sm dark:border-[#2D4060]" wire:key="num-{{ $number->id }}">
+                <div class="rounded-2xl border border-slate-200 nx-glass-tile p-5 shadow-sm dark:border-[var(--brand-card-border-dark)]" wire:key="num-{{ $number->id }}">
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-2">
                             <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20"><x-icon name="phone" class="h-4 w-4" /></span>
@@ -39,7 +39,7 @@
                         <div class="flex items-center gap-2">
                             @if ($rule && $rule->status === 'active')
                                 <button type="button" wire:click="disable({{ $rule->id }})" wire:confirm="Turn off call forwarding for this number?"
-                                        class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-red-300 hover:text-red-600 dark:border-[#2D4060] dark:text-slate-300">Turn off</button>
+                                        class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-red-300 hover:text-red-600 dark:border-[var(--brand-card-border-dark)] dark:text-slate-300">Turn off</button>
                             @endif
                             <button type="button" wire:click="edit({{ $number->id }})"
                                     class="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark">{{ $rule && $rule->status === 'active' ? 'Edit' : 'Set up' }}</button>
@@ -55,13 +55,13 @@
                                 <div>
                                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Forward calls to</label>
                                     <input type="tel" wire:model="forwardTo" placeholder="+2348012345678"
-                                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                                     @error('forwardTo') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
                                     <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">No-answer backup (optional)</label>
                                     <input type="tel" wire:model="fallback" placeholder="+2348098765432"
-                                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352] dark:text-slate-100">
                                     @error('fallback') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                                 </div>
                             </div>

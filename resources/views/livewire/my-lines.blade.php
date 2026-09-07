@@ -6,7 +6,7 @@
         </div>
         <div class="hidden items-center gap-2 sm:flex">
             <a href="{{ route('catalogue') }}" wire:navigate
-               class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:border-primary/40 hover:text-primary dark:border-[#2D4060] dark:text-slate-300 dark:hover:text-teal-300">
+               class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:border-primary/40 hover:text-primary dark:border-[var(--brand-card-border-dark)] dark:text-slate-300 dark:hover:text-teal-300">
                 <x-icon name="package" class="h-4 w-4" /> Buy eSIM
             </a>
             <a href="{{ route('numbers') }}" wire:navigate
@@ -20,7 +20,7 @@
         @include('partials.my-connectivity')
         @include('partials.my-lines-analytics')
     @else
-        <div class="rounded-3xl border border-dashed border-slate-300 p-10 text-center dark:border-[#2D4060]">
+        <div class="rounded-3xl border border-dashed border-slate-300 p-10 text-center dark:border-[var(--brand-card-border-dark)]">
             <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300">
                 <x-icon name="signal" class="h-7 w-7" />
             </div>
@@ -30,7 +30,7 @@
             </p>
             <div class="mt-5 flex items-center justify-center gap-2">
                 <a href="{{ route('catalogue') }}" wire:navigate
-                   class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-primary/40 hover:text-primary dark:border-[#2D4060] dark:text-slate-300">
+                   class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-primary/40 hover:text-primary dark:border-[var(--brand-card-border-dark)] dark:text-slate-300">
                     <x-icon name="package" class="h-4 w-4" /> Browse eSIM plans
                 </a>
                 <a href="{{ route('numbers') }}" wire:navigate

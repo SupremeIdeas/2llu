@@ -10,7 +10,7 @@
     </div>
 
     {{-- Transcript --}}
-    <div class="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]"
+    <div class="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]"
          x-data x-init="$el.scrollTop = $el.scrollHeight"
          x-on:message-added.window="$nextTick(() => $el.scrollTop = $el.scrollHeight)">
         @forelse ($messages as $m)
@@ -117,7 +117,7 @@
                     <button type="button" @click="requestMic()"
                             class="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark">Allow microphone</button>
                     <button type="button" @click="reset()"
-                            class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">Not now</button>
+                            class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-300 dark:hover:bg-[#243352]">Not now</button>
                 </div>
             </div>
         </div>
@@ -146,7 +146,7 @@
         <form wire:submit="send" class="flex items-center gap-2"
               x-on:message-added.window="$nextTick(() => { const i = $el.querySelector('input[type=text]'); i && i.focus(); })">
             <x-nia-glow-wrapper interactive class="flex-1 rounded-full">
-            <div class="flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-1 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352]">
+            <div class="flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-1 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40 dark:border-[var(--brand-card-border-dark)] dark:bg-[#243352]">
 
                 {{-- Normal controls (hidden while recording). --}}
                 <input type="text" wire:model="draft" autocomplete="off" placeholder="Type your message…"

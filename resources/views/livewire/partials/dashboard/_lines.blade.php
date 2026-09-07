@@ -2,7 +2,7 @@
      an account that already has lines (@if hasAny). --}}
 @if ($hasAny)
     <a href="{{ route('numbers.lines') }}" wire:navigate
-       class="group block rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md dark:border-[#2D4060] dark:bg-[#1A2840]">
+       class="group block rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
         <div class="flex items-center justify-between">
             <h2 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 <x-icon name="signal" class="h-4 w-4" /> My Lines

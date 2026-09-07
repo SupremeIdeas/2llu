@@ -6,7 +6,7 @@
         </div>
         @if ($unread > 0)
             <button wire:click="markAllRead"
-                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[var(--brand-card-border-dark)] dark:text-slate-300 dark:hover:bg-[#243352]">
                 Mark all read
             </button>
         @endif
@@ -26,7 +26,7 @@
         @forelse ($notifications as $note)
             @php $d = $note->data; $isUnread = is_null($note->read_at); @endphp
             <div wire:key="n-{{ $note->id }}"
-                 class="flex items-start gap-3 rounded-xl border p-4 {{ $isUnread ? 'border-primary/30 bg-primary/5 dark:bg-primary/10' : 'border-slate-200 bg-white dark:border-[#2D4060] dark:bg-[#1B2A44]' }}">
+                 class="flex items-start gap-3 rounded-xl border p-4 {{ $isUnread ? 'border-primary/30 bg-primary/5 dark:bg-primary/10' : 'border-slate-200 bg-white dark:border-[var(--brand-card-border-dark)] dark:bg-[#1B2A44]' }}">
                 <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20">
                     <x-icon :name="$d['icon'] ?? 'bell'" class="h-4 w-4" />
                 </span>
@@ -52,7 +52,7 @@
                 @endif
             </div>
         @empty
-            <div class="flex flex-col items-center gap-2 rounded-xl border border-dashed border-slate-200 py-16 text-center text-slate-400 dark:border-[#2D4060]">
+            <div class="flex flex-col items-center gap-2 rounded-xl border border-dashed border-slate-200 py-16 text-center text-slate-400 dark:border-[var(--brand-card-border-dark)]">
                 <x-icon name="bell" class="h-10 w-10 opacity-40" />
                 <p class="text-sm">Nothing here yet.</p>
             </div>

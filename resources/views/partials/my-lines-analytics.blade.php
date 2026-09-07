@@ -10,7 +10,7 @@
     $spendChart = ['labels' => collect($spendBreakdown)->pluck('label'), 'values' => collect($spendBreakdown)->pluck('total')];
     $topUpChart = ['labels' => collect($topUpHistory)->pluck('date'), 'values' => collect($topUpHistory)->pluck('total')];
 @endphp
-<div x-data="{ open: false, mounted: false }" class="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#2D4060] dark:bg-[#1A2840]">
+<div x-data="{ open: false, mounted: false }" class="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
     <button type="button"
             @click="open = ! open; if (open && ! mounted) { mounted = true; $nextTick(() => window.NaaraLinesAnalytics?.mountAll($el.closest('[x-data]'))) }"
             class="flex w-full items-center justify-between text-left">
