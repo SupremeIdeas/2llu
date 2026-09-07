@@ -121,7 +121,7 @@ class GiftCards extends Component
     public function sync(string $provider, GiftCardCatalogueSyncService $svc): void
     {
         abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
-        abort_unless(in_array($provider, ['reloadly', 'zendit'], true), 422);
+        abort_unless(in_array($provider, $svc->providerKeys(), true), 422);
 
         $count = $svc->sync($provider);
         SyncStatus::flush();
@@ -133,7 +133,7 @@ class GiftCards extends Component
     public function preflight(string $provider, GiftCardCatalogueSyncService $svc): void
     {
         abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
-        abort_unless(in_array($provider, ['reloadly', 'zendit'], true), 422);
+        abort_unless(in_array($provider, $svc->providerKeys(), true), 422);
 
         $this->probe[$provider] = $svc->provider($provider)->preflight();
         $this->dispatch('nx-toast', type: $this->probe[$provider]['ok'] ? 'success' : 'error',
@@ -178,13 +178,18 @@ class GiftCards extends Component
         $this->dispatch('nx-toast', type: 'success', message: 'Order declined — buyer refunded.');
     }
 
-    public function render()
+    public function render(GiftCardCatalogueSyncService $svc)
     {
-        // Both providers, side by side — status + last sync + catalogue depth.
-        $providers = collect(['reloadly', 'zendit'])->map(fn ($p) => [
+        // Every registered provider, side by side — status + last sync +
+        // catalogue depth. Order (and therefore the Primary/Secondary/…
+        // role label) is the same priority ranking recomputePrimary() routes
+        // by, so a newly-registered provider only needs adding to
+        // GiftCardCatalogueSyncService::PROVIDERS to get a full admin card.
+        $roles = ['Primary', 'Secondary', 'Tertiary', 'Quaternary', 'Backup'];
+        $providers = collect($svc->providerKeys())->values()->map(fn ($p, $i) => [
             'key' => $p,
-            'label' => $p === 'reloadly' ? 'Reloadly' : 'Zendit',
-            'role' => $p === 'reloadly' ? 'Primary' : 'Failover',
+            'label' => ucfirst($p),
+            'role' => $roles[$i] ?? 'Backup',
             'configured' => ProviderStatus::isActive($p),
             'sync' => SyncStatus::for('giftcards:'.$p),
             'total' => GiftCardProduct::where('provider', $p)->count(),

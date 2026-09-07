@@ -4,22 +4,34 @@ namespace Tests\Support;
 
 use App\Services\GiftCards\GiftCardProviderException;
 use App\Services\GiftCards\GiftCardProviderInterface;
+use App\Services\GiftCards\GiftCardStatusCheckable;
 
 /**
  * Configurable Naara Gift provider double. Counts order() calls (to prove the
  * double-submit guard orders exactly once) and can be told to deliver, return a
  * non-throwing 'failed'/'processing' status, or throw — so the money-path guards
  * (refund-on-failure, no double charge) are exercised deterministically.
+ * Also implements GiftCardStatusCheckable (freely, as a test double — this
+ * doesn't claim any real provider has this capability, unlike the production
+ * services which only implement it where actually documented) so the
+ * reconcile command can be tested against a controllable status response.
  */
-class FakeGiftCardProvider implements GiftCardProviderInterface
+class FakeGiftCardProvider implements GiftCardProviderInterface, GiftCardStatusCheckable
 {
     public int $orderCalls = 0;
+
+    public array $statusResponse = ['status' => 'processing', 'receipt' => []];
 
     public function __construct(
         private string $status = 'delivered',
         private array $receipt = ['code' => 'GIFT-1234', 'epin' => 'PIN-9'],
         private bool $shouldThrow = false,
     ) {}
+
+    public function orderStatus(string $providerTxId): array
+    {
+        return $this->statusResponse;
+    }
 
     public function key(): string
     {

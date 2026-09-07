@@ -106,8 +106,14 @@ Schedule::command('staff:compensation-close')->monthlyOn(1, '03:15')->withoutOve
 // subscriptions, and alert merchants about upcoming renewals (money-safe).
 Schedule::command('merchant:client-subscriptions')->dailyAt('05:35')->withoutOverlapping();
 
-// Naara Gift: sync the gift-card catalogue from Reloadly (primary) + Zendit.
+// Naara Gift: sync the gift-card catalogue from every registered provider.
 Schedule::command('giftcards:sync')->dailyAt('03:15')->withoutOverlapping();
+
+// Naara Gift: recover an order stuck 'processing' because its provider's
+// async-delivery webhook never arrived — polls the real order-status
+// endpoint (Reloadly/Bitrefill/Tillo) rather than leaving the buyer's
+// receipt screen stuck forever on a dropped webhook.
+Schedule::command('giftcards:reconcile-processing')->everyFifteenMinutes()->withoutOverlapping();
 
 // Brand Directory (BUILD-9 §5.2/§6): charge due brand-listing subscriptions,
 // pause short ones, and update follower-guarantee priority scores. runInBackground

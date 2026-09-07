@@ -50,6 +50,7 @@ class ProviderKeys
                     'airalo_client_secret' => ['label' => 'Airalo — Client Secret', 'config' => 'services.airalo.client_secret', 'env' => 'AIRALO_CLIENT_SECRET', 'secret' => true, 'hint' => 'Same page — shown once.'],
                     'quibity_api_key' => ['label' => 'Quibity / eSIM.sm — API Key', 'config' => 'services.quibity.api_key', 'env' => 'QUIBITY_API_KEY', 'secret' => true, 'hint' => 'esim.sm reseller dashboard (TERTIARY).'],
                     'zendit_api_key' => ['label' => 'Zendit — API Key (Naara Connect + data)', 'config' => 'services.zendit.api_key', 'env' => 'ZENDIT_API_KEY', 'secret' => true, 'hint' => 'developers.zendit.io → API keys. Full eSIMs (calls + data) AND plain data eSIMs. Use a sand_… test key with ZENDIT_SANDBOX=true first.'],
+                    'zendit_webhook_secret' => ['label' => 'Zendit — Webhook Secret', 'config' => 'services.zendit.webhook_secret', 'env' => 'ZENDIT_WEBHOOK_SECRET', 'secret' => true, 'hint' => 'Verifies the Naara Gift async voucher-delivery webhook (/webhooks/giftcards/zendit).'],
                     'oneglobal_client_id' => ['label' => '1GLOBAL — Client ID (Naara Connect)', 'config' => 'services.oneglobal.client_id', 'env' => 'ONEGLOBAL_CLIENT_ID', 'secret' => false, 'hint' => 'docs.connect.1global.com — partner access. Full eSIM (voice + data).'],
                     'oneglobal_client_secret' => ['label' => '1GLOBAL — Client Secret', 'config' => 'services.oneglobal.client_secret', 'env' => 'ONEGLOBAL_CLIENT_SECRET', 'secret' => true, 'hint' => 'Same Connect app — OAuth2 client-credentials secret.'],
                     'montymobile_api_key' => ['label' => 'Monty Mobile — RSP API Key (Naara Connect)', 'config' => 'services.montymobile.api_key', 'env' => 'MONTYMOBILE_API_KEY', 'secret' => true, 'hint' => 'montymobile.com → partner/sales for RSP API access. Full eSIM (voice + data).'],
@@ -145,10 +146,13 @@ class ProviderKeys
                 'fields' => [
                     'reloadly_client_id' => ['label' => 'Reloadly — Client ID', 'config' => 'services.reloadly.client_id', 'env' => 'RELOADLY_CLIENT_ID', 'secret' => false, 'hint' => 'reloadly.com → Developers → API settings. Airtime + gift cards. Use RELOADLY_SANDBOX=true first.'],
                     'reloadly_client_secret' => ['label' => 'Reloadly — Client Secret', 'config' => 'services.reloadly.client_secret', 'env' => 'RELOADLY_CLIENT_SECRET', 'secret' => true, 'hint' => 'Same page — the OAuth client-credentials secret.'],
+                    'reloadly_webhook_secret' => ['label' => 'Reloadly — Webhook Secret', 'config' => 'services.reloadly.webhook_secret', 'env' => 'RELOADLY_WEBHOOK_SECRET', 'secret' => true, 'hint' => 'Verifies the Naara Gift async order-delivery webhook (/webhooks/giftcards/reloadly).'],
                     'bitrefill_api_id' => ['label' => 'Bitrefill — API ID', 'config' => 'services.bitrefill.api_id', 'env' => 'BITREFILL_API_ID', 'secret' => false, 'hint' => 'bitrefill.com → Account → API. Gift cards + airtime (crypto-funded).'],
                     'bitrefill_api_secret' => ['label' => 'Bitrefill — API Secret', 'config' => 'services.bitrefill.api_secret', 'env' => 'BITREFILL_API_SECRET', 'secret' => true, 'hint' => 'Same page — signs requests.'],
+                    'bitrefill_webhook_secret' => ['label' => 'Bitrefill — Webhook Secret', 'config' => 'services.bitrefill.webhook_secret', 'env' => 'BITREFILL_WEBHOOK_SECRET', 'secret' => true, 'hint' => 'Verifies Bitrefill\'s invoice-completed webhook (/webhooks/giftcards/bitrefill).'],
                     'tillo_api_key' => ['label' => 'Tillo — API Key', 'config' => 'services.tillo.api_key', 'env' => 'TILLO_API_KEY', 'secret' => false, 'hint' => 'tillo.io merchant portal → API. Gift cards. Sandbox host until live access.'],
                     'tillo_secret' => ['label' => 'Tillo — Secret', 'config' => 'services.tillo.secret', 'env' => 'TILLO_SECRET', 'secret' => true, 'hint' => 'Same portal — the HMAC signing secret.'],
+                    'tillo_webhook_secret' => ['label' => 'Tillo — Webhook Secret', 'config' => 'services.tillo.webhook_secret', 'env' => 'TILLO_WEBHOOK_SECRET', 'secret' => true, 'hint' => 'Verifies Tillo\'s order webhook (/webhooks/giftcards/tillo).'],
                 ],
             ],
             'voice' => [

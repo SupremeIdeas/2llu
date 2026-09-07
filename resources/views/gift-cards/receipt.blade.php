@@ -58,6 +58,33 @@
                 </div>
             @endif
             @if (! empty($r['terms']))<p class="mt-3 text-xs text-slate-400">{{ \Illuminate\Support\Str::limit(strip_tags($r['terms']), 300) }}</p>@endif
+
+            {{-- Real capability only — shown solely when the provider actually
+                 supports checking an issued card's remaining balance. --}}
+            @if ($canCheckBalance)
+                <div class="mt-4" x-data="{ loading: false, result: null, error: null }">
+                    <button type="button" :disabled="loading"
+                            @click="
+                                loading = true; error = null;
+                                fetch(@js(route('gift-cards.order.balance', $order)), {
+                                    method: 'POST',
+                                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '', 'Accept': 'application/json' },
+                                }).then(r => r.json()).then(data => {
+                                    loading = false;
+                                    if (data.error) { error = data.error; return; }
+                                    result = data;
+                                }).catch(() => { loading = false; error = 'Could not reach the balance check right now.'; })
+                            "
+                            class="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 transition hover:border-primary hover:text-primary disabled:opacity-60 dark:border-white/10 dark:text-slate-300">
+                        <span x-show="!loading">Check remaining balance</span>
+                        <span x-show="loading" x-cloak class="inline-flex items-center gap-2"><x-ui.spinner class="h-4 w-4" /> Checking…</span>
+                    </button>
+                    <div x-show="result" x-cloak class="mt-2 rounded-xl bg-primary/10 p-3 text-center text-sm font-semibold text-primary-dark dark:text-primary">
+                        <span x-text="result ? result.currency + ' ' + Number(result.balance).toFixed(2) + ' remaining' : ''"></span>
+                    </div>
+                    <p x-show="error" x-cloak class="mt-2 text-center text-xs text-red-500" x-text="error"></p>
+                </div>
+            @endif
         @endif
     </div>
 </x-layouts.customer>

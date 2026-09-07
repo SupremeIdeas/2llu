@@ -44,6 +44,7 @@ class SchedulerHealth
         'partners:payout-run' => ['Partner payouts', 86400],
         'merchant:client-subscriptions' => ['Merchant client subscriptions', 86400],
         'giftcards:sync' => ['Naara Gift catalogue sync', 86400],
+        'giftcards:reconcile-processing' => ['Naara Gift stuck-order reconcile', 900],
         'numbers:catalogue-sync' => ['Number catalogue sync', 604800],
         // NCI Layer 3 (BUILD-19 §7) — the learning recompute must keep running or
         // scores silently go stale; the weekly prune keeps provider_outcomes bounded.

@@ -21,8 +21,8 @@ class GiftCardCatalogueSyncService
         'reloadly' => ReloadlyGiftCardService::class,
         'zendit' => ZenditVoucherService::class,
         // NAARA-BUILD-18 — registered gift adapters (enabled=false until onboarded).
-        'bitrefill' => \App\Services\GiftCards\BitrefillService::class,
-        'tillo' => \App\Services\GiftCards\TilloService::class, // placeholder tier
+        'bitrefill' => BitrefillService::class,
+        'tillo' => TilloService::class, // placeholder tier
     ];
 
     public function provider(string $key): GiftCardProviderInterface
@@ -34,6 +34,20 @@ class GiftCardCatalogueSyncService
         $class = self::PROVIDERS[$key] ?? throw new \InvalidArgumentException("Unknown gift-card provider [$key].");
 
         return app($class);
+    }
+
+    /**
+     * Registered provider keys in PRIORITY order (routing/fallback rank, not
+     * alphabetical) — Reloadly wins wherever it carries a brand, Zendit fills
+     * gaps, then Bitrefill, then Tillo. Admin UI + recomputePrimary() both
+     * drive off this single list so a newly-registered provider only needs
+     * adding to PROVIDERS above.
+     *
+     * @return array<int, string>
+     */
+    public function providerKeys(): array
+    {
+        return array_keys(self::PROVIDERS);
     }
 
     /** Sync one provider; returns the number of products upserted. */
@@ -75,24 +89,34 @@ class GiftCardCatalogueSyncService
         }
     }
 
-    /** Reloadly is primary per brand+country; Zendit is primary only where Reloadly is absent. */
+    /**
+     * Each provider is primary per brand+country wherever no HIGHER-priority
+     * provider (earlier in providerKeys()) already carries that brand+country
+     * combo — generalizes the old Reloadly-then-Zendit-only routing to all N
+     * registered providers, so Bitrefill/Tillo can actually become primary
+     * for a brand neither Reloadly nor Zendit carries.
+     */
     public function recomputePrimary(): void
     {
         GiftCardProduct::query()->update(['is_primary' => false]);
-        GiftCardProduct::where('provider', 'reloadly')->update(['is_primary' => true]);
 
-        GiftCardProduct::where('provider', 'zendit')
-            ->whereNotExists(function ($q) {
-                $q->select(DB::raw(1))->from('gift_card_products as r')
-                    ->whereColumn('r.brand_key', 'gift_card_products.brand_key')
-                    ->where('r.provider', 'reloadly')
-                    ->where(function ($w) {
-                        $w->whereColumn('r.country', 'gift_card_products.country')
-                            ->orWhere(function ($n) {
-                                $n->whereNull('r.country')->whereNull('gift_card_products.country');
-                            });
-                    });
-            })
-            ->update(['is_primary' => true]);
+        $ranked = $this->providerKeys();
+        foreach ($ranked as $i => $provider) {
+            $higher = array_slice($ranked, 0, $i);
+
+            GiftCardProduct::where('provider', $provider)
+                ->when($higher !== [], fn ($q) => $q->whereNotExists(function ($sub) use ($higher) {
+                    $sub->select(DB::raw(1))->from('gift_card_products as r')
+                        ->whereColumn('r.brand_key', 'gift_card_products.brand_key')
+                        ->whereIn('r.provider', $higher)
+                        ->where(function ($w) {
+                            $w->whereColumn('r.country', 'gift_card_products.country')
+                                ->orWhere(function ($n) {
+                                    $n->whereNull('r.country')->whereNull('gift_card_products.country');
+                                });
+                        });
+                }))
+                ->update(['is_primary' => true]);
+        }
     }
 }

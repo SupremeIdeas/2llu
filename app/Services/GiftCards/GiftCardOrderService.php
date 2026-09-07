@@ -26,6 +26,8 @@ class GiftCardOrderService
     private const PROVIDERS = [
         'reloadly' => ReloadlyGiftCardService::class,
         'zendit' => ZenditVoucherService::class,
+        'bitrefill' => BitrefillService::class,
+        'tillo' => TilloService::class,
     ];
 
     public function __construct(
@@ -210,6 +212,17 @@ class GiftCardOrderService
         if ($product->isRange()) {
             if ($amount < (float) $product->min_amount || $amount > (float) $product->max_amount) {
                 throw new GiftCardException('Enter an amount between '.$product->min_amount.' and '.$product->max_amount.'.');
+            }
+            // Bitrefill range products carry a real step (increment) constraint
+            // the provider enforces on its side — checked here too so the
+            // buyer gets a clear message instead of a provider-side order
+            // failure after the wallet's already been debited.
+            $step = (float) (((array) $product->cost_meta)['range_step'] ?? 0);
+            if ($step > 0) {
+                $steps = round(($amount - (float) $product->min_amount) / $step);
+                if (abs((float) $product->min_amount + $steps * $step - $amount) > 0.01) {
+                    throw new GiftCardException('Amount must be in increments of '.$step.' from '.$product->min_amount.'.');
+                }
             }
         } elseif (! collect((array) $product->fixed_denominations)->map(fn ($v) => (float) $v)->contains($amount)) {
             throw new GiftCardException('Choose one of the available amounts.');

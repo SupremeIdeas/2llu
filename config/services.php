@@ -74,6 +74,7 @@ return [
         'base_url' => env('ZENDIT_BASE_URL', env('ZENDIT_SANDBOX', false)
             ? 'https://test-api.zendit.io/v1'
             : 'https://api.zendit.io/v1'),
+        'webhook_secret' => env('ZENDIT_WEBHOOK_SECRET'),
     ],
 
     // 1GLOBAL (Connect API) — OAuth2 client-credentials. Partner-access onboarding.
@@ -358,6 +359,7 @@ return [
         'client_secret' => env('RELOADLY_CLIENT_SECRET'),
         'sandbox' => env('RELOADLY_SANDBOX', true),
         'auth_url' => env('RELOADLY_AUTH_URL', 'https://auth.reloadly.com/oauth/token'),
+        'webhook_secret' => env('RELOADLY_WEBHOOK_SECRET'),
     ],
 
     // ── NAARA-BUILD-18: Provider Expansion. All ship enabled=false; keys go in
@@ -380,6 +382,7 @@ return [
         'api_id' => env('BITREFILL_API_ID'),
         'api_secret' => env('BITREFILL_API_SECRET'),
         'base_url' => env('BITREFILL_BASE_URL', 'https://api.bitrefill.com/v2'),
+        'webhook_secret' => env('BITREFILL_WEBHOOK_SECRET'),
     ],
     'esimaccess' => [
         'api_key' => env('ESIMACCESS_API_KEY'),
@@ -390,6 +393,7 @@ return [
         'api_key' => env('TILLO_API_KEY'),
         'secret' => env('TILLO_SECRET'),
         'base_url' => env('TILLO_BASE_URL', 'https://sandbox.tillo.dev/api/v2'),
+        'webhook_secret' => env('TILLO_WEBHOOK_SECRET'),
     ],
     'ubigi' => [
         'api_key' => env('UBIGI_API_KEY'),
