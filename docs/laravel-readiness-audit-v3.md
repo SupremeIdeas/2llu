@@ -34,30 +34,22 @@
 
 ## New findings — not yet fixed, prioritized
 
-### 1. Admin 2FA is opt-in, not mandatory-by-default
+### 1. Admin 2FA is opt-in, not mandatory-by-default — RESOLVED, no action
 `config('admin.require_2fa')` = `(bool) env('ADMIN_REQUIRE_2FA', false)` —
 confirmed the shipped default is OFF. A fresh admin (including the seeded
 `DefaultAdminSeeder` super_admin) can use the full admin panel with zero
 2FA enrolment unless the owner explicitly sets `ADMIN_REQUIRE_2FA=true`.
-This is a real security posture decision, not a pure bug — flipping the
-default to hard-enforced would immediately lock out any admin who hasn't
-enrolled 2FA yet on a live install.
-**Needs an owner decision**: enforce 2FA for ALL admin/staff roles by
-default on new installs (recommended), vs. keep it admin-toggleable as-is.
+**Owner decision (2026-09-07): keep it opt-in as-is.** No code change.
 
-### 2. Provider purchase calls run synchronously, not queued
+### 2. Provider purchase calls run synchronously, not queued — RESOLVED, docs corrected
 `Checkout::purchase()` and `GetNumber::order()`/`getLine()` call the eSIM/
 number provider's HTTP API directly inside the Livewire action, not as a
-queued Horizon job — this contradicts `laravel-readiness-audit-v2.md` §1's
-claim that "every external/provider call is a queued job." In practice the
-sync path is wrapped in the circuit breaker + refund guard, so it's not
-unsafe, but it does mean a slow provider directly stalls the checkout
-request instead of returning immediately with an async "processing" state.
-**Needs an owner decision**: (a) correct the v2 doc to describe the
-deliberate sync+breaker+refund pattern as intentional, or (b) refactor to
-dispatch a queued job with an async "processing" UI state (bigger change —
-touches the checkout UX, the orphan-charge guard, and every provider
-adapter).
+queued Horizon job — this contradicted `laravel-readiness-audit-v2.md` §1's
+claim that "every external/provider call is a queued job." The sync path
+is wrapped in the circuit breaker + orphan-charge/refund guard, so it's not
+unsafe. **Owner decision (2026-09-07): the sync+breaker+refund pattern is
+intentional — correct the doc, don't refactor to async.**
+`laravel-readiness-audit-v2.md` §1 has been corrected accordingly.
 
 ### 3. Sentry DSN is blank — error tracking not actually wired
 `.env.example` has `SENTRY_LARAVEL_DSN=` and `ErrorLogger` mentions Sentry
@@ -99,15 +91,11 @@ date-formatting code that applies it. It's inert.
 user-facing date/time rendering (real feature), or drop the column
 (cleanup) — not worth doing until one of those is actually requested.
 
-## Suggested order of attack
+## Status
 
-Ranked by (owner-decision-required?) × (risk if left alone):
-
-1. **#1 admin 2FA default** — security-relevant, quick to flip once decided.
-2. **#2 sync-vs-queued provider calls** — either a one-line doc correction
-   or a real refactor; needs the decision before any code moves.
-3. **#4 output-side AI reply guard** — small, scoped, no owner decision
-   needed, can be built directly.
+1. ~~**#1 admin 2FA default**~~ — resolved, owner kept it opt-in, no action.
+2. ~~**#2 sync-vs-queued provider calls**~~ — resolved, docs corrected.
+3. ~~**#4 output-side AI reply guard**~~ — shipped (`SupportReplyGuard`).
 4. **#3 Sentry DSN** — zero code, just needs the owner to hand over a key.
 5. **#5 Capacitor packages** — only matters if the mobile wrapper track is
    currently active.
