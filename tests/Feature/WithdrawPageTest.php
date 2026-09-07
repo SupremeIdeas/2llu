@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Withdraw;
 use App\Models\KycVerification;
 use App\Models\PayoutAccount;
+use App\Models\PayoutRequest;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Credits\CreditService;
@@ -19,8 +20,10 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * ROADMAP §Layer 1 — the customer cash-out page. KYC-L2 gated; manage payout
- * accounts (name resolved before saving) and withdraw withdrawable credits.
+ * ROADMAP §Layer 1 — the customer cash-out page. Browsing and payout-account
+ * setup are free (NAARA-BUILD-22 §3); KYC-L2 is only required once the
+ * unified free-payout threshold is spent. Manages payout accounts (name
+ * resolved before saving) and withdraws withdrawable credits.
  */
 class WithdrawPageTest extends TestCase
 {
@@ -78,11 +81,71 @@ class WithdrawPageTest extends TestCase
         return $user;
     }
 
-    public function test_unverified_users_are_sent_to_verify(): void
+    public function test_unverified_users_can_open_the_page(): void
     {
         $user = User::factory()->create(['is_active' => true]);
 
-        $this->actingAs($user)->get('/rewards/withdraw')->assertRedirect(route('account.verify'));
+        $this->actingAs($user)->get('/rewards/withdraw')->assertOk()->assertSee('Withdraw earnings');
+    }
+
+    public function test_an_unverified_user_can_add_a_payout_account(): void
+    {
+        $this->fakeResolver();
+        $user = User::factory()->create(['is_active' => true]);
+
+        Livewire::actingAs($user)->test(Withdraw::class)
+            ->set('country', 'NG')->set('bankCode', '058')->set('accountNumber', '0123456789')
+            ->call('addAccount')
+            ->assertSet('accountError', null);
+
+        $this->assertDatabaseHas('payout_accounts', ['user_id' => $user->id, 'account_name' => 'JANE TRAVELLER']);
+    }
+
+    public function test_an_unverified_user_can_withdraw_within_the_free_threshold(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+        app(CreditService::class)->rewardReferral($user, 1, 1000); // $10 withdrawable
+        $account = PayoutAccount::create([
+            'user_id' => $user->id, 'type' => 'bank', 'country' => 'NG', 'currency' => 'NGN',
+            'bank_code' => '058', 'account_number' => '0123456789', 'account_name' => 'JANE T.',
+            'provider' => 'paystack', 'is_verified' => true, 'is_default' => true,
+        ]);
+
+        Livewire::actingAs($user)->test(Withdraw::class)
+            ->set('accountId', $account->id)->set('amountUsd', 10)
+            ->call('withdraw')
+            ->assertSet('withdrawError', null);
+
+        $this->assertDatabaseHas('payout_requests', [
+            'user_id' => $user->id, 'source_bucket' => 'referral_credits', 'status' => 'pending',
+        ]);
+    }
+
+    public function test_an_unverified_user_past_the_free_threshold_is_blocked(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+        app(CreditService::class)->rewardReferral($user, 1, 1000);
+        $account = PayoutAccount::create([
+            'user_id' => $user->id, 'type' => 'bank', 'country' => 'NG', 'currency' => 'NGN',
+            'bank_code' => '058', 'account_number' => '0123456789', 'account_name' => 'JANE T.',
+            'provider' => 'paystack', 'is_verified' => true, 'is_default' => true,
+        ]);
+        // Burn the default 5 free payouts (any bucket counts, per the unified
+        // threshold).
+        foreach (range(1, 5) as $i) {
+            PayoutRequest::create([
+                'user_id' => $user->id, 'amount' => 1, 'currency' => 'USD',
+                'source_bucket' => 'referral_earnings', 'status' => PayoutRequest::PAID,
+                'provider' => 'paystack', 'reference' => 'burn'.$i,
+            ]);
+        }
+
+        Livewire::actingAs($user)->test(Withdraw::class)
+            ->set('accountId', $account->id)->set('amountUsd', 10)
+            ->call('withdraw')
+            ->assertSet('withdrawError', fn ($v) => str_contains($v, 'free payout limit'));
+
+        $this->assertDatabaseCount('payout_requests', 5);
     }
 
     public function test_verified_users_can_open_the_page(): void

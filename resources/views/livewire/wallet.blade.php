@@ -251,19 +251,19 @@
                 </span>
             </div>
 
-            @if (! $kycLevel2)
-                <div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+            {{-- Bank-account setup is always free — only withdrawing PAST the
+                 free-payout threshold needs identity verification (§3). --}}
+            @if ($requiresKyc && ! $canWithdraw)
+                <div class="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
                     <x-icon name="shield-check" class="mt-0.5 h-4 w-4 shrink-0" />
                     <span>
-                        Verify your identity to set up a bank account and withdraw earnings.
+                        You've used your free withdrawals — verify your identity to keep withdrawing.
                         <a href="{{ route('account.verify') }}" wire:navigate class="font-semibold underline">Verify now</a>
                     </span>
                 </div>
             @endif
 
-            @if ($kycLevel2)
-                <livewire:withdraw />
-            @endif
+            <livewire:withdraw />
         </div>
     </div>
 

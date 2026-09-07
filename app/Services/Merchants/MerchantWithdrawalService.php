@@ -31,8 +31,7 @@ class MerchantWithdrawalService
         private CurrencyService $currency,
         private KycService $kyc,
         private PayoutThreshold $threshold,
-    ) {
-    }
+    ) {}
 
     public function availableUsd(Merchant $merchant): float
     {
@@ -66,9 +65,10 @@ class MerchantWithdrawalService
         }
 
         $owner = $merchant->owner;
-        // Payout-time identity verification (BUILD-4 §1). A verified payout
-        // account already implies KYC-L2 (adding one is gated kyc:2); this is the
-        // deferred verification that replaced the old KYB-at-signup gate.
+        // "Verified" here means the payout PROVIDER confirmed the account name
+        // before it was saved (PayoutAccountService) — adding one is free of
+        // KYC (BUILD-4 §1 deferred-verification design); the unified
+        // free-payout threshold below is what actually gates KYC-L2.
         if ($account->user_id !== $owner->id || ! $account->is_verified) {
             throw new PayoutException('Choose a verified payout account.');
         }

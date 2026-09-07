@@ -17,6 +17,24 @@
         </div>
     @endunless
 
+    {{-- Free-payout / KYC threshold state (§3) — positive-framed, same pattern
+         as the shared PayoutDashboard. Setting up an account above is always
+         free; this only affects submitting a withdrawal below. --}}
+    @if ($requiresKyc && ! $canWithdraw)
+        <div class="mt-4 flex items-start gap-3 rounded-xl bg-amber-50 p-3 dark:bg-amber-500/10">
+            <x-icon name="shield" class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+            <div class="text-sm">
+                <p class="font-semibold text-amber-800 dark:text-amber-300">You've used your {{ $freeCount }} free withdrawals</p>
+                <p class="text-amber-700 dark:text-amber-400/90">Verify your identity to keep withdrawing — it only takes a minute.</p>
+                <a href="{{ route('account.verify') }}" wire:navigate class="mt-2 inline-flex nx-btn nx-btn--gold !py-1.5 !text-xs">Verify identity</a>
+            </div>
+        </div>
+    @elseif (! $requiresKyc)
+        <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <x-icon name="check" class="mr-1 inline h-3.5 w-3.5 text-emerald-500" />{{ $remainingFree }} of {{ $freeCount }} free withdrawals left before identity verification is needed.
+        </p>
+    @endif
+
     {{-- Payout accounts --}}
     <h2 class="mt-8 text-sm font-semibold text-slate-900 dark:text-slate-100">Your payout accounts</h2>
     <div class="mt-3 space-y-2">
@@ -194,7 +212,7 @@
             </div>
         </div>
         <button type="button" wire:click="withdraw" wire:loading.attr="disabled" wire:target="withdraw"
-                @disabled(! $enabled)
+                @disabled(! $enabled || ! $canWithdraw)
                 class="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
             <x-icon name="credit-card" wire:loading.remove wire:target="withdraw" class="h-4 w-4" />
             <x-ui.spinner wire:loading wire:target="withdraw" class="h-4 w-4" />
