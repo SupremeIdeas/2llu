@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\PayoutAccount;
 use App\Models\TopUpIntent;
 use App\Models\UserWallet;
+use App\Models\WalletTransaction;
 use App\Services\Kyc\KycService;
 use App\Services\Payouts\WithdrawalService;
 use App\Services\Pricing\CurrencyService;
@@ -52,8 +53,27 @@ class Wallet extends Component
     /** The currency the user sees prices in (display only; USD is settlement). */
     public string $displayCurrency = 'USD';
 
+    /**
+     * Owner-reported UX gap: after a gateway redirect-back, the actual credit
+     * lands later via a queued webhook job (worst case ~120s on the shared-
+     * hosting cron-drain cadence — see routes/console.php's queue:work
+     * schedule), but the page showed nothing in the meantime, forcing a
+     * manual refresh loop. Set right after topUp() redirects away, survives
+     * the round trip via session, and drives a polling "processing" banner
+     * that disappears the instant the credit is confirmed — replaced by the
+     * existing fintech-style success hero toast.
+     *
+     * @var array{gateway: string, reference: string, amount: float, currency: string, started_at: int}|null
+     */
+    public ?array $pendingTopUp = null;
+
+    /** Stop polling/showing the banner after this long even if never resolved
+     *  (well past the worst-case drain lag) — never poll forever. */
+    private const PENDING_TOPUP_TIMEOUT_SECONDS = 600;
+
     public function mount(): void
     {
+        $this->loadPendingTopUp();
         // Default to the first Active gateway so the selector never opens on a
         // "Coming Soon" one; falls back to the first known if none configured yet.
         $active = array_keys($this->availableGateways());
@@ -66,6 +86,70 @@ class Wallet extends Component
         if (! GatewayCurrencyMatrix::supports($this->gateway, $this->currency)) {
             $this->currency = GatewayCurrencyMatrix::currenciesFor($this->gateway)[0] ?? $this->currency;
         }
+    }
+
+    /** Restore a pending top-up marker from the session (survives the
+     *  redirect-away/redirect-back round trip) — resolves it immediately if
+     *  the credit already landed while the user was on the gateway. */
+    private function loadPendingTopUp(): void
+    {
+        $pending = session('pending_topup');
+        if (! $pending) {
+            return;
+        }
+
+        if (time() - $pending['started_at'] >= self::PENDING_TOPUP_TIMEOUT_SECONDS) {
+            session()->forget('pending_topup');
+
+            return;
+        }
+
+        if ($this->pendingTopUpLanded($pending)) {
+            session()->forget('pending_topup');
+            $this->announceTopUpSuccess();
+
+            return;
+        }
+
+        $this->pendingTopUp = $pending;
+    }
+
+    /** Polled from the "processing" banner (wire:poll) — disappears the
+     *  instant the queued credit job has actually run. */
+    public function checkPendingTopUp(): void
+    {
+        if (! $this->pendingTopUp) {
+            return;
+        }
+
+        if (time() - $this->pendingTopUp['started_at'] >= self::PENDING_TOPUP_TIMEOUT_SECONDS) {
+            session()->forget('pending_topup');
+            $this->pendingTopUp = null;
+
+            return;
+        }
+
+        if ($this->pendingTopUpLanded($this->pendingTopUp)) {
+            session()->forget('pending_topup');
+            $this->pendingTopUp = null;
+            $this->announceTopUpSuccess();
+        }
+    }
+
+    /** The exact reference CreditWalletJob writes once the webhook-verified
+     *  credit actually runs — see App\Jobs\CreditWalletJob::handle(). */
+    private function pendingTopUpLanded(array $pending): bool
+    {
+        return WalletTransaction::where('user_id', auth()->id())
+            ->where('reference', "topup:{$pending['gateway']}:{$pending['reference']}")
+            ->exists();
+    }
+
+    private function announceTopUpSuccess(): void
+    {
+        $this->dispatch('nx-toast', variant: 'hero', type: 'success',
+            title: 'Top-up successful',
+            message: 'Your wallet has been credited — funds are ready to spend.');
     }
 
     /** Switch the display currency (persists to session + profile). */
@@ -170,6 +254,20 @@ class Wallet extends Component
                 'rate_usd_to_local' => $fx->rate($currency),
                 'status' => 'pending',
             ]);
+        }
+
+        // Pending-state UX (owner request): survives the redirect-away/
+        // redirect-back round trip via session so the wallet page can show a
+        // "processing" banner instead of a stale balance the user has to
+        // manually refresh to resolve.
+        if (! empty($result['reference'])) {
+            session(['pending_topup' => [
+                'gateway' => $this->gateway,
+                'reference' => $result['reference'],
+                'amount' => $amount,
+                'currency' => $currency,
+                'started_at' => time(),
+            ]]);
         }
 
         return redirect()->away($result['redirect_url']);
