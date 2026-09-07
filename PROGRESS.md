@@ -9,6 +9,62 @@
 
 ## DONE
 
+### 🔒 Readiness-audit fixes, round 1: fail-open webhooks, unthrottled auth POSTs, stale storefront cache — 2026-09-07
+Owner reuploaded the 4 readiness blueprints and asked for a fresh parallel
+audit ("anyone that is not actually wired in, just wire it... anyone we
+have already done just skip it, no duplicate"). Ran 6 background
+general-purpose agents (read-only) across the 32 blueprint domains,
+cross-checked their findings against the two prior-session audit docs
+(`docs/laravel-readiness-audit.md`, `-v2.md`) to filter out anything
+already known/deferred, and shipped the smallest, clearest, highest-value
+"wire it" items from the NEW findings immediately — the larger
+architectural items (data-retention layer, SAML, sync-vs-queued provider
+calls, mandatory admin 2FA default, activation-nudge job, AI cost
+governance, gitleaks CI step) are still open and tracked separately, not
+duplicated here.
+- **Three webhook controllers were fail-OPEN, not fail-closed.**
+  `GetatextWebhookController`, `WhatsAppWebhookController`, and
+  `AppBuildWebhookController` all treated an unconfigured secret as
+  "nothing to verify" and accepted the request anyway — confirmed live-
+  exploitable in this environment (`.env` has all three secrets blank).
+  Fixed all three to match the codebase's own existing fail-closed
+  reference pattern (`SmsInboundWebhookController`): `abort_if($secret
+  === '', 401)` before the HMAC/token check, so an unconfigured secret
+  now REJECTS every request instead of accepting every request. Money
+  rule 9 ("verify every webhook with HMAC + hash_equals() before
+  touching the payload") now actually holds when a secret is missing,
+  not just when one is present.
+- **`POST /register` and `POST /forgot-password` had zero rate limiting.**
+  Confirmed by reading Fortify's own route file — its `limiters` config
+  only wires `login`/`two-factor`/`passkeys`, nothing for registration or
+  password-reset requests. Rather than fight Fortify's route registration
+  (`Fortify::ignoreRoutes()` + re-declaring every auth route), added a
+  small self-gating global middleware, `ThrottleUnprotectedAuthRoutes`
+  (mirrors the existing `VerifyTurnstile` convention), registered in
+  `bootstrap/app.php` right after it: 5/hour per IP on register, 5/hour
+  per email+IP on forgot-password.
+- **`EsimCatalogue::flush()` was missing from two price-changing paths.**
+  The storefront's cached "from $X" teaser grid was only invalidated by
+  catalogue-sync/feature-toggle actions — a global markup change
+  (`RecomputePlanPricingJob`) or a single plan's manual price override
+  (`Admin\Pricing::savePlan()`) could leave the storefront showing a
+  stale price indefinitely. Both now call `EsimCatalogue::flush()` right
+  after repricing.
+- Tests: 3 new/updated webhook tests (incl. an explicit
+  fail-closed-not-open regression test), 4 new
+  `ThrottleUnprotectedAuthRoutesTest` tests, 2 new cache-flush regression
+  tests. All 31 targeted tests green; Pint clean on every touched file.
+- **Deferred, not forgotten** (confirmed genuinely new by the 6-agent
+  audit, not yet fixed): admin 2FA is opt-in not mandatory-by-default;
+  Sentry DSN is blank in `.env` (error tracking not actually wired);
+  eSIM/number provider purchase calls run synchronously inside the
+  Livewire action rather than as queued Horizon jobs (contradicts
+  `laravel-readiness-audit-v2.md`'s claim that every provider call is
+  queued — needs an owner decision: fix the docs, or refactor to async);
+  the Capacitor `package.json` has a gap; a dead timezone field exists
+  somewhere in settings; there's no output-side AI response screening.
+  These need a synthesis pass before the next round of fixes.
+
 ### 🎨 Theme Preset expansion: 20 → 40 presets (Phase 2 of the color-system audit) — 2026-09-06
 Owner's follow-up to the accent-dark contrast fix: "extend the themes preset
 to 40 so that we will have a powerful solid theme documentary." Added 20

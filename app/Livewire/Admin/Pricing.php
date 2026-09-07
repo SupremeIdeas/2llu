@@ -6,6 +6,9 @@ use App\Jobs\RecomputePlanPricingJob;
 use App\Models\EsimPlan;
 use App\Models\Setting;
 use App\Services\Pricing\PricingEngine;
+use App\Support\Auditor;
+use App\Support\EsimCatalogue;
+use App\Support\PricingDisplay;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -90,7 +93,7 @@ class Pricing extends Component
         $this->mms_send_cost_twilio = Setting::getValue('pricing.mms_send_cost.twilio', 0.02);
         $this->mms_send_cost_telnyx = Setting::getValue('pricing.mms_send_cost.telnyx', 0.01);
         $this->public_mode = (string) Setting::getValue('pricing.public_mode', 'auto');
-        $this->estimate_tiers = \App\Support\PricingDisplay::estimateTiers();
+        $this->estimate_tiers = PricingDisplay::estimateTiers();
     }
 
     public function savePublicPricing(): void
@@ -185,6 +188,13 @@ class Pricing extends Component
         // Keep computed_retail_usd (and the generated final_retail_usd) in sync.
         $engine->recompute($plan);
 
+        // Readiness-audit fix (2026-09-07): the storefront "from $X" teaser
+        // grid caches final_retail_usd forever and was only flushed by
+        // catalogue-sync/feature-toggle actions, never by a manual price
+        // override here — so a plan's browse price could disagree with its
+        // real price indefinitely after this exact save.
+        EsimCatalogue::flush();
+
         $this->audit('pricing.plan_updated', $plan->id, [
             'override_markup_pct' => $plan->override_markup_pct,
             'manual_retail_usd' => $plan->manual_retail_usd,
@@ -197,7 +207,7 @@ class Pricing extends Component
 
     private function audit(string $action, ?int $modelId, array $payload): void
     {
-        \App\Support\Auditor::log($action, EsimPlan::class, $modelId, $payload);
+        Auditor::log($action, EsimPlan::class, $modelId, $payload);
     }
 
     public function render(PricingEngine $engine)

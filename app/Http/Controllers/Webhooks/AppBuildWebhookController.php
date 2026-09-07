@@ -20,12 +20,15 @@ class AppBuildWebhookController extends Controller
         $raw = $request->getContent();
         $signature = (string) $request->header('X-Naara-Signature', '');
 
-        // If a secret is configured it MUST verify; if none is set (self-hosted
-        // trusted runner on the same host) we accept, matching the trigger side.
-        if ($secret !== '') {
-            $expected = hash_hmac('sha256', $raw, $secret);
-            abort_unless(hash_equals($expected, $signature), 401);
-        }
+        // Fails CLOSED (readiness-audit fix, 2026-09-07): this route flips a
+        // build to "ready" with an artifact_url that becomes the public app
+        // download — an unconfigured secret used to accept any unsigned
+        // request, which would let anyone who finds this URL point the
+        // official app download at a malicious APK. Configure
+        // APPEXPORT_CI_SECRET before wiring up a build runner.
+        abort_if($secret === '', 401);
+        $expected = hash_hmac('sha256', $raw, $secret);
+        abort_unless(hash_equals($expected, $signature), 401);
 
         $data = $request->json()->all();
         $build = AppBuild::find($data['build_id'] ?? 0);

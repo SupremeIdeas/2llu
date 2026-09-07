@@ -43,13 +43,14 @@ class WhatsAppWebhookController extends Controller
         $secret = (string) config('services.whatsapp.app_secret', '');
         $raw = $request->getContent();
 
-        // Verify BEFORE reading the payload. If a secret is configured it MUST
-        // match; Meta signs as "sha256=<hex>".
-        if ($secret !== '') {
-            $expected = 'sha256='.hash_hmac('sha256', $raw, $secret);
-            $signature = (string) $request->header('X-Hub-Signature-256', '');
-            abort_unless(hash_equals($expected, $signature), 401);
-        }
+        // Verify BEFORE reading the payload. Fails CLOSED (readiness-audit
+        // fix, 2026-09-07): an unconfigured secret used to be treated as
+        // "nothing to check", letting anyone spoof an inbound STOP message
+        // and opt an arbitrary phone number out. Meta signs as "sha256=<hex>".
+        abort_if($secret === '', 401);
+        $expected = 'sha256='.hash_hmac('sha256', $raw, $secret);
+        $signature = (string) $request->header('X-Hub-Signature-256', '');
+        abort_unless(hash_equals($expected, $signature), 401);
 
         foreach ($request->input('entry', []) as $entry) {
             foreach ($entry['changes'] ?? [] as $change) {

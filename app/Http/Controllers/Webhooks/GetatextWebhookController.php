@@ -15,8 +15,13 @@ use Illuminate\Http\Request;
  * mark it completed, and broadcast OtpReceived.
  *
  * Getatext sends from many IPs, so we do NOT IP-whitelist. Getatext has no
- * HMAC signature; if a GETATEXT_WEBHOOK_TOKEN shared secret is configured we
- * verify it (constant-time). Every webhook is logged before processing and
+ * HMAC signature, so a GETATEXT_WEBHOOK_TOKEN shared secret is the only
+ * verification available — readiness-audit finding (2026-09-07): this used
+ * to fail OPEN (accept unverified requests) when the token wasn't
+ * configured, which would let anyone who finds this URL inject an arbitrary
+ * OTP code into any pending rental whose provider ref they know. Now fails
+ * CLOSED like SmsInboundWebhookController, matching the same provider's
+ * other inbound route. Every webhook is logged before processing and
  * handling is idempotent (a repeat delivery never double-processes).
  */
 class GetatextWebhookController extends Controller
@@ -25,13 +30,11 @@ class GetatextWebhookController extends Controller
     {
         $payload = $request->all();
 
-        // Optional shared-secret verification (constant-time).
-        $verified = true;
-        $secret = config('services.getatext.webhook_token');
-        if (! empty($secret)) {
-            $provided = $request->header('X-Webhook-Token') ?? $request->query('token');
-            $verified = is_string($provided) && hash_equals((string) $secret, $provided);
-        }
+        // Constant-time shared-secret verification — fails closed (never
+        // treats a missing/blank secret as "verified").
+        $secret = (string) config('services.getatext.webhook_token', '');
+        $provided = $request->header('X-Webhook-Token') ?? $request->query('token');
+        $verified = $secret !== '' && is_string($provided) && hash_equals($secret, $provided);
 
         $log = WebhookLog::create([
             'provider' => 'getatext',

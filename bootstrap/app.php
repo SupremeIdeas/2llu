@@ -59,6 +59,10 @@ return Application::configure(basePath: dirname(__DIR__))
             // Turnstile bot check on the auth POSTs (self-gates; no-op unless
             // active — blueprint Section 33).
             \App\Http\Middleware\VerifyTurnstile::class,
+            // Fortify ships POST /register and POST /forgot-password with NO
+            // rate limit at all (readiness-audit fix, 2026-09-07) — self-gates
+            // on path exactly like VerifyTurnstile above.
+            \App\Http\Middleware\ThrottleUnprotectedAuthRoutes::class,
             // Inbound webhook delivery log (readiness Domain 13/14) — observability
             // only, self-scopes to webhooks/* and never alters handler behaviour.
             \App\Http\Middleware\LogWebhookDelivery::class,

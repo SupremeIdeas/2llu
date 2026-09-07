@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Services\Pricing\PricingEngine;
 use Database\Seeders\PricingSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class PricingEngineTest extends TestCase
@@ -180,5 +181,19 @@ class PricingEngineTest extends TestCase
 
         $this->assertSame(15.0, (float) $a->fresh()->final_retail_usd); // 10 * 1.5
         $this->assertSame(30.0, (float) $b->fresh()->final_retail_usd); // 20 * 1.5
+    }
+
+    public function test_recompute_job_flushes_the_storefront_teaser_cache(): void
+    {
+        // Readiness-audit fix (2026-09-07): a global markup change repriced
+        // every plan but left the storefront's cached "from $X" grid on the
+        // pre-change prices indefinitely.
+        Cache::forever('esim.nav.grid.v1:data', ['stale' => true]);
+        $this->plan(['cost_price_usd' => 10.0]);
+        Setting::setValue('pricing.default_markup_pct', 50, 'pricing');
+
+        (new RecomputePlanPricingJob)->handle($this->engine);
+
+        $this->assertFalse(Cache::has('esim.nav.grid.v1:data'));
     }
 }
