@@ -106,7 +106,7 @@ class ThemeLandingPageTest extends TestCase
         Setting::setValue(ThemePreset::SETTING_KEY, 'neon-vertex');
         ThemePreset::bust();
 
-        $this->assertNull(ThemePreset::landingContent()['image']);
+        $this->assertSame(LandingHeroLibrary::defaultsFor('neon-vertex')['image'], ThemePreset::landingContent()['image']);
     }
 
     // ---- Admin editor -------------------------------------------------------

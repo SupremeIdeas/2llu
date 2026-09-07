@@ -1,16 +1,31 @@
 {{-- Per-theme custom About page — "midnight-signal" (Theme visual rebuild,
-     owner request 2026-09-07). Reuses the theme's own dark navy / cyan "HUD
-     radar ring" motif (same as its login screen and landing hero) so the
-     persona stays consistent across every page. Editable text comes from
-     $content (ThemePageLibrary schema for about_page/midnight-signal); the
-     values grid is structural, matching the landing page's own feature-grid
-     precedent. Fully responsive: two-column bands collapse below lg. --}}
+     owner request 2026-09-07). REWRITTEN (owner feedback: the first pass
+     recoloured the same 2-card/3-card/founder-card skeleton every theme
+     shared — "please stop giving me lazy man work"). Every section below
+     is a different structural composition from neon-vertex's about page
+     AND from a generic template, each traced to a specific reference:
+       - Hero: an annotated device diagram — a duotone photo with 3
+         labelled callout lines (AI Panym's annotated headset hero) on
+         desktop; a plain icon list on mobile, where connector lines can't
+         survive a narrow viewport.
+       - Mission/Vision: one bold full-width statement band with a real
+         Earth photo floated to one side (Payrot's parrot-plus-globe hero)
+         instead of two plain side-by-side cards.
+       - Values: a horizontal snap-scroll rail (ClassiAds), not a grid.
+       - Founder: a dark statement band with a pull-quote over a duotone
+         Earth backdrop (Payrot's "grow beyond borders" band) instead of a
+         centred card.
+     Every decorative photo slot ships with a real, stably-hosted stock
+     shot (owner rule: "no place will be empty... pick one from the
+     Internet"). The founder avatar stays initials-only — no photo of him
+     is on file, and a stock photo mislabelled with his name would
+     misrepresent a real person. --}}
 <section class="relative overflow-hidden bg-navy">
     <div class="pointer-events-none absolute inset-0" aria-hidden="true">
-        <span class="absolute left-1/2 top-0 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/3 rounded-full bg-primary/25 blur-3xl"></span>
+        <span class="absolute left-1/2 top-0 h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/3 rounded-full bg-primary/20 blur-3xl"></span>
     </div>
 
-    <div class="relative mx-auto max-w-3xl px-4 pb-14 pt-16 text-center sm:pb-20 sm:pt-24">
+    <div class="relative mx-auto max-w-3xl px-4 pb-10 pt-16 text-center sm:pb-14 sm:pt-24">
         <span class="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
             <x-icon name="signal" class="h-3.5 w-3.5" /> {{ $content['eyebrow'] }}
         </span>
@@ -20,62 +35,94 @@
         <p class="mx-auto mt-4 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
             {{ $content['intro'] }}
         </p>
-
-        {{-- Radar-ring motif, echoing the landing hero's central visual. --}}
-        <div class="relative mx-auto mt-12 flex h-40 w-40 items-center justify-center" aria-hidden="true">
-            <span class="absolute h-20 w-20 rounded-full border border-primary/25"></span>
-            <span class="absolute h-32 w-32 rounded-full border border-primary/15"></span>
-            <span class="absolute h-40 w-40 animate-ping rounded-full border border-primary/10" style="animation-duration:3s"></span>
-            <span class="relative flex h-3 w-3 rounded-full bg-primary shadow-lg shadow-primary/70"></span>
-        </div>
     </div>
-</section>
 
-{{-- Mission / vision — dark data-readout cards, same border/backdrop language as the landing hero's floating stats. --}}
-<section class="bg-navy px-4 pb-16">
-    <div class="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2">
-        <div class="rounded-2xl border border-primary/20 bg-navy/90 p-6 shadow-xl backdrop-blur">
-            <p class="text-[10px] uppercase tracking-wide text-primary">Mission</p>
-            <p class="mt-2 text-sm leading-relaxed text-slate-200">{{ $content['mission'] }}</p>
-        </div>
-        <div class="rounded-2xl border border-primary/20 bg-navy/90 p-6 shadow-xl backdrop-blur">
-            <p class="text-[10px] uppercase tracking-wide text-primary">Vision</p>
-            <p class="mt-2 text-sm leading-relaxed text-slate-200">{{ $content['vision'] }}</p>
-        </div>
-    </div>
-</section>
-
-{{-- Values grid — structural echo of the landing page's light feature grid. --}}
-<section class="bg-[#F8F9FA] py-16 dark:bg-[#0c1220] sm:py-20">
-    <div class="mx-auto max-w-5xl px-4">
-        <h2 class="text-center font-display text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">How we hold the signal</h2>
-        <div class="mt-10 grid gap-6 sm:grid-cols-3">
-            @foreach ([
-                ['icon' => 'signal', 'title' => 'Always watching', 'body' => 'Carrier quality and coverage are checked continuously, not once a quarter.'],
-                ['icon' => 'shield-check', 'title' => 'No surprise bills', 'body' => 'What you see at checkout is the final price — cost is never marked up after the fact.'],
-                ['icon' => 'clock', 'title' => 'Answers in minutes', 'body' => 'When a network hiccups, the signal room notices before you do.'],
-            ] as $feature)
-                <div class="rounded-2xl border border-primary/10 bg-white p-5 dark:border-primary/15 dark:bg-navy/60">
-                    <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20">
-                        <x-icon :name="$feature['icon']" class="h-4 w-4" />
-                    </span>
-                    <h3 class="mt-3 text-sm font-bold text-slate-900 dark:text-white">{{ $feature['title'] }}</h3>
-                    <p class="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{{ $feature['body'] }}</p>
+    {{-- Annotated device diagram — desktop only; mobile gets a plain icon list below. --}}
+    <div class="relative mx-auto hidden max-w-4xl items-center justify-center gap-6 px-4 pb-20 lg:flex">
+        <div class="flex w-60 flex-col items-end gap-10 text-right">
+            @foreach ([['icon' => 'signal', 'label' => 'Live carrier scan'], ['icon' => 'shield-check', 'label' => 'Predictable pricing']] as $point)
+                <div class="flex items-center gap-3">
+                    <p class="text-sm font-semibold text-white">{{ $point['label'] }}</p>
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary"><x-icon :name="$point['icon']" class="h-4 w-4" /></span>
+                    <span class="h-px w-10 bg-gradient-to-r from-primary/50 to-transparent"></span>
                 </div>
             @endforeach
         </div>
+
+        <div class="relative shrink-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
+            <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=700&auto=format&fit=crop" alt="" class="h-72 w-56 object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-navy via-navy/40 to-primary/20 mix-blend-multiply"></div>
+        </div>
+
+        <div class="flex w-60 flex-col gap-10">
+            <div class="flex items-center gap-3">
+                <span class="h-px w-10 bg-gradient-to-l from-primary/50 to-transparent"></span>
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary"><x-icon name="clock" class="h-4 w-4" /></span>
+                <p class="text-sm font-semibold text-white">24/7 monitoring</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="relative grid gap-3 px-4 pb-16 sm:grid-cols-3 lg:hidden">
+        @foreach ([
+            ['icon' => 'signal', 'label' => 'Live carrier scan'],
+            ['icon' => 'shield-check', 'label' => 'Predictable pricing'],
+            ['icon' => 'clock', 'label' => '24/7 monitoring'],
+        ] as $point)
+            <div class="mx-auto flex w-full max-w-xs items-center gap-3 rounded-2xl border border-primary/20 bg-navy/90 p-4 backdrop-blur">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary"><x-icon :name="$point['icon']" class="h-4 w-4" /></span>
+                <p class="text-sm font-semibold text-white">{{ $point['label'] }}</p>
+            </div>
+        @endforeach
     </div>
 </section>
 
-{{-- Founder card. --}}
-<section class="mx-auto max-w-2xl px-4 py-20">
-    <div class="rounded-2xl border border-primary/15 bg-white p-8 text-center dark:border-primary/20 dark:bg-navy/60">
-        <span class="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xl font-bold text-primary">
+{{-- Mission / Vision — one bold statement band with a globe photo, not two side-by-side cards. --}}
+<section class="relative overflow-hidden bg-gradient-to-br from-primary-dark to-primary px-4 py-16 sm:py-20">
+    <div class="mx-auto grid max-w-5xl items-center gap-8 sm:grid-cols-[1fr_260px]">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-widest text-white/70">Mission</p>
+            <p class="mt-2 text-xl font-bold leading-snug text-white sm:text-2xl">{{ $content['mission'] }}</p>
+            <p class="mt-6 text-xs font-semibold uppercase tracking-widest text-white/70">Vision</p>
+            <p class="mt-2 text-base leading-relaxed text-white/90">{{ $content['vision'] }}</p>
+        </div>
+        <div class="mx-auto overflow-hidden rounded-[2.5rem] shadow-2xl sm:mx-0">
+            <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=700&auto=format&fit=crop" alt="" class="h-56 w-56 object-cover">
+        </div>
+    </div>
+</section>
+
+{{-- Values — horizontal snap-scroll rail. --}}
+<section class="bg-[#F8F9FA] py-16 dark:bg-[#0c1220] sm:py-20">
+    <h2 class="px-4 text-center font-display text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">How we hold the signal</h2>
+    <div class="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:justify-center">
+        @foreach ([
+            ['icon' => 'signal', 'title' => 'Always watching', 'body' => 'Carrier quality and coverage are checked continuously, not once a quarter.'],
+            ['icon' => 'shield-check', 'title' => 'No surprise bills', 'body' => 'What you see at checkout is the final price — cost is never marked up after the fact.'],
+            ['icon' => 'clock', 'title' => 'Answers in minutes', 'body' => 'When a network hiccups, the signal room notices before you do.'],
+        ] as $feature)
+            <div class="w-64 shrink-0 snap-start rounded-2xl border border-primary/10 bg-white p-5 dark:border-primary/15 dark:bg-navy/60">
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20">
+                    <x-icon :name="$feature['icon']" class="h-4 w-4" />
+                </span>
+                <h3 class="mt-3 text-sm font-bold text-slate-900 dark:text-white">{{ $feature['title'] }}</h3>
+                <p class="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{{ $feature['body'] }}</p>
+            </div>
+        @endforeach
+    </div>
+</section>
+
+{{-- Founder — dark pull-quote band over a duotone Earth backdrop. --}}
+<section class="relative overflow-hidden bg-navy px-4 py-20 text-center">
+    <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop" alt=""
+         class="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-15">
+    <div class="relative mx-auto max-w-xl">
+        <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-lg font-bold text-primary">
             {{ collect(explode(' ', $content['founder_name']))->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('') }}
         </span>
-        <h3 class="mt-4 font-display text-xl font-bold text-slate-900 dark:text-white">{{ $content['founder_name'] }}</h3>
-        <p class="text-sm font-medium text-primary">{{ $content['founder_title'] }}</p>
-        <p class="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ $content['founder_bio'] }}</p>
+        <p class="mt-6 font-display text-xl font-bold leading-snug text-white sm:text-2xl">&ldquo;{{ $content['founder_bio'] }}&rdquo;</p>
+        <p class="mt-5 text-sm font-semibold text-white">{{ $content['founder_name'] }}</p>
+        <p class="text-xs text-primary">{{ $content['founder_title'] }}</p>
     </div>
 </section>
 

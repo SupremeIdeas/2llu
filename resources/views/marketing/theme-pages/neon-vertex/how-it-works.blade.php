@@ -1,10 +1,16 @@
 {{-- Per-theme custom How It Works page — "neon-vertex" (Theme visual
-     rebuild, owner request 2026-09-07). Same gradient-blob/pill/curved-card
-     language as this theme's landing hero and About page. Editable text
-     ($content) covers headline/subtext; the 4-step flow and device
-     compatibility callout are structural, matching the landing page's own
-     feature-card precedent. Fully responsive: numbered rail collapses to a
-     single column below sm. --}}
+     rebuild, owner request 2026-09-07). REWRITTEN (owner feedback: stop
+     recolouring the same vertical numbered card rail on every theme).
+     Structure here is traced to two different references:
+       - The 4-step flow: a receding 3D perspective row of cards (the
+         AI-image-generator hero's trailing-card composition) on desktop;
+         a plain horizontal snap-scroll strip on mobile, since a 3D
+         perspective transform reads as broken tilt on a narrow screen.
+       - Compatibility: three circular icon buttons in a row (Cosmos X's
+         "Earth / Planets / Meteors" quick-link circles) instead of one
+         big gradient callout card.
+     Real photo in the mobile-only device card (owner rule: never an empty
+     placeholder). --}}
 <section class="relative overflow-hidden bg-white dark:bg-navy">
     <div class="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-gradient-to-br from-primary/30 via-accent/25 to-transparent blur-3xl" aria-hidden="true"></div>
 
@@ -18,38 +24,60 @@
     </div>
 </section>
 
-{{-- 4-step numbered flow — gradient badge numerals, rounded card rail. --}}
-<section class="mx-auto max-w-3xl px-4 pb-16">
-    <ol class="relative space-y-6 pl-10">
-        <span class="absolute bottom-1 left-4 top-1 w-0.5 rounded-full bg-gradient-to-b from-primary to-accent" aria-hidden="true"></span>
-        @foreach ([
-            ['title' => 'Pick your destination', 'body' => 'Search any of 190+ countries and see live plans in seconds — no account required to browse.'],
-            ['title' => 'Choose a plan, pay once', 'body' => 'Your wallet covers it — top up with card, bank transfer, or mobile money.'],
-            ['title' => 'Scan the QR', 'body' => 'Your eSIM QR lands instantly by email and in-app. Scan it before you fly, or the moment you land.'],
-            ['title' => 'Land already connected', 'body' => 'No SIM counters, no roaming toggles to remember — you touch down online.'],
-        ] as $i => $step)
-            <li class="relative">
-                <span class="absolute -left-10 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-sm font-bold text-white shadow-lg shadow-accent/30">{{ $i + 1 }}</span>
-                <div class="rounded-3xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-[#12172a]">
-                    <h3 class="font-display font-bold text-slate-900 dark:text-white">{{ $step['title'] }}</h3>
-                    <p class="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ $step['body'] }}</p>
-                </div>
-            </li>
+@php
+    $steps = [
+        ['n' => '01', 'title' => 'Pick your destination', 'body' => 'Search any of 190+ countries and see live plans in seconds — no account required to browse.'],
+        ['n' => '02', 'title' => 'Choose a plan, pay once', 'body' => 'Your wallet covers it — top up with card, bank transfer, or mobile money.'],
+        ['n' => '03', 'title' => 'Scan the QR', 'body' => 'Your eSIM QR lands instantly by email and in-app. Scan it before you fly, or the moment you land.'],
+        ['n' => '04', 'title' => 'Land already connected', 'body' => 'No SIM counters, no roaming toggles to remember — you touch down online.'],
+    ];
+@endphp
+
+{{-- Desktop: receding 3D perspective row. --}}
+<section class="hidden pb-24 lg:block" style="perspective: 1400px;">
+    <div class="mx-auto flex max-w-4xl justify-center gap-6 px-4">
+        @foreach ($steps as $i => $step)
+            <div class="w-56 shrink-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-[#12172a]"
+                 style="transform: rotateY({{ -10 - $i * 4 }}deg) translateZ({{ -$i * 18 }}px) scale({{ 1 - $i * 0.035 }}); transform-style: preserve-3d;">
+                <span class="font-display text-2xl font-black text-primary">{{ $step['n'] }}</span>
+                <h3 class="mt-3 font-display font-bold text-slate-900 dark:text-white">{{ $step['title'] }}</h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{{ $step['body'] }}</p>
+            </div>
         @endforeach
-    </ol>
+    </div>
 </section>
 
-{{-- Device compatibility callout — gradient card, matches the landing hero's stat-card curve. --}}
-<section class="mx-auto max-w-3xl px-4 pb-24">
-    <div class="rounded-[2.5rem] bg-gradient-to-br from-primary to-accent p-8 text-center text-white shadow-2xl shadow-accent/30">
-        <span class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/15">
-            <x-icon name="smartphone" class="h-5 w-5" />
-        </span>
-        <h2 class="mt-4 font-display text-xl font-bold">Check your phone supports eSIM first</h2>
-        <p class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-white/90">Most phones from the last 4 years do — we check automatically before you pay, so there's never a wasted purchase.</p>
-        <a href="{{ auth()->check() ? route('catalogue') : route('register') }}" wire:navigate class="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-primary shadow-lg transition hover:opacity-90">
-            Check compatibility <x-icon name="chevron-right" class="h-4 w-4" />
-        </a>
+{{-- Mobile: plain snap-scroll strip (no 3D — it reads as broken tilt this narrow). --}}
+<section class="pb-16 lg:hidden">
+    <div class="flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4">
+        @foreach ($steps as $step)
+            <div class="w-64 shrink-0 snap-start rounded-3xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-[#12172a]">
+                <span class="font-display text-2xl font-black text-primary">{{ $step['n'] }}</span>
+                <h3 class="mt-3 font-display font-bold text-slate-900 dark:text-white">{{ $step['title'] }}</h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{{ $step['body'] }}</p>
+            </div>
+        @endforeach
+    </div>
+</section>
+
+{{-- Compatibility — three circular quick-link buttons, not a gradient card. --}}
+<section class="mx-auto max-w-2xl px-4 pb-24 text-center">
+    <h2 class="font-display text-xl font-bold text-slate-900 dark:text-white">Check your phone supports eSIM first</h2>
+    <p class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600 dark:text-slate-300">Most phones from the last 4 years do — we check automatically before you pay, so there's never a wasted purchase.</p>
+
+    <div class="mt-8 flex justify-center gap-8">
+        @foreach ([
+            ['icon' => 'smartphone', 'label' => 'iPhone'],
+            ['icon' => 'smartphone', 'label' => 'Android'],
+            ['icon' => 'badge-check', 'label' => 'Check mine'],
+        ] as $btn)
+            <a href="{{ auth()->check() ? route('catalogue') : route('register') }}" wire:navigate class="group flex flex-col items-center gap-2">
+                <span class="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-white shadow-lg shadow-accent/30 transition group-hover:scale-105">
+                    <x-icon :name="$btn['icon']" class="h-6 w-6" />
+                </span>
+                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">{{ $btn['label'] }}</span>
+            </a>
+        @endforeach
     </div>
 </section>
 

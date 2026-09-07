@@ -1,58 +1,65 @@
 {{-- Per-theme custom Contact page — "midnight-signal" (Theme visual
-     rebuild, owner request 2026-09-07). Reuses the dark navy / cyan
-     data-readout card language from this theme's other pages. Editable
-     text ($content) covers headline/subtext; the channels sidebar is
-     structural, matching the landing page's feature-grid precedent. The
-     real `<livewire:contact-form />` component is reused as-is — a theme
-     reskins the surrounding chrome, never the functional form. Fully
-     responsive: the two-column layout collapses to one column below lg. --}}
-<section class="relative overflow-hidden bg-navy">
-    <div class="pointer-events-none absolute inset-0" aria-hidden="true">
-        <span class="absolute left-1/2 top-0 h-[24rem] w-[24rem] -translate-x-1/2 -translate-y-1/3 rounded-full bg-primary/20 blur-3xl"></span>
-    </div>
-    <div class="relative mx-auto max-w-2xl px-4 pb-10 pt-16 text-center sm:pt-24">
-        <h1 class="mx-auto font-display text-4xl font-bold leading-tight text-white sm:text-5xl">
-            {{ $content['headline'] }}
-        </h1>
-        <p class="mx-auto mt-4 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
-            {{ $content['subtext'] }}
-        </p>
+     rebuild, owner request 2026-09-07). REWRITTEN (owner feedback: stop
+     recolouring the same form+sidebar skeleton on every theme). Structure
+     traces to Cmouse's split hero — a solid colour panel holding the
+     headline + the real form on one side, a photo card with a floating
+     rating-style pill overlapping it on the other — plus a horizontal
+     icon-service strip along the bottom (Cmouse's Hairdressing/Massage/
+     Eye Care/Nail Beauty row) instead of a vertical sidebar stack. The
+     real `<livewire:contact-form />` component sits inside a light inner
+     card so its fields keep proper contrast on the gradient panel. --}}
+<section class="bg-navy px-4 pb-4 pt-16 sm:pt-20">
+    <div class="mx-auto grid max-w-5xl gap-6 overflow-hidden rounded-[2.5rem] lg:grid-cols-2">
+        <div class="rounded-[2.5rem] bg-gradient-to-br from-primary-dark to-primary p-6 sm:p-10 lg:rounded-r-none">
+            <h1 class="font-display text-3xl font-bold leading-tight text-white sm:text-4xl">
+                {{ $content['headline'] }}
+            </h1>
+            <p class="mt-4 max-w-md text-sm leading-relaxed text-white/90 sm:text-base">
+                {{ $content['subtext'] }}
+            </p>
+
+            <div class="mt-8 rounded-[2rem] bg-white p-6 dark:bg-[#12172a]">
+                <h2 class="mb-4 font-display text-lg font-bold text-slate-900 dark:text-white">Send a signal</h2>
+                <livewire:contact-form />
+            </div>
+        </div>
+
+        <div class="relative overflow-hidden rounded-[2.5rem] lg:rounded-l-none">
+            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=900&auto=format&fit=crop"
+                 alt="" class="h-64 w-full object-cover lg:h-full">
+            <div class="absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/10 to-transparent"></div>
+
+            <div class="absolute left-6 top-6 flex items-center gap-2 rounded-full bg-navy/90 px-4 py-2 shadow-lg backdrop-blur">
+                <x-icon name="star" class="h-3.5 w-3.5 text-primary" />
+                <div>
+                    <p class="text-[11px] font-semibold leading-none text-white">Usually replies within the hour</p>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
-<section class="bg-[#F8F9FA] px-4 py-16 dark:bg-[#0c1220] sm:py-20">
-    <div class="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_320px]">
-        <div class="rounded-2xl border border-primary/15 bg-white p-6 sm:p-8 dark:border-primary/20 dark:bg-navy/60">
-            <h2 class="mb-5 font-display text-xl font-bold text-slate-900 dark:text-white">Send a signal</h2>
-            <livewire:contact-form />
+{{-- Channels — horizontal icon-service strip along the bottom. --}}
+<section class="bg-navy px-4 py-16">
+    <div class="mx-auto flex max-w-4xl flex-wrap justify-center gap-6 sm:gap-10">
+        <div class="flex flex-col items-center gap-2 text-center">
+            <span class="flex h-12 w-12 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary"><x-icon name="message-circle" class="h-5 w-5" /></span>
+            <a href="{{ auth()->check() ? route('support') : route('login') }}" class="text-xs font-semibold text-white hover:underline">Live chat</a>
         </div>
-
-        <aside class="space-y-4">
-            <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400">Other channels</h2>
-
-            <div class="rounded-2xl border border-primary/10 bg-white p-5 dark:border-primary/15 dark:bg-navy/60">
-                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20"><x-icon name="message-circle" class="h-4 w-4" /></span>
-                <h3 class="mt-3 font-bold text-slate-900 dark:text-white">Live chat</h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">The signal room usually replies within the hour.</p>
-                <a href="{{ auth()->check() ? route('support') : route('login') }}" class="mt-3 inline-block text-sm font-semibold text-primary hover:underline">Open the chat</a>
+        <div class="flex flex-col items-center gap-2 text-center">
+            <span class="flex h-12 w-12 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary"><x-icon name="mail" class="h-5 w-5" /></span>
+            <a href="mailto:{{ config('naara.support.email') }}" class="text-xs font-semibold text-white hover:underline">Email</a>
+        </div>
+        @if (\App\Support\Niche\SupportLinks::hasWhatsapp())
+            <div class="flex flex-col items-center gap-2 text-center">
+                <span class="flex h-12 w-12 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary"><x-icon name="phone" class="h-5 w-5" /></span>
+                <a href="{{ \App\Support\Niche\SupportLinks::whatsappUrl() }}" target="_blank" rel="noopener" class="text-xs font-semibold text-white hover:underline">WhatsApp</a>
             </div>
-
-            <div class="rounded-2xl border border-primary/10 bg-white p-5 dark:border-primary/15 dark:bg-navy/60">
-                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20"><x-icon name="mail" class="h-4 w-4" /></span>
-                <h3 class="mt-3 font-bold text-slate-900 dark:text-white">Email</h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">For anything that needs a paper trail.</p>
-                <a href="mailto:{{ config('naara.support.email') }}" class="mt-3 inline-block text-sm font-semibold text-primary hover:underline">{{ config('naara.support.email') }}</a>
-            </div>
-
-            @if (\App\Support\Niche\SupportLinks::hasWhatsapp())
-                <div class="rounded-2xl border border-primary/10 bg-white p-5 dark:border-primary/15 dark:bg-navy/60">
-                    <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20"><x-icon name="phone" class="h-4 w-4" /></span>
-                    <h3 class="mt-3 font-bold text-slate-900 dark:text-white">WhatsApp</h3>
-                    <p class="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">Message us directly for quick questions.</p>
-                    <a href="{{ \App\Support\Niche\SupportLinks::whatsappUrl() }}" target="_blank" rel="noopener" class="mt-3 inline-block text-sm font-semibold text-primary hover:underline">Chat on WhatsApp</a>
-                </div>
-            @endif
-        </aside>
+        @endif
+        <div class="flex flex-col items-center gap-2 text-center">
+            <span class="flex h-12 w-12 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary"><x-icon name="help-circle" class="h-5 w-5" /></span>
+            <a href="{{ route('how-it-works') }}" wire:navigate class="text-xs font-semibold text-white hover:underline">Help centre</a>
+        </div>
     </div>
 </section>
 
