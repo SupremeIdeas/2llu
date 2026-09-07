@@ -58,6 +58,12 @@
                             class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
                         <x-icon name="layers" class="h-4 w-4" /> Sections
                     </button>
+                    @if (\App\Support\LandingHeroLibrary::has($p['section_styles']['landing_hero'] ?? 'default'))
+                        <button type="button" wire:click="editLanding('{{ $p['slug'] }}')"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                            <x-icon name="file-text" class="h-4 w-4" /> Landing page
+                        </button>
+                    @endif
                 </div>
                 <span class="mt-2 text-[11px] uppercase tracking-wide text-slate-400">{{ str_replace('_', ' ', $p['icon_family']['style'] ?? 'sprite') }} icons</span>
             </div>
@@ -163,6 +169,66 @@
             <button type="button" wire:click="saveSections" wire:loading.attr="disabled" wire:target="saveSections"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
                 <x-icon name="badge-check" class="h-4 w-4" /> Save sections
+            </button>
+        </div>
+    </x-ui.modal>
+
+    {{-- Per-theme landing-page content editor (owner request): entirely
+         schema-driven off LandingHeroLibrary — the form below adapts to
+         whatever fields the theme's assigned custom landing style declares,
+         so a future landing style just needs a new registry entry, no
+         change here. --}}
+    <x-ui.modal wire="showLandingModal" title="{{ $landingEditingName }} — landing page" max-width="lg">
+        <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">
+            This theme has its own unique landing page — edit its text and image here.
+            Leave the image blank to keep what's already saved.
+        </p>
+
+        <div class="space-y-4">
+            @foreach ($this->landingFields() as $field)
+                <div>
+                    <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">{{ $field['label'] }}</label>
+
+                    @if ($field['type'] === 'textarea')
+                        <textarea wire:model="landingValues.{{ $field['key'] }}" rows="3" maxlength="{{ $field['max'] }}"
+                                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100"></textarea>
+                    @elseif ($field['type'] === 'select')
+                        <select wire:model="landingValues.{{ $field['key'] }}"
+                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                            @foreach ($field['options'] as $key => $optionLabel)
+                                <option value="{{ $key }}">{{ $optionLabel }}</option>
+                            @endforeach
+                        </select>
+                    @elseif ($field['type'] === 'image')
+                        <div class="mb-2 flex aspect-[2/1] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-[#2D4060] dark:bg-[#243352]">
+                            @if ($this->landing_image_upload && $this->landing_image_upload->isPreviewable())
+                                <img src="{{ $this->landing_image_upload->temporaryUrl() }}" class="h-full w-full object-cover">
+                            @elseif ($landingValues[$field['key']] ?? null)
+                                <img src="{{ $landingValues[$field['key']] }}" class="h-full w-full object-cover">
+                            @else
+                                <span class="text-[11px] text-slate-400">No image — a themed placeholder shows instead</span>
+                            @endif
+                        </div>
+                        <input type="file" wire:model="landing_image_upload" accept="image/webp,image/jpeg"
+                               class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary dark:text-slate-400">
+                        @error('landing_image_upload') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    @else
+                        <input type="text" wire:model="landingValues.{{ $field['key'] }}" maxlength="{{ $field['max'] }}"
+                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-[#2D4060] dark:bg-[#243352] dark:text-slate-100">
+                    @endif
+                    @error('landingValues.'.$field['key']) <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-5 flex justify-end gap-2">
+            <button type="button" @click="open = false"
+                    class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#2D4060] dark:text-slate-300 dark:hover:bg-[#243352]">
+                Cancel
+            </button>
+            <button type="button" wire:click="saveLanding" wire:loading.attr="disabled" wire:target="saveLanding"
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60">
+                <x-icon name="badge-check" class="h-4 w-4" /> Save landing page
             </button>
         </div>
     </x-ui.modal>

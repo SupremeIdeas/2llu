@@ -63,8 +63,11 @@ class ThemeBatch1VisualRebuildTest extends TestCase
         $this->assertSame($slug, ThemePreset::sectionStyle('header'));
         $this->assertSame($slug, ThemePreset::sectionStyle('login'));
         $this->assertSame($slug, ThemePreset::sectionStyle('bottom_nav'));
-        // landing_hero isn't part of batch 1 yet — still the shared default.
-        $this->assertSame('default', ThemePreset::sectionStyle('landing_hero'));
+        // landing_hero only exists for the 2 themes with a hand-built
+        // landing page so far (see ThemeLandingPageTest) — everyone else
+        // still uses the shared default homepage content.
+        $expectedLandingHero = in_array($slug, ['neon-vertex', 'midnight-signal'], true) ? $slug : 'default';
+        $this->assertSame($expectedLandingHero, ThemePreset::sectionStyle('landing_hero'));
     }
 
     #[DataProvider('batch1ThemesWithLoginBg')]

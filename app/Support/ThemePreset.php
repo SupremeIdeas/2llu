@@ -76,7 +76,12 @@ class ThemePreset
         // the only default so every existing theme keeps today's exact
         // background until an admin deliberately assigns an effect.
         'login_bg' => ['none', 'dot-grid', 'mesh-grain', 'aurora'],
-        'landing_hero' => ['default'],
+        // Each entry here is a genuinely unique, hand-built landing page for
+        // ONE theme (owner request, 2026-09-07) — never a generic template —
+        // with its own admin-editable content fields registered in
+        // LandingHeroLibrary. 'default' keeps using the existing site-wide
+        // homepage content (SiteContent/PageBuilder), untouched.
+        'landing_hero' => ['default', 'neon-vertex', 'midnight-signal'],
     ];
 
     /**
@@ -123,6 +128,7 @@ class ThemePreset
                     'hero_assets' => self::decode($row->hero_assets),
                     'layout_variants' => self::decode($row->layout_variants),
                     'section_styles' => self::decode($row->section_styles ?? null),
+                    'landing_content' => self::decode($row->landing_content ?? null),
                     'is_built_in' => (bool) $row->is_built_in,
                 ];
             } catch (\Throwable) {
@@ -211,6 +217,46 @@ class ThemePreset
     }
 
     /**
+     * The active theme's per-theme landing-page content (owner request,
+     * 2026-09-07) — only meaningful when sectionStyle('landing_hero') isn't
+     * 'default'. Returns [] for 'default' (nothing to render through this
+     * system; the existing SiteContent/PageBuilder homepage content applies
+     * as normal). For a custom style, every field declared in
+     * LandingHeroLibrary::fieldsFor() is resolved to the admin-saved value
+     * — re-validated against that field's OWN type here, exactly like
+     * sectionStyle()'s whitelist discipline — or that field's own default
+     * when unset/invalid, so a corrupt row can never inject an arbitrary
+     * image URL or an out-of-whitelist select value into the page.
+     *
+     * @return array<string, mixed>
+     */
+    public static function landingContent(): array
+    {
+        $style = self::sectionStyle('landing_hero');
+        if ($style === 'default') {
+            return [];
+        }
+
+        $saved = self::active()['landing_content'] ?? [];
+        $content = [];
+
+        foreach (LandingHeroLibrary::fieldsFor($style) as $field) {
+            $key = $field['key'];
+            $value = $saved[$key] ?? null;
+
+            $content[$key] = match ($field['type']) {
+                'image' => (is_string($value) && $value !== '' && preg_match('#^(/[\w./-]+|https?://[\w./:?=&%-]+)$#', $value) === 1)
+                    ? $value : $field['default'],
+                'select' => (is_string($value) && array_key_exists($value, $field['options'] ?? []))
+                    ? $value : $field['default'],
+                default => (is_string($value) && $value !== '') ? $value : $field['default'],
+            };
+        }
+
+        return $content;
+    }
+
+    /**
      * The single shared "Apple-inspired" dark palette every non-default theme
      * falls back to in dark mode. Deliberately NOT derived from each preset's
      * own light-mode tokens — the owner explicitly asked for one consistent,
@@ -269,6 +315,7 @@ class ThemePreset
                     'persona' => $r->persona,
                     'tokens' => self::decode($r->tokens),
                     'icon_family' => self::decode($r->icon_family),
+                    'section_styles' => self::decode($r->section_styles ?? null),
                     'is_built_in' => (bool) $r->is_built_in,
                     'sort_order' => (int) $r->sort_order,
                 ]);
@@ -379,6 +426,7 @@ class ThemePreset
             'hero_assets' => [],
             'layout_variants' => [],
             'section_styles' => [],
+            'landing_content' => [],
             'is_built_in' => true,
         ];
     }

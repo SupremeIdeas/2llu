@@ -1,4 +1,13 @@
 <x-layouts.marketing>
+    {{-- Per-theme custom landing page (owner request, 2026-09-07): a theme
+         with its OWN hand-built landing layout (see LandingHeroLibrary)
+         takes over the whole homepage content area — 'default' (every
+         theme unless an admin deliberately assigns one) leaves the
+         Section Builder / SiteContent flow below completely untouched. --}}
+    @php($themeLandingStyle = \App\Support\ThemePreset::sectionStyle('landing_hero'))
+    @if ($themeLandingStyle !== 'default' && \App\Support\LandingHeroLibrary::has($themeLandingStyle))
+        @include(\App\Support\LandingHeroLibrary::bladeFor($themeLandingStyle), ['content' => \App\Support\ThemePreset::landingContent()])
+    @else
     {{-- Section Builder: if an admin has published built sections for this page,
          render them through the shared renderer. Empty = fall back to the
          existing content below, so an untouched page is unchanged (BUILD-6 §B). --}}
@@ -24,6 +33,7 @@
             @include('marketing.home._wizard')
         @endif
     @endforeach
+    @endif
     @endif
 
 </x-layouts.marketing>

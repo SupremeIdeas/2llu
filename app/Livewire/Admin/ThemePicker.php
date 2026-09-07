@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Setting;
 use App\Models\ThemePreset as ThemePresetModel;
 use App\Support\Auditor;
+use App\Support\LandingHeroLibrary;
 use App\Support\MediaStorage;
 use App\Support\ThemePreset;
 use Illuminate\Support\Facades\Auth;
@@ -76,6 +77,29 @@ class ThemePicker extends Component
     private const LOGIN_BG_LABELS = [
         'none' => 'None', 'dot-grid' => 'Dot grid', 'mesh-grain' => 'Mesh grain', 'aurora' => 'Aurora',
     ];
+
+    /**
+     * Per-theme landing-page content editor (owner request, 2026-09-07):
+     * "the existing themes were supposed to be able to help admin change
+     * text images and the rest for that theme." Entirely schema-driven off
+     * LandingHeroLibrary::fieldsFor() — a future landing style just adds an
+     * entry there and this editor grows a matching form automatically, no
+     * UI code change needed ("adopting the editor to also learn").
+     */
+    public bool $showLandingModal = false;
+
+    public ?string $landingEditingSlug = null;
+
+    public string $landingEditingName = '';
+
+    /** Which landing_hero style is assigned to the theme being edited — decides which fields render. */
+    public string $landingEditingStyle = 'default';
+
+    /** Current field values, keyed exactly like that style's field schema. */
+    public array $landingValues = [];
+
+    /** Single image upload slot — blank leaves the saved image untouched (same partial-update discipline as hero images). */
+    public $landing_image_upload = null;
 
     public function mount(): void
     {
@@ -298,6 +322,113 @@ class ThemePicker extends Component
 
         $this->dispatch('nx-toast', type: 'success', message: $this->sectionEditingName.' section styles saved.');
         $this->showSectionsModal = false;
+    }
+
+    /**
+     * Open the landing-content editor for one theme. Only meaningful once a
+     * custom landing_hero style is assigned via Sections above — a theme
+     * still on 'default' uses the existing site-wide homepage content
+     * (SiteContent/PageBuilder) instead, so there is nothing here to edit.
+     */
+    public function editLanding(string $slug): void
+    {
+        $this->gate();
+
+        $row = ThemePresetModel::where('slug', $slug)->first();
+        if ($row === null) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown theme.');
+
+            return;
+        }
+
+        $sections = is_array($row->section_styles) ? $row->section_styles : [];
+        $style = $sections['landing_hero'] ?? 'default';
+
+        if ($style === 'default' || ! LandingHeroLibrary::has($style)) {
+            $this->dispatch('nx-toast', type: 'error', message: $row->name.' doesn\'t have a custom landing page yet — assign one under Sections first.');
+
+            return;
+        }
+
+        $saved = is_array($row->landing_content) ? $row->landing_content : [];
+        $this->landingEditingSlug = $slug;
+        $this->landingEditingName = $row->name;
+        $this->landingEditingStyle = $style;
+        $this->landingValues = [];
+        foreach (LandingHeroLibrary::fieldsFor($style) as $field) {
+            $this->landingValues[$field['key']] = $saved[$field['key']] ?? $field['default'];
+        }
+        $this->landing_image_upload = null;
+        $this->resetErrorBag();
+        $this->showLandingModal = true;
+    }
+
+    /** The field schema for the theme currently open in the landing editor — drives the dynamic form. */
+    public function landingFields(): array
+    {
+        return LandingHeroLibrary::fieldsFor($this->landingEditingStyle);
+    }
+
+    /**
+     * Persist the landing-content field values, re-validating every one
+     * against its OWN field schema (never trust the posted value) — text
+     * fields against their max length, selects against their declared
+     * options, and the image field either keeps the saved URL or replaces
+     * it with a freshly uploaded/validated one.
+     */
+    public function saveLanding(): void
+    {
+        $this->gate();
+
+        if ($this->landingEditingSlug === null || ! LandingHeroLibrary::has($this->landingEditingStyle)) {
+            return;
+        }
+
+        $fields = LandingHeroLibrary::fieldsFor($this->landingEditingStyle);
+        $rules = [];
+        foreach ($fields as $field) {
+            $key = 'landingValues.'.$field['key'];
+            $rules[$key] = match ($field['type']) {
+                'select' => ['required', 'in:'.implode(',', array_keys($field['options'] ?? []))],
+                'image' => ['nullable'],
+                default => ['required', 'string', 'max:'.($field['max'] ?? 255)],
+            };
+        }
+        $rules['landing_image_upload'] = 'nullable|mimes:webp,jpg,jpeg|max:600';
+        $this->validate($rules, [], collect($fields)->mapWithKeys(fn ($f) => ['landingValues.'.$f['key'] => $f['label']])->all());
+
+        $row = ThemePresetModel::where('slug', $this->landingEditingSlug)->first();
+        if ($row === null) {
+            $this->dispatch('nx-toast', type: 'error', message: 'Unknown theme.');
+            $this->showLandingModal = false;
+
+            return;
+        }
+
+        $content = is_array($row->landing_content) ? $row->landing_content : [];
+        foreach ($fields as $field) {
+            if ($field['type'] === 'image') {
+                if ($this->landing_image_upload) {
+                    $content[$field['key']] = MediaStorage::storePublic($this->landing_image_upload, 'theme-landing');
+                }
+
+                // else: leave whatever is already saved untouched.
+                continue;
+            }
+            $content[$field['key']] = $this->landingValues[$field['key']];
+        }
+
+        $row->landing_content = $content;
+        $row->save();
+
+        ThemePreset::bust(); // only matters if this is the active theme
+        Auditor::log('theme.landing_updated', ThemePresetModel::class, $row->id, [
+            'slug' => $this->landingEditingSlug,
+            'style' => $this->landingEditingStyle,
+        ]);
+
+        $this->dispatch('nx-toast', type: 'success', message: $this->landingEditingName.' landing page saved.');
+        $this->showLandingModal = false;
     }
 
     /**

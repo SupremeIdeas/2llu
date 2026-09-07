@@ -9,6 +9,57 @@
 
 ## DONE
 
+### 🖼️ Per-theme custom landing pages — first two, mimicking real reference layouts — 2026-09-07
+Owner correction to the earlier "don't duplicate the page-builder" call:
+"those pages I uploaded... were supposed to be a unique preset style
+independent to carry their own perfect landing page and hero unique style
+for each of those themes... this is not a duplicate is just each theme
+with their unique series of landing Page." This is genuinely additive —
+'default' (every theme unless assigned otherwise) keeps using the existing
+SiteContent/PageBuilder homepage exactly as before; only a theme with a
+hand-built layout takes over.
+- **`LandingHeroLibrary`** (new registry, mirrors `SectionLibrary`'s own
+  pattern): each entry declares a blade partial + an ordered field schema
+  (key/type/label/max/options/default). This IS the "seed extra controls
+  as we build, adopt the editor to learn" mechanism the owner asked for —
+  the admin editor is 100% schema-driven off this registry, so a future
+  landing style is just a new array entry here; no admin-UI code changes
+  needed for it to get a working edit form.
+- **Two real landing pages shipped**, structurally mimicking real
+  uploaded references (not generic templates), recoloured in-persona and
+  rewritten for NaaraSim's eSIM/numbers product:
+  - **Neon Vertex** — mimics a SaaS-dashboard hero (gradient-last-word
+    display headline, blob-gradient visual with a floating stat-card
+    overlay, 3 feature cards).
+  - **Midnight Signal** — mimics an AI-travel-product hero (dark hero,
+    floating data-readout cards flanking a central visual reusing this
+    theme's own HUD radar-ring motif for cross-page consistency, search-
+    style CTA, light 4-col feature grid below).
+  Both fully responsive (floating cards stack under the visual on mobile
+  instead of overlapping) — browser-verified at mobile + desktop viewports.
+- **New `landing_content` json column** on `theme_presets` +
+  `ThemePreset::landingContent()` resolver: every field is re-validated
+  against its OWN schema type at read time (image against the same same-
+  origin/URL regex `heroFor()` uses, select against its declared options,
+  text against non-empty) — a corrupt/tampered row can never inject an
+  arbitrary image URL or an out-of-whitelist value, same discipline as
+  `sectionStyle()`.
+- **Admin "Landing page" editor** on the Theme page (only appears once a
+  theme has a real custom style assigned via Sections): a dynamic form —
+  text/textarea/select/image-upload per field type, image upload follows
+  the same partial-update discipline as hero images (blank = keep saved).
+  Server re-validates every field against its schema on save.
+- Wired at `marketing/home.blade.php`'s very top: a theme with a custom
+  `landing_hero` style takes over the whole homepage content area before
+  the existing Section Builder / SiteContent flow ever runs.
+- Tests: `ThemeLandingHeroStylesMigrationTest` (3), `ThemeLandingPageTest`
+  (12 — homepage rendering per theme, content whitelisting, admin editor
+  incl. rejecting a theme still on 'default', file upload, max-length
+  validation, non-admin blocked). Full suite 1548/1548, Pint clean.
+- **Deferred, by design**: the 3 feature cards / 4-feature grid on each
+  page aren't part of the editable schema yet — static seed copy for now,
+  addable as new schema fields later exactly like everything else here.
+
 ### 🧩 Swappable sections completed: bottom nav extracted, admin picker UI, login background effects — 2026-09-07
 Owner follow-up: "make sure admin with the Naara official theme can basically
 swap any header he likes to their existing theme header and also bottom

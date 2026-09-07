@@ -258,13 +258,22 @@ class ThemePresetSeeder extends Seeder
             default => null,
         };
 
+        // landing_hero: only themes with a genuinely unique, hand-built
+        // landing page get one (owner request, 2026-09-07) — not all 5
+        // batch-1 personas have one yet, unlike header/login/bottom_nav.
+        $landingHero = match ($slug) {
+            'neon-vertex', 'midnight-signal' => $slug,
+            default => null,
+        };
+
         return match ($slug) {
-            'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold' => [
+            'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold' => array_filter([
                 'header' => $slug,
                 'login' => $slug,
                 'bottom_nav' => $slug,
                 'login_bg' => $loginBg,
-            ],
+                'landing_hero' => $landingHero,
+            ], fn ($v) => $v !== null),
             default => [],
         };
     }
