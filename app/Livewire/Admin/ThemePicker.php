@@ -14,7 +14,7 @@ use Livewire\WithFileUploads;
 
 /**
  * NAARA THEME SYSTEM — Batch 2 §4 (+ hero-image editing, owner request). Admin →
- * Theme picker. Select one of the 20 presets and apply it platform-wide, and —
+ * Theme picker. Select one of the 40 presets and apply it platform-wide, and —
  * per preset — upload/replace/remove the hero image shown on Dashboard, eSIM and
  * Numbers under that theme. No other inline token editing (colours/radius/type
  * stay seed-defined). Applying writes the slug to Setting, busts the theme cache,

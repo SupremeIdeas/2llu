@@ -9,6 +9,48 @@
 
 ## DONE
 
+### 🎨 Theme Preset expansion: 20 → 40 presets (Phase 2 of the color-system audit) — 2026-09-06
+Owner's follow-up to the accent-dark contrast fix: "extend the themes preset
+to 40 so that we will have a powerful solid theme documentary." Added 20
+new presets (rows 21–40) via a new `ThemePresetSeeder::phase2Presets()`,
+each inspired by one of the color-system skill's curated palettes
+(`04-palette-library.md` mood picks + named production palettes — Cobalt
+Essence, Lemonade → "Electric Ledger", Starlight, Dusk Navy-Orange →
+"Dusk Route", Lavender Ink, Signal Red → "Signal Grey" — renamed where a
+literal name would collide with an existing persona) plus 3 original
+combinations chosen to fill hue gaps the other 39 didn't cover (icy
+frost-blue, industrial copper, northern-lights teal/violet).
+- **Every single one of the 20 new palettes was validated BEFORE being
+  written**, not after: `primary` clears >=3:1 white-text contrast (the
+  same bar the existing 20 hold) and the new `accent_dark` token clears
+  >=4.5:1 on white — computed with the skill's own `contrast_check.py`,
+  darkening only as much as each color actually needed (0–50% toward
+  black depending on the starting hue) rather than one blanket formula.
+  `ThemePresetContrastTest` (added in the prior PR) now runs against all
+  40 and passes with zero exceptions — this is a real, enforced guardrail,
+  not a claim.
+- New personas: Solar Flare, Frostbite, Cocoa Dust, Neon Vertex, Canopy,
+  Noir Reserve, Communal, Blush Editorial, Heirloom, Founding, Afterdark,
+  Cobalt Essence, Electric Ledger, Starlight, Dusk Route, Lavender Ink,
+  Signal Grey, Copper Line, Aurora Borealis, Sandstone Route — each with
+  its own radius/typography/shadow/border-opacity personality, not just a
+  recoloured copy of an existing template.
+- No new hero images or fonts were introduced: hero art reuses the
+  existing 8-image set (same reuse discipline as rows 2–20) and typography
+  stays within the existing `Supreme Display` / `Figtree` / `Didact
+  Gothic` allow-list — extending either would need real asset work this
+  pass deliberately didn't scope in.
+- Dark mode needed **zero per-theme authoring** for any of the 20 new
+  presets — they automatically inherit the shared "Apple-inspired" dark
+  palette from `ThemePreset::styleCss()` (the fix from the theme
+  card-container-audit PR), so this pass only had to get each preset's
+  light-mode identity right.
+- `ThemePickerTest`/`ThemePresetTest` count assertions updated from 20 →
+  40; stale "20 themes" comments in `ThemePicker.php` and `app.blade.php`
+  corrected. Full suite green (1491). Verified live via Playwright across
+  4 of the 20 new presets (Solar Flare, Frostbite, Neon Vertex, Electric
+  Ledger) in both light and dark mode.
+
 ### 🎨 color-system skill installed + accent-dark token fixes a site-wide WCAG contrast gap — 2026-09-06
 Owner installed a personal cross-project "color-system" skill (now at
 `~/.claude/skills/color-system` — palette library, contrast/legibility

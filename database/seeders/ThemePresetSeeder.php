@@ -6,8 +6,9 @@ use App\Models\ThemePreset;
 use Illuminate\Database\Seeder;
 
 /**
- * NAARA THEME SYSTEM — Batch 2 §1, palette refresh + expansion (2026-09-04).
- * Seeds all 20 switchable presets.
+ * NAARA THEME SYSTEM — Batch 2 §1, palette refresh + expansion (2026-09-04),
+ * extended to 40 presets by the color-system skill audit (2026-09-06).
+ * Seeds all 40 switchable presets.
  *
  * `naara-official` (row 1) is the permanent built-in: its tokens are TRANSCRIBED
  * from the live app.css `--brand-*` set and it emits NO override CSS (the built-in
@@ -19,16 +20,20 @@ use Illuminate\Database\Seeder;
  * itself). Each new palette is inspired by the colour-story of one of 15
  * reference mockups the owner forwarded — never their copy/imagery/branding,
  * just the mood of the colours. Rows 16–20 are 5 brand-new personas, added so
- * the platform now ships 20 themes total (see newPresets() below); one is
+ * the platform shipped 20 themes total (see newPresets() below); one is
  * inspired by the one reference image left over after the 14 recolours, the
  * rest are original combinations chosen to stay visually distinct from every
- * other preset. Every palette keeps `primary` dark enough for white button
- * text, matching the existing set's own bar (not stricter, not looser).
- * All of it is seeded with `firstOrCreate` (rows 2–20) / `updateOrCreate`
+ * other preset. Rows 21–40 are the 40-theme expansion (see phase2Presets()
+ * below), each inspired by the color-system skill's curated palette library.
+ * Every palette keeps `primary` dark enough for white button text and now
+ * also ships its own `accent_dark` (>=4.5:1 on white — see
+ * `ThemePresetContrastTest`, which enforces both for every row here).
+ * All of it is seeded with `firstOrCreate` (rows 2–40) / `updateOrCreate`
  * (row 1 only) so a re-run NEVER clobbers an admin's own tuning made through
  * the picker — a one-time migration (not this seeder) is what actually
- * updates the 14 recoloured rows in a database that already seeded the old
- * palette; see `2026_09_04_120000_refresh_theme_preset_palettes.php`.
+ * updates rows in a database that already seeded an older palette; see
+ * `2026_09_04_120000_refresh_theme_preset_palettes.php` and
+ * `2026_09_06_180000_add_theme_preset_accent_dark_token.php`.
  *
  * Icons: only `naara-official` keeps the 3D set; every other preset points at the
  * shared `naara-sprite-01` family (the sprite sheet itself ships in Batch 3 §5 —
@@ -198,6 +203,28 @@ class ThemePresetSeeder extends Seeder
                 'sort_order' => $preset['sort_order'],
             ]);
         }
+
+        // Rows 21–40 — the 40-theme expansion (color-system skill audit,
+        // 2026-09-06). Same firstOrCreate discipline: never clobber admin
+        // tuning. See phase2Presets() for how each palette was chosen and
+        // validated.
+        foreach ($this->phase2Presets() as $preset) {
+            ThemePreset::firstOrCreate(['slug' => $preset['slug']], [
+                'name' => $preset['name'],
+                'persona' => $preset['persona'],
+                'tokens' => [
+                    'colors' => $preset['colors'],
+                    'radius' => $preset['radius'],
+                    'typography' => $preset['typography'],
+                    'surface' => $preset['surface'],
+                ],
+                'icon_family' => ['style' => 'sprite', 'set' => 'naara-sprite-01'],
+                'hero_assets' => $hero($preset['hero']),
+                'layout_variants' => $this->baselineVariants(),
+                'is_built_in' => false,
+                'sort_order' => $preset['sort_order'],
+            ]);
+        }
     }
 
     /**
@@ -327,6 +354,191 @@ class ThemePresetSeeder extends Seeder
                 'radius' => ['control' => '0.5rem', 'card' => '1.25rem', 'pill' => '9999px'],
                 'typography' => ['display' => $display, 'sans' => 'Didact Gothic'],
                 'surface' => ['card_shadow' => 'sm', 'card_border_opacity' => '0.6']],
+        ];
+    }
+
+    /**
+     * Rows 21–40 — the 40-theme expansion (owner request, following the
+     * color-system skill installation). Each palette is inspired by one of
+     * the skill's curated mood palettes (`04-palette-library.md`) or named
+     * production palettes (Cobalt Essence, Lemonade, Starlight, Dusk
+     * Navy-Orange, Lavender Ink, Signal Red — "Electric Ledger"/"Signal
+     * Grey"/"Dusk Route" here are those last three renamed to avoid
+     * colliding with existing personas), plus 3 originals to round out the
+     * set. Every `primary` and `accent_dark` was verified with the skill's
+     * `contrast_check.py` BEFORE being written here — `primary` clears
+     * >=3:1 white-text contrast (matches the existing 20's own bar) and
+     * `accent_dark` clears >=4.5:1 on white (see ThemePresetContrastTest,
+     * which enforces both for every seeded preset going forward). Dark
+     * mode is NOT authored per-theme: every non-default preset's dark mode
+     * automatically collapses to the one shared standard palette in
+     * ThemePreset::styleCss() — only the light-mode identity below matters.
+     * Hero art reuses the existing 8-image set, same as rows 2–20.
+     */
+    private function phase2Presets(): array
+    {
+        $display = 'Supreme Display';
+
+        return [
+            ['slug' => 'solar-flare', 'name' => 'Solar Flare', 'sort_order' => 21,
+                'persona' => 'Vivid amber-orange with a fierce crimson pop on deep navy — sports-broadcast energy and urgency.',
+                'colors' => ['primary' => '207 127 11', 'primary_dark' => '149 91 8', 'accent' => '205 24 24', 'accent_dark' => '205 24 24', 'navy' => '10 20 45', 'action' => '220 55 35'],
+                'radius' => ['control' => '0.75rem', 'card' => '1.75rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'lg', 'card_border_opacity' => '0.5'],
+                'hero' => 'islands-male'],
+
+            ['slug' => 'frostbite', 'name' => 'Frostbite', 'sort_order' => 22,
+                'persona' => 'Cool steel-blue with an icy teal accent on near-black — crisp, glacial, high-trust fintech feel.',
+                'colors' => ['primary' => '50 130 184', 'primary_dark' => '36 94 132', 'accent' => '0 144 158', 'accent_dark' => '0 130 142', 'navy' => '5 5 35', 'action' => '225 65 70'],
+                'radius' => ['control' => '0.5rem', 'card' => '1rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Didact Gothic'],
+                'surface' => ['card_shadow' => 'sm', 'card_border_opacity' => '0.6'],
+                'hero' => 'portal-gateway'],
+
+            ['slug' => 'cocoa-dust', 'name' => 'Cocoa Dust', 'sort_order' => 23,
+                'persona' => 'Warm mocha-brown with a burnt-copper pop — artisanal, café-culture warmth.',
+                'colors' => ['primary' => '125 90 80', 'primary_dark' => '90 65 58', 'accent' => '197 129 71', 'accent_dark' => '158 103 57', 'navy' => '25 18 16', 'action' => '200 70 50'],
+                'radius' => ['control' => '0.875rem', 'card' => '1.75rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'md', 'card_border_opacity' => '0.5'],
+                'hero' => 'before-after'],
+
+            ['slug' => 'neon-vertex', 'name' => 'Neon Vertex', 'sort_order' => 24,
+                'persona' => 'Deep ultraviolet with a hot-pink flash on near-black — nightlife, electronic, after-hours energy.',
+                'colors' => ['primary' => '61 8 123', 'primary_dark' => '44 6 89', 'accent' => '244 59 134', 'accent_dark' => '207 50 114', 'navy' => '14 5 30', 'action' => '236 72 100'],
+                'radius' => ['control' => '0.375rem', 'card' => '1rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Didact Gothic'],
+                'surface' => ['card_shadow' => 'md', 'card_border_opacity' => '0.4'],
+                'hero' => 'app-ui-phone'],
+
+            ['slug' => 'canopy-green', 'name' => 'Canopy', 'sort_order' => 25,
+                'persona' => 'Forest green with a warm terracotta pop — outdoor, eco-conscious, grounded travel feel.',
+                'colors' => ['primary' => '11 132 87', 'primary_dark' => '8 95 63', 'accent' => '201 125 75', 'accent_dark' => '161 100 60', 'navy' => '10 26 18', 'action' => '210 75 55'],
+                'radius' => ['control' => '0.625rem', 'card' => '1.5rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Didact Gothic'],
+                'surface' => ['card_shadow' => 'md', 'card_border_opacity' => '0.5'],
+                'hero' => 'worldwide'],
+
+            ['slug' => 'noir-reserve', 'name' => 'Noir Reserve', 'sort_order' => 26,
+                'persona' => 'Espresso-brown with a burnt-sienna accent — quiet, tactile, old-money luxury.',
+                'colors' => ['primary' => '92 61 46', 'primary_dark' => '66 44 33', 'accent' => '184 92 56', 'accent_dark' => '184 92 56', 'navy' => '30 24 24', 'action' => '190 60 45'],
+                'radius' => ['control' => '0.25rem', 'card' => '0.75rem', 'pill' => '0.5rem'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'sm', 'card_border_opacity' => '0.7'],
+                'hero' => 'branded'],
+
+            ['slug' => 'communal-teal', 'name' => 'Communal', 'sort_order' => 27,
+                'persona' => 'Soft aqua-teal with a coral pop — friendly, social, community-platform warmth.',
+                'colors' => ['primary' => '103 153 156', 'primary_dark' => '74 110 112', 'accent' => '232 137 107', 'accent_dark' => '162 96 75', 'navy' => '14 26 26', 'action' => '230 90 70'],
+                'radius' => ['control' => '0.875rem', 'card' => '2rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'md', 'card_border_opacity' => '0.5'],
+                'hero' => 'islands-female'],
+
+            ['slug' => 'blush-editorial', 'name' => 'Blush Editorial', 'sort_order' => 28,
+                'persona' => 'Rose-pink with a sky-blue pop on deep indigo — fashion-editorial, expressive, youthful.',
+                'colors' => ['primary' => '227 99 135', 'primary_dark' => '163 71 97', 'accent' => '95 168 211', 'accent_dark' => '66 118 148', 'navy' => '28 20 36', 'action' => '225 80 100'],
+                'radius' => ['control' => '0.75rem', 'card' => '1.75rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Didact Gothic'],
+                'surface' => ['card_shadow' => 'lg', 'card_border_opacity' => '0.4'],
+                'hero' => 'islands-female'],
+
+            ['slug' => 'heirloom-taupe', 'name' => 'Heirloom', 'sort_order' => 29,
+                'persona' => 'Warm taupe with a dusty slate-blue accent — heritage, craft, understated vintage.',
+                'colors' => ['primary' => '118 97 97', 'primary_dark' => '85 70 70', 'accent' => '110 146 159', 'accent_dark' => '88 117 127', 'navy' => '22 18 18', 'action' => '200 65 55'],
+                'radius' => ['control' => '0.5rem', 'card' => '1rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'sm', 'card_border_opacity' => '0.6'],
+                'hero' => 'before-after'],
+
+            ['slug' => 'founding', 'name' => 'Founding', 'sort_order' => 30,
+                'persona' => 'Deep forest-teal with a terracotta pop — institutional, established, rooted in place.',
+                'colors' => ['primary' => '58 99 81', 'primary_dark' => '42 71 58', 'accent' => '228 130 87', 'accent_dark' => '171 98 65', 'navy' => '20 18 18', 'action' => '205 70 55'],
+                'radius' => ['control' => '0.375rem', 'card' => '0.75rem', 'pill' => '0.5rem'],
+                'typography' => ['display' => $display, 'sans' => 'Didact Gothic'],
+                'surface' => ['card_shadow' => 'sm', 'card_border_opacity' => '0.7'],
+                'hero' => 'worldwide'],
+
+            ['slug' => 'afterdark-plum', 'name' => 'Afterdark', 'sort_order' => 31,
+                'persona' => 'Deep plum with a crimson flash on near-black — bold editorial, gaming, nightlife energy.',
+                'colors' => ['primary' => '49 29 63', 'primary_dark' => '35 21 45', 'accent' => '202 62 71', 'accent_dark' => '202 62 71', 'navy' => '14 10 18', 'action' => '220 55 60'],
+                'radius' => ['control' => '0.25rem', 'card' => '0.5rem', 'pill' => '0.25rem'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'md', 'card_border_opacity' => '0.7'],
+                'hero' => 'app-ui-phone'],
+
+            ['slug' => 'cobalt-essence', 'name' => 'Cobalt Essence', 'sort_order' => 32,
+                'persona' => 'Electric cobalt blue with a warm amber pop — modern SaaS dashboard energy.',
+                'colors' => ['primary' => '61 126 252', 'primary_dark' => '44 91 181', 'accent' => '251 191 36', 'accent_dark' => '138 105 20', 'navy' => '24 25 35', 'action' => '230 65 55'],
+                'radius' => ['control' => '0.5rem', 'card' => '1.25rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Didact Gothic'],
+                'surface' => ['card_shadow' => 'sm', 'card_border_opacity' => '0.6'],
+                'hero' => 'portal-gateway'],
+
+            ['slug' => 'electric-ledger', 'name' => 'Electric Ledger', 'sort_order' => 33,
+                'persona' => 'Deep navy with an electric-blue primary and warm amber highlight — fintech-wallet precision.',
+                'colors' => ['primary' => '36 106 243', 'primary_dark' => '26 76 175', 'accent' => '254 201 71', 'accent_dark' => '140 111 39', 'navy' => '10 25 48', 'action' => '225 60 60'],
+                'radius' => ['control' => '0.375rem', 'card' => '0.75rem', 'pill' => '0.5rem'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'sm', 'card_border_opacity' => '0.7'],
+                'hero' => 'before-after'],
+
+            ['slug' => 'starlight-violet', 'name' => 'Starlight', 'sort_order' => 34,
+                'persona' => 'Deep indigo-violet with a champagne-gold pop — premium, creative, after-hours glamour.',
+                'colors' => ['primary' => '59 51 134', 'primary_dark' => '42 37 96', 'accent' => '201 162 39', 'accent_dark' => '141 113 27', 'navy' => '25 20 32', 'action' => '220 65 70'],
+                'radius' => ['control' => '0.75rem', 'card' => '1.75rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'lg', 'card_border_opacity' => '0.4'],
+                'hero' => 'branded'],
+
+            ['slug' => 'dusk-route', 'name' => 'Dusk Route', 'sort_order' => 35,
+                'persona' => 'Steel-blue with a warm burnt-orange pop — cinematic dusk-to-dawn travel mood.',
+                'colors' => ['primary' => '84 119 146', 'primary_dark' => '60 86 105', 'accent' => '217 125 61', 'accent_dark' => '163 94 46', 'navy' => '17 26 36', 'action' => '215 70 50'],
+                'radius' => ['control' => '0.625rem', 'card' => '1.5rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Didact Gothic'],
+                'surface' => ['card_shadow' => 'lg', 'card_border_opacity' => '0.5'],
+                'hero' => 'islands-male'],
+
+            ['slug' => 'lavender-ink', 'name' => 'Lavender Ink', 'sort_order' => 36,
+                'persona' => 'Soft lavender-violet with a rose-pink pop on deep indigo — playful-premium hybrid.',
+                'colors' => ['primary' => '165 121 242', 'primary_dark' => '119 87 174', 'accent' => '224 168 216', 'accent_dark' => '134 101 130', 'navy' => '10 10 36', 'action' => '225 80 130'],
+                'radius' => ['control' => '0.875rem', 'card' => '2rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'lg', 'card_border_opacity' => '0.4'],
+                'hero' => 'islands-female'],
+
+            ['slug' => 'signal-grey', 'name' => 'Signal Grey', 'sort_order' => 37,
+                'persona' => 'Cool graphite-grey with a vivid signal-red accent — high-alert, bold editorial focus.',
+                'colors' => ['primary' => '131 134 143', 'primary_dark' => '94 96 103', 'accent' => '255 19 19', 'accent_dark' => '230 17 17', 'navy' => '5 5 8', 'action' => '220 40 40'],
+                'radius' => ['control' => '0.125rem', 'card' => '0.25rem', 'pill' => '0.25rem'],
+                'typography' => ['display' => $display, 'sans' => 'Didact Gothic'],
+                'surface' => ['card_shadow' => 'md', 'card_border_opacity' => '0.8'],
+                'hero' => 'app-ui-phone'],
+
+            ['slug' => 'copper-line', 'name' => 'Copper Line', 'sort_order' => 38,
+                'persona' => 'Burnt copper with a steel-blue pop — industrial-craft, workshop-warm precision.',
+                'colors' => ['primary' => '181 101 29', 'primary_dark' => '130 73 21', 'accent' => '47 102 144', 'accent_dark' => '47 102 144', 'navy' => '30 20 15', 'action' => '200 75 50'],
+                'radius' => ['control' => '0.375rem', 'card' => '0.75rem', 'pill' => '0.5rem'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'sm', 'card_border_opacity' => '0.6'],
+                'hero' => 'before-after'],
+
+            ['slug' => 'aurora-borealis', 'name' => 'Aurora Borealis', 'sort_order' => 39,
+                'persona' => 'Deep teal with a violet flash — northern-lights inspired, cool and otherworldly.',
+                'colors' => ['primary' => '31 111 120', 'primary_dark' => '22 80 86', 'accent' => '139 92 246', 'accent_dark' => '132 87 234', 'navy' => '10 25 28', 'action' => '220 65 90'],
+                'radius' => ['control' => '0.625rem', 'card' => '1.5rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Didact Gothic'],
+                'surface' => ['card_shadow' => 'md', 'card_border_opacity' => '0.5'],
+                'hero' => 'worldwide'],
+
+            ['slug' => 'sandstone-route', 'name' => 'Sandstone Route', 'sort_order' => 40,
+                'persona' => 'Warm sandstone-brown with an olive-green pop — desert-route, earthy overland travel feel.',
+                'colors' => ['primary' => '166 124 82', 'primary_dark' => '120 89 59', 'accent' => '62 124 89', 'accent_dark' => '62 124 89', 'navy' => '24 20 14', 'action' => '205 80 55'],
+                'radius' => ['control' => '0.75rem', 'card' => '1.75rem', 'pill' => '9999px'],
+                'typography' => ['display' => $display, 'sans' => 'Figtree'],
+                'surface' => ['card_shadow' => 'md', 'card_border_opacity' => '0.5'],
+                'hero' => 'islands-male'],
         ];
     }
 }
