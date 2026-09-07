@@ -136,6 +136,40 @@ class ThemePresetTest extends TestCase
         $this->assertSame('variant-a', ThemePreset::layoutVariant('nonexistent_page'));
     }
 
+    public function test_section_style_defaults_to_default(): void
+    {
+        ThemePresetModel::create([
+            'slug' => 'grid-ten', 'name' => 'Grid Ten',
+            'tokens' => [], 'icon_family' => ['style' => 'sprite', 'set' => 'naara-sprite-01'],
+            'section_styles' => ['header' => 'nonexistent-style'],
+            'is_built_in' => false, 'sort_order' => 4,
+        ]);
+        Setting::setValue(ThemePreset::SETTING_KEY, 'grid-ten');
+        ThemePreset::bust();
+
+        // A whitelisted section with no assignment (or an unknown value that
+        // fell through the whitelist) both fall back to 'default' — never a
+        // 500, never an unvalidated string reaching an @include.
+        $this->assertSame('default', ThemePreset::sectionStyle('header'));
+        $this->assertSame('default', ThemePreset::sectionStyle('login'));
+        // An entirely unrecognised section key is safe too.
+        $this->assertSame('default', ThemePreset::sectionStyle('nonexistent_section'));
+    }
+
+    public function test_section_style_picks_a_whitelisted_assignment(): void
+    {
+        ThemePresetModel::create([
+            'slug' => 'grid-eleven', 'name' => 'Grid Eleven',
+            'tokens' => [], 'icon_family' => ['style' => 'sprite', 'set' => 'naara-sprite-01'],
+            'section_styles' => ['header' => 'default'],
+            'is_built_in' => false, 'sort_order' => 5,
+        ]);
+        Setting::setValue(ThemePreset::SETTING_KEY, 'grid-eleven');
+        ThemePreset::bust();
+
+        $this->assertSame('default', ThemePreset::sectionStyle('header'));
+    }
+
     public function test_seeder_creates_all_forty_presets(): void
     {
         $this->seed(ThemePresetSeeder::class);

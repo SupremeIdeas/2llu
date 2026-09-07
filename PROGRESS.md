@@ -9,6 +9,48 @@
 
 ## DONE
 
+### 🧩 Swappable theme sections — architecture + first two sections wired (header, login) — 2026-09-07
+Owner request: "Naara official themes to have the capability to reuse any
+theme header, bottom nav, login screen and any other sections on demand
+from across these themes as swappable capability... admin can still decide
+to use the Naara official theme and still swap any section for any area
+possible, no bloating." This ships the underlying architecture plus a
+real, working proof of concept on two sections — not yet the admin UI
+picker (deferred until there's more than one style family to pick from;
+see NEXT) or the remaining two sections (bottom nav, landing hero — both
+higher blast-radius, see below).
+- **New `section_styles` json column** on `theme_presets` (sibling to
+  `layout_variants`, which picks between structural variants of a page's
+  OWN content — this is for shared CHROME sections instead). Nullable,
+  defaults to nothing, so all 40 existing presets keep rendering today's
+  exact shared chrome with zero migration-time data changes needed.
+- **`ThemePreset::sectionStyle(string $section): string`** — the resolver,
+  built exactly like the existing `layoutVariant()`: a strict
+  `SECTION_STYLE_ALLOW` whitelist per section key (`header`, `bottom_nav`,
+  `login`, `landing_hero` — only `'default'` exists in each today), falls
+  back to `'default'` for any unset/tampered/unrecognised value so a
+  corrupt row can never reach an `@include` with unvalidated input, and
+  can never 500.
+- **Two sections actually extracted and wired**, chosen for being the
+  lowest-blast-radius, most self-contained candidates: the **login screen**
+  (`components/layouts/auth.blade.php` → resolves to
+  `components/layouts/theme-sections/login/{style}.blade.php`) and the
+  **standard mobile header** (`components/app-shell.blade.php` → resolves
+  to `components/theme-sections/header/{style}.blade.php`, the
+  `/numbers/*` wallet-bar header is page-specific chrome and intentionally
+  untouched). Each `'default'` partial is the byte-for-byte original
+  markup — proven zero-regression by the FULL suite (1495/1495 green)
+  before and after, not just the theme-specific tests.
+- **Bottom nav deliberately NOT extracted yet.** It shares Alpine
+  `x-data` state with the "More" sheet and has its own Numbers-specific
+  variant interleaved in the same file — extracting it safely needs more
+  care than this pass's scope. Same file also holds the desktop sidebar,
+  which isn't part of this section-swap concept at all (chrome-once, not
+  per-theme-swappable, per the owner's "header, bottom nav, login" list).
+- New tests: `test_section_style_defaults_to_default`,
+  `test_section_style_picks_a_whitelisted_assignment` in
+  `ThemePresetTest`. Full suite 1495/1495, Pint clean on every touched file.
+
 ### 🎨 Theme Preset expansion: 20 → 40 presets (Phase 2 of the color-system audit) — 2026-09-06
 Owner's follow-up to the accent-dark contrast fix: "extend the themes preset
 to 40 so that we will have a powerful solid theme documentary." Added 20

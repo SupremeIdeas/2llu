@@ -136,18 +136,11 @@
             </div>
         </header>
     @else
-    <header class="nx-header-fade sticky top-0 z-30 flex items-center justify-between px-4 py-3 lg:hidden">
-        <a href="{{ $brandRoute ?? '#' }}" wire:navigate class="flex items-center">
-            <x-brand-logo :variant="$headerBrand['variant']" :label="$headerBrand['label']" size="md" :fallback-icon="$brandIcon" />
-        </a>
-        <div class="flex items-center gap-1">
-            {{ $headerActions ?? '' }}
-            {{-- Layouts that supply headerActions (customer) place the toggle
-                 themselves in the bell → toggle → hamburger order; only add one
-                 here for layouts that don't (admin), so it's never doubled. --}}
-            @unless (isset($headerActions))<x-theme-toggle />@endunless
-        </div>
-    </header>
+    {{-- Swappable HEADER section (owner request, 2026-09-07): admin can point
+         this at any built style family via ThemePreset::sectionStyle('header')
+         — 'default' is the original, unmodified markup below, so every
+         existing theme keeps rendering today's exact header. --}}
+    @include('components.theme-sections.header.'.\App\Support\ThemePreset::sectionStyle('header'))
     @endif
 
     {{-- ============ Page content ============ --}}

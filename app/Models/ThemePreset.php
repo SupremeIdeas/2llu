@@ -14,7 +14,7 @@ class ThemePreset extends Model
 {
     protected $fillable = [
         'slug', 'name', 'persona', 'tokens', 'icon_family',
-        'hero_assets', 'layout_variants', 'is_built_in', 'sort_order',
+        'hero_assets', 'layout_variants', 'section_styles', 'is_built_in', 'sort_order',
     ];
 
     protected function casts(): array
@@ -24,6 +24,7 @@ class ThemePreset extends Model
             'icon_family' => 'array',
             'hero_assets' => 'array',
             'layout_variants' => 'array',
+            'section_styles' => 'array',
             'is_built_in' => 'boolean',
             'sort_order' => 'integer',
         ];

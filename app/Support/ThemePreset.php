@@ -40,6 +40,25 @@ class ThemePreset
     public const VARIANTS = ['variant-a', 'variant-b', 'variant-c'];
 
     /**
+     * Swappable CHROME sections (owner request, 2026-09-07): unlike
+     * layout_variants (a page's own content), these are shared UI shells —
+     * header, bottom nav, login screen, landing hero — that any preset,
+     * including naara-official, can point at any named style family. Only
+     * 'default' exists today (today's exact, unchanged markup); batch theme
+     * builds add more named families here as they ship, and an admin picks
+     * per-section per-theme once there's a real choice to make. Never a raw
+     * path or arbitrary string — always resolved through this whitelist, so
+     * a corrupt/tampered row can only ever fall back to 'default', never
+     * reach an @include with attacker-controlled input.
+     */
+    public const SECTION_STYLE_ALLOW = [
+        'header' => ['default'],
+        'bottom_nav' => ['default'],
+        'login' => ['default'],
+        'landing_hero' => ['default'],
+    ];
+
+    /**
      * Font families a theme is allowed to name. Every value must ALSO be
      * registered in tailwind.config.js + loaded via @font-face / Google Fonts
      * at build time — never injected per-theme at runtime (FOUT/CLS risk,
@@ -57,7 +76,7 @@ class ThemePreset
      * table on a fresh install, corrupted row, mid-migration) — exactly
      * PlatformTheme::current()'s try/catch discipline.
      *
-     * @return array{slug:string,name:string,persona:?string,tokens:array,icon_family:array,hero_assets:array,layout_variants:array,is_built_in:bool}
+     * @return array{slug:string,name:string,persona:?string,tokens:array,icon_family:array,hero_assets:array,layout_variants:array,section_styles:array,is_built_in:bool}
      */
     public static function active(): array
     {
@@ -82,6 +101,7 @@ class ThemePreset
                     'icon_family' => self::decode($row->icon_family),
                     'hero_assets' => self::decode($row->hero_assets),
                     'layout_variants' => self::decode($row->layout_variants),
+                    'section_styles' => self::decode($row->section_styles ?? null),
                     'is_built_in' => (bool) $row->is_built_in,
                 ];
             } catch (\Throwable) {
@@ -143,6 +163,26 @@ class ThemePreset
         $pick = self::active()['layout_variants'][$page] ?? null;
 
         return in_array($pick, self::VARIANTS, true) ? $pick : 'variant-a';
+    }
+
+    /**
+     * Which named style family a swappable chrome SECTION uses under the
+     * active theme (see SECTION_STYLE_ALLOW). Defaults to 'default' — the
+     * unmodified, currently-shipped markup — for any section/theme
+     * combination not explicitly assigned, or any value outside that
+     * section's whitelist, so a missing or tampered key never 500s and
+     * never reaches an @include with unvalidated input.
+     */
+    public static function sectionStyle(string $section): string
+    {
+        $allow = self::SECTION_STYLE_ALLOW[$section] ?? null;
+        if ($allow === null) {
+            return 'default';
+        }
+
+        $pick = self::active()['section_styles'][$section] ?? null;
+
+        return in_array($pick, $allow, true) ? $pick : 'default';
     }
 
     /**
@@ -313,6 +353,7 @@ class ThemePreset
             'icon_family' => ['style' => '3d', 'set' => 'default'],
             'hero_assets' => [],
             'layout_variants' => [],
+            'section_styles' => [],
             'is_built_in' => true,
         ];
     }
