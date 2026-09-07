@@ -1,0 +1,86 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Livewire\Dashboard;
+use App\Models\Setting;
+use App\Models\User;
+use App\Support\ThemePreset;
+use Database\Seeders\ThemePresetSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\TestCase;
+
+/**
+ * Theme visual rebuild, Batch 1 of 8 (owner request, 2026-09-07). Five
+ * presets get a real, structurally unique header + login screen instead of
+ * the shared "default" chrome: aries-contrast, midnight-signal, neon-vertex,
+ * paperwhite, origin-bold. Proves the resolver picks the right style for
+ * each and that both swappable surfaces (the mobile header via an
+ * authenticated page, and the login screen) render without error under
+ * every one of the five.
+ */
+class ThemeBatch1VisualRebuildTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(ThemePresetSeeder::class);
+        ThemePreset::bust();
+    }
+
+    public static function batch1Themes(): array
+    {
+        return [
+            'aries-contrast' => ['aries-contrast'],
+            'midnight-signal' => ['midnight-signal'],
+            'neon-vertex' => ['neon-vertex'],
+            'paperwhite' => ['paperwhite'],
+            'origin-bold' => ['origin-bold'],
+        ];
+    }
+
+    #[DataProvider('batch1Themes')]
+    public function test_theme_resolves_its_own_header_and_login_style(string $slug): void
+    {
+        Setting::setValue(ThemePreset::SETTING_KEY, $slug);
+        ThemePreset::bust();
+
+        $this->assertSame($slug, ThemePreset::sectionStyle('header'));
+        $this->assertSame($slug, ThemePreset::sectionStyle('login'));
+        // Sections not part of batch 1 are untouched — still the shared default.
+        $this->assertSame('default', ThemePreset::sectionStyle('bottom_nav'));
+        $this->assertSame('default', ThemePreset::sectionStyle('landing_hero'));
+    }
+
+    #[DataProvider('batch1Themes')]
+    public function test_login_page_renders_under_the_theme(string $slug): void
+    {
+        Setting::setValue(ThemePreset::SETTING_KEY, $slug);
+        ThemePreset::bust();
+
+        $this->get('/login')->assertOk()->assertSee('Welcome back');
+    }
+
+    #[DataProvider('batch1Themes')]
+    public function test_authenticated_header_renders_under_the_theme(string $slug): void
+    {
+        Setting::setValue(ThemePreset::SETTING_KEY, $slug);
+        ThemePreset::bust();
+
+        Livewire::actingAs(User::factory()->create())->test(Dashboard::class)
+            ->assertOk()
+            ->assertSee('Connectivity');
+    }
+
+    public function test_naara_official_is_unaffected_by_batch_1(): void
+    {
+        // The default theme must never pick up a batch-1 style family.
+        $this->assertSame('naara-official', ThemePreset::slug());
+        $this->assertSame('default', ThemePreset::sectionStyle('header'));
+        $this->assertSame('default', ThemePreset::sectionStyle('login'));
+    }
+}

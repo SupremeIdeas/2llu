@@ -52,9 +52,20 @@ class ThemePreset
      * reach an @include with attacker-controlled input.
      */
     public const SECTION_STYLE_ALLOW = [
-        'header' => ['default'],
+        'header' => [
+            'default',
+            // Batch 1 of the theme visual rebuild (2026-09-07) — one named
+            // style family per theme, keyed by that theme's own slug (a
+            // future batch can point TWO themes at the same key to share a
+            // style; batch 1 gives each its own to maximise the requested
+            // "very unique, don't look identical" variety).
+            'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold',
+        ],
         'bottom_nav' => ['default'],
-        'login' => ['default'],
+        'login' => [
+            'default',
+            'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold',
+        ],
         'landing_hero' => ['default'],
     ];
 

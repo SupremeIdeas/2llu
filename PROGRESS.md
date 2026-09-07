@@ -9,6 +9,68 @@
 
 ## DONE
 
+### 🎨 Theme visual rebuild — Batch 1 of 8: 5 themes get unique header + login screens — 2026-09-07
+Owner request: "start batch 1 now" — the first 5 of the 40 presets get a
+genuinely structurally-unique header + login screen instead of the shared
+"default" chrome, built on the swappable-section architecture below.
+Researched current (2025-2026) Dribbble/Behance/Awwwards/design-trend
+patterns in parallel with implementation (brutalism, liquid-glass, skewed
+diagonal panels, bento grids, editorial-minimalism) and grounded each of
+the 5 in a real, buildable structural trick rather than a re-colour:
+- **Aries (`aries-contrast`)** — brutalist: sharp corners (no rounding
+  anywhere in the chrome), a solid contrast bar instead of a glass fade, a
+  single-column full-bleed login (no split panel) with a gold-bordered
+  card and a live-status pulse dot.
+- **Midnight Signal (`midnight-signal`)** — HUD/smart-home: a glass header
+  with a pulsing signal icon in a "console" pill; the login keeps the
+  two-column shape but swaps the media panel for concentric radar rings
+  around a pulsing dot instead of the shared WebGL planet.
+- **Neon Vertex (`neon-vertex`)** — nightlife: a floating detached pill
+  header (the dominant 2026 mobile header shape) with a gradient glow
+  badge; the login's straight column seam is replaced by a skewed
+  diagonal neon accent strip (`skew-x-12`) — the single highest-value,
+  cheapest-to-build "structurally distinct" trick found in research.
+- **Paperwhite (`paperwhite`)** — editorial minimalism: no glass/blur/
+  shadow at all, just a hairline rule; the login drops the split panel
+  entirely for a single centred column with generous whitespace — the
+  biggest structural departure in the batch.
+- **Origin Bold (`origin-bold`)** — bold colour-block: a solid-fill header
+  with a thick bottom border; the login REVERSES the usual proportions
+  (form leads at 60%, colour-block trails at 40%) with an oversized
+  outlined "190+" numeral motif.
+- **Real bug caught and fixed during browser verification**: the
+  Origin Bold media panel's headline text overflowed past the viewport
+  edge — a classic flexbox `min-width: auto` trap (a flex item won't
+  shrink below its unwrapped content width without an explicit
+  `min-w-0`). Fixed by adding `min-w-0` to both the panel and its text
+  block and moving the giant decorative numeral to an absolutely
+  positioned layer so it can never affect flex sizing. Caught by actually
+  looking at a rendered screenshot, not just `assertOk()`.
+- **New migration** (`2026_09_07_110000_assign_theme_batch1_section_styles`)
+  assigns each of these 5 slugs' `header`/`login` section_styles to a key
+  matching its own slug, purely additive (never overwrites admin tuning) —
+  for databases upgrading from before this batch. A fresh install gets the
+  same assignment directly from `ThemePresetSeeder::batch1SectionStyles()`
+  so the two paths can never drift apart (same discipline as accent_dark).
+- **Browser-verified for real**: booted a dev server, logged in through
+  the actual login form, and screenshotted all 5 themes' login screens
+  (mobile + desktop) AND authenticated header (mobile) via Playwright —
+  not just asserted via test client. All 5 are visually confirmed distinct
+  from each other and from naara-official.
+- Tests: `ThemeBatch1SectionStylesMigrationTest` (4 tests: assigns, never
+  overwrites admin tuning, skips a never-seeded slug, down() removes only
+  what it assigned) + `ThemeBatch1VisualRebuildTest` (16 tests: resolver
+  picks the right style per theme, login page renders, authenticated
+  header renders, naara-official is unaffected). Full suite 1515/1515,
+  Pint clean.
+- **Deferred to later batches**: bottom-nav and landing-hero sections for
+  these same 5 themes (both sections aren't extracted/wired yet — see the
+  swappable-section architecture entry below); batches 2-8 (35 more
+  themes) using the additional research-backed patterns not used here yet
+  (bento-grid dashboards, glass "liquid" panels with a solid barrier layer
+  for contrast, asymmetric magazine-margin layouts, hard color-block
+  halves with oversized numerals/labels).
+
 ### 🧩 Swappable theme sections — architecture + first two sections wired (header, login) — 2026-09-07
 Owner request: "Naara official themes to have the capability to reuse any
 theme header, bottom nav, login screen and any other sections on demand

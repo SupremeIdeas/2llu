@@ -179,6 +179,7 @@ class ThemePresetSeeder extends Seeder
                 'icon_family' => ['style' => 'sprite', 'set' => 'naara-sprite-01'],
                 'hero_assets' => $heroMap[$preset['slug']] ?? [],
                 'layout_variants' => $variants,
+                'section_styles' => $this->batch1SectionStyles($preset['slug']),
                 'is_built_in' => false,
                 'sort_order' => $preset['sort_order'],
             ]);
@@ -221,10 +222,35 @@ class ThemePresetSeeder extends Seeder
                 'icon_family' => ['style' => 'sprite', 'set' => 'naara-sprite-01'],
                 'hero_assets' => $hero($preset['hero']),
                 'layout_variants' => $this->baselineVariants(),
+                'section_styles' => $this->batch1SectionStyles($preset['slug']),
                 'is_built_in' => false,
                 'sort_order' => $preset['sort_order'],
             ]);
         }
+    }
+
+    /**
+     * Theme visual rebuild, Batch 1 of 8 (owner request, 2026-09-07): the
+     * first 5 presets to get their own unique header + login screen instead
+     * of the shared "default" chrome, each pointing at a style key matching
+     * its own slug (see ThemePreset::SECTION_STYLE_ALLOW and the partials
+     * under resources/views/components/theme-sections/header/ and
+     * resources/views/components/layouts/theme-sections/login/). A fresh
+     * install gets these from the seeder directly; an existing database
+     * upgrading gets the same values from
+     * 2026_09_07_110000_assign_theme_batch1_section_styles.php instead —
+     * the values must stay identical between the two, exactly like
+     * accent_dark above.
+     */
+    private function batch1SectionStyles(string $slug): array
+    {
+        return match ($slug) {
+            'aries-contrast', 'midnight-signal', 'neon-vertex', 'paperwhite', 'origin-bold' => [
+                'header' => $slug,
+                'login' => $slug,
+            ],
+            default => [],
+        };
     }
 
     /**
