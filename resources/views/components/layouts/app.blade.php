@@ -26,12 +26,14 @@
          (admin-editable name/icon/colours). theme-color paints the mobile
          browser chrome + native WebView status bar. --}}
     <link rel="manifest" href="{{ route('manifest') }}">
-    {{-- The header editor's own colour override (when set) extends all the
-         way to the mobile browser chrome / native status bar, so a themed
-         header reads as one continuous surface instead of stopping at the
-         page edge. Falls back to the existing admin-configured App Export
-         colour when the header is using its theme's own default. --}}
-    <meta name="theme-color" content="{{ \App\Support\ThemePreset::headerColorHex() ?? \App\Support\AppExport::get('theme_color', '#0A6E6E') }}">
+    {{-- Browser chrome / native status-bar colour, most-specific wins:
+         (1) the header editor's own colour override when an admin has set one
+         (a themed header then reads as one continuous surface to the page
+         edge), else (2) the active Theme Preset's primary colour so the
+         chrome repaints with whichever theme is active, else (3) the
+         admin-configured App Export PWA colour on the default theme. --}}
+    <meta name="theme-color" content="{{ \App\Support\ThemePreset::headerColorHex() ?? \App\Support\ThemePreset::browserThemeColor() ?? \App\Support\AppExport::get('theme_color', '#0A6E6E') }}">
+
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">

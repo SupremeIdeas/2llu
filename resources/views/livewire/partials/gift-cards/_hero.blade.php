@@ -41,9 +41,9 @@
         <h1 class="font-display {{ $heroTitleSizeClasses }} font-extrabold leading-[1.07] tracking-[-0.025em] text-slate-900 dark:text-white">
             @if ($heroTitleRest !== '')
                 {{ $heroTitleFirst }}<br>
-                <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{{ $heroTitleRest }}</span>
+                <span class="nx-hero-accent">{{ $heroTitleRest }}</span>
             @else
-                <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{{ $heroTitleFirst }}</span>
+                <span class="nx-hero-accent">{{ $heroTitleFirst }}</span>
             @endif
         </h1>
         <p class="mt-3.5 max-w-xs text-[15px] leading-relaxed text-slate-500 dark:text-slate-300 sm:text-base">{{ $heroDesc }}</p>
