@@ -90,6 +90,8 @@ class Branding extends Component
 
     public string $hero_title_size = HeroBackground::DEFAULT_TITLE_SIZE;
 
+    public string $hero_cta_size = HeroBackground::DEFAULT_CTA_SIZE;
+
     // Site-wide font system (owner request): '' keeps the shipped Naara default
     // (Supreme Display / Didact Gothic); 'google' picks a Google Font by name;
     // 'custom' uses an uploaded web font file. One source per slot.
@@ -137,6 +139,7 @@ class Branding extends Component
         $this->hero_enabled = HeroBackground::enabled();
         $this->hero_title = HeroBackground::title();
         $this->hero_title_size = HeroBackground::titleSize();
+        $this->hero_cta_size = HeroBackground::ctaSize();
         $this->logo_scale_family = BrandSettings::logoScale('family');
         $this->logo_scale_product = BrandSettings::logoScale('product');
         $this->logo_scale_gift = BrandSettings::logoScale('gift');
@@ -324,6 +327,7 @@ class Branding extends Component
             'hero_description' => 'nullable|string|max:120',
             'hero_title' => 'nullable|string|max:40',
             'hero_title_size' => 'required|in:'.implode(',', array_keys(HeroBackground::TITLE_SIZES)),
+            'hero_cta_size' => 'required|in:'.implode(',', array_keys(HeroBackground::CTA_SIZES)),
             'logo_scale_family' => 'numeric|min:0.5|max:2',
             'logo_scale_product' => 'numeric|min:0.5|max:2',
             'logo_scale_gift' => 'numeric|min:0.5|max:2',
@@ -358,6 +362,9 @@ class Branding extends Component
         // empty).
         Setting::setValue(HeroBackground::TITLE_KEY, trim($this->hero_title), 'brand');
         Setting::setValue(HeroBackground::TITLE_SIZE_KEY, $this->hero_title_size, 'brand');
+
+        // CTA (Buy eSIM / Get Number) button size override (owner request).
+        Setting::setValue(HeroBackground::CTA_SIZE_KEY, $this->hero_cta_size, 'brand');
 
         // Per-logo display scale (admin taste) — clamped 0.5–2.0.
         Setting::setValue('brand.logo_scale_family', max(0.5, min(2.0, (float) $this->logo_scale_family)), 'brand');

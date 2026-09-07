@@ -249,4 +249,50 @@ class HeroBackgroundTest extends TestCase
         // Unchanged — still the default.
         $this->assertSame(HeroBackground::DEFAULT_TITLE_SIZE, HeroBackground::titleSize());
     }
+
+    // ---- Admin-overridable CTA (Buy eSIM / Get Number) button size --------
+
+    public function test_the_hero_shows_the_full_button_labels_side_by_side(): void
+    {
+        // Owner report: buttons had been shortened to "eSIM"/"Number" and were
+        // stacking on mid-width viewports. Full labels restored, and the CTA
+        // row is no longer confined to the headline's narrow max-w column.
+        Livewire::actingAs(User::factory()->create())->test(Dashboard::class)
+            ->assertSee('Buy eSIM')
+            ->assertSee('Get Number');
+    }
+
+    public function test_the_cta_size_defaults_to_medium(): void
+    {
+        $this->assertSame(HeroBackground::DEFAULT_CTA_SIZE, HeroBackground::ctaSize());
+    }
+
+    public function test_admin_can_change_the_cta_button_size(): void
+    {
+        Storage::fake('public');
+        Livewire::actingAs($this->admin())->test(Branding::class)
+            ->set('brand_name', 'NaaraSim')
+            ->set('hero_cta_size', 'sm')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('sm', HeroBackground::ctaSize());
+
+        // The literal class the 'sm' preset renders (kept in sync with the
+        // match() in _hero.blade.php).
+        Livewire::actingAs(User::factory()->create())->test(Dashboard::class)
+            ->assertSee('px-3.5 py-2 text-xs', false);
+    }
+
+    public function test_an_invalid_cta_size_is_rejected(): void
+    {
+        Storage::fake('public');
+        Livewire::actingAs($this->admin())->test(Branding::class)
+            ->set('brand_name', 'NaaraSim')
+            ->set('hero_cta_size', 'huge')
+            ->call('save')
+            ->assertHasErrors('hero_cta_size');
+
+        $this->assertSame(HeroBackground::DEFAULT_CTA_SIZE, HeroBackground::ctaSize());
+    }
 }
