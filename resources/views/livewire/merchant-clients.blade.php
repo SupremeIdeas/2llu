@@ -138,11 +138,34 @@
                 <button type="button" wire:click="$set('assignType', 'connect')" @class(['flex-1 rounded-full py-1.5 text-xs font-semibold transition', 'bg-white text-primary shadow-sm dark:bg-white/15 dark:text-teal-300' => $assignType === 'connect', 'text-slate-500' => $assignType !== 'connect'])>Naara Connect</button>
             </div>
 
-            <select wire:model="assignPlanId" class="mb-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-white/10 dark:bg-[#243352] dark:text-slate-100">
-                <option value="">Choose a plan…</option>
-                @foreach (($assignType === 'connect' ? $connectPlans : $dataPlans) as $plan)<option value="{{ $plan->id }}">{{ $plan->name }}</option>@endforeach
+            {{-- Search + country filter (owner request): the flat 200-name
+                 dropdown made finding a specific country's plan slow. Search
+                 by name; the country list is the real, live footprint for
+                 the active line (data vs connect), so results are always
+                 exactly what's actually assignable. --}}
+            <div class="mb-2 flex gap-2">
+                <div class="relative flex-1">
+                    <x-icon name="search" class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    <input type="text" wire:model.live.debounce.300ms="assignSearch" placeholder="Search plans…"
+                           class="w-full rounded-xl border border-slate-300 bg-white py-2 pl-8 pr-2 text-xs dark:border-white/10 dark:bg-[#243352] dark:text-slate-100">
+                </div>
+                <select wire:model.live="assignCountry"
+                        class="w-32 shrink-0 rounded-xl border border-slate-300 bg-white px-2 text-xs dark:border-white/10 dark:bg-[#243352] dark:text-slate-100">
+                    <option value="">All countries</option>
+                    @foreach ($assignCountryOptions as $c)
+                        <option value="{{ $c['code'] }}">{{ $c['name'] }} ({{ $c['count'] }})</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <select wire:model="assignPlanId" size="5" class="mb-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-white/10 dark:bg-[#243352] dark:text-slate-100">
+                @forelse (($assignType === 'connect' ? $connectPlans : $dataPlans) as $plan)
+                    <option value="{{ $plan->id }}">{{ $plan->name }}</option>
+                @empty
+                    <option value="" disabled>No plans match — try a different search or country.</option>
+                @endforelse
             </select>
-            @if ($assignType === 'connect' && $connectPlans->isEmpty())<p class="mb-2 text-xs text-slate-400">No Naara Connect plans are live yet.</p>@endif
+            @if ($assignType === 'connect' && $connectPlans->isEmpty() && $assignSearch === '' && $assignCountry === '')<p class="mb-2 text-xs text-slate-400">No Naara Connect plans are live yet.</p>@endif
 
             <label class="mb-3 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                 <input type="checkbox" wire:model="assignForce" class="rounded border-slate-300 text-primary focus:ring-primary">
