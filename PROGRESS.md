@@ -9,6 +9,26 @@
 
 ## DONE
 
+### 📱 Fix mobile header content bleed-through (owner screenshot: Merchant Invoices) — 2026-09-06
+Owner screenshot showed the "‹ Clients" back-link ghosting through and
+colliding with the Naara logo on the Merchant Invoices page on mobile.
+Root cause: `.nx-header-fade`'s gradient started fading to transparent at
+55% of the header's own height — while the logo/icon row still physically
+sat inside that 55–100% zone — so any bold content that scrolled to just
+beneath the sticky header bled through the header's own translucent
+background and visually collided with the logo. Not invoice-specific: any
+mobile page whose top content is left-aligned bold text hit the same bug;
+Invoices' "‹ Clients" link happened to make it obvious.
+- Fix: held the header's fade flat at 95% opacity through 70% of its own
+  height (comfortably covering the logo/icon row on every page) and
+  compressed the fade-to-transparent into the last 30% — which is only the
+  empty bottom padding, never actual header content. Same fix in both light
+  and dark variants.
+- Verified live via Playwright at a 412×915 mobile viewport, scrolled to the
+  exact position that previously showed the ghosting: header now stays
+  cleanly opaque behind the logo/icons in both themes. Full suite green
+  (1486); this is a pure CSS change with no new test surface.
+
 ### 🖼️ Journey Goals admin images + Naara Gift brand-detail modernization — 2026-09-06
 Owner request, two related front-end asks in one pass:
 - **Journey Goals images**: admin can now attach an optional image to a goal,
