@@ -26,8 +26,8 @@
                 {{-- Branded default for this persona: a mini statement mock
                      — real ledger content (line items + a gold-underlined
                      total), never a decorative blob/orb/glow. --}}
-                <div class="pointer-events-none absolute inset-0 flex items-center justify-center p-8" aria-hidden="true">
-                    <div class="w-full max-w-xs rounded-xl border border-white/15 bg-white/[0.07] p-5 shadow-2xl backdrop-blur-sm">
+                <div class="pointer-events-none absolute inset-0 flex items-start justify-end p-8 pt-24 lg:p-12 lg:pt-28" aria-hidden="true">
+                    <div class="w-full max-w-[240px] rounded-xl border border-white/15 bg-white/[0.07] p-5 shadow-2xl backdrop-blur-sm">
                         <div class="flex items-center justify-between border-b border-dashed border-white/25 pb-3">
                             <span class="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">Statement No. 00214</span>
                             <span class="inline-flex items-center gap-1 rounded-md bg-accent/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">

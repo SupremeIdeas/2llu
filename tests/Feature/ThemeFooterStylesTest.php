@@ -15,8 +15,10 @@ use Tests\TestCase;
  * too should have unique footer too... not always we get a straight line
  * footer, then footer swappable too"). neon-vertex and midnight-signal were
  * the first two themes with a hand-built footer; batch 2 (2026-09-07) added
- * 5 more (aries-contrast, paperwhite, origin-bold, solar-flare, noir-reserve)
- * — all mirroring the header/bottom_nav pattern exactly: chrome-only, no
+ * 5 more (aries-contrast, paperwhite, origin-bold, solar-flare, noir-reserve);
+ * batch 3 (2026-09-07) adds 5 brand-new personas (aurora-shift,
+ * sunset-transit, fintra-clean, capable-mono, waitlisty-soft) — all
+ * mirroring the header/bottom_nav pattern exactly: chrome-only, no
  * editable content fields, same functional links/columns as the shared
  * default footer. Every other theme, including naara-official, keeps using
  * today's exact shared footer.
@@ -42,6 +44,11 @@ class ThemeFooterStylesTest extends TestCase
             'origin-bold' => ['origin-bold'],
             'solar-flare' => ['solar-flare'],
             'noir-reserve' => ['noir-reserve'],
+            'aurora-shift' => ['aurora-shift'],
+            'sunset-transit' => ['sunset-transit'],
+            'fintra-clean' => ['fintra-clean'],
+            'capable-mono' => ['capable-mono'],
+            'waitlisty-soft' => ['waitlisty-soft'],
         ];
     }
 
