@@ -49,3 +49,7 @@ Homestead.yaml
 # Graphify — generated knowledge-graph output (rebuilt per-machine via
 # `graphify update .`; large + volatile, never committed). Also in .claudeignore.
 /graphify-out/
+
+# Claude Code agent worktrees — local git-worktree scaffolding for
+# background subagents, machine-specific, never committed.
+/.claude/worktrees/
