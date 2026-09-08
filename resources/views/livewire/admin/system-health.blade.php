@@ -215,9 +215,11 @@
 
     {{-- ============ Database updates (no-terminal migration runner) ============
          Owner request (2026-09-08): shared-cPanel installs often have no
-         SSH/terminal access, so a code update that ships new migrations had
-         no way to actually apply them. This runs `php artisan migrate
-         --force` from a click. Every migration this platform ships is
+         SSH/terminal access at all, so a code update that ships new
+         migrations had no way to actually apply them; a VPS/Cloudways box
+         has SSH but this saves logging in for a routine update either way.
+         This runs `php artisan migrate --force` from a click — nothing
+         here is cPanel-specific. Every migration this platform ships is
          additive-only (never drops/truncates live data — see CLAUDE.md),
          but it still changes the live schema, so it's gated to super_admin
          only (one level above the cache flush above) and shown with an
@@ -230,7 +232,7 @@
                     Database updates
                 </h2>
                 <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                    After uploading new code, apply any new database changes here — no terminal or SSH needed. Safe on shared cPanel.
+                    After uploading new code, apply any new database changes here — no terminal or SSH needed. Safe on both VPS and shared cPanel.
                 </p>
             </div>
             @if (Auth::user()->hasRole('super_admin'))

@@ -5,9 +5,12 @@ namespace App\Support;
 /**
  * Detects migrations present in the codebase but not yet recorded in the
  * `migrations` table — the "what would `php artisan migrate` do?" preview
- * for the System Health migration runner (2026-09-08). Built for shared
- * cPanel installs with no terminal/SSH access: an admin needs to see,
- * before clicking anything, exactly which files are about to run.
+ * for the System Health migration runner (2026-09-08). Host-agnostic (no
+ * cPanel-specific assumption anywhere in here) — used identically on a
+ * shared-cPanel install with no terminal at all, and on a VPS/Cloudways
+ * box where it just saves an SSH round trip for a routine update: an admin
+ * needs to see, before clicking anything, exactly which files are about
+ * to run.
  *
  * Reuses Laravel's own Migrator/repository resolution (not a filesystem-vs-
  * text-output diff) so the count can never drift from what

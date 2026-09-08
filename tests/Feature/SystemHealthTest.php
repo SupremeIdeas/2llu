@@ -179,10 +179,11 @@ class SystemHealthTest extends TestCase
 
     /**
      * No-terminal migration runner (owner request, 2026-09-08: shared-cPanel
-     * installs often have no SSH access, so a code update shipping new
-     * migrations had no way to actually apply them). PendingMigrations
-     * reuses Laravel's own Migrator/repository resolution — it can never
-     * drift from what `php artisan migrate` would really do.
+     * installs often have no SSH access at all, and a VPS/Cloudways install
+     * saves an SSH round trip either way, so a code update shipping new
+     * migrations needed a click-to-run path). PendingMigrations reuses
+     * Laravel's own Migrator/repository resolution — it can never drift
+     * from what `php artisan migrate` would really do.
      */
     public function test_pending_migrations_reports_none_on_a_freshly_migrated_database(): void
     {

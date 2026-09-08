@@ -14,7 +14,12 @@ Owner request: after uploading fresh code to an already-installed shared
 cPanel server (no terminal/SSH access), there was no way to actually apply
 new migrations — the installer only runs `migrate` once, on first install,
 then locks itself out. Added a permanent no-terminal update path instead of
-a one-off cron workaround:
+a one-off cron workaround. Confirmed the same day (owner follow-up) that
+this is host-agnostic by construction — plain `Artisan::call()` behind an
+HTTP request, nothing cPanel-specific anywhere in it — so it works
+identically on a VPS/Cloudways install too, saving an SSH round trip for a
+routine update even where SSH is available. Copy/comments updated across
+the panel and code to say "VPS and shared cPanel" rather than cPanel-only:
 - **`App\Support\PendingMigrations`** — reuses Laravel's own
   Migrator/repository resolution (`app('migrator')->getMigrationFiles()` vs
   `getRepository()->getRan()`) rather than parsing `migrate:status` text, so

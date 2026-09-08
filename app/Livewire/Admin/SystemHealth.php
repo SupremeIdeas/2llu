@@ -26,8 +26,9 @@ use Livewire\Component;
 class SystemHealth extends Component
 {
     /** Raw `php artisan migrate` output from the last run this page load —
-     *  shown so an admin on a no-terminal shared-cPanel install can see
-     *  exactly what happened, not just a toast. */
+     *  shown so an admin on a no-terminal install (shared cPanel, or a VPS
+     *  they'd rather not SSH into for a routine update) can see exactly
+     *  what happened, not just a toast. */
     public string $migrationOutput = '';
 
     public function mount(): void
@@ -67,8 +68,11 @@ class SystemHealth extends Component
 
     /**
      * Runs `php artisan migrate --force` from a click — the no-terminal
-     * update path for a shared-cPanel install with no SSH access (owner
-     * request, 2026-09-08). Every migration this platform ships is
+     * update path (owner request, 2026-09-08). Nothing here is cPanel-
+     * specific: it's plain Artisan::call() triggered by an HTTP request, so
+     * it works identically on shared cPanel (no SSH available at all) and
+     * on a VPS/Cloudways box (SSH available, but this saves logging in for
+     * a routine update). Every migration this platform ships is
      * additive-only by discipline (CLAUDE.md: never overwrite live data),
      * but this still changes the live schema, so it's gated tighter than
      * the cache flush above (super_admin only) and audit-logged either way.
