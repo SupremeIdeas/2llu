@@ -4,6 +4,16 @@
 > It is the permanent context for this project. Do not delete it.
 > The full specification is `NaaraSim-Master-Build-Blueprint-v5.docx` in this folder (Sections 0–32).
 
+> **This repo is `2llu`, forked from NaaraSim on 2026-09-08.** Everything
+> below this notice describes the NaaraSim platform this fork inherited —
+> still accurate for the wallet, KYC, payout, and numbers/SMS provider
+> plumbing 2LLU reuses as-is. It is **not** the 2LLU product spec. For what
+> we're actually building here, read **`2LLU-BUILD-PLAN.md`** (sequencing,
+> priority, model assignment) and `docs/blueprints/` (the batch source
+> documents) first. Batch 1 in that plan is what turns this codebase from
+> NaaraSim into 2LLU — strip eSIM, rebrand, new schema. Until Batch 1 runs,
+> this repo is still NaaraSim in every way that matters.
+
 ---
 
 ## HOW WE BUILD (read this first)
@@ -193,3 +203,13 @@ platform.
 - When the graph is stale (code changed since it was built — compare
   `git rev-parse HEAD` to the report's build commit), run `graphify update .`
   before relying on it for architectural decisions.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

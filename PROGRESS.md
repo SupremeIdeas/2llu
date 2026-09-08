@@ -5,6 +5,11 @@
 > Full detail per module: `NaaraSim-Master-Build-Blueprint-v5.docx` (Sections 0–32).
 > We are building WITHOUT Ruflo — single developer, one module at a time.
 
+> **This is the NaaraSim history this `2llu` fork carries over — still
+> accurate for the infrastructure 2LLU reuses (wallet, KYC, payout,
+> numbers/SMS).** For 2LLU's own build log and next step, see
+> **`2LLU-BUILD-PLAN.md`** at the repo root, not the NEXT section below.
+
 ---
 
 ## DONE
