@@ -9,6 +9,47 @@
 
 ## DONE
 
+### 🔀 Consolidation: merged all open work to main — 2026-09-07
+Owner request ("professionally merge all our work to main … merge everything
+we have so far that has not been merged"). Built one local integration
+branch off current `main` and merged every open PR into it, resolving all
+conflicts by hand, with the full suite green before `main` moved:
+- **Theme stack** — PR #39 (swappable-section architecture) + PR #40
+  (theme batches 1–3 = 15 full-suite themes, header editor, admin colour
+  overrides): fast-forwarded on cleanly (0 behind main).
+- **PR #38** — readiness-audit security fixes (webhook fail-open, unthrottled
+  auth routes, stale pricing cache).
+- **PR #33** — Popular Destinations fallback on a fresh catalogue.
+- **PR #29** — Merchant V2 eSIM picker search + country filter.
+- **PR #30** — top-up pending-state UX (processing banner + success toast).
+- **PR #34** — free payout setup + unified KYC threshold on legacy withdraw.
+- **PR #28** — home hero: unstack CTAs, restore labels, admin size override.
+- **PR #27** — Naara Gift: wire Bitrefill + Tillo, pricing-bug fix,
+  reconcile + balance-check.
+- **PR #32** — theme browser-chrome colour + dark-mode hero contrast fix.
+- **PR #31** — admin-controllable card glassmorphism + eSIM catalogue glass.
+- **Notable conflict resolutions** (all others were PROGRESS.md / build
+  artifacts): (1) `Wallet.php` import union — #34's `PayoutThreshold`
+  superseded the old `KycService` check (Pint dropped the now-unused
+  import); (2) `<meta name="theme-color">` composed to
+  `headerColorHex() ?? browserThemeColor() ?? AppExport default` (header
+  override > active theme primary > configured PWA colour); (3) `_hero.blade`
+  CTA row kept #28's newer full-label + size-override version over #32's
+  short-label one; (4) `.nx-glass-tile` made BOTH theme-aware
+  (`--brand-card-dark`) AND admin-opacity-driven (`--nx-glass-opacity-dark`
+  scaled into the `color-mix`), and catalogue cards took the glass tile while
+  keeping the theme-aware border/inner CSS vars over #31's hardcoded hexes.
+- **Verification:** full suite **1774 passed** (5846 assertions); all 13 new
+  (theme) migrations apply cleanly in order on a fresh DB; no dependency
+  changes; `npm run build` clean; no conflict markers anywhere. CI does not
+  gate on Pint and `main` carries the same pre-existing repo-wide Pint debt,
+  so untouched files were left alone (fixing them is out of scope for this
+  consolidation).
+- **New:** `docs/THEME_BUILD_BLUEPRINT.md` — the standing brief for
+  continuing theme batches 4–8 with the same discipline.
+- Remaining ~25 themes are deferred ("revisited to be built later after
+  other features are wired") — see the blueprint + `## NEXT`.
+
 ### 🎨 Theme visual rebuild batch 3 (5 brand-new themes, built from scratch) — 2026-09-07
 Continuation of the batch-by-batch arc, per "let us move to the Next batch
 after you have finished batch 2." Unlike batches 1-2 (which mixed
