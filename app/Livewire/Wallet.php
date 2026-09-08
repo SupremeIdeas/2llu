@@ -6,7 +6,6 @@ use App\Models\PayoutAccount;
 use App\Models\TopUpIntent;
 use App\Models\UserWallet;
 use App\Models\WalletTransaction;
-use App\Services\Kyc\KycService;
 use App\Services\Payouts\PayoutThreshold;
 use App\Services\Payouts\WithdrawalService;
 use App\Services\Pricing\CurrencyService;
