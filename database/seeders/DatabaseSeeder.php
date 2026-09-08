@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             ProviderRegistrySeeder::class, // provider registry metadata + URLs (BUILD-14)
             ProviderExpansionSeeder::class, // new adapters, enabled=false (BUILD-18)
             ThemePresetSeeder::class,       // switchable visual skins — built-in naara-official (Theme Batch 1)
+            FeeSettingSeeder::class,    // 2LLU fee_settings defaults (Batch 1 §5d)
+            CirclePlanSeeder::class,    // 2LLU default priority rule + 24 circle_plans tiers (Batch 1 §5d)
         ]);
     }
 }
