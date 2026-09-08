@@ -8,6 +8,9 @@
 /* NaaraCare "Nia" chat glow (BUILD-3 §5) — scoped to the Nia input + AI bubbles. */
 @import './nia-glow.css';
 
+/* 2LLU concentric-ring card motif (Batch 1 Step 3) — scoped to <x-brand.ring-card>. */
+@import './brand-ring.css';
+
 /* Preloader Studio presets (brand-aware, compiled — never inline). */
 @import './preloaders.css';
 
@@ -30,6 +33,92 @@
     font-family: 'Didact Gothic';
     src: url('/fonts/didact-gothic.woff2') format('woff2');
     font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* --- 2LLU design-system fonts (Batch 1 Step 3 — brand-bible.md /
+   docs/blueprints/01-batch1-clone-strip-foundation.md). Self-hosted, same
+   mechanism as the NaaraSim fonts above (no external CDN, CSP-safe) —
+   NOT wired into --font-display/--font-sans or the sitewide h1-h6/body
+   rules below, which stay on Supreme Display/Didact Gothic untouched.
+   Reach these via the `font-brand-display` / `font-brand-body` /
+   `font-brand-mono` Tailwind utilities (tailwind.config.js) or the
+   <x-brand.*> components — additive only, nothing existing repoints here
+   yet. Fraunces and Sora ship as variable woff2 files (Google's css2 API
+   serves one file covering the whole weight axis for browsers that
+   support it); each @font-face below pins one weight instance out of that
+   shared file, matching how Google's own generated CSS declares them. */
+@font-face {
+    font-family: 'Fraunces';
+    src: url('/fonts/fraunces-variable.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Fraunces';
+    src: url('/fonts/fraunces-variable.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Fraunces';
+    src: url('/fonts/fraunces-variable.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Sora';
+    src: url('/fonts/sora-variable.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Sora';
+    src: url('/fonts/sora-variable.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Sora';
+    src: url('/fonts/sora-variable.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Sora';
+    src: url('/fonts/sora-variable.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+/* IBM Plex Mono ships as static per-weight files (not a variable font), so
+   tabular-figure number rendering (wallet balances, turn/cycle counters —
+   pair with Tailwind's `tabular-nums` utility) is exact at each weight. */
+@font-face {
+    font-family: 'IBM Plex Mono';
+    src: url('/fonts/ibm-plex-mono-400.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'IBM Plex Mono';
+    src: url('/fonts/ibm-plex-mono-500.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'IBM Plex Mono';
+    src: url('/fonts/ibm-plex-mono-600.woff2') format('woff2');
+    font-weight: 600;
     font-style: normal;
     font-display: swap;
 }
