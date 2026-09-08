@@ -862,15 +862,17 @@
    and anything like them) — those stay exactly as they are, no blur, no
    opacity change. This is a binary per-component flag, not a spectrum. */
 .nx-glass-tile {
-    background: rgb(255 255 255 / 0.62);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    backdrop-filter: blur(12px) saturate(140%);
+    background: rgb(255 255 255 / var(--nx-glass-opacity-light, 0.62));
+    -webkit-backdrop-filter: blur(var(--nx-glass-blur, 12px)) saturate(140%);
+    backdrop-filter: blur(var(--nx-glass-blur, 12px)) saturate(140%);
 }
 .dark .nx-glass-tile {
-    /* Tinted with --brand-card-dark (theme-coverage audit) rather than a
-       fixed navy, so this already-widely-applied class repaints with the
-       active Theme Preset instead of staying frozen on Naara's own tone. */
-    background: color-mix(in srgb, var(--brand-card-dark) 55%, transparent);
+    /* Tinted with --brand-card-dark (theme-coverage audit) so this widely-
+       applied class repaints with the active Theme Preset instead of staying
+       frozen on Naara's own navy — and the tint STRENGTH follows the admin
+       glassmorphism opacity dial (--nx-glass-opacity-dark, a 0-1 fraction
+       scaled to a percentage), so both features compose. */
+    background: color-mix(in srgb, var(--brand-card-dark) calc(var(--nx-glass-opacity-dark, 0.55) * 100%), transparent);
 }
 @supports not (color: color-mix(in srgb, red, blue)) {
     .dark .nx-glass-tile { background: var(--brand-card-dark); }

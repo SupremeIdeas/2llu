@@ -16,7 +16,7 @@
             <x-icon name="chevron-right" class="h-4 w-4 rotate-180" /> Back
         </button>
 
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
+        <div class="overflow-hidden rounded-3xl border border-slate-200 nx-glass-tile shadow-sm dark:border-[var(--brand-card-border-dark)]">
             <div class="p-6">
                 {{-- The plan's coverage art sits beside the title as a compact
                      thumbnail — never a full-bleed cover over the page. --}}
@@ -81,7 +81,7 @@
         @if ($screen === 'region')
             {{-- Region header: the admin map photo reads well large, so it
                  stays a wide banner with the name overlaid. --}}
-            <div class="mb-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
+            <div class="mb-5 overflow-hidden rounded-3xl border border-slate-200 nx-glass-tile shadow-sm dark:border-[var(--brand-card-border-dark)]">
                 @if ($banner)
                     <div class="relative h-36 w-full overflow-hidden sm:h-44">
                         <img src="{{ $banner }}" alt="{{ $selName }}" class="h-full w-full object-cover">
@@ -107,7 +107,7 @@
         @else
             {{-- Country header: the country's cutout art sits beside the name
                  as a compact thumbnail — it never covers the page as a banner. --}}
-            <div class="mb-5 flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[var(--brand-card-border-dark)] dark:bg-[var(--brand-card-dark)]">
+            <div class="mb-5 flex items-center gap-4 rounded-3xl border border-slate-200 nx-glass-tile p-4 shadow-sm dark:border-[var(--brand-card-border-dark)]">
                 <span class="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 sm:h-24 sm:w-24 dark:bg-[var(--brand-card-inner-dark)]">
                     @if ($banner)
                         <img src="{{ $banner }}" alt="{{ $selName }}" class="h-full w-full object-cover">

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\Admin\PlatformThemePage;
 use App\Models\User;
+use App\Support\GlassmorphismSettings;
 use App\Support\PlatformTheme;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,6 +24,7 @@ class PlatformThemePageTest extends TestCase
         parent::setUp();
         $this->seed(RoleSeeder::class);
         PlatformTheme::flush();
+        GlassmorphismSettings::flush();
     }
 
     public function test_the_page_is_admin_only(): void
@@ -85,5 +87,53 @@ class PlatformThemePageTest extends TestCase
 
         $this->assertSame('default', PlatformTheme::mode());
         $this->assertSame('', PlatformTheme::styleCss());
+    }
+
+    public function test_it_saves_the_glass_dial_and_clamps_out_of_range_values(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(PlatformThemePage::class)
+            ->set('glass_opacity', 500)
+            ->set('glass_blur', -5)
+            ->call('saveGlass')
+            ->assertHasErrors(['glass_opacity', 'glass_blur']);
+
+        Livewire::actingAs($admin)->test(PlatformThemePage::class)
+            ->set('glass_opacity', 80)
+            ->set('glass_blur', 6)
+            ->call('saveGlass')
+            ->assertHasNoErrors();
+
+        $this->assertSame(80, GlassmorphismSettings::opacity());
+        $this->assertSame(6, GlassmorphismSettings::blur());
+    }
+
+    public function test_reset_glass_returns_to_the_shipped_default(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        GlassmorphismSettings::save(90, 20);
+
+        Livewire::actingAs($admin)->test(PlatformThemePage::class)
+            ->call('resetGlass')
+            ->assertHasNoErrors();
+
+        $this->assertSame(GlassmorphismSettings::DEFAULT_OPACITY, GlassmorphismSettings::opacity());
+        $this->assertSame(GlassmorphismSettings::DEFAULT_BLUR, GlassmorphismSettings::blur());
+    }
+
+    public function test_glass_dial_is_admin_only(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('user');
+
+        Livewire::actingAs($user)->test(PlatformThemePage::class)
+            ->set('glass_opacity', 80)
+            ->call('saveGlass')
+            ->assertStatus(403);
+
+        $this->assertSame(GlassmorphismSettings::DEFAULT_OPACITY, GlassmorphismSettings::opacity());
     }
 }
