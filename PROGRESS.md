@@ -9,6 +9,37 @@
 
 ## DONE
 
+### 🗄️ No-terminal database-migration runner (System Health) — 2026-09-08
+Owner request: after uploading fresh code to an already-installed shared
+cPanel server (no terminal/SSH access), there was no way to actually apply
+new migrations — the installer only runs `migrate` once, on first install,
+then locks itself out. Added a permanent no-terminal update path instead of
+a one-off cron workaround:
+- **`App\Support\PendingMigrations`** — reuses Laravel's own
+  Migrator/repository resolution (`app('migrator')->getMigrationFiles()` vs
+  `getRepository()->getRan()`) rather than parsing `migrate:status` text, so
+  the pending count/list can never drift from what `php artisan migrate`
+  would actually do.
+- **`Admin\SystemHealth::runMigrations()`** — a new "Database updates" panel
+  (next to the existing cache-flush panel) shows the exact pending migration
+  filenames before anything runs, then calls
+  `Artisan::call('migrate', ['--force' => true])` from a click and displays
+  the raw output. Gated to **super_admin only** (one level tighter than the
+  admin-accessible cache flush, since this changes live schema) and
+  audit-logged (`admin.migrations_run` / `admin.migrations_failed`) — a
+  no-op (nothing pending) is a safe early-return that writes no audit row.
+  `wire:confirm` before running; button disabled while nothing is pending
+  or a run is in flight.
+- New `i-database` sprite icon (lucide-style, verified none of the existing
+  icons fit before adding one).
+- 5 new tests (pending-detection on a fresh DB, panel visibility per role,
+  403 for a non-super-admin caller, safe no-op behaviour) + smoke-tested
+  the real pending→run→resolved cycle against the actual database (not just
+  mocks) by rolling back a migration's repository row, confirming detection,
+  running it, and confirming it cleared. Full suite green (1779 passed).
+  Browser-verified both states (up-to-date and 1-pending) on
+  `/adminmaster/system-health`.
+
 ### 🔀 Consolidation: merged all open work to main — 2026-09-07
 Owner request ("professionally merge all our work to main … merge everything
 we have so far that has not been merged"). Built one local integration

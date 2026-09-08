@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\SystemHealth;
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\HostingGuide;
+use App\Support\PendingMigrations;
 use App\Support\QueueHealth;
 use App\Support\SchedulerHealth;
 use Database\Seeders\RoleSeeder;
@@ -173,5 +175,66 @@ class SystemHealthTest extends TestCase
             ->assertOk()
             ->assertSee('Hosting &amp; background setup', false)
             ->assertSee('schedule:run');
+    }
+
+    /**
+     * No-terminal migration runner (owner request, 2026-09-08: shared-cPanel
+     * installs often have no SSH access, so a code update shipping new
+     * migrations had no way to actually apply them). PendingMigrations
+     * reuses Laravel's own Migrator/repository resolution — it can never
+     * drift from what `php artisan migrate` would really do.
+     */
+    public function test_pending_migrations_reports_none_on_a_freshly_migrated_database(): void
+    {
+        $this->assertSame([], PendingMigrations::names());
+        $this->assertSame(0, PendingMigrations::count());
+    }
+
+    public function test_the_database_updates_panel_shows_up_to_date_for_a_super_admin(): void
+    {
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('super_admin');
+
+        Livewire::actingAs($superAdmin)->test(SystemHealth::class)
+            ->assertOk()
+            ->assertSee('Database updates')
+            ->assertSee('Up to date')
+            ->assertSee('No pending migrations');
+    }
+
+    public function test_a_plain_admin_sees_the_panel_but_not_the_run_button(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(SystemHealth::class)
+            ->assertOk()
+            ->assertSee('Database updates')
+            ->assertSee('Only a super admin can run database updates')
+            ->assertDontSee('wire:click="runMigrations"', false);
+    }
+
+    public function test_a_plain_admin_cannot_call_run_migrations_directly(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)->test(SystemHealth::class)
+            ->call('runMigrations')
+            ->assertStatus(403);
+    }
+
+    public function test_a_super_admin_running_migrations_with_nothing_pending_is_a_safe_no_op(): void
+    {
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('super_admin');
+
+        Livewire::actingAs($superAdmin)->test(SystemHealth::class)
+            ->call('runMigrations')
+            ->assertOk()
+            ->assertDispatched('nx-toast');
+
+        // A no-op run must never write an audit row — nothing actually happened.
+        $this->assertSame(0, AuditLog::where('action', 'admin.migrations_run')->count());
     }
 }

@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Admin;
 
+use App\Support\Auditor;
 use App\Support\EnvironmentGuard;
 use App\Support\HostingGuide;
+use App\Support\PendingMigrations;
 use App\Support\QueueHealth;
 use App\Support\SchedulerHealth;
 use Illuminate\Support\Collection;
@@ -23,6 +25,11 @@ use Livewire\Component;
 #[Layout('components.layouts.admin')]
 class SystemHealth extends Component
 {
+    /** Raw `php artisan migrate` output from the last run this page load —
+     *  shown so an admin on a no-terminal shared-cPanel install can see
+     *  exactly what happened, not just a toast. */
+    public string $migrationOutput = '';
+
     public function mount(): void
     {
         abort_unless(Auth::user()->hasAnyRole(['super_admin', 'admin']), 403);
@@ -58,9 +65,40 @@ class SystemHealth extends Component
         }
     }
 
+    /**
+     * Runs `php artisan migrate --force` from a click — the no-terminal
+     * update path for a shared-cPanel install with no SSH access (owner
+     * request, 2026-09-08). Every migration this platform ships is
+     * additive-only by discipline (CLAUDE.md: never overwrite live data),
+     * but this still changes the live schema, so it's gated tighter than
+     * the cache flush above (super_admin only) and audit-logged either way.
+     */
+    public function runMigrations(): void
+    {
+        abort_unless(Auth::user()->hasRole('super_admin'), 403);
+
+        $pending = PendingMigrations::names();
+        if ($pending === []) {
+            $this->dispatch('nx-toast', type: 'success', message: 'Already up to date — no pending migrations.');
+
+            return;
+        }
+
+        try {
+            Artisan::call('migrate', ['--force' => true]);
+            $this->migrationOutput = trim(Artisan::output());
+            Auditor::log('admin.migrations_run', payload: ['migrations' => $pending]);
+            $this->dispatch('nx-toast', type: 'success', message: count($pending).' migration(s) applied.');
+        } catch (\Throwable $e) {
+            Auditor::log('admin.migrations_failed', payload: ['error' => $e->getMessage(), 'migrations' => $pending]);
+            $this->dispatch('nx-toast', type: 'error', message: 'Migration failed: '.$e->getMessage());
+        }
+    }
+
     public function render()
     {
         return view('livewire.admin.system-health', [
+            'pendingMigrations' => PendingMigrations::names(),
             'tasks' => SchedulerHealth::report(),
             'anyOverdue' => SchedulerHealth::anyOverdue(),
             'queueConnection' => SchedulerHealth::queueConnection(),

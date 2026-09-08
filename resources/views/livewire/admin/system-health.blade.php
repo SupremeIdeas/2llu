@@ -213,6 +213,60 @@
         </div>
     </div>
 
+    {{-- ============ Database updates (no-terminal migration runner) ============
+         Owner request (2026-09-08): shared-cPanel installs often have no
+         SSH/terminal access, so a code update that ships new migrations had
+         no way to actually apply them. This runs `php artisan migrate
+         --force` from a click. Every migration this platform ships is
+         additive-only (never drops/truncates live data — see CLAUDE.md),
+         but it still changes the live schema, so it's gated to super_admin
+         only (one level above the cache flush above) and shown with an
+         explicit list of what will run before the admin commits to it. --}}
+    <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2D4060] dark:bg-[#1A2840]">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    <x-icon name="database" class="h-4 w-4 text-primary dark:text-teal-300" />
+                    Database updates
+                </h2>
+                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    After uploading new code, apply any new database changes here — no terminal or SSH needed. Safe on shared cPanel.
+                </p>
+            </div>
+            @if (Auth::user()->hasRole('super_admin'))
+                <button type="button" wire:click="runMigrations" wire:loading.attr="disabled" wire:target="runMigrations"
+                        @if (count($pendingMigrations) > 0) wire:confirm="Run {{ count($pendingMigrations) }} pending migration(s) now? This updates the live database schema (additive only — no existing data is touched or removed)." @endif
+                        @disabled(count($pendingMigrations) === 0)
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60">
+                    <x-icon name="upload" class="h-4 w-4" wire:loading.remove wire:target="runMigrations" />
+                    <x-ui.spinner class="h-4 w-4" wire:loading wire:target="runMigrations" />
+                    {{ count($pendingMigrations) > 0 ? 'Run '.count($pendingMigrations).' pending migration(s)' : 'Up to date' }}
+                </button>
+            @endif
+        </div>
+
+        @if (count($pendingMigrations) > 0)
+            <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
+                <p class="text-xs font-semibold text-amber-800 dark:text-amber-300">{{ count($pendingMigrations) }} migration(s) waiting to run:</p>
+                <ul class="mt-1.5 space-y-0.5 font-mono text-[11px] text-amber-700 dark:text-amber-400">
+                    @foreach ($pendingMigrations as $name)
+                        <li>{{ $name }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @else
+            <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">No pending migrations — the database schema is already up to date.</p>
+        @endif
+
+        @if ($migrationOutput !== '')
+            <pre class="mt-3 max-h-48 overflow-auto rounded-xl bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-200 dark:bg-black">{{ $migrationOutput }}</pre>
+        @endif
+
+        @unless (Auth::user()->hasRole('super_admin'))
+            <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">Only a super admin can run database updates.</p>
+        @endunless
+    </div>
+
     {{-- ============ Hosting & background setup (dual: VPS + shared) ============
          NaaraSim runs on both a VPS (Redis + Horizon) and shared cPanel (a
          database queue drained by a one-minute cron). This shows the correct,
