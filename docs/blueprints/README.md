@@ -9,7 +9,7 @@ assignment per batch: **`/2LLU-BUILD-PLAN.md`** at the repo root.
 |---|---|---|
 | — | `00-brand-bible.md` | Voice, legal-safe copy, disclosures (both rails) |
 | 1 | `01-batch1-clone-strip-foundation.md` | Fork, strip eSIM, brand/design system, core schema, turn-sorting, fee settings |
-| **2** | **missing — see build plan Phase 0.5** | Underwriting/Claude bank-statement analysis, debt engine, fee splitting, wallet/withdrawal, FX sync |
+| 2 | `02-batch2-fee-math-wallet-debt-underwriting-fx.md` | Income eligibility, Claude bank-statement underwriting, fee-split math, idempotent wallet debit + debt/penalty engine, transparent payout breakdown, FX sync |
 | 3 | `03-batch3-matching-guardians-admin.md` | Geo schema, matching, group UI, Guardians v2, renewal voting, admin |
 | 4 | `04-batch4-geo-seeding.md` | Country→state→LGA seed data, 5 Paystack countries |
 | 5 | `05-batch5-geo-seeding-stripe-international.md` | Same pipeline, 44 Stripe countries |

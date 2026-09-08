@@ -25,30 +25,16 @@ still accurate for the parts 2LLU keeps.
 
 ---
 
-## 1. Critical blocker before Batch 3 — "Batch 2" was never supplied
+## 1. Batch 2 — resolved
 
-Batches 3, 9, 10, and 12 all say "depends on Batch 2" and reference specific
-services it's supposed to contain — `UnderwritingService` (Claude-based
-bank-statement analysis), the `circle_debts` penalty engine, `FeeCalculator`
-(contribution/payout fee splitting), `WithdrawalService`, `CreditLedger`,
-`GuardianPoolLedger`, and the `fx_rates` daily sync job. **No batch document
-titled "Batch 2" was in the set given to this session.** Batch 1 creates the
-*tables* these services will use (`user_bank_statements`, `circle_debts`,
-`fx_rates`, `fee_settings`) with explicit notes that "logic wired in Batch
-2" — so the schema exists, the business logic doesn't.
-
-**Do not start Batch 3 until this is resolved.** Two ways to resolve it:
-1. Ask the owner for the actual Batch 2 document (fastest, lowest-risk —
-   this is money-movement logic, worth getting the real spec rather than
-   inferring it).
-2. If it's genuinely lost, reconstruct it from the shape every later batch
-   assumes (the service names, table names, and call sites above are
-   consistent across four independent documents, which is enough signal to
-   draft a faithful spec) — but this must be a deliberate, reviewed design
-   pass, not a guess folded silently into Batch 3's implementation.
-
-This is Phase 0.5 below and is the actual next step, ahead of any batch
-numbered 3 or later.
+Batches 3, 9, 10, and 12 all declared a dependency on "Batch 2" — the money
+engine (`UnderwritingService`, the `circle_debts` penalty engine,
+`FeeCalculator`, wallet debit/credit, `WithdrawalService`,
+`GuardianPoolLedger`, FX sync) — that wasn't in the original batch set given
+to this session. The owner supplied the real document afterward:
+`docs/blueprints/02-batch2-fee-math-wallet-debt-underwriting-fx.md`. No
+reconstruction was needed. Phase 0.5/2 below now build from that document
+directly.
 
 ---
 
@@ -56,7 +42,7 @@ numbered 3 or later.
 
 ```
 Batch 1 (foundation)
-  ├─→ Batch 2 (MISSING — money engine: underwriting, debt, fees, FX)
+  ├─→ Batch 2 (money engine: underwriting, debt, fees, FX)
   │     ├─→ Batch 3 (matching, guardians, admin, renewal)
   │     │     └─→ Batch 4 (geo seed: Africa) ─→ Batch 5 (geo seed: intl)
   │     ├─→ Batch 9 (referral priority, honest verification)
@@ -107,9 +93,8 @@ refund-eligibility logic), the phase table below splits it.
 | Phase | Batch(es) | What | Model | Why |
 |---|---|---|---|---|
 | 0 | — | Fork, Graphify install + build, blueprints saved | done | — |
-| 0.5 | *Batch 2 (missing)* | **Resolve the gap above before anything else.** Source the real doc, or have Opus draft `UnderwritingService`, debt engine, `FeeCalculator`, `WithdrawalService`, `CreditLedger`, `GuardianPoolLedger`, FX sync from the shape later batches assume | **Opus 5** | Money-movement design from partial spec; get this wrong and every batch built on top inherits the mistake |
 | 1 | Batch 1 | Clone/strip/brand/design system, `circle_*` schema, `TurnSortingService`, 24-plan seed, fee-settings panel | **Sonnet 5** | Well-specified feature build, no open money-correctness questions |
-| 2 | Batch 2 (implement) | Build out what Phase 0.5 specified | **Opus 5** | Same reasoning as 0.5 — this *is* the money engine |
+| 2 | Batch 2 | Income eligibility filter, Claude-based bank-statement underwriting (`UnderwritingService`), `FeeCalculator` fee-split math, idempotent contribution debit + `circle_debts` penalty/compensation engine, transparent payout breakdown, daily FX sync | **Opus 5** | This is the money engine — wallet debits, debt creation, fee splitting, payout math. A subtle bug here means wrong money movement, not a cosmetic defect |
 | 3 | Batch 3 | Geo schema, matching engine, group UI, Guardians v2, renewal voting, admin | **Sonnet 5**, except **Opus 5** for the Guardian base-pay/escalation-bonus earnings math (real-money distribution, has an explicitly open design question to resolve first) | Split by risk within the batch |
 | 4 | Batch 4 → 5 | Geo seeding: 5 Paystack countries, then 44 Stripe countries | **Haiku 4.5** | Fully mechanical: documented API, given sanity-check tolerances, no judgment calls |
 | 5 | Batch 6 | Ledger reconciliation, solvency check, RBAC + maker-checker, job monitoring/alerting, tested backup/restore | **Opus 5** | Explicitly P0 "before real money moves"; pure correctness + security-boundary reasoning |
@@ -131,7 +116,8 @@ restated in nearly every later batch document for a reason.
 
 ## 5. Next step
 
-**Phase 0.5.** Get the real Batch 2 document from the owner, or explicitly
-approve reconstructing it from the referenced shape, before any Batch 3+
-work starts. Update this file's "Next step" line as phases complete, same
-discipline `PROGRESS.md` already uses for the inherited NaaraSim work.
+**Phase 1 — Batch 1.** Fork/tooling and all 14+1 blueprint documents are in
+place; nothing further is blocked. Start the actual strip-eSIM/rebrand/
+schema work per `docs/blueprints/01-batch1-clone-strip-foundation.md`.
+Update this line as phases complete, same discipline `PROGRESS.md` already
+uses for the inherited NaaraSim work.
