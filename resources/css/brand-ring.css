@@ -1,0 +1,64 @@
+/* 2LLU concentric-ring motif (Batch 1 Step 3 — brand-bible.md /
+   docs/blueprints/01-batch1-clone-strip-foundation.md, "The Pour"). Ties the
+   ring visual language to the product mechanic — 2LLU's circles are a
+   rotation — so Batch 3 reuses this exact motif for the round/cycle tracker.
+   Used by <x-brand.ring-card> only. Restraint matters here: the rings are
+   HOVER-ONLY, never on by default, and stay faint even then.
+
+   True concentric rings (repeating-radial-gradient), not a box-shadow glow —
+   anchored at the card's bottom-right corner so they read as ripples fanning
+   out from a point (the pour), masked to fade toward the card's centre and
+   edges so nothing hard-clips. Butter/caramel at low alpha in light mode,
+   butter alone (softer alpha) in dark mode so it doesn't fight the espresso
+   surface. */
+.nx-ring-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+.nx-ring-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: repeating-radial-gradient(circle at 100% 100%,
+        transparent 0,
+        transparent 13px,
+        rgba(185, 122, 62, 0.30) 14px,
+        rgba(185, 122, 62, 0.30) 15px);
+    -webkit-mask-image: radial-gradient(circle at 100% 100%, black 0%, black 45%, transparent 78%);
+    mask-image: radial-gradient(circle at 100% 100%, black 0%, black 45%, transparent 78%);
+    opacity: 0;
+    transform: scale(0.94);
+    transition: opacity 450ms ease, transform 450ms ease;
+}
+
+.nx-ring-card:hover::before,
+.nx-ring-card:focus-within::before {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.dark .nx-ring-card::before {
+    background-image: repeating-radial-gradient(circle at 100% 100%,
+        transparent 0,
+        transparent 13px,
+        rgba(232, 179, 76, 0.22) 14px,
+        rgba(232, 179, 76, 0.22) 15px);
+}
+
+/* The card's own content stack above the ring layer. */
+.nx-ring-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nx-ring-card::before {
+        transition: opacity 200ms ease;
+        transform: none;
+    }
+}

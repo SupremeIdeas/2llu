@@ -8,6 +8,9 @@ use App\Http\Controllers\CustomPageController;
 use App\Http\Controllers\DeveloperDocsController;
 use App\Http\Controllers\DownloadAppController;
 use App\Http\Controllers\EsimQrController;
+use App\Livewire\Admin\CirclePlans;
+use App\Livewire\Admin\CirclePriorityRules;
+use App\Livewire\Admin\FeeSettings;
 use App\Http\Controllers\GiftCardOrderController;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\ManifestController;
@@ -407,6 +410,16 @@ Route::middleware(['admin', 'throttle:admin'])
             Route::get('/gift-hero', GiftHero::class)->name('gift-hero');
             Route::get('/developer-api', DeveloperApi::class)->name('developer-api');
             Route::get('/payouts', Payouts::class)->name('payouts');
+            // Admin's own payout-account setup for withdrawing circle platform
+            // fees (2LLU Batch 1 §7) — the exact same component/flow a regular
+            // user gets (Withdraw::class keeps its own customer layout here;
+            // no new component, per the spec).
+            Route::get('/payout-accounts', Withdraw::class)->name('payout-accounts');
+            // 2LLU circle plans/priority-rule config (Batch 1 §6) — the only
+            // manual step in the whole turn-sorting/matching system.
+            Route::get('/circle-plans', CirclePlans::class)->name('circle-plans');
+            Route::get('/circle-priority-rules', CirclePriorityRules::class)->name('circle-priority-rules');
+            Route::get('/fee-settings', FeeSettings::class)->name('fee-settings');
             Route::get('/refunds', Refunds::class)->name('refunds');
             Route::get('/reconciliation', Reconciliation::class)->name('reconciliation');
             Route::get('/analytics', Analytics::class)->name('analytics');
