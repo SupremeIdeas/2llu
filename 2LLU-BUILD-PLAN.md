@@ -7,6 +7,21 @@
 
 ---
 
+## 0a. Owner decision: eSIM code stays, untouched, dormant
+
+Batch 1's "Step 2 — Strip eSIM" (deleting eSIM-only files and surgically
+editing ~80 files that mix eSIM with Numbers/SMS/admin) was attempted and
+aborted: it's an invasive, high-token, high-risk audit for a payoff that
+doesn't actually block building 2LLU's own features. Owner decision:
+**skip it.** eSIM code, routes, models, and admin screens (`EsimHero`,
+`EsimControlCenter`, `esim.qr`, `esim:sync*` commands, etc.) stay exactly
+as they are in the codebase — inert as far as 2LLU is concerned, but not
+deleted, not gated, not touched. Effort goes into building 2LLU's own
+features additively on top, per the phases below. Revisit an actual eSIM
+removal later only if it becomes a real problem (e.g. it starts showing up
+in 2LLU's own admin nav in a confusing way) — at that point a narrow,
+targeted fix beats another full-codebase audit.
+
 ## 0. Where we are
 
 2LLU is a git-history fork of `SupremeIdeas/NaaraSim` (`main` @ `d921fd4`,

@@ -23,6 +23,12 @@ class PayoutRequest extends Model
 
     public const REVERSED = 'reversed';
 
+    /** payee_type value for admin's own platform-fee withdrawals (2LLU Batch 1 §7). */
+    public const PAYEE_ADMIN = 'admin';
+
+    /** source_bucket for withdrawing accumulated circle platform fees (2LLU Batch 1 §7). */
+    public const BUCKET_CIRCLE_PLATFORM_FEES = 'circle_platform_fees';
+
     protected $fillable = [
         'user_id', 'payee_type', 'payout_account_id', 'amount', 'credit_amount', 'currency',
         'source_bucket', 'status', 'provider', 'provider_ref', 'failure_reason',
